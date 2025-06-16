@@ -8,11 +8,12 @@ $colors: (
   ),
   body: (
     background-body: $background-body,
-    color-body-text: $color-body-text,
+    color-body: $color-body,
   ),
   sidebar: (
     background-sidebar: $background-sidebar,
     color-sidebar-border: $color-sidebar-border,
+    color-sidebar: $color-sidebar,
   ),
   icon: (
     color-icon: $icon-color,
@@ -26,7 +27,7 @@ $colors--dark: (
   ),
   body: (
     background-body: $background-body--dark,
-    color-body-text: $color-body-text--dark,
+    color-body: $color-body--dark,
   ),
   sidebar: (
     background-sidebar: $background-sidebar--dark,

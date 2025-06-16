@@ -29,16 +29,17 @@
             </div>
           </div>
         </div>
-        <div
+        <router-link
           v-else
-          class="nav-item"
-          @click="router.push({ name: route.name })"
+          :to="{ name: route.name }"
+          :class="['nav-item']"
         >
+<!--          @click="router.push({ name: route.name })"-->
           <span class="nav-item__icon">
             <AppIcon :icon="route.icon" />
           </span>
           <span class="nav-item__title">{{ route.title }}</span>
-        </div>
+        </router-link>
       </template>
     </div>
   </aside>
@@ -101,14 +102,34 @@ const routes: Rote[] = [
     padding: 20px 0;
     overflow-y: auto;
     overflow-x: hidden;
+    & > .nav-item:not(:last-child) {
+      margin-bottom: 30px;
+    }
     &-item {
       border-radius: 5px;
       display: flex;
       align-items: center;
       cursor: pointer;
       gap: 10px;
-      &:not(:last-child) {
-        margin-bottom: 30px;
+      color: var(--color-sidebar-text);
+      transition: all 0.2s linear;
+      &:hover {
+        color: $color-sidebar-hover;
+        background-color: $background-sidebar-item-hover;
+        .nav-item__icon {
+          svg {
+            color: $color-sidebar-hover;
+          }
+        }
+      }
+      &.router-link-active {
+        color: $color-sidebar-item-active;
+        background-color: $background-sidebar-item-active;
+        .nav-item__icon {
+          svg {
+            color: $color-sidebar-item-active;
+          }
+        }
       }
       &__icon {
         width: 32px;
@@ -118,6 +139,7 @@ const routes: Rote[] = [
         align-items: center;
         justify-content: center;
         flex: none;
+        transition: fill 3s linear;
       }
       &__title {
         white-space: nowrap;

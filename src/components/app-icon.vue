@@ -25,5 +25,6 @@ const imgUrl = computed(() => `/images/svg/${icon}.svg`)
 <style scoped lang="scss">
 svg {
   color: var(--color-icon);
+  transition: all 0.2s linear;
 }
 </style>

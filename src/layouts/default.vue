@@ -21,11 +21,11 @@ import AppSidebar from '@/components/app-sidebar.vue'
   grid-template-columns: max-content 1fr;
   grid-template-rows: max-content 1fr;
   grid-template-areas:
-    "header header"
-    "sidebar main";
+    'header header'
+    'sidebar main';
 
   main {
-    padding: 30px 20px 30px 80px;
+    padding: 24px 24px 48px 80px;
     grid-area: main;
   }
 }

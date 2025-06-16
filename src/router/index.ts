@@ -6,7 +6,7 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('@/layouts/default.vue'),
-      redirect: { name: 'play' },
+      redirect: { name: 'now-playing' },
       children: [
         {
           path: '/library',
@@ -22,31 +22,35 @@ const router = createRouter({
               path: 'artists',
               name: 'artists',
               component: () => import('@/views/library/artists.vue'),
-            }
-          ]
+            },
+          ],
         },
         {
-          path: '/play',
-          name: 'play',
-          component: () => import('@/views/play.vue'),
-        }
-      ]
+          path: '/now-playing',
+          name: 'now-playing',
+          component: () => import('@/views/now-playing.vue'),
+        },
+      ],
     },
     {
       path: '/sandbox',
       component: () => import('@/layouts/sandbox.vue'),
       children: [
         { path: '', name: 'sandbox', component: () => import('@/views/sandbox/index.vue') },
-        { path: 'bundle/:bundle?', name: 'sandbox-bundle', component: () => import('@/views/sandbox/bundle.vue') },
+        {
+          path: 'bundle/:bundle?',
+          name: 'sandbox-bundle',
+          component: () => import('@/views/sandbox/bundle.vue'),
+        },
         ...(await import('@/views/sandbox/routes')).default,
       ],
-      beforeEnter: (to, from, next) => {
+      beforeEnter: () => {
         if (import.meta.env.MODE === 'development') {
-          next()
+          return true
         } else {
-          next('/')
+          return { path: '/' }
         }
-      }
+      },
     },
   ],
 })

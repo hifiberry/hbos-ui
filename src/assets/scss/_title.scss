@@ -1,5 +1,17 @@
-h1,.h1 {}
-h2,.h2 {}
-h3,.h3 {}
-h4,.h4 {}
-h5,.h5 {}
+@use 'variables' as *;
+
+h1, .h1 {
+  font: 600 28px $font-family-base;
+  color: var(--color-head);
+  margin-bottom: 32px;
+}
+
+h2, .h2 {
+  font: 600 20px $font-family-base;
+  color: var(--color-head);
+  margin-bottom: 12px;
+}
+
+// h3, .h3 {}
+// h4, .h4 {}
+// h5, .h5 {}

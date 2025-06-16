@@ -1,0 +1,3 @@
+# .prettierignore
+src/assets/scss/variables/colors.scss
+src/assets/scss/_title.scss

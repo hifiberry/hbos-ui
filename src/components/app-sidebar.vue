@@ -1,14 +1,8 @@
 <template>
   <aside class="app-sidebar">
     <div class="nav">
-      <template
-        v-for="route in routes"
-        :key="route.name"
-      >
-        <div
-          v-if="route.children && route.children.length"
-          class="nav-item__parent"
-        >
+      <template v-for="route in routes" :key="route.name">
+        <div v-if="route.children && route.children.length" class="nav-item__parent">
           <div class="nav-item">
             <span class="nav-item__icon">
               <AppIcon :icon="route.icon" />
@@ -22,19 +16,15 @@
               class="nav-item"
               @click="router.push({ name: childrenRoute.name })"
             >
-            <span class="nav-item__icon">
-              <AppIcon :icon="childrenRoute.icon" />
-            </span>
+              <span class="nav-item__icon">
+                <AppIcon :icon="childrenRoute.icon" />
+              </span>
               <span class="nav-item__title">{{ childrenRoute.title }}</span>
             </div>
           </div>
         </div>
-        <router-link
-          v-else
-          :to="{ name: route.name }"
-          :class="['nav-item']"
-        >
-<!--          @click="router.push({ name: route.name })"-->
+        <router-link v-else :to="{ name: route.name }" :class="['nav-item']">
+          <!--          @click="router.push({ name: route.name })"-->
           <span class="nav-item__icon">
             <AppIcon :icon="route.icon" />
           </span>
@@ -60,25 +50,26 @@ interface Rote {
 
 const routes: Rote[] = [
   {
-    name: 'play',
+    name: 'now-playing',
     title: 'Now Playing',
-    icon: 'play-light'
-  }, {
+    icon: 'play-light',
+  },
+  {
     title: 'Music Library',
     icon: 'playlist-light',
     children: [
       {
         name: 'albums',
         title: 'Albums',
-        icon: 'notebook-thin'
+        icon: 'notebook-thin',
       },
       {
         name: 'artists',
         title: 'Artists',
-        icon: 'users-thin'
-      }
-    ]
-  }
+        icon: 'users-thin',
+      },
+    ],
+  },
 ]
 </script>
 

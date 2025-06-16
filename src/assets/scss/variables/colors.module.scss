@@ -1,0 +1,46 @@
+@use "colors" as *;
+@use 'sass:string';
+
+$colors: (
+  header: (
+    background-header: $background-header,
+    color-header-border: $color-header-border,
+  ),
+  body: (
+    background-body: $background-body,
+    color-body-text: $color-body-text,
+  ),
+  sidebar: (
+    background-sidebar: $background-sidebar,
+    color-sidebar-border: $color-sidebar-border,
+  ),
+  icon: (
+    color-icon: $icon-color,
+  )
+);
+
+$colors--dark: (
+  header: (
+    background-header: $background-header--dark,
+    color-header-border: $color-header-border--dark,
+  ),
+  body: (
+    background-body: $background-body--dark,
+    color-body-text: $color-body-text--dark,
+  ),
+  sidebar: (
+    background-sidebar: $background-sidebar--dark,
+    color-sidebar-border: $color-sidebar-border--dark,
+  ),
+  icon: (
+    color-icon: $icon-color--dark,
+  )
+);
+
+:export {
+  @each $group, $colors in $colors {
+    @each $name, $color in $colors {
+      #{ string.unquote($group + '--' + $name) }: $color;
+    }
+  }
+}

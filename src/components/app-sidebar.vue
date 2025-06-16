@@ -82,19 +82,11 @@ const routes: Rote[] = [
 </script>
 
 <style scoped lang="scss">
-$sidebar-light-bg: $color-white;
-$sidebar-light-border-color: $color-grey;
-$sidebar-light-color: $color-grey-3;
-
-$sidebar-dark-bg: $color-grey-2;
-$sidebar-dark-color: $color-white;
-
 .app-sidebar {
   grid-area: sidebar;
-  //width: 56px;
-  width: 200px;
-  background-color: $sidebar-light-bg;
-  border-right: 1px solid $sidebar-light-border-color;
+  width: 56px;
+  background-color: var(--background-sidebar);
+  border-right: 1px solid var(--color-sidebar-border);
   position: fixed;
   left: 0;
   bottom: 0;
@@ -102,10 +94,6 @@ $sidebar-dark-color: $color-white;
   padding: 0 12px;
   transition: all 0.2s linear;
   z-index: 5;
-  @include dark {
-    background-color: $sidebar-dark-bg;
-    border-color: transparent;
-  }
   &:hover {
     width: 200px;
   }
@@ -119,10 +107,6 @@ $sidebar-dark-color: $color-white;
       align-items: center;
       cursor: pointer;
       gap: 10px;
-      color: $sidebar-light-color;
-      @include dark {
-        color: $sidebar-dark-color;
-      }
       &:not(:last-child) {
         margin-bottom: 30px;
       }

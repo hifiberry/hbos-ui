@@ -1,7 +1,6 @@
 @use "mixins";
 @use "reset";
 @use "fonts";
-@use "colors" as *;
 @use "grid";
 @use "title";
 
@@ -10,10 +9,6 @@ body {
   font-size: $font-size-base;
   line-height: $font-line-height-base;
   font-family: $font-family-base;
-  color: $light-text-color;
-  background-color: $light-bg;
-  @include dark {
-    background-color: $dark-bg;
-    color: $dark-text-color;
-  }
+  background-color: var(--background-body);
+  color: var(--color-body-text);
 }

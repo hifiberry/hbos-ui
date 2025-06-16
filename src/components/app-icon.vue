@@ -23,14 +23,7 @@ const imgUrl = computed(() => `/images/svg/${icon}.svg`)
 </script>
 
 <style scoped lang="scss">
-$light-icon-color: $color-black-1;
-
-$dark-icon-color: $color-white;
-
 svg {
-  color: $light-icon-color;
-  @include dark {
-    color: $dark-icon-color;
-  }
+  color: var(--color-icon);
 }
 </style>

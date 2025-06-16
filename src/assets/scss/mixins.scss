@@ -1,0 +1,11 @@
+@mixin dark {
+  $ampersand: &;
+
+  @at-root {
+    html[class="dark"] {
+      #{$ampersand} {
+        @content;
+      }
+    }
+  }
+}

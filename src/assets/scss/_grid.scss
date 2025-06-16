@@ -1,0 +1,49 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 30px;
+  counter-reset: div;
+}
+.grid-gap {
+  margin-bottom: 30px;
+}
+.m-auto {
+  margin:auto;
+}
+/* spanning cols */
+.col-2 {
+  grid-column: auto/span 2;
+}
+.col-3 {
+  grid-column: auto/span 3;
+}
+.col-4 {
+  grid-column: auto/span 4;
+}
+.col-5 {
+  grid-column: auto/span 5;
+}
+.col-6 {
+  grid-column: auto/span 6;
+}
+.col-8 {
+  grid-column: auto/span 8;
+}
+.col-9 {
+  grid-column: auto/span 9;
+}
+.col-10 {
+  grid-column: auto/span 10;
+}
+.col-11 {
+  grid-column: auto/span 11;
+}
+.col-12 {
+  grid-column: auto/span 12;
+}
+
+/* spanning rows */
+
+.row-2 {
+  grid-row: auto/span 2;
+}

@@ -30,6 +30,11 @@ const router = createRouter({
           name: 'now-playing',
           component: () => import('@/views/now-playing.vue'),
         },
+        {
+          path: '/sound',
+          name: 'sound',
+          component: () => import('@/views/sound.vue'),
+        },
       ],
     },
     {

@@ -53,14 +53,14 @@ const route = useRoute()
 
 import AppIcon from '@/components/app-icon.vue'
 
-interface Rote {
+interface Route {
   name?: string
   title: string
   icon: string
-  children?: Rote[]
+  children?: Route[]
 }
 
-const routes: Rote[] = [
+const routes: Route[] = [
   {
     name: 'now-playing',
     title: 'Now Playing',
@@ -82,9 +82,14 @@ const routes: Rote[] = [
       },
     ],
   },
+  {
+    name: 'sound',
+    title: 'Sound',
+    icon: 'music-note-simple-light',
+  }
 ]
 
-const isCurrentRoute = (routes: Rote[]): boolean => {
+const isCurrentRoute = (routes: Route[]): boolean => {
   for (let i = 0; i < routes.length; i++) {
     const routeItem = routes[i]
     if (routeItem.name === route.name) {
@@ -98,8 +103,8 @@ const isCurrentRoute = (routes: Rote[]): boolean => {
 <style scoped lang="scss">
 .app-sidebar {
   grid-area: sidebar;
-  //width: 56px;
-  width: 200px;
+  width: 56px;
+  //width: 200px;
   background-color: var(--background-sidebar);
   border-right: 1px solid var(--color-sidebar-border);
   position: fixed;
@@ -111,15 +116,20 @@ const isCurrentRoute = (routes: Rote[]): boolean => {
   z-index: 5;
   &:hover {
     width: 200px;
+    .nav-item__arrow {
+      opacity: 1;
+    }
   }
   .nav {
     padding: 20px 0;
     overflow-y: auto;
     overflow-x: hidden;
-    & > .nav-item {
+    & > * {
       &:not(:last-child) {
         margin-bottom: 32px;
       }
+    }
+    & > .nav-item {
       &.router-link-active {
         color: $color-sidebar-item-active;
         background-color: $background-sidebar-item-active;
@@ -165,7 +175,7 @@ const isCurrentRoute = (routes: Rote[]): boolean => {
               background-color: $background-sidebar-item-active;
               .nav-item__icon, .nav-item__arrow {
                 svg {
-                  color: $color-sidebar-item-active;
+                  color: $color-sidebar-item-active!important;
                 }
               }
             }
@@ -176,18 +186,36 @@ const isCurrentRoute = (routes: Rote[]): boolean => {
             position: relative;
             .nav-item__arrow {
               position: absolute;
-              top: 9px;
+              top: 8px;
               right: 7px;
+              transition: transform 0.2s linear;
               svg {
                 width: 16px;
                 height: 16px;
               }
             }
+            &:hover {
+              .nav-item__arrow {
+                svg {
+                  color: $color-sidebar-hover;
+                }
+              }
+            }
           }
         }
-      }
-      &__wrapper {
-
+        &:hover {
+          .nav-item {
+            &__wrapper {
+              max-height: 300px;
+              padding-top: 12px;
+              opacity: 1;
+            }
+            &__arrow {
+              transform: rotate(-180deg);
+              top: 6px;
+            }
+          }
+        }
       }
       &__title {
         white-space: nowrap;
@@ -195,7 +223,11 @@ const isCurrentRoute = (routes: Rote[]): boolean => {
         padding-right: 5px;
       }
       &__wrapper {
-        padding: 12px 0 0 12px;
+        padding: 0 0 0 12px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.2s linear, padding-top 0.2s linear, opacity 0.2s linear;
         .nav-item {
           &:not(:last-child) {
             margin-bottom: 12px;
@@ -210,6 +242,9 @@ const isCurrentRoute = (routes: Rote[]): boolean => {
             }
           }
         }
+      }
+      &__arrow {
+        opacity: 0;
       }
     }
   }

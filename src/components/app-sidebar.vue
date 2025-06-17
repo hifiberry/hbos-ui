@@ -1,30 +1,42 @@
 <template>
   <aside class="app-sidebar">
     <div class="nav">
-      <template v-for="route in routes" :key="route.name">
-        <div v-if="route.children && route.children.length" class="nav-item__parent">
+      <template
+        v-for="route in routes"
+        :key="route.name"
+      >
+        <div
+          v-if="route.children && route.children.length"
+          :class="['nav-item__parent', { 'router-link-active': isCurrentRoute(route.children) }]"
+        >
           <div class="nav-item">
             <span class="nav-item__icon">
               <AppIcon :icon="route.icon" />
             </span>
             <span class="nav-item__title">{{ route.title }}</span>
+            <span class="nav-item__arrow">
+              <AppIcon icon="caret-down" />
+            </span>
           </div>
           <div class="nav-item__wrapper">
-            <div
+            <router-link
               v-for="childrenRoute in route.children"
               :key="childrenRoute.name"
+              :to="{ name: childrenRoute.name }"
               class="nav-item"
-              @click="router.push({ name: childrenRoute.name })"
             >
               <span class="nav-item__icon">
                 <AppIcon :icon="childrenRoute.icon" />
               </span>
               <span class="nav-item__title">{{ childrenRoute.title }}</span>
-            </div>
+            </router-link>
           </div>
         </div>
-        <router-link v-else :to="{ name: route.name }" :class="['nav-item']">
-          <!--          @click="router.push({ name: route.name })"-->
+        <router-link
+          v-else
+          :to="{ name: route.name }"
+          :class="['nav-item']"
+        >
           <span class="nav-item__icon">
             <AppIcon :icon="route.icon" />
           </span>
@@ -36,8 +48,8 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-const router = useRouter()
+import { useRoute } from 'vue-router'
+const route = useRoute()
 
 import AppIcon from '@/components/app-icon.vue'
 
@@ -71,12 +83,23 @@ const routes: Rote[] = [
     ],
   },
 ]
+
+const isCurrentRoute = (routes: Rote[]): boolean => {
+  for (let i = 0; i < routes.length; i++) {
+    const routeItem = routes[i]
+    if (routeItem.name === route.name) {
+      return true
+    }
+  }
+  return false
+}
 </script>
 
 <style scoped lang="scss">
 .app-sidebar {
   grid-area: sidebar;
-  width: 56px;
+  //width: 56px;
+  width: 200px;
   background-color: var(--background-sidebar);
   border-right: 1px solid var(--color-sidebar-border);
   position: fixed;
@@ -93,15 +116,26 @@ const routes: Rote[] = [
     padding: 20px 0;
     overflow-y: auto;
     overflow-x: hidden;
-    & > .nav-item:not(:last-child) {
-      margin-bottom: 30px;
+    & > .nav-item {
+      &:not(:last-child) {
+        margin-bottom: 32px;
+      }
+      &.router-link-active {
+        color: $color-sidebar-item-active;
+        background-color: $background-sidebar-item-active;
+        .nav-item__icon {
+          svg {
+            color: $color-sidebar-item-active;
+          }
+        }
+      }
     }
     &-item {
       border-radius: 5px;
       display: flex;
       align-items: center;
       cursor: pointer;
-      gap: 10px;
+      gap: 2px;
       color: var(--color-sidebar-text);
       transition: all 0.2s linear;
       &:hover {
@@ -110,15 +144,6 @@ const routes: Rote[] = [
         .nav-item__icon {
           svg {
             color: $color-sidebar-hover;
-          }
-        }
-      }
-      &.router-link-active {
-        color: $color-sidebar-item-active;
-        background-color: $background-sidebar-item-active;
-        .nav-item__icon {
-          svg {
-            color: $color-sidebar-item-active;
           }
         }
       }
@@ -132,9 +157,59 @@ const routes: Rote[] = [
         flex: none;
         transition: fill 3s linear;
       }
+      &__parent {
+        &.router-link-active {
+          & > .nav {
+            &-item {
+              color: $color-sidebar-item-active;
+              background-color: $background-sidebar-item-active;
+              .nav-item__icon, .nav-item__arrow {
+                svg {
+                  color: $color-sidebar-item-active;
+                }
+              }
+            }
+          }
+        }
+        & > .nav {
+          &-item {
+            position: relative;
+            .nav-item__arrow {
+              position: absolute;
+              top: 9px;
+              right: 7px;
+              svg {
+                width: 16px;
+                height: 16px;
+              }
+            }
+          }
+        }
+      }
+      &__wrapper {
+
+      }
       &__title {
         white-space: nowrap;
         flex: 1;
+        padding-right: 5px;
+      }
+      &__wrapper {
+        padding: 12px 0 0 12px;
+        .nav-item {
+          &:not(:last-child) {
+            margin-bottom: 12px;
+          }
+          &.router-link-active {
+            color: $color-sidebar-hover;
+            background-color: $background-sidebar-item-hover;
+            .nav-item__icon {
+              svg {
+                color: $color-sidebar-hover;
+              }
+            }
+          }
+        }
       }
     }
   }

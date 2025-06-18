@@ -51,10 +51,8 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-const route = useRoute()
-
 import AppIcon from '@/components/app-icon.vue'
+import AppAudioControls from '@/components/app-audio-controls.vue'
 
 interface Route {
   name?: string
@@ -92,16 +90,6 @@ const routes: Route[] = [
     icon: 'music-note-simple-light',
   }
 ]
-
-const isCurrentRoute = (routes: Route[]): boolean => {
-  for (let i = 0; i < routes.length; i++) {
-    const routeItem = routes[i]
-    if (routeItem.name === route.name) {
-      return true
-    }
-  }
-  return false
-}
 </script>
 
 <style scoped lang="scss">

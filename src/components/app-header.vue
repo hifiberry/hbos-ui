@@ -4,6 +4,10 @@
       <img src="/images/logo.svg" alt="">
     </router-link>
 
+    <div class="header-controls">
+      <AppAudioControls isSeparate />
+    </div>
+
     <div>
       <AppIconButton
         icon="moon-thin"
@@ -19,6 +23,7 @@ const isDark = useDark()
 const toggleDark = useToggle(isDark)
 
 import AppIconButton from '@/components/app-icon-button.vue'
+import AppAudioControls from '@/components/app-audio-controls.vue'
 </script>
 
 <style scoped lang="scss">
@@ -36,6 +41,11 @@ header {
     border: none;
     padding: 10px 15px;
     height: auto;
+  }
+}
+.header-controls {
+  @include media-breakpoint-down(lg) {
+    display: none;
   }
 }
 </style>

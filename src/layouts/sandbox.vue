@@ -1,7 +1,9 @@
 <template>
   <div class="sandbox-view">
-    <RouterLink v-if="route.name != 'sandbox'" to="/sandbox">
-      <h2 class="sandbox-view__back"><AppIcon icon="prev" /> Back</h2>
+    <RouterLink :to="route.name == 'sandbox' ? '/' : '/sandbox'">
+      <h2 class="sandbox-view__back">
+        <AppIcon icon="prev" /> {{ route.name == 'sandbox' ? 'Home' : 'Back' }}
+      </h2>
     </RouterLink>
 
     <router-view />

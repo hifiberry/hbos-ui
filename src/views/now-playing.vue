@@ -1,12 +1,12 @@
 <template>
   <div class="now-playing">
-    <!-- TODO cleanup testCover -->
-    <h1 @click="testCover">Now Playing</h1>
+    <h1 class="now-playing__title">Now Playing</h1>
 
     <div class="now-playing__player">
       <AppCover class="now-playing__cover" :src alt="Horsepower" />
 
-      <div class="now-playing__info">
+      <!-- TODO cleanup testCover -->
+      <div class="now-playing__info" @click="testCover">
         <h2>{{ songName || 'Song Name' }}</h2>
         <p>{{ artist || 'Artist' }}</p>
       </div>
@@ -42,6 +42,12 @@ const testCover = () => {
   min-width: 100%;
   height: 100%;
 
+  &__title {
+    @include media-breakpoint-down(sm) {
+      display: none;
+    }
+  }
+
   &__player {
     flex: 1;
     display: flex;
@@ -54,12 +60,17 @@ const testCover = () => {
   }
 
   &__cover {
-    margin-top: 20px;
+    margin-top: auto;
+    margin-bottom: 20px;
   }
 
   &__info {
     text-align: center;
-    margin: 53px 0 50px;
+    margin: auto 0 50px;
+  }
+
+  &__audio-controls {
+    margin-bottom: 48px;
   }
 }
 </style>

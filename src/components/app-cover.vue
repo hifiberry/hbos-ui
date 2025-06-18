@@ -63,9 +63,29 @@ watch(
   width: 450px;
   background-color: var(--cover-placeholder-bg);
 
+  @include media-breakpoint-down(lg) {
+    height: 350px;
+    width: 350px;
+  }
+
+  @include media-breakpoint-down(sm) {
+    height: 250px;
+    width: 250px;
+  }
+
   img {
     height: 450px;
     width: 450px;
+
+    @include media-breakpoint-down(lg) {
+      height: 350px;
+      width: 350px;
+    }
+
+    @include media-breakpoint-down(sm) {
+      height: 250px;
+      width: 250px;
+    }
   }
 }
 
@@ -73,5 +93,15 @@ svg.app-cover__placeholder-icon {
   width: 120px;
   height: 120px;
   color: var(--cover-placeholder-icon-color);
+
+  @include media-breakpoint-down(lg) {
+    height: 93px;
+    width: 93px;
+  }
+
+  @include media-breakpoint-down(sm) {
+    height: 66px;
+    width: 66px;
+  }
 }
 </style>

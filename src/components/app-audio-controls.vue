@@ -63,10 +63,24 @@ const audioControls = useAudioControls()
   justify-content: center;
   gap: 48px;
 
+  @include media-breakpoint-down(lg) {
+    gap: 24px;
+  }
+
+  @include media-breakpoint-down(sm) {
+    gap: 12px;
+    justify-content: space-between;
+  }
+
   svg {
     width: 32px;
     height: 32px;
     color: var(--secondary-audio-controls);
+
+    @include media-breakpoint-down(lg) {
+      width: 24px;
+      height: 24px;
+    }
   }
 
   &--main {
@@ -74,10 +88,23 @@ const audioControls = useAudioControls()
     align-items: center;
     gap: 32px;
 
+    @include media-breakpoint-down(lg) {
+      gap: 16px;
+    }
+
+    @include media-breakpoint-down(sm) {
+      gap: 21px;
+    }
+
     svg {
       width: 48px;
       height: 48px;
       color: var(--main-audio-controls);
+
+      @include media-breakpoint-down(lg) {
+        width: 32px;
+        height: 32px;
+      }
     }
   }
 }
@@ -86,20 +113,48 @@ const audioControls = useAudioControls()
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 48px;
+
+  @include media-breakpoint-down(lg) {
+    gap: 23px;
+  }
 
   svg {
     width: 24px;
     height: 24px;
     color: var(--secondary-audio-controls);
+
+    @include media-breakpoint-down(lg) {
+      width: 20px;
+      height: 20px;
+    }
   }
 
   .app-audio-controls--main {
     gap: 16px;
 
+    @include media-breakpoint-down(lg) {
+      gap: 7px;
+    }
+
+    @include media-breakpoint-down(sm) {
+      gap: 16px;
+    }
+
     svg {
       width: 24px;
       height: 24px;
       color: var(--main-audio-controls-separate);
+
+      @include media-breakpoint-down(lg) {
+        width: 20px;
+        height: 20px;
+      }
+
+      @include media-breakpoint-down(sm) {
+        width: 24px;
+        height: 24px;
+      }
     }
   }
 }

@@ -11,8 +11,12 @@ const router = createRouter({
         {
           path: '/library',
           component: () => import('@/views/router-view.vue'),
-          redirect: { name: 'albums' },
           children: [
+            {
+              path: '',
+              name: 'library',
+              component: () => import('@/views/library/index.vue'),
+            },
             {
               path: 'albums',
               name: 'albums',

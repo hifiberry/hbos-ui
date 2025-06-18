@@ -1,5 +1,8 @@
 <template>
-  <aside class="app-sidebar">
+  <aside class="sidebar">
+    <div class="sidebar-controls">
+      <AppSongControlInfo isOnSticky/>
+    </div>
     <div class="nav">
       <template
         v-for="route in routes"
@@ -52,7 +55,7 @@
 
 <script setup lang="ts">
 import AppIcon from '@/components/app-icon.vue'
-import AppAudioControls from '@/components/app-audio-controls.vue'
+import AppSongControlInfo from '@/components/app-song-control-info.vue'
 
 interface Route {
   name?: string
@@ -93,23 +96,26 @@ const routes: Route[] = [
 </script>
 
 <style scoped lang="scss">
-.app-sidebar {
-  grid-area: sidebar;
+.sidebar {
   width: 56px;
+  height: 100%;
   background-color: var(--background-sidebar);
   border-right: 1px solid var(--color-sidebar-border);
   position: fixed;
   left: 0;
   bottom: 0;
-  top: 80px;
-  padding: 0 12px;
+  top: 0;
+  padding: 80px 12px 0;
   transition: all 0.2s linear;
   z-index: 5;
   @include media-breakpoint-down(lg) {
     top: auto;
     background-color: transparent;
     width: 100%!important;
+    height: auto;
     bottom: 30px;
+    padding-left: 15px;
+    padding-right: 15px;
   }
   &:hover {
     width: 200px;
@@ -276,6 +282,16 @@ const routes: Route[] = [
           display: none;
         }
       }
+    }
+  }
+  &-controls {
+    display: none;
+    margin-bottom: 12px;
+    &:deep(.app-audio-controls) {
+      width: auto;
+    }
+    @include media-breakpoint-down(lg) {
+      display: block;
     }
   }
 }

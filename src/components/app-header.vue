@@ -5,7 +5,7 @@
     </router-link>
 
     <div class="header-controls">
-      <AppAudioControls isSeparate />
+      <AppSongControlInfo />
     </div>
 
     <div>
@@ -23,7 +23,7 @@ const isDark = useDark()
 const toggleDark = useToggle(isDark)
 
 import AppIconButton from '@/components/app-icon-button.vue'
-import AppAudioControls from '@/components/app-audio-controls.vue'
+import AppSongControlInfo from '@/components/app-song-control-info.vue'
 </script>
 
 <style scoped lang="scss">
@@ -36,6 +36,9 @@ header {
   justify-content: space-between;
   height: 80px;
   flex: none;
+  gap: 60px;
+  position: relative;
+  z-index: 9;
   @include media-breakpoint-down(lg) {
     background-color: transparent;
     border: none;
@@ -44,6 +47,7 @@ header {
   }
 }
 .header-controls {
+  flex: 1;
   @include media-breakpoint-down(lg) {
     display: none;
   }

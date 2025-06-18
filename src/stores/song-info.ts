@@ -1,20 +1,11 @@
-import { defineStore } from 'pinia'
+import { ref} from 'vue'
 
-interface Song {
-  title: string
-  artist: string
-  album: string
-  track_number: number
-  liked: boolean
-  cover_art_url: string
-  thumbnail: string
-  duration: number
-  position: number
-}
+import { defineStore } from 'pinia'
+import type { Song } from '@/types/player'
 
 export const useSongInfo = defineStore('song-info', () => {
   // State
-  const songInfo: Song = {
+  const songInfo = ref<Song | null>({
     title: 'Title',
     artist: 'Artist',
     album: 'Album',
@@ -24,7 +15,7 @@ export const useSongInfo = defineStore('song-info', () => {
     thumbnail: 'https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr1358638421.jpg',
     duration: 3000,
     position: 1,
-  }
+  })
 
   return {
     // State

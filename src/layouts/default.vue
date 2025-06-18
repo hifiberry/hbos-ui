@@ -15,7 +15,7 @@ import AppSidebar from '@/components/app-sidebar.vue'
 
 <style scoped lang="scss">
 .wrapper {
-  width: 100dvw;
+  //width: 100dvw;
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -24,7 +24,7 @@ import AppSidebar from '@/components/app-sidebar.vue'
     padding: 24px 24px 48px 80px;
     flex: 1;
     @include media-breakpoint-down(lg) {
-      padding: 15px 15px 95px;
+      padding: 15px 15px 170px;
     }
   }
 }

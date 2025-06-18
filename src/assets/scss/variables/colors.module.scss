@@ -30,6 +30,10 @@ $colors: (
     main-audio-controls-separate: $main-audio-controls-separate,
     secondary-audio-controls: $secondary-audio-controls,
   ),
+  cover-placeholder: (
+    cover-placeholder-bg: $cover-placeholder-bg,
+    cover-placeholder-icon-color: $cover-placeholder-icon-color,
+  ),
 );
 
 $colors--dark: (
@@ -59,6 +63,10 @@ $colors--dark: (
     main-audio-controls: $main-audio-controls--dark,
     main-audio-controls-separate: $main-audio-controls-separate--dark,
     secondary-audio-controls: $secondary-audio-controls--dark,
+  ),
+  cover-placeholder: (
+    cover-placeholder-bg: $cover-placeholder-bg--dark,
+    cover-placeholder-icon-color: $cover-placeholder-icon-color--dark,
   ),
 );
 

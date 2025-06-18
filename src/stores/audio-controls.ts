@@ -11,8 +11,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const isPlaying = ref(false)
   const isPaused = ref(true)
 
-  // TODo create 'now-playing' Store
-  // TODo get currentData in the 'now-playing' Store
+  // TODO create 'current-player' Store
+  // TODO get currentData in the 'current-player' Store
   const currentData: currentData = {
     loop_mode: 'none', // 'none', 'no', 'track', 'song', 'playlist'
   }
@@ -21,6 +21,20 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const isPlayingOrPaused = computed(() => isPlaying.value || isPaused.value)
 
   // Actions
+  // TODO move to 'current-player'
+  const initPlayer = () => {
+    console.log('initPlayer')
+
+    isSendingCommand.value = true
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        isSendingCommand.value = false
+        resolve(true)
+      }, 2400)
+    })
+  }
+
   /**
    * Send a command to the player
    * @param {string} command - The command to send
@@ -28,7 +42,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
-  // TODo fix Promise<string | boolean>, leave only boolean
+  // TODO fix Promise<string | boolean>, leave only boolean
   const sendCommand = (
     command: string,
     playerName: string | null = null,
@@ -80,7 +94,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
-  // TODo fix Promise<string | boolean>, leave only boolean
+  // TODO fix Promise<string | boolean>, leave only boolean
   async function toggleShuffle(
     playerName: string | null = null,
     apiBase: string = 'PLAYER_CONFIG.apiBasePath',
@@ -113,7 +127,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
    * @returns {Promise<boolean>} Success or failure
    */
 
-  // TODo fix Promise<string | boolean>, leave only boolean
+  // TODO fix Promise<string | boolean>, leave only boolean
   async function cycleLoopMode(
     // currentData: currentData, // getting from the State
     playerName: string | null = null,
@@ -155,10 +169,11 @@ export const useAudioControls = defineStore('audio-controls', () => {
     // Getters
     isPlayingOrPaused,
     // Actions
+    initPlayer,
+    sendCommand,
     togglePlayPause,
     playNextOrPrev,
-    cycleLoopMode,
     toggleShuffle,
-    sendCommand,
+    cycleLoopMode,
   }
 })

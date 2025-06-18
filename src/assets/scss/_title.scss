@@ -1,10 +1,14 @@
 @use 'variables' as *;
+@use 'mixins' as *;
 
 h1, .h1 {
   font: 600 28px $font-family-base;
   line-height: $font-line-height-base;
   color: var(--color-head);
   margin-bottom: 32px;
+  @include media-breakpoint-down(lg) {
+    font-size: 22px;
+  }
 }
 
 h2, .h2 {

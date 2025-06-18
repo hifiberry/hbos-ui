@@ -1,3 +1,6 @@
+@use 'sass:map';
+@use 'sass:list';
+
 @mixin dark {
   $ampersand: &;
 
@@ -7,5 +10,24 @@
         @content;
       }
     }
+  }
+}
+
+$breakpoints: (
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px
+);
+@mixin media-breakpoint-down($breakpoint) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    $max-width: map.get($breakpoints, $breakpoint) - 0.02px;
+    @media (max-width: $max-width) {
+      @content;
+    }
+  } @else {
+    @warn "Unfortunately, no value could be retrieved from `#{$breakpoint}`. "
+        + "Available breakpoints are: #{map-keys($breakpoints)}.";
   }
 }

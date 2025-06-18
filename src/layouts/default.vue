@@ -17,16 +17,15 @@ import AppSidebar from '@/components/app-sidebar.vue'
 .wrapper {
   width: 100dvw;
   height: 100dvh;
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  grid-template-rows: max-content 1fr;
-  grid-template-areas:
-    'header header'
-    'sidebar main';
+  display: flex;
+  flex-direction: column;
 
   main {
     padding: 24px 24px 48px 80px;
-    grid-area: main;
+    flex: 1;
+    @include media-breakpoint-down(lg) {
+      padding: 15px 15px 95px;
+    }
   }
 }
 </style>

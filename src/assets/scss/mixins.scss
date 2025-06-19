@@ -6,7 +6,7 @@
   $ampersand: &;
 
   @at-root {
-    html[class="dark"] {
+    html[class='dark'] {
       #{$ampersand} {
         @content;
       }
@@ -19,7 +19,7 @@ $breakpoints: (
   md: 768px,
   lg: 992px,
   xl: 1200px,
-  xxl: 1400px
+  xxl: 1400px,
 );
 @mixin media-breakpoint-down($breakpoint) {
   @if map.has-key($breakpoints, $breakpoint) {

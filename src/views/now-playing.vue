@@ -43,7 +43,7 @@ const testCover = () => {
   height: 100%;
 
   &__title {
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(md) {
       display: none;
     }
   }

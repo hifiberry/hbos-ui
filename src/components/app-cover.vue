@@ -68,7 +68,7 @@ watch(
     width: 350px;
   }
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     height: 250px;
     width: 250px;
   }
@@ -82,7 +82,7 @@ watch(
       width: 350px;
     }
 
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(md) {
       height: 250px;
       width: 250px;
     }
@@ -99,7 +99,7 @@ svg.app-cover__placeholder-icon {
     width: 93px;
   }
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     height: 66px;
     width: 66px;
   }

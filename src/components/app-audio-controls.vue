@@ -63,11 +63,11 @@ const audioControls = useAudioControls()
   justify-content: center;
   gap: 48px;
 
-  @include media-breakpoint-down(lg) {
+  @include media-down(lg) {
     gap: 24px;
   }
 
-  @include media-breakpoint-down(md) {
+  @include media-down(md) {
     gap: 12px;
     justify-content: space-between;
   }
@@ -77,7 +77,7 @@ const audioControls = useAudioControls()
     height: 32px;
     color: var(--secondary-audio-controls);
 
-    @include media-breakpoint-down(lg) {
+    @include media-down(lg) {
       width: 24px;
       height: 24px;
     }
@@ -88,11 +88,11 @@ const audioControls = useAudioControls()
     align-items: center;
     gap: 32px;
 
-    @include media-breakpoint-down(lg) {
+    @include media-down(lg) {
       gap: 16px;
     }
 
-    @include media-breakpoint-down(md) {
+    @include media-down(md) {
       gap: 21px;
     }
 
@@ -101,7 +101,7 @@ const audioControls = useAudioControls()
       height: 48px;
       color: var(--main-audio-controls);
 
-      @include media-breakpoint-down(lg) {
+      @include media-down(lg) {
         width: 32px;
         height: 32px;
       }
@@ -115,7 +115,7 @@ const audioControls = useAudioControls()
   justify-content: center;
   gap: 48px;
 
-  @include media-breakpoint-down(lg) {
+  @include media-down(lg) {
     gap: 23px;
   }
 
@@ -124,7 +124,7 @@ const audioControls = useAudioControls()
     height: 24px;
     color: var(--secondary-audio-controls);
 
-    @include media-breakpoint-down(lg) {
+    @include media-down(lg) {
       width: 20px;
       height: 20px;
     }
@@ -133,11 +133,11 @@ const audioControls = useAudioControls()
   .app-audio-controls--main {
     gap: 16px;
 
-    @include media-breakpoint-down(lg) {
+    @include media-down(lg) {
       gap: 7px;
     }
 
-    @include media-breakpoint-down(md) {
+    @include media-down(md) {
       gap: 16px;
     }
 
@@ -146,12 +146,12 @@ const audioControls = useAudioControls()
       height: 24px;
       color: var(--main-audio-controls-separate);
 
-      @include media-breakpoint-down(lg) {
+      @include media-down(lg) {
         width: 20px;
         height: 20px;
       }
 
-      @include media-breakpoint-down(md) {
+      @include media-down(md) {
         width: 24px;
         height: 24px;
       }

@@ -1,24 +1,12 @@
 <template>
   <aside class="sidebar">
-    <div
-      v-if="isPlayerControls"
-      class="sidebar-controls"
-    >
-      <AppSongControlInfo isOnSticky/>
+    <div v-if="isPlayerControls" class="sidebar-controls">
+      <AppSongControlInfo isOnSticky />
     </div>
     <div class="nav">
-      <template
-        v-for="route in routes"
-        :key="route.name"
-      >
-        <div
-          v-if="route.children && route.children.length"
-          :class="['nav-item__parent']"
-        >
-          <router-link
-            :to="{ name: route.name }"
-            :class="['nav-item']"
-          >
+      <template v-for="route in routes" :key="route.name">
+        <div v-if="route.children && route.children.length" :class="['nav-item__parent']">
+          <router-link :to="{ name: route.name }" :class="['nav-item']">
             <span class="nav-item__icon">
               <AppIcon :icon="route.icon" />
             </span>
@@ -41,11 +29,7 @@
             </router-link>
           </div>
         </div>
-        <router-link
-          v-else
-          :to="{ name: route.name }"
-          :class="['nav-item']"
-        >
+        <router-link v-else :to="{ name: route.name }" :class="['nav-item']">
           <span class="nav-item__icon">
             <AppIcon :icon="route.icon" />
           </span>
@@ -99,7 +83,7 @@ const routes: Route[] = [
     name: 'sound',
     title: 'Sound',
     icon: 'music-note-simple-light',
-  }
+  },
 ]
 </script>
 
@@ -116,10 +100,10 @@ const routes: Route[] = [
   padding: 80px 12px 0;
   transition: all 0.2s linear;
   z-index: 5;
-  @include media-breakpoint-down(lg) {
+  @include media-down(lg) {
     top: auto;
     background-color: transparent;
-    width: 100%!important;
+    width: 100% !important;
     height: auto;
     bottom: 30px;
     padding: 0 15px;
@@ -138,7 +122,10 @@ const routes: Route[] = [
           max-height: 0;
           overflow: hidden;
           opacity: 0;
-          transition: max-height 0.2s linear, padding-top 0.2s linear, opacity 0.2s linear;
+          transition:
+            max-height 0.2s linear,
+            padding-top 0.2s linear,
+            opacity 0.2s linear;
         }
       }
     }
@@ -147,7 +134,7 @@ const routes: Route[] = [
     padding: 20px 0;
     overflow-y: auto;
     overflow-x: hidden;
-    @include media-breakpoint-down(lg) {
+    @include media-down(lg) {
       padding: 0;
       overflow: visible;
       display: flex;
@@ -158,30 +145,31 @@ const routes: Route[] = [
     & > * {
       &:not(:last-child) {
         margin-bottom: 32px;
-        @include media-breakpoint-down(lg) {
+        @include media-down(lg) {
           margin: 0;
         }
       }
     }
     .nav-item {
-      @include media-breakpoint-down(lg) {
+      @include media-down(lg) {
         display: flex;
         flex-direction: column;
       }
       &.router-link-active {
         color: $color-sidebar-item-active;
         background-color: $background-sidebar-item-active;
-        @include media-breakpoint-down(lg) {
+        @include media-down(lg) {
           background-color: transparent;
           color: $primary;
         }
-        .nav-item__icon, .nav-item__arrow {
+        .nav-item__icon,
+        .nav-item__arrow {
           svg {
             color: $color-sidebar-item-active;
           }
         }
         .nav-item__icon {
-          @include media-breakpoint-down(lg) {
+          @include media-down(lg) {
             background-color: $background-sidebar-item-active;
           }
         }
@@ -192,7 +180,7 @@ const routes: Route[] = [
           max-height: 300px;
           padding-top: 12px;
           opacity: 1;
-          @include media-breakpoint-down(lg) {
+          @include media-down(lg) {
             display: none;
           }
         }
@@ -213,14 +201,15 @@ const routes: Route[] = [
       &:hover {
         color: $color-sidebar-hover;
         background-color: $background-sidebar-item-hover;
-        @include media-breakpoint-down(lg) {
+        @include media-down(lg) {
           color: var(--color-sidebar);
           background-color: transparent;
         }
-        .nav-item__icon,.nav-item__arrow {
+        .nav-item__icon,
+        .nav-item__arrow {
           svg {
             color: $color-sidebar-hover;
-            @include media-breakpoint-down(lg) {
+            @include media-down(lg) {
               color: var(--color-sidebar);
             }
           }
@@ -257,7 +246,7 @@ const routes: Route[] = [
         white-space: nowrap;
         flex: 1;
         padding-right: 5px;
-        @include media-breakpoint-down(lg) {
+        @include media-down(lg) {
           font-size: 10px;
           padding: 5px 0 0;
         }
@@ -267,7 +256,10 @@ const routes: Route[] = [
         max-height: 0;
         overflow: hidden;
         opacity: 0;
-        transition: max-height 0.2s linear, padding-top 0.2s linear, opacity 0.2s linear;
+        transition:
+          max-height 0.2s linear,
+          padding-top 0.2s linear,
+          opacity 0.2s linear;
         .nav-item {
           &:not(:last-child) {
             margin-bottom: 12px;
@@ -285,7 +277,7 @@ const routes: Route[] = [
       }
       &__arrow {
         opacity: 0;
-        @include media-breakpoint-down(lg) {
+        @include media-down(lg) {
           display: none;
         }
       }
@@ -297,7 +289,7 @@ const routes: Route[] = [
     &:deep(.app-audio-controls) {
       width: auto;
     }
-    @include media-breakpoint-down(lg) {
+    @include media-down(lg) {
       display: block;
     }
   }

@@ -6,7 +6,7 @@ h1, .h1 {
   line-height: $font-line-height-base;
   color: var(--color-head);
   margin-bottom: 32px;
-  @include media-breakpoint-down(lg) {
+  @include media-down(lg) {
     font-size: 22px;
   }
 }

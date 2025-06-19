@@ -41,7 +41,7 @@ header {
   gap: 60px;
   position: relative;
   z-index: 9;
-  @include media-breakpoint-down(lg) {
+  @include media-down(lg) {
     background-color: transparent;
     border: none;
     padding: 10px 15px;
@@ -50,7 +50,7 @@ header {
 }
 .header-controls {
   flex: 1;
-  @include media-breakpoint-down(lg) {
+  @include media-down(lg) {
     display: none;
   }
 }

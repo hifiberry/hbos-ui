@@ -4,7 +4,10 @@
       <img src="/images/logo.svg" alt="">
     </router-link>
 
-    <div class="header-controls">
+    <div
+      v-if="isPlayerControls"
+      class="header-controls"
+    >
       <AppSongControlInfo />
     </div>
 
@@ -24,6 +27,11 @@ const toggleDark = useToggle(isDark)
 
 import AppIconButton from '@/components/app-icon-button.vue'
 import AppSongControlInfo from '@/components/app-song-control-info.vue'
+
+interface HeaderProps {
+  isPlayerControls?: boolean
+}
+const { isPlayerControls = true } = defineProps<HeaderProps>()
 </script>
 
 <style scoped lang="scss">

@@ -21,11 +21,11 @@ import AppCover from '@/components/app-cover.vue'
 import { useSongInfo } from '@/stores/song-info'
 const { songInfo } = useSongInfo()
 
-interface AppAudioControlsProps {
+interface AudioSongControlInfoProps {
   isOnSticky?: boolean
 }
 
-const { isOnSticky = false } = defineProps<AppAudioControlsProps>()
+const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
 </script>
 
 <style scoped lang="scss">
@@ -48,6 +48,10 @@ const { isOnSticky = false } = defineProps<AppAudioControlsProps>()
         height: 100%;
         object-fit: cover;
       }
+      svg {
+        width: 20px;
+        height: 20px;
+      }
     }
   }
   &__box {
@@ -59,6 +63,7 @@ const { isOnSticky = false } = defineProps<AppAudioControlsProps>()
     }
   }
   &__attr {
+    color: var(--color-body-secondary);
     .h3 {
       margin-bottom: 3px;
       font-size: 18px;
@@ -68,7 +73,7 @@ const { isOnSticky = false } = defineProps<AppAudioControlsProps>()
     background-color: var(--background-sidebar);
     border-radius: 10px;
     padding: 12px;
-    box-shadow: 0px 2px 8px 0px #0000000A;
+    box-shadow: $box-shadow-main-content;
   }
 }
 </style>

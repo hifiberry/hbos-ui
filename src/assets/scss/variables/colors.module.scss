@@ -12,6 +12,7 @@ $colors: (
   body: (
     background-body: $background-body,
     color-body: $color-body,
+    color-body-secondary: $color-body-secondary,
   ),
   sidebar: (
     background-sidebar: $background-sidebar,
@@ -47,10 +48,12 @@ $colors--dark: (
   body: (
     background-body: $background-body--dark,
     color-body: $color-body--dark,
+    color-body-secondary: $color-body-secondary--dark,
   ),
   sidebar: (
     background-sidebar: $background-sidebar--dark,
     color-sidebar-border: $color-sidebar-border--dark,
+    color-sidebar: $color-sidebar--dark,
   ),
   main: (
     background-main-content: $background-main-content--dark,

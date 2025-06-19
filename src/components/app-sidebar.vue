@@ -1,6 +1,9 @@
 <template>
   <aside class="sidebar">
-    <div class="sidebar-controls">
+    <div
+      v-if="isPlayerControls"
+      class="sidebar-controls"
+    >
       <AppSongControlInfo isOnSticky/>
     </div>
     <div class="nav">
@@ -56,6 +59,11 @@
 <script setup lang="ts">
 import AppIcon from '@/components/app-icon.vue'
 import AppSongControlInfo from '@/components/app-song-control-info.vue'
+
+interface SidebarProps {
+  isPlayerControls?: boolean
+}
+const { isPlayerControls = true } = defineProps<SidebarProps>()
 
 interface Route {
   name?: string
@@ -114,8 +122,7 @@ const routes: Route[] = [
     width: 100%!important;
     height: auto;
     bottom: 30px;
-    padding-left: 15px;
-    padding-right: 15px;
+    padding: 0 15px;
   }
   &:hover {
     width: 200px;
@@ -201,20 +208,20 @@ const routes: Route[] = [
       align-items: center;
       cursor: pointer;
       gap: 2px;
-      color: var(--color-sidebar-text);
+      color: var(--color-sidebar);
       transition: all 0.2s linear;
       &:hover {
         color: $color-sidebar-hover;
         background-color: $background-sidebar-item-hover;
         @include media-breakpoint-down(lg) {
-          color: var(--color-sidebar-text);
+          color: var(--color-sidebar);
           background-color: transparent;
         }
-        .nav-item__icon {
+        .nav-item__icon,.nav-item__arrow {
           svg {
             color: $color-sidebar-hover;
             @include media-breakpoint-down(lg) {
-              color: var(--color-sidebar-text);
+              color: var(--color-sidebar);
             }
           }
         }

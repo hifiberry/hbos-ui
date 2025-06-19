@@ -1,5 +1,6 @@
 @use 'sass:map';
 @use 'sass:list';
+@use "sass:meta";
 
 @mixin dark {
   $ampersand: &;

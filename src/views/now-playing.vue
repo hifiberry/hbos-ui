@@ -11,6 +11,17 @@
         <p>{{ artist || 'Artist' }}</p>
       </div>
 
+      <AppProgressSlider
+        class="now-playing__progress-slider"
+        :value="progress"
+        :min="0"
+        :max="100"
+        :step="1"
+        :isDraggable="false"
+        :hasThumb="true"
+        @click:progress="onClickProgress"
+      />
+
       <AppAudioControls class="now-playing__audio-controls" />
     </div>
   </div>
@@ -19,11 +30,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppCover from '@/components/app-cover.vue'
+import AppProgressSlider from '@/components/app-progress-slider.vue'
+import AppAudioControls from '@/components/app-audio-controls.vue'
 
 const songName = ref('')
 const artist = ref('')
+const progress = ref(42)
+
+const onClickProgress = (newVal: number) => {
+  progress.value = newVal
+}
 
 // TODO cleanup testCover
 const src = ref('https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr135863842.jpg') // Wrong src
@@ -69,8 +86,12 @@ const testCover = () => {
     margin: auto 0 50px;
   }
 
+  &__progress-slider {
+    margin-bottom: 32px;
+  }
+
   &__audio-controls {
-    margin-bottom: 48px;
+    margin-bottom: 20px;
   }
 }
 </style>

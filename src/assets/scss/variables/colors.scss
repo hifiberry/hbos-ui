@@ -1,9 +1,9 @@
-$primary: #E11E4A;
+$primary: #E11E4A;                                                $primary--dark: #FF2E63;
 
 $background-body: #fafafa;                                        $background-body--dark: #000;
 $color-body: #707070;                                             $color-body--dark: #fff;
 $color-body-secondary: #707070;                                   $color-body-secondary--dark: #aaa;
-$color-link: $primary;                                            $color-link--dark: #fff;
+$color-link: $primary;                                              $color-link--dark: #fff;
 
 $background-header: #fff;                                         $background-header--dark: #333;
 $color-header-border: #f5f5f5;                                    $color-header-border--dark: transparent;
@@ -24,7 +24,7 @@ $box-shadow-main-content: 0px 2px 8px 0px rgba(0, 0, 0, 0.04);
 $color-head: #191717;                                             $color-head--dark: #FFFFFF;
 $color-text: #707070;                                             $color-text--dark: #FFFFFF;
 
-$main-audio-controls: $primary;                                   $main-audio-controls--dark: #AAAAAA;
+$main-audio-controls: $primary;                                     $main-audio-controls--dark: #AAAAAA;
 $main-audio-controls-separate: rgba(112, 112, 112, 0.5);          $main-audio-controls-separate--dark: #AAAAAA;
 $secondary-audio-controls: #707070;                               $secondary-audio-controls--dark: #AAAAAA;
 
@@ -37,3 +37,7 @@ $background-start-skeleton: #ddd;                                 $background-st
 $background-end-skeleton: #eee;                                   $background-end-skeleton--dark: #555;
 
 
+$progress-slider-bg: rgba(112, 112, 112, 0.1);                    $progress-slider-bg--dark: #AAAAAA;
+$progress-slider-progess: $primary;                                 $progress-slider-progess--dark: $primary--dark;
+$progress-slider-on-header-bg: rgba(112, 112, 112, 0.2);          $progress-slider-on-header-bg--dark: rgba(170, 170, 170, 1);
+$progress-slider-on-header-progess: rgba(112, 112, 112, 0.4);     $progress-slider-on-header-progess--dark: #FFFFFF;

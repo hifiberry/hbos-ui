@@ -45,7 +45,13 @@ $colors: (
   skeleton: (
     background-start-skeleton: $background-start-skeleton,
     background-end-skeleton: $background-end-skeleton,
-  )
+  ),
+  progress-slider: (
+    progress-slider-bg: $progress-slider-bg,
+    progress-slider-progess: $progress-slider-progess,
+    progress-slider-on-header-bg: $progress-slider-on-header-bg,
+    progress-slider-on-header-progess: $progress-slider-on-header-progess,
+  ),
 );
 
 $colors--dark: (
@@ -89,7 +95,13 @@ $colors--dark: (
   skeleton: (
     background-start-skeleton: $background-start-skeleton--dark,
     background-end-skeleton: $background-end-skeleton--dark,
-  )
+  ),
+  progress-slider: (
+    progress-slider-bg: $progress-slider-bg--dark,
+    progress-slider-progess: $progress-slider-progess--dark,
+    progress-slider-on-header-bg: $progress-slider-on-header-bg--dark,
+    progress-slider-on-header-progess: $progress-slider-on-header-progess--dark,
+  ),
 );
 
 :export {

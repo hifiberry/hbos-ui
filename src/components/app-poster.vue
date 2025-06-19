@@ -45,11 +45,16 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
+  font-size: 14px;
   &-img {
     width: 140px;
     height: 140px;
     margin-bottom: 10px;
     overflow: hidden;
+    @include media-down(lg) {
+      width: 100px;
+      height: 100px;
+    }
     img {
       width: 100%;
       height: 100%;
@@ -72,6 +77,9 @@ watch(
   }
   h4 {
     transition: all 0.2s linear;
+  }
+  p {
+    font-weight: 500;
   }
   &:hover {
     color: $primary;

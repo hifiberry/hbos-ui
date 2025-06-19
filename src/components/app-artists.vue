@@ -43,6 +43,15 @@ onMounted(() => {
     display: flex;
     gap: 60px;
     overflow: hidden;
+    @include media-down(xl) {
+      gap: 30px;
+    }
+    @include media-down(lg) {
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      justify-content: space-around;
+    }
   }
   .title {
     display: flex;

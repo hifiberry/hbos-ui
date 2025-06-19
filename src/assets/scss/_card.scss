@@ -1,9 +1,13 @@
 @use "variables/colors" as *;
 @use "variables" as *;
+@use "mixins" as *;
 
 .card {
   background-color: var(--background-card);
   border-radius: 10px;
   box-shadow: $box-shadow-main-content;
   padding: 18px;
+  @include media-down(lg) {
+    padding: 10px;
+  }
 }

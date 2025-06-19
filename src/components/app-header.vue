@@ -1,27 +1,21 @@
 <template>
   <header>
     <router-link to="/">
-      <img src="/images/logo.svg" alt="">
+      <img src="/images/logo.svg" alt="" />
     </router-link>
 
-    <div
-      v-if="isPlayerControls"
-      class="header-controls"
-    >
+    <div v-if="isPlayerControls" class="header-controls">
       <AppSongControlInfo />
     </div>
 
     <div>
-      <AppIconButton
-        icon="moon-thin"
-        @click="toggleDark()"
-      />
+      <AppIconButton icon="moon-thin" @click="toggleDark()" />
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { useDark, useToggle } from "@vueuse/core"
+import { useDark, useToggle } from '@vueuse/core'
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 

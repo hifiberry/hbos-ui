@@ -1,7 +1,7 @@
-//@use "mixins";
 @use "reset";
 @use "fonts";
 @use "grid";
+@use "card";
 @use "title";
 
 body {
@@ -11,4 +11,11 @@ body {
   font-family: $font-family-base;
   background-color: var(--background-body);
   color: var(--color-body);
+}
+a {
+  color: var(--color-link);
+  transition: all 0.2s linear;
+  &:hover {
+    opacity: 0.7;
+  }
 }

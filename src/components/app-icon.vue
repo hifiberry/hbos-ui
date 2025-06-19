@@ -1,10 +1,5 @@
 <template>
-  <inline-svg
-    :class="['app-icon']"
-    :width="width"
-    :height="height"
-    :src="imgUrl"
-  />
+  <inline-svg :class="['app-icon']" :width="width" :height="height" :src="imgUrl" />
 </template>
 
 <script setup lang="ts">

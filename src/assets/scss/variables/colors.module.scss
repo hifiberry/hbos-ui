@@ -21,6 +21,7 @@ $colors: (
   ),
   main: (
     background-main-content: $background-main-content,
+    color-link: $color-link,
   ),
   text: (
     color-head: $color-head,
@@ -38,6 +39,13 @@ $colors: (
     cover-placeholder-bg: $cover-placeholder-bg,
     cover-placeholder-icon-color: $cover-placeholder-icon-color,
   ),
+  card: (
+    background-card: $background-card,
+  ),
+  skeleton: (
+    background-start-skeleton: $background-start-skeleton,
+    background-end-skeleton: $background-end-skeleton,
+  )
 );
 
 $colors--dark: (
@@ -57,6 +65,7 @@ $colors--dark: (
   ),
   main: (
     background-main-content: $background-main-content--dark,
+    color-link: $color-link--dark,
   ),
   text: (
     color-head: $color-head--dark,
@@ -74,6 +83,13 @@ $colors--dark: (
     cover-placeholder-bg: $cover-placeholder-bg--dark,
     cover-placeholder-icon-color: $cover-placeholder-icon-color--dark,
   ),
+  card: (
+    background-card: $background-card--dark,
+  ),
+  skeleton: (
+    background-start-skeleton: $background-start-skeleton--dark,
+    background-end-skeleton: $background-end-skeleton--dark,
+  )
 );
 
 :export {

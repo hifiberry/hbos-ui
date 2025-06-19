@@ -67,7 +67,7 @@ const audioControls = useAudioControls()
     gap: 24px;
   }
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     gap: 12px;
     justify-content: space-between;
   }
@@ -92,7 +92,7 @@ const audioControls = useAudioControls()
       gap: 16px;
     }
 
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(md) {
       gap: 21px;
     }
 
@@ -137,7 +137,7 @@ const audioControls = useAudioControls()
       gap: 7px;
     }
 
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(md) {
       gap: 16px;
     }
 
@@ -151,7 +151,7 @@ const audioControls = useAudioControls()
         height: 20px;
       }
 
-      @include media-breakpoint-down(sm) {
+      @include media-breakpoint-down(md) {
         width: 24px;
         height: 24px;
       }

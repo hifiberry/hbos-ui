@@ -24,6 +24,9 @@ h3, .h3 {
   line-height: $font-line-height-base;
   color: var(--color-head);
   margin-bottom: 12px;
+  @include media-down(lg) {
+    font-size: 16px;
+  }
 }
  h4, .h4 {
    font: 500 16px $font-family-base;

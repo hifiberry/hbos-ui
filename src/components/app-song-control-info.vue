@@ -1,22 +1,30 @@
 <template>
-  <div :class="['song-control-info', { 'card': isOnSticky }]">
+  <div :class="['song-control-info', { card: isOnSticky }]">
     <div v-if="songInfo" class="song-control-info__box">
       <div class="song-control-info__cover">
-        <AppCover :src="songInfo.thumbnail"/>
+        <AppCover :src="songInfo.thumbnail" />
       </div>
       <div class="song-control-info__attr">
-        <div class="h3">{{ songInfo.title }}</div>
-        <p>{{ songInfo.artist }}</p>
+        <div class="h3">
+          <AppMarquee>
+            {{ songInfo.title }}
+          </AppMarquee>
+        </div>
+
+        <p>
+          <AppMarquee>{{ songInfo.artist }}</AppMarquee>
+        </p>
       </div>
     </div>
 
-    <AppAudioControls isSeparate :isOnSticky="isOnSticky"/>
+    <AppAudioControls isSeparate :isOnSticky="isOnSticky" />
   </div>
 </template>
 
 <script setup lang="ts">
 import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppCover from '@/components/app-cover.vue'
+import AppMarquee from '@/components/app-marquee.vue'
 
 import { useSongInfo } from '@/stores/song-info'
 const { songInfo } = useSongInfo()
@@ -58,15 +66,17 @@ const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
     display: flex;
     gap: 10px;
     align-items: center;
+    width: calc(100% - 120px);
     &__attr {
       flex: 1;
     }
   }
   &__attr {
     color: var(--color-body-secondary);
+    max-width: 260px;
+    min-width: 100px;
     .h3 {
       margin-bottom: 3px;
-      font-size: 18px;
     }
   }
   &.card {

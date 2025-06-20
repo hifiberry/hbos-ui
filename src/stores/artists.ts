@@ -5,7 +5,7 @@ import type { Artist } from '@/types/library'
 const MOCK_ARTISTS: Artist[] = [
   {
     id: 'a1',
-    name: 'Artist 1',
+    name: 'Artist 1Artist 1Artist 1Artist 1Artist 1Artist 1',
     album_count: 1,
     thumb_url: ['https://r2.theaudiodb.com/images/media/artist/thumb/2-chainz-4ff3c2f2aba7b.jpg'],
     is_multi: true,

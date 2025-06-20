@@ -1,6 +1,8 @@
 <template>
   <div class="albums">
-    <AppBackRouter :to="{ name: 'library' }">Albums</AppBackRouter>
+    <div class="breadcrumbs">
+      <AppBackRouter :to="{ name: 'library' }">Albums</AppBackRouter>
+    </div>
     <div class="card">
       <div class="albums-list">
         <AppPosterSkeleton v-if="albumStore.loading" />
@@ -12,6 +14,7 @@
             :title="album.name"
             :subtitle="`${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'} • ${album.tracks_count} track${album.tracks_count !== 1 ? 's' : ''}`"
             :src="album.cover_art"
+            @click="router.push({ name: 'album', params: { id: album.id } })"
           />
         </template>
       </div>
@@ -24,6 +27,9 @@ import { onMounted } from 'vue'
 
 import { useAlbumsStore } from '@/stores/albums'
 const albumStore = useAlbumsStore()
+
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 import AppPoster from '@/components/app-poster.vue'
 import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'

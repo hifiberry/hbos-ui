@@ -13,9 +13,14 @@ body {
   color: var(--color-body);
 }
 a {
-  color: var(--color-link);
-  transition: all 0.2s linear;
-  &:hover {
-    opacity: 0.7;
+  &.text-link {
+    color: var(--color-link);
+    transition: all 0.2s linear;
+    &:hover {
+      opacity: 0.7;
+    }
   }
+}
+.breadcrumbs {
+  margin-bottom: 25px;
 }

@@ -1,6 +1,8 @@
 <template>
   <div class="artists">
-    <AppBackRouter :to="{ name: 'library' }">Artists</AppBackRouter>
+    <div class="breadcrumbs">
+      <AppBackRouter :to="{ name: 'library' }">Artists</AppBackRouter>
+    </div>
     <div class="card">
       <div class="artists-list">
         <AppPosterSkeleton v-if="artistStore.loading" poster-form="circle" />

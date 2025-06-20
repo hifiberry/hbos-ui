@@ -49,13 +49,15 @@ $colors: (
   ),
   progress-slider: (
     progress-slider-bg: $progress-slider-bg,
-    progress-slider-progess: $progress-slider-progess,
     progress-slider-on-header-bg: $progress-slider-on-header-bg,
     progress-slider-on-header-progess: $progress-slider-on-header-progess,
   ),
 );
 
 $colors--dark: (
+  general: (
+    primary: $primary--dark,
+  ),
   header: (
     background-header: $background-header--dark,
     color-header-border: $color-header-border--dark,
@@ -100,7 +102,6 @@ $colors--dark: (
   ),
   progress-slider: (
     progress-slider-bg: $progress-slider-bg--dark,
-    progress-slider-progess: $progress-slider-progess--dark,
     progress-slider-on-header-bg: $progress-slider-on-header-bg--dark,
     progress-slider-on-header-progess: $progress-slider-on-header-progess--dark,
   ),

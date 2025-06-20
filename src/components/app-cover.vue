@@ -63,12 +63,12 @@ watch(
   width: 450px;
   background-color: var(--cover-placeholder-bg);
 
-  @include media-down(lg) {
+  @include media-down(md) {
     height: 350px;
     width: 350px;
   }
 
-  @include media-down(md) {
+  @include media-down(sm) {
     height: 250px;
     width: 250px;
   }
@@ -77,12 +77,12 @@ watch(
     height: 450px;
     width: 450px;
 
-    @include media-down(lg) {
+    @include media-down(md) {
       height: 350px;
       width: 350px;
     }
 
-    @include media-down(md) {
+    @include media-down(sm) {
       height: 250px;
       width: 250px;
     }
@@ -94,12 +94,12 @@ svg.app-cover__placeholder-icon {
   height: 120px;
   color: var(--cover-placeholder-icon-color);
 
-  @include media-down(lg) {
+  @include media-down(md) {
     height: 93px;
     width: 93px;
   }
 
-  @include media-down(md) {
+  @include media-down(sm) {
     height: 66px;
     width: 66px;
   }

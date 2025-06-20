@@ -10,6 +10,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const isSendingCommand = ref(false)
   const isPlaying = ref(false)
   const isPaused = ref(true)
+  const seekPosition = ref(42) // TODO set initial seekPosition
 
   // TODO create 'current-player' Store
   // TODO get currentData in the 'current-player' Store
@@ -160,11 +161,37 @@ export const useAudioControls = defineStore('audio-controls', () => {
     return await sendCommand(`set_loop:${nextMode}`, playerName, apiBase)
   }
 
+  /**
+   * Send a seek command to the player
+   * @param {number} position - The position to seek to in seconds
+   * @param {string} playerName - Optional specific player name
+   * @param {string} apiBase - The base URL for the API
+   * @returns {Promise<boolean>} Success or failure
+   */
+  // TODO fix Promise<string | boolean>, leave only boolean
+  async function seekToPosition(
+    position: number,
+    playerName: string | null = null,
+    apiBase: string = 'PLAYER_CONFIG.apiBasePath',
+  ): Promise<string | boolean> {
+    try {
+      const seekCommand = `seek:${Math.floor(position)}`
+      return await sendCommand(seekCommand, playerName, apiBase).then(() => {
+        seekPosition.value = position
+        return seekCommand
+      })
+    } catch (error) {
+      console.error('Error seeking to position:', error)
+      return false
+    }
+  }
+
   return {
     // State
     isSendingCommand,
     isPlaying,
     isPaused,
+    seekPosition,
     currentData,
     // Getters
     isPlayingOrPaused,
@@ -175,5 +202,6 @@ export const useAudioControls = defineStore('audio-controls', () => {
     playNextOrPrev,
     toggleShuffle,
     cycleLoopMode,
+    seekToPosition,
   }
 })

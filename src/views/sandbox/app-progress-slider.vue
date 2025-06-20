@@ -22,6 +22,27 @@
 
   <div style="width: 500px">
     <AppProgressSlider
+      :value="progress_delay_draggable"
+      :min="0"
+      :max="100"
+      :step="1"
+      :isDraggable="true"
+      :hasThumb="true"
+      @click:progress="onClickProgress_delay_draggable"
+    />
+
+    <h3 style="margin-top: 24px">Delay: {{ delay }}ms</h3>
+    <h3 style="margin-top: 12px">isDraggable: true</h3>
+    <h3 style="margin-top: 12px">hasThumb: true</h3>
+    <h3 style="margin-top: 12px">Emited value: {{ emitet_value_delay_draggable }}</h3>
+    <h3 style="margin-top: 12px">Progress value: {{ progress_delay_draggable }}</h3>
+  </div>
+
+  <br />
+  <br />
+
+  <div style="width: 500px">
+    <AppProgressSlider
       :value="progress_2"
       :min="0"
       :max="100"
@@ -115,6 +136,9 @@ import AppProgressSlider from '@/components/app-progress-slider.vue'
 const progress_1 = ref<number>(50)
 const emitet_value_1 = ref<number>(50)
 
+const progress_delay_draggable = ref<number>(50)
+const emitet_value_delay_draggable = ref<number>(50)
+
 const delay = 1200
 
 const progress_2 = ref<number>(60)
@@ -139,6 +163,8 @@ const setPlayingInterval = () => {
 // setPlayingInterval()
 
 function onClickProgress_1(newVal: number) {
+  console.log('onClickProgress_1', newVal)
+
   emitet_value_1.value = newVal
 
   if (intervalID) {
@@ -153,7 +179,26 @@ function onClickProgress_1(newVal: number) {
   }, delay)
 }
 
+function onClickProgress_delay_draggable(newVal: number) {
+  console.log('onClickProgress_delay_draggable', newVal)
+
+  emitet_value_delay_draggable.value = newVal
+
+  if (intervalID) {
+    clearInterval(intervalID)
+  }
+
+  // Only update when you're ready
+  setTimeout(() => {
+    progress_delay_draggable.value = newVal
+
+    // setPlayingInterval()
+  }, delay)
+}
+
 function onClickProgress_2(newVal: number) {
+  console.log('onClickProgress_2', newVal)
+
   emitet_value_2.value = newVal
 
   if (intervalID) {
@@ -166,6 +211,8 @@ function onClickProgress_2(newVal: number) {
 }
 
 function onClickProgress_3(newVal: number) {
+  console.log('onClickProgress_3', newVal)
+
   emitet_value_3.value = newVal
 
   if (intervalID) {
@@ -178,6 +225,8 @@ function onClickProgress_3(newVal: number) {
 }
 
 function onClickProgress_on_header(newVal: number) {
+  console.log('onClickProgress_on_header', newVal)
+
   emitet_value_on_header.value = newVal
 
   if (intervalID) {

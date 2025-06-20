@@ -5,6 +5,7 @@
     :class="{ disabled, 'is-on-header': isOnHeader }"
     @click="handleClick"
     @mousedown="startDrag"
+    @touchstart="startTouch"
   >
     <div class="app-progress-slider__track">
       <div class="app-progress-slider__progress" :style="{ width: displayPercent + '%' }" />
@@ -124,7 +125,63 @@ function stopDrag() {
   document.removeEventListener('mouseup', stopDrag)
 }
 
-onBeforeUnmount(stopDrag)
+// For touch devices
+function getValueFromTouch(event: TouchEvent): number | null {
+  if (!slider.value || event.touches.length === 0) return null
+
+  const rect = slider.value.getBoundingClientRect()
+  const touchX = event.touches[0].clientX - rect.left
+  const width = rect.width
+  const ratio = touchX / width
+
+  let newValue = min + ratio * (max - min)
+
+  if (step > 0) {
+    newValue = Math.round((newValue - min) / step) * step + min
+  }
+
+  return Math.min(Math.max(newValue, min), max)
+}
+
+function startTouch(event: TouchEvent) {
+  if (disabled || !isDraggable) return
+
+  dragging.value = true
+  hasDragged.value = false
+
+  document.addEventListener('touchmove', onTouchMove)
+  document.addEventListener('touchend', stopTouch)
+  event.preventDefault()
+}
+
+function onTouchMove(event: TouchEvent) {
+  if (!dragging.value || disabled) return
+
+  const newValue = getValueFromTouch(event)
+  if (newValue !== null) {
+    internalValue.value = newValue
+    hasDragged.value = true
+  }
+}
+
+function stopTouch() {
+  if (!dragging.value) return
+
+  if (hasDragged.value) {
+    emit('click:progress', internalValue.value)
+  }
+
+  dragging.value = false
+  hasDragged.value = false
+
+  document.removeEventListener('touchmove', onTouchMove)
+  document.removeEventListener('touchend', stopTouch)
+}
+
+onBeforeUnmount(() => {
+  stopDrag()
+  stopTouch()
+})
 </script>
 
 <style scoped lang="scss">
@@ -137,7 +194,7 @@ onBeforeUnmount(stopDrag)
   cursor: pointer;
   user-select: none;
 
-  @include media-down(lg) {
+  @include media-down(md) {
     height: 6px;
     border-radius: 3px;
   }
@@ -156,10 +213,10 @@ onBeforeUnmount(stopDrag)
 
   &__progress {
     height: 100%;
-    background-color: var(--progress-slider-progess);
+    background-color: var(--primary);
     border-radius: 4px;
 
-    @include media-down(lg) {
+    @include media-down(md) {
       border-radius: 3px;
     }
   }
@@ -170,15 +227,20 @@ onBeforeUnmount(stopDrag)
     transform: translate(-50%, -50%);
     width: 16px;
     height: 16px;
-    background-color: var(--progress-slider-progess);
+    background-color: var(--primary);
     border-radius: 50%;
     pointer-events: none;
   }
 
   &.is-on-header {
+    margin-top: 16px;
     height: 2px;
     border-radius: 1px;
     background: var(--progress-slider-on-header-bg);
+
+    @include media-down(md) {
+      margin-top: 12px;
+    }
 
     .app-progress-slider__progress {
       height: 2px;

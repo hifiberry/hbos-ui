@@ -17,12 +17,17 @@
       </div>
     </div>
 
-    <AppAudioControls isSeparate :isOnSticky="isOnSticky" />
+    <div class="song-control-info__controls">
+      <AppAudioControls isSeparate :isOnSticky="isOnSticky" />
+
+      <AppProgressControl v-if="!isOnSticky" isOnHeader />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import AppAudioControls from '@/components/app-audio-controls.vue'
+import AppProgressControl from '@/components/app-progress-control.vue'
 import AppCover from '@/components/app-cover.vue'
 import AppMarquee from '@/components/app-marquee.vue'
 

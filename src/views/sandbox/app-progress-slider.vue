@@ -1,5 +1,5 @@
 <template>
-  <div style="width: 500px">
+  <div class="sandbox-progress-slider__container">
     <AppProgressSlider
       :value="progress_1"
       :min="0"
@@ -20,7 +20,7 @@
   <br />
   <br />
 
-  <div style="width: 500px">
+  <div class="sandbox-progress-slider__container">
     <AppProgressSlider
       :value="progress_delay_draggable"
       :min="0"
@@ -41,7 +41,7 @@
   <br />
   <br />
 
-  <div style="width: 500px">
+  <div class="sandbox-progress-slider__container">
     <AppProgressSlider
       :value="progress_2"
       :min="0"
@@ -62,7 +62,7 @@
   <br />
   <br />
 
-  <div style="width: 500px">
+  <div class="sandbox-progress-slider__container">
     <AppProgressSlider
       :value="progress_3"
       :min="0"
@@ -83,7 +83,7 @@
   <br />
   <br />
 
-  <div style="width: 500px">
+  <div class="sandbox-progress-slider__container">
     <AppProgressSlider
       :value="50"
       :min="0"
@@ -102,7 +102,7 @@
   <br />
   <br />
 
-  <div style="width: 250px">
+  <div class="sandbox-progress-slider__container--small">
     <h3 style="margin-bottom: 24px; color: #e11e4a">On The Header</h3>
 
     <AppProgressSlider
@@ -122,7 +122,7 @@
   <br />
   <br />
 
-  <div style="width: 250px">
+  <div class="sandbox-progress-slider__container--small">
     <AppProgressSlider :value="50" :isOnHeader="true" :disabled="true" />
 
     <h3 style="margin-top: 24px">disabled: true</h3>
@@ -244,3 +244,17 @@ onBeforeUnmount(() => {
   }
 })
 </script>
+
+<style lang="scss">
+.sandbox-progress-slider__container {
+  width: 500px;
+
+  @include media-down(sm) {
+    width: 350px;
+  }
+
+  &--small {
+    width: 350px;
+  }
+}
+</style>

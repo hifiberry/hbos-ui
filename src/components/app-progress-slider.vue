@@ -126,11 +126,14 @@ function stopDrag() {
 }
 
 // For touch devices
-function getValueFromTouch(event: TouchEvent): number | null {
-  if (!slider.value || event.touches.length === 0) return null
+function getValueFromTouch(event: TouchEvent, useChangedTouches = false): number | null {
+  if (!slider.value) return null
+
+  const touches = useChangedTouches ? event.changedTouches : event.touches
+  if (touches.length === 0) return null
 
   const rect = slider.value.getBoundingClientRect()
-  const touchX = event.touches[0].clientX - rect.left
+  const touchX = touches[0].clientX - rect.left
   const width = rect.width
   const ratio = touchX / width
 
@@ -143,18 +146,30 @@ function getValueFromTouch(event: TouchEvent): number | null {
   return Math.min(Math.max(newValue, min), max)
 }
 
+let touchStartX = 0
+let touchMoved = false
+
 function startTouch(event: TouchEvent) {
-  if (disabled || !isDraggable) return
+  if (disabled) return
+
+  touchMoved = false
+  touchStartX = event.touches[0].clientX
+
+  if (!isDraggable) return
 
   dragging.value = true
   hasDragged.value = false
 
   document.addEventListener('touchmove', onTouchMove)
   document.addEventListener('touchend', stopTouch)
-  event.preventDefault()
 }
 
 function onTouchMove(event: TouchEvent) {
+  if (event.touches.length === 0) return
+
+  const deltaX = Math.abs(event.touches[0].clientX - touchStartX)
+  if (deltaX > 5) touchMoved = true // threshold to detect dragging
+
   if (!dragging.value || disabled) return
 
   const newValue = getValueFromTouch(event)
@@ -164,10 +179,13 @@ function onTouchMove(event: TouchEvent) {
   }
 }
 
-function stopTouch() {
-  if (!dragging.value) return
+function stopTouch(event: TouchEvent) {
+  if (!touchMoved) {
+    const newValue = getValueFromTouch(event, true) // use changedTouches
+    if (newValue !== null) emit('click:progress', newValue)
+  }
 
-  if (hasDragged.value) {
+  if (dragging.value && hasDragged.value) {
     emit('click:progress', internalValue.value)
   }
 
@@ -179,8 +197,10 @@ function stopTouch() {
 }
 
 onBeforeUnmount(() => {
-  stopDrag()
-  stopTouch()
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+  document.removeEventListener('touchmove', onTouchMove)
+  document.removeEventListener('touchend', stopTouch)
 })
 </script>
 

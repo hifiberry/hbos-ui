@@ -39,9 +39,23 @@ onMounted(() => {
 <style scoped lang="scss">
 .albums {
   &-list {
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 140px;
     gap: 60px;
     overflow: hidden;
+    @include media-down(xl) {
+      gap: 30px;
+    }
+    @include media-down(lg) {
+      grid-auto-columns: 100px;
+    }
+    @include media-down(md) {
+      gap: 15px;
+      grid-auto-flow: initial;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      grid-auto-columns: unset;
+    }
   }
   .title {
     display: flex;

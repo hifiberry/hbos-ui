@@ -1,11 +1,25 @@
 <template>
   <div class="poster">
     <div :class="['poster-img', posterForm, { placeholder: error }]">
-      <AppIcon v-if="error" class="poster-img__placeholder" icon="music" />
+      <AppIcon
+        v-if="error"
+        class="poster-img__placeholder"
+        :icon="posterForm === 'circle' ? 'users-thin' : 'notebook-thin'"
+      />
       <img v-else :src="src" :alt="title" loading="lazy" />
     </div>
-    <h4>{{ title }}</h4>
-    <p>{{ subtitle }}</p>
+    <div class="poster-attr">
+      <h4>
+        <AppMarquee>
+          {{ title }}
+        </AppMarquee>
+      </h4>
+      <p>
+        <AppMarquee>
+          {{ subtitle }}
+        </AppMarquee>
+      </p>
+    </div>
   </div>
 </template>
 
@@ -14,6 +28,7 @@ import { ref as deepRef, watch } from 'vue'
 import { useImage } from '@vueuse/core'
 
 import AppIcon from '@/components/app-icon.vue'
+import AppMarquee from '@/components/app-marquee.vue'
 
 type PoserForm = 'square' | 'circle'
 
@@ -45,11 +60,29 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  &:hover {
+    color: $primary;
+    h4 {
+      color: $primary;
+    }
+    .poster-img {
+      img {
+        transform: scale(1.2);
+      }
+    }
+  }
   &-img {
     width: 140px;
     height: 140px;
     margin-bottom: 10px;
     overflow: hidden;
+    @include media-down(lg) {
+      width: 100px;
+      height: 100px;
+    }
     img {
       width: 100%;
       height: 100%;
@@ -67,21 +100,18 @@ watch(
       svg {
         width: 50px;
         height: 50px;
+        color: var(--color-icon-primary);
       }
     }
   }
-  h4 {
-    transition: all 0.2s linear;
-  }
-  &:hover {
-    color: $primary;
+  &-attr {
+    width: 100%;
+    text-align: center;
     h4 {
-      color: $primary;
+      transition: all 0.2s linear;
     }
-    .poster-img {
-      img {
-        transform: scale(1.2);
-      }
+    p {
+      font-weight: 500;
     }
   }
 }

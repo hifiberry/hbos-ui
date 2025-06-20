@@ -8,7 +8,7 @@ const MOCK_ALBUMS: Albums[] = [
     name: 'Artist 1',
     release_date: '',
     tracks_count: 20,
-    cover_art: 'https://r2.theaudiodb.com/images/media/artist/thumb/2-chainz-4ff3c2f2aba7b.jpg',
+    cover_art: 'https://r2.theaudiodb.com/images/media/artist/thumb/2-chainz-4ff3c2f2aba7b!!!.jpg',
   },
   {
     id: 'a2',

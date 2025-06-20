@@ -1,4 +1,4 @@
-import { ref} from 'vue'
+import { ref } from 'vue'
 
 import { defineStore } from 'pinia'
 import type { Song } from '@/types/player'
@@ -19,6 +19,6 @@ export const useSongInfo = defineStore('song-info', () => {
 
   return {
     // State
-    songInfo
+    songInfo,
   }
 })

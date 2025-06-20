@@ -49,7 +49,8 @@ header {
   }
 }
 .header-controls {
-  flex: 1;
+  min-width: 450px;
+  max-width: 700px;
   @include media-down(lg) {
     display: none;
   }

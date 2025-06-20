@@ -1,7 +1,11 @@
 <template>
   <div class="poster">
     <div :class="['poster-img', posterForm, { placeholder: error }]">
-      <AppIcon v-if="error" class="poster-img__placeholder" icon="music" />
+      <AppIcon
+        v-if="error"
+        class="poster-img__placeholder"
+        :icon="posterForm === 'circle' ? 'users-thin' : 'notebook-thin'"
+      />
       <img v-else :src="src" :alt="title" loading="lazy" />
     </div>
     <div class="poster-attr">
@@ -96,6 +100,7 @@ watch(
       svg {
         width: 50px;
         height: 50px;
+        color: var(--color-icon-primary);
       }
     }
   }

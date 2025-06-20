@@ -29,6 +29,7 @@ $colors: (
   ),
   icon: (
     color-icon: $icon-color,
+    color-icon-primary: $icon-color-primary,
   ),
   audio-controls: (
     main-audio-controls: $main-audio-controls,
@@ -73,6 +74,7 @@ $colors--dark: (
   ),
   icon: (
     color-icon: $icon-color--dark,
+    color-icon-primary: $icon-color-primary--dark,
   ),
   audio-controls: (
     main-audio-controls: $main-audio-controls--dark,

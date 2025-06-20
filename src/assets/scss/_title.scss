@@ -5,7 +5,7 @@ h1, .h1 {
   font: 600 28px $font-family-base;
   line-height: $font-line-height-base;
   color: var(--color-head);
-  margin-bottom: 32px;
+  margin-bottom: 25px;
   @include media-down(lg) {
     font-size: 22px;
   }

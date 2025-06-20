@@ -20,7 +20,6 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 25px;
   .h1 {
     margin-bottom: 0;
   }

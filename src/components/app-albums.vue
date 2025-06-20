@@ -3,7 +3,7 @@
     <div class="title">
       <h2>Albums</h2>
 
-      <router-link :to="{ name: 'albums' }">View All</router-link>
+      <router-link :to="{ name: 'albums' }" class="text-link">View All</router-link>
     </div>
 
     <div class="albums-list">

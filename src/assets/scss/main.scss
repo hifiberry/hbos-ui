@@ -15,9 +15,11 @@ body {
 a {
   &.text-link {
     color: var(--color-link);
+    text-decoration: underline;
+    text-decoration-color: transparent;
     transition: all 0.2s linear;
     &:hover {
-      opacity: 0.7;
+      text-decoration-color: var(--color-link);
     }
   }
 }

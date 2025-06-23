@@ -1,4 +1,4 @@
-export interface Albums {
+export interface Album {
   id: string
   name: string
   release_date: string

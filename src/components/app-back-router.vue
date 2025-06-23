@@ -22,10 +22,22 @@ defineProps<{
   gap: 10px;
   .h1 {
     margin-bottom: 0;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: all 0.2s linear;
   }
   svg {
     transform: rotate(90deg);
     color: var(--color-icon-primary);
+    transition: all 0.2s linear;
+  }
+  &:hover {
+    .h1 {
+      text-decoration-color: var(--color-head);
+    }
+    svg {
+      transform: rotate(90deg) translateY(2px);
+    }
   }
 }
 </style>

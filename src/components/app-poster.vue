@@ -62,7 +62,6 @@ watch(
   align-items: center;
   font-size: 14px;
   white-space: nowrap;
-  overflow: hidden;
   &:hover {
     color: $primary;
     h4 {

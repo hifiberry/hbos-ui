@@ -1,8 +1,8 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Albums } from '@/types/library'
+import type { Album } from '@/types/library'
 
-const MOCK_ALBUMS: Albums[] = [
+const MOCK_ALBUMS: Album[] = [
   {
     id: 'a1',
     name: 'Artist 1',
@@ -19,10 +19,21 @@ const MOCK_ALBUMS: Albums[] = [
   },
 ]
 
+const MOCK_ALBUM: Album[] = [
+  {
+    id: 'a1',
+    name: 'Artist 1',
+    release_date: '',
+    tracks_count: 20,
+    cover_art: 'https://r2.theaudiodb.com/images/media/artist/thumb/2-chainz-4ff3c2f2aba7b.jpg',
+  },
+]
+
 export const useAlbumsStore = defineStore('albums', () => {
   // State
   const loading = ref<boolean>(false)
-  const albums = ref<Albums[]>([])
+  const albums = ref<Album[]>([])
+  const album = ref<Album[]>([])
 
   // Action
   async function getAlbums() {
@@ -37,12 +48,26 @@ export const useAlbumsStore = defineStore('albums', () => {
     })
   }
 
+  async function getAlbumById(id: string) {
+    loading.value = true
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        loading.value = false
+        album.value = MOCK_ALBUM
+        resolve(true)
+      }, 2400)
+    })
+  }
+
   return {
     // State
     loading,
     albums,
+    album,
 
     // Action
     getAlbums,
+    getAlbumById,
   }
 })

@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import AppProgressSlider from '@/components/app-progress-slider.vue'
 
 const progress_1 = ref<number>(50)
@@ -150,99 +150,41 @@ const emitet_value_3 = ref<number>(70)
 const progress_on_header = ref<number>(30)
 const emitet_value_on_header = ref<number>(30)
 
-let intervalID: number | null = null
-
-const setPlayingInterval = () => {
-  intervalID = setInterval(() => {
-    progress_1.value += 1
-
-    if (progress_1.value >= 100) progress_1.value = 0
-  }, 1000)
-}
-
-// setPlayingInterval()
-
 function onClickProgress_1(newVal: number) {
-  console.log('onClickProgress_1', newVal)
-
   emitet_value_1.value = newVal
-
-  if (intervalID) {
-    clearInterval(intervalID)
-  }
 
   // Only update when you're ready
   setTimeout(() => {
     progress_1.value = newVal
-
-    // setPlayingInterval()
   }, delay)
 }
 
 function onClickProgress_delay_draggable(newVal: number) {
-  console.log('onClickProgress_delay_draggable', newVal)
-
   emitet_value_delay_draggable.value = newVal
-
-  if (intervalID) {
-    clearInterval(intervalID)
-  }
 
   // Only update when you're ready
   setTimeout(() => {
     progress_delay_draggable.value = newVal
-
-    // setPlayingInterval()
   }, delay)
 }
 
 function onClickProgress_2(newVal: number) {
-  console.log('onClickProgress_2', newVal)
-
   emitet_value_2.value = newVal
 
-  if (intervalID) {
-    clearInterval(intervalID)
-  }
-
   progress_2.value = newVal
-
-  // setPlayingInterval()
 }
 
 function onClickProgress_3(newVal: number) {
-  console.log('onClickProgress_3', newVal)
-
   emitet_value_3.value = newVal
 
-  if (intervalID) {
-    clearInterval(intervalID)
-  }
-
   progress_3.value = newVal
-
-  // setPlayingInterval()
 }
 
 function onClickProgress_on_header(newVal: number) {
-  console.log('onClickProgress_on_header', newVal)
-
   emitet_value_on_header.value = newVal
 
-  if (intervalID) {
-    clearInterval(intervalID)
-  }
-
   progress_on_header.value = newVal
-
-  // setPlayingInterval()
 }
-
-onBeforeUnmount(() => {
-  if (intervalID) {
-    clearInterval(intervalID)
-  }
-})
 </script>
 
 <style lang="scss">

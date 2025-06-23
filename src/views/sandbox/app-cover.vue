@@ -19,19 +19,11 @@ import AppCover from '@/components/app-cover.vue'
 const src = ref('') // No src
 
 const loadWrongImageSrc = () => {
-  src.value = 'loadWrongImageSrc'
-
-  nextTick(() => {
-    src.value = 'https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr135863842.jpg' // Wrong src
-  })
+  src.value = 'https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr135863842.jpg' // Wrong src
 }
 
 const loadRightImageSrc = () => {
-  src.value = 'loadRightImageSrc'
-
-  nextTick(() => {
-    src.value = 'https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr1358638421.jpg' // Right src
-  })
+  src.value = 'https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr1358638421.jpg' // Right src
 }
 </script>
 

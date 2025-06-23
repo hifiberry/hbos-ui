@@ -25,7 +25,12 @@ import AppAudioControls from '@/components/app-audio-controls.vue'
 import { storeToRefs } from 'pinia'
 import { useSongsStore } from '@/stores/songs'
 
-const { song } = storeToRefs(useSongsStore())
+const songsStore = useSongsStore()
+
+const { song } = storeToRefs(songsStore)
+const { getSongById } = songsStore
+
+getSongById('')
 </script>
 
 <style lang="scss">

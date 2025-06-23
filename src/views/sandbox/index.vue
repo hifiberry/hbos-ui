@@ -20,7 +20,7 @@
       <div v-for="route in routes" :key="route.path">
         <div>
           <!--          <input type="checkbox" v-model="bundle" :value="route.path"/>-->
-          <router-link :to="{ name: route.name }">{{ route.path }}</router-link>
+          <router-link :to="{ name: route.name }" class="link">{{ route.path }}</router-link>
         </div>
       </div>
     </template>
@@ -74,5 +74,9 @@ watch(
   flex-direction: column;
   gap: 10px;
   max-width: 100%;
+
+  .link {
+    color: var(--primary);
+  }
 }
 </style>

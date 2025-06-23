@@ -52,6 +52,8 @@ const dragging = ref(false)
 const hasDragged = ref(false)
 const internalValue = ref(value)
 
+const wasOnDragging = ref(false)
+
 watch(
   () => value,
   (newVal) => {
@@ -82,10 +84,18 @@ function getValueFromMouse(event: MouseEvent): number | null {
 }
 
 function handleClick(event: MouseEvent) {
-  if (disabled || isDraggable) return
+  if (disabled || wasOnDragging.value) {
+    wasOnDragging.value = false
+
+    return
+  }
 
   const newValue = getValueFromMouse(event)
   if (newValue !== null) {
+    if (isDraggable) {
+      internalValue.value = newValue
+    }
+
     emit('click:progress', newValue)
   }
 }
@@ -103,6 +113,8 @@ function startDrag(event: MouseEvent) {
 
 function onDrag(event: MouseEvent) {
   if (!dragging.value || disabled) return
+
+  wasOnDragging.value = true
 
   const newValue = getValueFromMouse(event)
   if (newValue !== null) {
@@ -182,7 +194,13 @@ function onTouchMove(event: TouchEvent) {
 function stopTouch(event: TouchEvent) {
   if (!touchMoved) {
     const newValue = getValueFromTouch(event, true) // use changedTouches
-    if (newValue !== null) emit('click:progress', newValue)
+    if (newValue !== null) {
+      if (isDraggable) {
+        internalValue.value = newValue
+      }
+
+      emit('click:progress', newValue)
+    }
   }
 
   if (dragging.value && hasDragged.value) {
@@ -207,17 +225,12 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .app-progress-slider {
   position: relative;
+  display: flex;
+  align-items: center;
   width: 100%;
-  height: 8px;
-  background: var(--progress-slider-bg);
-  border-radius: 4px;
+  height: 12px;
   cursor: pointer;
   user-select: none;
-
-  @include media-down(md) {
-    height: 6px;
-    border-radius: 3px;
-  }
 
   &.disabled {
     opacity: 0.5;
@@ -226,9 +239,15 @@ onBeforeUnmount(() => {
 
   &__track {
     position: absolute;
-    height: 100%;
+    height: 8px;
     width: 100%;
-    background-color: transparent;
+    border-radius: 4px;
+    background: var(--progress-slider-bg);
+
+    @include media-down(md) {
+      height: 6px;
+      border-radius: 3px;
+    }
   }
 
   &__progress {
@@ -255,17 +274,19 @@ onBeforeUnmount(() => {
   }
 
   &.is-on-header {
-    margin-top: 16px;
-    height: 2px;
-    border-radius: 1px;
-    background: var(--progress-slider-on-header-bg);
+    margin-top: 8px;
 
     @include media-down(md) {
-      margin-top: 12px;
+      margin-top: 6px;
+    }
+
+    .app-progress-slider__track {
+      height: 2px;
+      border-radius: 1px;
+      background: var(--progress-slider-on-header-bg);
     }
 
     .app-progress-slider__progress {
-      height: 2px;
       border-radius: 1px;
       background-color: var(--progress-slider-on-header-progess);
     }

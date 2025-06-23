@@ -19,7 +19,7 @@ const { seekPositionTime = '00:00', songDurationTime = '00:00' } = defineProps<A
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-size: 14px;
 }
 </style>

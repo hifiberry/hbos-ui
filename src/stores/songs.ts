@@ -19,14 +19,14 @@ const MOCK_SONG: Song = {
 const MOCK_SONGS: Song[] = [
   {
     id: 'song-1',
-    title: 'American Wheeze',
-    artist: '16 Horsepower',
-    album: 'Olden',
+    title: 'Dedication',
+    artist: '2 Chainz',
+    album: 'COLLEGROVE',
     track_number: 1,
-    liked: true,
+    liked: false,
     cover_art_url: '',
-    thumbnail: 'https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr1358638421.jpg',
-    duration: 252,
+    thumbnail: 'https://r2.theaudiodb.com/images/media/artist/thumb/2-chainz-4ff3c2f2aba7b.jpg',
+    duration: 299,
     position: 1,
   },
   {

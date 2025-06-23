@@ -220,7 +220,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
     // Do all checks
 
     if (isPlaying.value && song.value?.duration) {
-      const delta = +(10 / song.value?.duration).toFixed(9)
+      const delta = +(10 / song.value.duration).toFixed(9)
 
       progressInterval.value = setInterval(() => {
         seekPosition.value = +(seekPosition.value + delta).toFixed(9)

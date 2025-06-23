@@ -76,13 +76,19 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const togglePlayPause = () => {
     const command = isPlaying.value ? 'pause' : 'play'
 
+    stopAutoProgress()
+
     sendCommand(command, 'playerName', 'apiBase').then((command_result) => {
       if (command_result === 'play') {
         isPlaying.value = true
         isPaused.value = false
+
+        startAutoProgress()
       } else if (command_result === 'pause') {
         isPlaying.value = false
         isPaused.value = true
+
+        stopAutoProgress()
       }
 
       console.log('togglePlayPause', {
@@ -187,14 +193,62 @@ export const useAudioControls = defineStore('audio-controls', () => {
     apiBase: string = 'PLAYER_CONFIG.apiBasePath',
   ): Promise<string | boolean> {
     try {
+      stopAutoProgress()
+
       const seekCommand = `seek:${Math.floor(position)}`
       return await sendCommand(seekCommand, playerName, apiBase).then(() => {
         seekPosition.value = position
+
+        if (isPlaying.value && songInfo.value?.duration) {
+          startAutoProgress()
+        }
+
         return seekCommand
       })
     } catch (error) {
       console.error('Error seeking to position:', error)
       return false
+    }
+  }
+
+  const progressInterval = ref<number | undefined>(undefined)
+
+  function startAutoProgress() {
+    // Stop any existing interval first
+    stopAutoProgress()
+
+    // Do all checks
+
+    if (isPlaying.value && songInfo.value?.duration) {
+      const delta = +(10 / songInfo.value?.duration).toFixed(9)
+
+      progressInterval.value = setInterval(() => {
+        seekPosition.value = +(seekPosition.value + delta).toFixed(9)
+
+        if (seekPosition.value >= 100) {
+          // Stop at the end of the song
+          // data.position = data.song.duration
+
+          // Force an update of player state from server when we reach the end
+          // console.log('Track reached the end, fetching current player state from server')
+          // fetchCurrentPlayer()
+
+          togglePlayPause()
+
+          seekPosition.value = 0 // Don't stop the timer yet - it will be managed based on the updated state
+        }
+      }, 100)
+    } else {
+      stopAutoProgress()
+    }
+  }
+
+  function stopAutoProgress() {
+    if (progressInterval.value) {
+      console.log('clearInterval')
+
+      clearInterval(progressInterval.value)
+      progressInterval.value = undefined
     }
   }
 
@@ -205,6 +259,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
     isPaused,
     seekPosition,
     currentData,
+    progressInterval,
     // Getters
     isPlayingOrPaused,
     songDurationTime,
@@ -217,5 +272,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
     toggleShuffle,
     cycleLoopMode,
     seekToPosition,
+    startAutoProgress,
+    stopAutoProgress,
   }
 })

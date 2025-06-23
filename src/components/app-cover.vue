@@ -74,34 +74,14 @@ watch(
   }
 
   img {
-    height: 450px;
-    width: 450px;
-
-    @include media-down(md) {
-      height: 350px;
-      width: 350px;
-    }
-
-    @include media-down(sm) {
-      height: 250px;
-      width: 250px;
-    }
+    width: 100%;
+    height: 100%;
   }
 }
 
 svg.app-cover__placeholder-icon {
-  width: 120px;
-  height: 120px;
+  width: 26.67%;
+  height: 26.67%;
   color: var(--cover-placeholder-icon-color);
-
-  @include media-down(md) {
-    height: 93px;
-    width: 93px;
-  }
-
-  @include media-down(sm) {
-    height: 66px;
-    width: 66px;
-  }
 }
 </style>

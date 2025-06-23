@@ -3,12 +3,11 @@
     <h1 class="now-playing__title">Now Playing</h1>
 
     <div class="now-playing__player">
-      <AppCover class="now-playing__cover" :src alt="Horsepower" />
+      <AppCover class="now-playing__cover" :src="songInfo?.thumbnail" alt="Horsepower" />
 
-      <!-- TODO cleanup testCover -->
-      <div class="now-playing__info" @click="testCover">
-        <h2>{{ songName || 'Song Name' }}</h2>
-        <p>{{ artist || 'Artist' }}</p>
+      <div class="now-playing__info">
+        <h2>{{ songInfo?.title || 'Song Name' }}</h2>
+        <p>{{ songInfo?.artist || 'Artist' }}</p>
       </div>
 
       <AppProgressControl class="now-playing__progress-control" isDraggable />
@@ -19,23 +18,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import AppCover from '@/components/app-cover.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
 
-const songName = ref('')
-const artist = ref('')
+import { storeToRefs } from 'pinia'
+import { useSongInfo } from '@/stores/song-info'
 
-// TODO cleanup testCover
-const src = ref('https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr135863842.jpg') // Wrong src
-const testCover = () => {
-  src.value = 'https://r2.theaudiodb.com/images/media/artist/thumb/vtxsxr1358638421.jpg' // Right src
-
-  songName.value = 'American Wheeze'
-  artist.value = '16 Horsepower'
-}
+const { songInfo } = storeToRefs(useSongInfo())
 </script>
 
 <style lang="scss">
@@ -70,6 +60,7 @@ const testCover = () => {
   &__info {
     text-align: center;
     margin: auto 0 50px;
+    font-size: 18px;
   }
 
   &__progress-control {

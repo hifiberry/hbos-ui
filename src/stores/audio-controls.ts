@@ -1,16 +1,28 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
+import { storeToRefs } from 'pinia'
+import { useSongInfo } from '@/stores/song-info'
+
+import { formatTime } from '@/helpers/formatTime'
+
 interface currentData {
   loop_mode: string
 }
 
 export const useAudioControls = defineStore('audio-controls', () => {
+  const { songInfo } = storeToRefs(useSongInfo())
+
   // State
   const isSendingCommand = ref(false)
   const isPlaying = ref(false)
   const isPaused = ref(true)
-  const seekPosition = ref(42) // TODO set initial seekPosition
+
+  const seekPosition = ref(50) // TODO set initial seekPosition
+  const songDurationTime = computed(() => formatTime(songInfo.value?.duration))
+  const seekPositionTime = computed(() =>
+    formatTime(((songInfo.value?.duration || 0) * (seekPosition.value || 0)) / 100),
+  )
 
   // TODO create 'current-player' Store
   // TODO get currentData in the 'current-player' Store
@@ -195,6 +207,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
     currentData,
     // Getters
     isPlayingOrPaused,
+    songDurationTime,
+    seekPositionTime,
     // Actions
     initPlayer,
     sendCommand,

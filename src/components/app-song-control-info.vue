@@ -20,7 +20,7 @@
     <div class="song-control-info__controls">
       <AppAudioControls isSeparate :isOnSticky="isOnSticky" />
 
-      <AppProgressControl v-if="!isOnSticky" isOnHeader />
+      <AppProgressControl v-if="!isOnSticky" isOnHeader isDraggable />
     </div>
   </div>
 </template>
@@ -31,8 +31,9 @@ import AppProgressControl from '@/components/app-progress-control.vue'
 import AppCover from '@/components/app-cover.vue'
 import AppMarquee from '@/components/app-marquee.vue'
 
+import { storeToRefs } from 'pinia'
 import { useSongInfo } from '@/stores/song-info'
-const { songInfo } = useSongInfo()
+const { songInfo } = storeToRefs(useSongInfo())
 
 interface AudioSongControlInfoProps {
   isOnSticky?: boolean

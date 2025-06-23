@@ -235,6 +235,7 @@ onBeforeUnmount(() => {
     height: 100%;
     background-color: var(--primary);
     border-radius: 4px;
+    transition: width 0.1s linear;
 
     @include media-down(md) {
       border-radius: 3px;
@@ -250,6 +251,7 @@ onBeforeUnmount(() => {
     background-color: var(--primary);
     border-radius: 50%;
     pointer-events: none;
+    transition: left 0.1s linear;
   }
 
   &.is-on-header {

@@ -6,3 +6,11 @@ $font-line-height-base: 1;
 $padding-main-content: 12px;
 
 $font-size-base-mobile: 14px;
+
+$breakpoints: (
+  sm: 600px,
+  md: 960px,
+  lg: 1024px,
+  xl: 1264px,
+  xxl: 1440px,
+);

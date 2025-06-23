@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 import { storeToRefs } from 'pinia'
-import { useSongInfo } from '@/stores/song-info'
+import { useSongsStore } from '@/stores/songs'
 
 import { formatTime } from '@/helpers/formatTime'
 
@@ -11,7 +11,7 @@ interface currentData {
 }
 
 export const useAudioControls = defineStore('audio-controls', () => {
-  const { songInfo } = storeToRefs(useSongInfo())
+  const { song } = storeToRefs(useSongsStore())
 
   // State
   const isSendingCommand = ref(false)
@@ -19,9 +19,9 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const isPaused = ref(true)
 
   const seekPosition = ref(50) // TODO set initial seekPosition
-  const songDurationTime = computed(() => formatTime(songInfo.value?.duration))
+  const songDurationTime = computed(() => formatTime(song.value?.duration))
   const seekPositionTime = computed(() =>
-    formatTime(((songInfo.value?.duration || 0) * (seekPosition.value || 0)) / 100),
+    formatTime(((song.value?.duration || 0) * (seekPosition.value || 0)) / 100),
   )
 
   // TODO create 'current-player' Store
@@ -199,7 +199,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
       return await sendCommand(seekCommand, playerName, apiBase).then(() => {
         seekPosition.value = position
 
-        if (isPlaying.value && songInfo.value?.duration) {
+        if (isPlaying.value && song.value?.duration) {
           startAutoProgress()
         }
 
@@ -219,8 +219,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     // Do all checks
 
-    if (isPlaying.value && songInfo.value?.duration) {
-      const delta = +(10 / songInfo.value?.duration).toFixed(9)
+    if (isPlaying.value && song.value?.duration) {
+      const delta = +(10 / song.value?.duration).toFixed(9)
 
       progressInterval.value = setInterval(() => {
         seekPosition.value = +(seekPosition.value + delta).toFixed(9)

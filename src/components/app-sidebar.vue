@@ -79,11 +79,11 @@ const routes: Route[] = [
       },
     ],
   },
-  {
-    name: 'sound',
-    title: 'Sound',
-    icon: 'music-note-simple-light',
-  },
+  // {
+  //   name: 'sound',
+  //   title: 'Sound',
+  //   icon: 'music-note-simple-light',
+  // },
 ]
 </script>
 

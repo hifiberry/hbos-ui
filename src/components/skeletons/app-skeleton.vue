@@ -1,19 +1,14 @@
 <template>
-  <div class="skeleton">&nbsp;</div>
+  <div :class="['skeleton', { 'skeleton--circle': shape === 'circle' }]">&nbsp;</div>
 </template>
 
 <script setup lang="ts">
-defineProps({
-  height: {
-    type: String,
-  },
-  width: {
-    type: String,
-  },
-  borderRadius: {
-    type: String,
-  },
-})
+interface SkeletonProps {
+  width?: string
+  height?: string
+  shape?: 'circle' | 'square'
+}
+const { width = '100%', height = 'auto', shape = 'square' } = defineProps<SkeletonProps>()
 </script>
 
 <style lang="scss" scoped>
@@ -29,7 +24,6 @@ defineProps({
 .skeleton {
   width: v-bind(width);
   height: v-bind(height);
-  border-radius: v-bind(borderRadius);
   background: linear-gradient(
     90deg,
     var(--background-start-skeleton) 25%,
@@ -39,5 +33,8 @@ defineProps({
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   flex: none;
+  &--circle {
+    border-radius: 50%;
+  }
 }
 </style>

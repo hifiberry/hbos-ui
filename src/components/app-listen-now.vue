@@ -27,6 +27,7 @@ import AppIcon from '@/components/app-icon.vue'
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s linear;
       svg {
         color: #fff;
       }
@@ -36,9 +37,13 @@ import AppIcon from '@/components/app-icon.vue'
       text-decoration: underline;
       text-decoration-color: transparent;
       transition: all 0.2s linear;
+      text-align: left;
     }
   }
   &:hover {
+    .listen-now-icon {
+      transform: scale(1.1);
+    }
     .listen-now-text {
       text-decoration-color: var(--color-link);
     }

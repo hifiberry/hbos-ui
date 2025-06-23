@@ -1,9 +1,7 @@
 <template>
   <div class="poster-skeleton" v-for="(_, index) in 8" :key="`skeleton-item-${index}`">
     <div class="poster-skeleton__img">
-      <!--      width="140px"-->
-      <!--      height="140px"-->
-      <AppSkeleton :border-radius="posterForm === 'circle' ? '50%' : ''" />
+      <AppSkeleton :shape="posterForm === 'circle' ? 'circle' : 'square'" />
     </div>
     <div class="poster-skeleton__title">
       <AppSkeleton width="100%" height="16px" />
@@ -13,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import AppSkeleton from '@/components/app-skeleton.vue'
+import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
 
 type posterForm = 'square' | 'circle'
 interface PosterProps {

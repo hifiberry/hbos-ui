@@ -1,6 +1,7 @@
 @use 'sass:map';
 @use 'sass:list';
 @use "sass:meta";
+@use "variables" as *;
 
 @mixin dark {
   $ampersand: &;
@@ -19,13 +20,13 @@
 // large tablet to laptop	960px > < 1264
 // desktop	1264 > < 1904px
 // 4k and ultra-wides	> 1904px
-$breakpoints: (
-  sm: 600px,
-  md: 960px,
-  lg: 1024px,
-  xl: 1264px,
-  xxl: 1440px,
-);
+//$breakpoints: (
+//  sm: 600px,
+//  md: 960px,
+//  lg: 1024px,
+//  xl: 1264px,
+//  xxl: 1440px,
+//);
 @mixin media-down($breakpoint) {
   @if map.has-key($breakpoints, $breakpoint) {
     $max: map.get($breakpoints, $breakpoint) - 0.02px;

@@ -29,12 +29,13 @@ import AppIcon from '@/components/app-icon.vue'
 interface AppCoverProps {
   src?: string
   alt?: string
+  delay?: number
 }
 
-const { src = '', alt = '' } = defineProps<AppCoverProps>()
+const { src = '', alt = '', delay = 0 } = defineProps<AppCoverProps>()
 
 const imageOptions = deepRef({ src })
-const { isLoading, error } = useImage(imageOptions, { delay: 400 })
+const { isLoading, error } = useImage(imageOptions, { delay: delay })
 
 watch(
   () => src,

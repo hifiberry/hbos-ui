@@ -1,18 +1,18 @@
 <template>
   <div :class="['song-control-info', { card: isOnSticky }]">
-    <div v-if="songInfo" class="song-control-info__box">
+    <div v-if="song" class="song-control-info__box">
       <div class="song-control-info__cover">
-        <AppCover :src="songInfo.thumbnail" />
+        <AppCover :src="song.thumbnail" />
       </div>
       <div class="song-control-info__attr">
         <div class="h3">
           <AppMarquee>
-            {{ songInfo.title }}
+            {{ song.title }}
           </AppMarquee>
         </div>
 
         <p>
-          <AppMarquee>{{ songInfo.artist }}</AppMarquee>
+          <AppMarquee>{{ song.artist }}</AppMarquee>
         </p>
       </div>
     </div>
@@ -26,20 +26,28 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+
 import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppCover from '@/components/app-cover.vue'
 import AppMarquee from '@/components/app-marquee.vue'
 
 import { storeToRefs } from 'pinia'
-import { useSongInfo } from '@/stores/song-info'
-const { songInfo } = storeToRefs(useSongInfo())
+import { useSongsStore } from '@/stores/songs'
+const { song } = storeToRefs(useSongsStore())
+const songsStore = useSongsStore()
+const { getSongById } = songsStore
 
 interface AudioSongControlInfoProps {
   isOnSticky?: boolean
 }
 
 const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
+
+onMounted(() => {
+  getSongById('')
+})
 </script>
 
 <style scoped lang="scss">
@@ -57,15 +65,6 @@ const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
     &:deep(.app-cover) {
       width: 40px;
       height: 40px;
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-      svg {
-        width: 20px;
-        height: 20px;
-      }
     }
   }
   &__box {

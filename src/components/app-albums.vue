@@ -16,6 +16,7 @@
           :title="album.name"
           :subtitle="`${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'} • ${album.tracks_count} track${album.tracks_count !== 1 ? 's' : ''}`"
           :src="album.cover_art"
+          @click="router.push({ name: 'album', params: { id: album.id } })"
         />
       </template>
     </div>
@@ -23,6 +24,8 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+const router = useRouter()
 import { onMounted } from 'vue'
 
 import { useAlbumsStore } from '@/stores/albums'

@@ -46,6 +46,7 @@ const onLeave = () => {
 .marquee {
   overflow: hidden;
   margin-inline-start: -6px;
+  padding-left: 6px;
   &-container {
     width: 100%;
     mask-image: linear-gradient(

@@ -25,19 +25,21 @@ const isPlayerControls = computed(
 
 <style scoped lang="scss">
 .wrapper {
-  //width: 100dvw;
   height: 100dvh;
   display: flex;
   flex-direction: column;
 
   main {
-    padding: 24px 24px 48px 80px;
+    padding: 104px 24px 48px 80px;
     flex: 1;
     @include media-down(lg) {
       padding: 15px 15px 170px;
     }
     &.no-player-controls {
-      padding-bottom: 100px;
+      padding-bottom: 80px;
+      @include media-down(lg) {
+        padding-bottom: 100px;
+      }
     }
   }
 }

@@ -15,6 +15,7 @@
             :subtitle="`${artist.album_count} album${artist.album_count !== 1 ? 's' : ''}`"
             :src="artist.thumb_url[0]"
             poster-form="circle"
+            @click="router.push({ name: 'album', params: { id: artist.id } })"
           />
         </template>
       </div>
@@ -26,6 +27,9 @@
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
 import AppPoster from '@/components/app-poster.vue'
+
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 import { onMounted } from 'vue'
 

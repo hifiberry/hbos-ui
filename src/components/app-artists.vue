@@ -17,6 +17,7 @@
           :subtitle="`${artist.album_count} album${artist.album_count !== 1 ? 's' : ''}`"
           :src="artist.thumb_url[0]"
           poster-form="circle"
+          @click="router.push({ name: 'album', params: { id: artist.id } })"
         />
       </template>
     </div>
@@ -25,6 +26,9 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 import { useArtistsStore } from '@/stores/artists'
 const artistStore = useArtistsStore()

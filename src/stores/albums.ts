@@ -5,14 +5,14 @@ import type { Album } from '@/types/library'
 const MOCK_ALBUMS: Album[] = [
   {
     id: 'a1',
-    name: 'Artist 1',
+    name: 'Album 1',
     release_date: '',
     tracks_count: 20,
     cover_art: 'https://r2.theaudiodb.com/images/media/artist/thumb/2-chainz-4ff3c2f2aba7b!!!.jpg',
   },
   {
     id: 'a2',
-    name: 'Artist 2',
+    name: 'Album 2',
     release_date: '',
     tracks_count: 20,
     cover_art: 'https://r2.theaudiodb.com/images/media/artist/thumb/2-chainz-4ff3c2f2aba7b.jpg',
@@ -21,7 +21,7 @@ const MOCK_ALBUMS: Album[] = [
 
 const MOCK_ALBUM: Album = {
   id: 'a1',
-  name: 'Artist 1',
+  name: 'Album 1',
   release_date: '',
   tracks_count: 20,
   cover_art: 'https://r2.theaudiodb.com/images/media/artist/thumb/2-chainz-4ff3c2f2aba7b.jpg',

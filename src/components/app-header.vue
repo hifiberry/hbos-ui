@@ -37,15 +37,18 @@ header {
   align-items: center;
   justify-content: space-between;
   height: 80px;
-  flex: none;
+  width: 100%;
   gap: 60px;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   z-index: 9;
   @include media-down(lg) {
     background-color: transparent;
     border: none;
     padding: 10px 15px;
     height: auto;
+    position: static;
   }
 }
 .header-controls {

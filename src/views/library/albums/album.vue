@@ -4,7 +4,9 @@
       <AppBackRouter :to="{ name: 'albums' }">Album Name</AppBackRouter>
     </div>
     <div class="grid">
-      <div class="col-6 card">{{ albumStore.album }}</div>
+      <div class="col-6 card">
+        <AppAlbumDetails :album="albumStore.album" />
+      </div>
       <div class="col-6 card"></div>
     </div>
   </div>
@@ -14,6 +16,7 @@
 import { onMounted, computed } from 'vue'
 
 import AppBackRouter from '@/components/app-back-router.vue'
+import AppAlbumDetails from '@/components/app-album-details.vue'
 
 import { useAlbumsStore } from '@/stores/albums'
 const albumStore = useAlbumsStore()

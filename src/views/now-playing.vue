@@ -3,11 +3,11 @@
     <h1 class="now-playing__title">Now Playing</h1>
 
     <div class="now-playing__player">
-      <AppCover class="now-playing__cover" :src="songInfo?.thumbnail" alt="Horsepower" />
+      <AppCover class="now-playing__cover" :src="song?.thumbnail" alt="Horsepower" />
 
       <div class="now-playing__info">
-        <h2>{{ songInfo?.title || 'Song Name' }}</h2>
-        <p>{{ songInfo?.artist || 'Artist' }}</p>
+        <h2>{{ song?.title || 'Song Name' }}</h2>
+        <p>{{ song?.artist || 'Artist' }}</p>
       </div>
 
       <AppProgressControl class="now-playing__progress-control" isDraggable />
@@ -23,9 +23,9 @@ import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
 
 import { storeToRefs } from 'pinia'
-import { useSongInfo } from '@/stores/song-info'
+import { useSongsStore } from '@/stores/songs'
 
-const { songInfo } = storeToRefs(useSongInfo())
+const { song } = storeToRefs(useSongsStore())
 </script>
 
 <style lang="scss">

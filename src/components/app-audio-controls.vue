@@ -2,9 +2,11 @@
   <div class="app-audio-controls" :class="{ 'is-separate': isSeparate }">
     <AppIconButton
       v-if="!isOnSticky"
+      class="app-audio-controls__secondary"
+      :class="{ active: audioControls.isShuffle }"
       icon="shuffle"
       title="Shuffle"
-      :disabled="audioControls.isSendingCommand"
+      :disabled="audioControls.isSendingCommand || !audioControls.canShuffle"
       @click="audioControls.toggleShuffle"
     />
 
@@ -33,9 +35,17 @@
 
     <AppIconButton
       v-if="!isOnSticky"
-      icon="loop"
-      title="Repeat"
-      :disabled="audioControls.isSendingCommand"
+      class="app-audio-controls__secondary"
+      :class="{ active: audioControls.currentLoopMode !== 'none' }"
+      :icon="audioControls.currentLoopMode === 'track' ? 'loop-one' : 'loop'"
+      :title="
+        audioControls.currentLoopMode === 'track'
+          ? 'Repeat Track'
+          : audioControls.currentLoopMode === 'playlist'
+            ? 'Repeat Album'
+            : 'Repeat'
+      "
+      :disabled="audioControls.isSendingCommand || !audioControls.canLoop"
       @click="audioControls.cycleLoopMode"
     />
   </div>
@@ -57,6 +67,8 @@ const audioControls = useAudioControls()
 
 <style lang="scss">
 .app-audio-controls {
+  $root: &;
+
   width: 100%;
   display: flex;
   align-items: center;
@@ -106,6 +118,10 @@ const audioControls = useAudioControls()
         height: 32px;
       }
     }
+  }
+
+  svg.active#{$root}__secondary {
+    color: var(--primary);
   }
 }
 

@@ -22,5 +22,9 @@ const { disabled = false } = defineProps<AppAudioControlsProps>()
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+
+  svg {
+    pointer-events: none;
+  }
 }
 </style>

@@ -16,7 +16,7 @@ import { useLibraryStore } from '@/stores/library'
 const store = useLibraryStore()
 
 onMounted(() => {
-  store.getAvailableLibrary()
+  // store.getAvailableLibrary()
 })
 </script>
 

@@ -11,7 +11,7 @@
 
       <template v-else>
         <AppPoster
-          v-for="artist in artistStore.artists"
+          v-for="artist in artistStore.artist"
           :key="artist.id"
           :title="artist.name"
           :subtitle="`${artist.album_count} album${artist.album_count !== 1 ? 's' : ''}`"
@@ -30,8 +30,8 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import { useArtistsStore } from '@/stores/artists'
-const artistStore = useArtistsStore()
+import { useArtistStore } from '@/stores/artist'
+const artistStore = useArtistStore()
 
 import AppPoster from '@/components/app-poster.vue'
 import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'

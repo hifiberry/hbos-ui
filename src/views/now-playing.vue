@@ -69,7 +69,16 @@ getSongById('')
   }
 
   &__progress-control {
+    width: 60%;
     margin-bottom: 32px;
+
+    @include media-down(lg) {
+      width: 80%;
+    }
+
+    @include media-down(md) {
+      width: 100%;
+    }
   }
 
   &__audio-controls {

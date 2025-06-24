@@ -6,7 +6,8 @@ const toastStore = useToastStore()
 
 import type { Player, PlayerResponse } from '@/types/library'
 
-const API_BASE_URL = `http://${window.location.hostname}:1080/api`
+// const API_BASE_URL = `http://${window.location.hostname}:1080/api`
+const API_BASE_URL = `http://localhost:1080/api`
 
 export const useLibraryStore = defineStore('library', () => {
   // State

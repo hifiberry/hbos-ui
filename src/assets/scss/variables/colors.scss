@@ -3,7 +3,7 @@ $primary: #E11E4A;                                                $primary--dark
 $background-body: #fafafa;                                        $background-body--dark: #000;
 $color-body: #707070;                                             $color-body--dark: #fff;
 $color-body-secondary: #707070;                                   $color-body-secondary--dark: #aaa;
-$color-link: $primary;                                            $color-link--dark: #fff;
+$color-link: $primary;                                              $color-link--dark: #fff;
 
 $background-header: #fff;                                         $background-header--dark: #333;
 $color-header-border: #f5f5f5;                                    $color-header-border--dark: transparent;
@@ -17,7 +17,7 @@ $background-sidebar-item-active: $primary;
 $color-sidebar-item-active: #fff;
 
 $icon-color: #707070;                                             $icon-color--dark: #fff;
-$icon-color-primary: $primary;                                    $icon-color-primary--dark: #aaa;
+$icon-color-primary: $primary;                                      $icon-color-primary--dark: #aaa;
 
 $background-main-content: #FFFFFF;                                $background-main-content--dark: rgba(255, 255, 255, 0.2);
 $box-shadow-main-content: 0px 2px 8px 0px rgba(0, 0, 0, 0.04);
@@ -25,9 +25,9 @@ $box-shadow-main-content: 0px 2px 8px 0px rgba(0, 0, 0, 0.04);
 $color-head: #191717;                                             $color-head--dark: #FFFFFF;
 $color-text: #707070;                                             $color-text--dark: #FFFFFF;
 
-$main-audio-controls: $primary;                                   $main-audio-controls--dark: #AAAAAA;
+$main-audio-controls: $primary;                                     $main-audio-controls--dark: #AAAAAA;
 $main-audio-controls-separate: rgba(112, 112, 112, 0.5);          $main-audio-controls-separate--dark: #AAAAAA;
-$secondary-audio-controls: #707070;                               $secondary-audio-controls--dark: #AAAAAA;
+$secondary-audio-controls: rgba(112, 112, 112, 0.6);              $secondary-audio-controls--dark: #AAAAAA;
 
 $cover-placeholder-bg: rgba(225, 30, 74, 0.05);                   $cover-placeholder-bg--dark: rgba(170, 170, 170, 0.5);
 $cover-placeholder-icon-color: #E11E4A;                           $cover-placeholder-icon-color--dark: #FFFFFF;

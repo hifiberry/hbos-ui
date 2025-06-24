@@ -34,7 +34,7 @@
     <AppIconButton
       v-if="!isOnSticky"
       icon="loop"
-      title="Loop"
+      title="Repeat"
       :disabled="audioControls.isSendingCommand"
       @click="audioControls.cycleLoopMode"
     />

@@ -1,4 +1,5 @@
 @use 'colors' as *;
+@use './../variables' as *;
 @use 'sass:string';
 
 $colors: (
@@ -52,6 +53,9 @@ $colors: (
     progress-slider-on-header-bg: $progress-slider-on-header-bg,
     progress-slider-on-header-progess: $progress-slider-on-header-progess,
   ),
+  toast: (
+    toastify-color-light: $background-body,
+  )
 );
 
 $colors--dark: (
@@ -105,12 +109,28 @@ $colors--dark: (
     progress-slider-on-header-bg: $progress-slider-on-header-bg--dark,
     progress-slider-on-header-progess: $progress-slider-on-header-progess--dark,
   ),
+  toast: (
+    toastify-color-dark: $background-body--dark,
+  )
+);
+
+$general: (
+  toastify: (
+    font-family: $font-family-base,
+  )
 );
 
 :export {
   @each $group, $colors in $colors {
     @each $name, $color in $colors {
       #{ string.unquote($group + '--' + $name) }: $color;
+    }
+  }
+}
+:root {
+  @each $group, $tokens in $general {
+    @each $name, $value in $tokens {
+      --#{$group}-#{$name}: #{$value};
     }
   }
 }

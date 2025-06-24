@@ -3,6 +3,7 @@
 @use "grid";
 @use "card";
 @use "title";
+@use 'vue3-toastify/dist/index.css';
 
 body {
   font-weight: $font-weight-base;

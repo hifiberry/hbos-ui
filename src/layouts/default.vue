@@ -33,12 +33,15 @@ const isPlayerControls = computed(
     padding: 104px 24px 48px 80px;
     flex: 1;
     @include media-down(lg) {
-      padding: 15px 15px 170px;
+      padding: 0 15px;
+      margin: 15px 0 170px;
+      overflow-y: auto;
     }
     &.no-player-controls {
-      padding-bottom: 80px;
+      padding-bottom: 20px;
       @include media-down(lg) {
-        padding-bottom: 100px;
+        margin-bottom: 100px;
+        padding-bottom: 0;
       }
     }
   }

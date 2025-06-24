@@ -1,7 +1,7 @@
 <template>
   <div class="library">
     <h1>Music Library</h1>
-    <AppArtists />
+    <AppArtists class="cell" />
     <AppAlbums />
   </div>
 </template>
@@ -13,8 +13,11 @@ import AppAlbums from '@/components/app-albums.vue'
 
 <style scoped lang="scss">
 .library {
-  .card {
+  .cell {
     margin-bottom: 55px;
+    @include media-down(lg) {
+      margin-bottom: 24px;
+    }
   }
 }
 </style>

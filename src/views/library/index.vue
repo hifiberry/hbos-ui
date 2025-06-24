@@ -7,8 +7,17 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+
 import AppArtists from '@/components/app-artists.vue'
 import AppAlbums from '@/components/app-albums.vue'
+
+import { useLibraryStore } from '@/stores/library'
+const store = useLibraryStore()
+
+onMounted(() => {
+  // store.getAvailableLibrary()
+})
 </script>
 
 <style scoped lang="scss">

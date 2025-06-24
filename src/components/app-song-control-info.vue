@@ -65,8 +65,6 @@ onMounted(() => {
     &:deep(.app-cover) {
       width: 40px;
       height: 40px;
-      min-width: auto;
-      min-height: auto;
     }
   }
   &__box {

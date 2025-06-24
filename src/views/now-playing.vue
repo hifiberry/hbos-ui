@@ -60,6 +60,34 @@ getSongById('')
   &__cover {
     margin-top: auto;
     margin-bottom: 20px;
+
+    &.app-cover {
+      @media (max-height: 768px) {
+        height: 30dvh;
+        width: 30dvh;
+        min-height: 150px;
+        min-width: 150px;
+      }
+
+      @media (max-height: 650px) {
+        height: 25dvh;
+        width: 25dvh;
+      }
+
+      @media (max-height: 568px) {
+        height: 20dvh;
+        width: 20dvh;
+        min-height: 115px;
+        min-width: 115px;
+      }
+
+      @media (orientation: landscape) and (max-height: 650px) {
+        height: 50dvh;
+        width: 50dvh;
+        min-height: 200px;
+        min-width: 200px;
+      }
+    }
   }
 
   &__info {

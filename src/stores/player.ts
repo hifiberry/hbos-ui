@@ -4,7 +4,6 @@ import { defineStore } from 'pinia'
 import { useToastStore } from '@/stores/toast'
 
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
-const libraryFetch = useLibraryFetch()
 
 import type { Track } from '@/types/library'
 
@@ -34,7 +33,7 @@ const API_BASE_URL = 'http://localhost:1080/api'
 
 export const usePlayerStore = defineStore('player', () => {
   const toastStore = useToastStore()
-  // const libraryStore = useLibraryStore()
+  const libraryFetch = useLibraryFetch()
 
   // State
   const loading = ref<boolean>(false)

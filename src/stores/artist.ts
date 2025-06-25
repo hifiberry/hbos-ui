@@ -3,12 +3,12 @@ import { defineStore } from 'pinia'
 import type { Artist } from '@/types/library'
 
 import { useToastStore } from '@/stores/toast'
-const toastStore = useToastStore()
-
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
-const libraryFetch = useLibraryFetch()
 
 export const useArtistStore = defineStore('artist', () => {
+  const libraryFetch = useLibraryFetch()
+  const toastStore = useToastStore()
+
   // State
   const loading = ref<boolean>(false)
   const artists = ref<Artist[]>([])

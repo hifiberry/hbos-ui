@@ -3,12 +3,12 @@ import { defineStore } from 'pinia'
 import type { Album, AlbumByArtistResponse, AlbumDetails, AlbumResponse } from '@/types/library'
 
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
-const libraryFetch = useLibraryFetch()
-
 import { useToastStore } from '@/stores/toast'
-const toastStore = useToastStore()
 
 export const useAlbumStore = defineStore('album', () => {
+  const libraryFetch = useLibraryFetch()
+  const toastStore = useToastStore()
+
   // State
   const loading = ref<boolean>(false)
   const albums = ref<Album[]>([])

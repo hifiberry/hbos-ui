@@ -16,6 +16,8 @@
         <h2>Albums</h2>
         <router-link :to="{ name: 'albums' }" class="text-link">View All</router-link>
       </div>
+
+      <AppAlbums :albums="albumStore.albums" in-row />
     </div>
   </div>
 </template>
@@ -29,8 +31,12 @@ import AppAlbums from '@/components/app-albums.vue'
 import { useArtistStore } from '@/stores/artist'
 const artistStore = useArtistStore()
 
+import { useAlbumStore } from '@/stores/album'
+const albumStore = useAlbumStore()
+
 onMounted(() => {
   artistStore.getArtists()
+  albumStore.getAlbums()
 })
 </script>
 

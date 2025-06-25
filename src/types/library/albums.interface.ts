@@ -21,3 +21,8 @@ export interface AlbumByArtistResponse {
   count: number
   player_name: string
 }
+export interface AlbumsResponse {
+  player_name: string
+  count: number
+  albums: Album[]
+}

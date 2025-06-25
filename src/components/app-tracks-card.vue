@@ -14,7 +14,7 @@
             <AppSkeleton width="30%" height="100%" class="h4" />
             <AppSkeleton width="30%" height="100%" />
           </div>
-          <AppSkeleton class="skeleton-duration" />
+          <!--          <AppSkeleton class="skeleton-duration" />-->
         </div>
       </template>
 
@@ -118,7 +118,7 @@ const onAddTrackToQueue = (track: Track): void => {
         font-size: 14px;
       }
       &:hover {
-        .song-item__desc {
+        .track-item__desc {
           &-name {
             :deep(.marquee span) {
               text-decoration-color: var(--color-head);

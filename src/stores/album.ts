@@ -1,6 +1,12 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Album, AlbumByArtistResponse, AlbumDetails, AlbumResponse } from '@/types/library'
+import type {
+  Album,
+  AlbumByArtistResponse,
+  AlbumDetails,
+  AlbumResponse,
+  AlbumsResponse,
+} from '@/types/library'
 
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { useToastStore } from '@/stores/toast'
@@ -15,6 +21,24 @@ export const useAlbumStore = defineStore('album', () => {
   const album = ref<AlbumDetails | null>(null)
 
   // Action
+  const getAlbums = async () => {
+    loading.value = true
+
+    const { error, data } = await libraryFetch<AlbumsResponse>(
+      '/library/:activeLibrary/albums',
+    ).json()
+
+    if (error.value) {
+      toastStore.showErrorToast(error.value)
+    }
+
+    if (data.value?.albums && data.value.albums.length) {
+      albums.value = data.value.albums
+    }
+
+    loading.value = false
+  }
+
   const getAlbumByAlbumId = async (id: string) => {
     loading.value = true
 
@@ -58,6 +82,7 @@ export const useAlbumStore = defineStore('album', () => {
     album,
 
     // Action
+    getAlbums,
     getAlbumByArtistId,
     getAlbumByAlbumId,
   }

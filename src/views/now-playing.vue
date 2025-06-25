@@ -3,7 +3,11 @@
     <h1 class="now-playing__title">Now Playing</h1>
 
     <div class="now-playing__player">
-      <AppCover class="now-playing__cover" :src="song?.thumbnail" alt="Horsepower" />
+      <AppCover
+        class="now-playing__cover"
+        :src="song?.cover_art_url"
+        :alt="song?.artist || 'Artist'"
+      />
 
       <div class="now-playing__info">
         <h2>{{ song?.title || 'Song Name' }}</h2>
@@ -23,14 +27,9 @@ import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
 
 import { storeToRefs } from 'pinia'
-import { useSongsStore } from '@/stores/songs'
+import { usePlayerStore } from '@/stores/player.ts'
 
-const songsStore = useSongsStore()
-
-const { song } = storeToRefs(songsStore)
-const { getSongById } = songsStore
-
-getSongById('')
+const { currentSong: song } = storeToRefs(usePlayerStore())
 </script>
 
 <style lang="scss">

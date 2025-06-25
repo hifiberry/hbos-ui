@@ -1,44 +1,47 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 import { storeToRefs } from 'pinia'
-import { useSongsStore } from '@/stores/songs'
 import { usePlayerStore } from '@/stores/player'
 
 import { formatTime } from '@/helpers/formatTime'
 
-interface currentData {
-  loop_mode: string
-}
-
 export const useAudioControls = defineStore('audio-controls', () => {
-  const { sendCommand } = usePlayerStore()
-  const { song } = storeToRefs(useSongsStore())
+  const playerStore = usePlayerStore()
+  const { sendCommand } = playerStore
+  const { currentData, currentSong } = storeToRefs(playerStore)
 
   // State
-  const isPlaying = ref(false)
-  const isPaused = ref(true)
-
   const canShuffle = ref(true) // TODO check on initiating
   const isShuffle = ref(false) // TODO get from response data
 
   const canLoop = ref(true) // TODO check on initiating
   const currentLoopMode = ref('none') // TODO get from currentData
 
-  const seekPosition = ref(50) // TODO set initial seekPosition
-  const songDurationTime = computed(() => formatTime(song.value?.duration))
-  const seekPositionTime = computed(() =>
-    formatTime(((song.value?.duration || 0) * (seekPosition.value || 0)) / 100),
-  )
-
-  // TODO create 'current-player' Store
-  // TODO get currentData in the 'current-player' Store
-  const currentData: currentData = {
-    loop_mode: 'none', // 'none', 'no', 'track', 'song', 'playlist'
-  }
+  const seekPosition = ref(0)
 
   // Getters
+  const isPlaying = computed(() => currentData.value?.state === 'playing')
+  const isPaused = computed(() => !isPlaying.value) // as we don't have 'stop' button
   const isPlayingOrPaused = computed(() => isPlaying.value || isPaused.value)
+
+  const songDurationTime = computed(() => formatTime(currentSong.value?.duration))
+  const seekPositionTime = computed(() =>
+    formatTime(((currentSong.value?.duration || 0) * (seekPosition.value || 0)) / 100),
+  )
+
+  watch(
+    () => currentData.value,
+    (newcurrentData) => {
+      if (currentSong.value?.duration) {
+        const percentage = ((newcurrentData?.position || 0) / currentSong.value.duration) * 100
+
+        seekPosition.value = percentage
+      } else {
+        seekPosition.value = 0
+      }
+    },
+  )
 
   // Actions
   const togglePlayPause = () => {
@@ -46,17 +49,11 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     stopAutoProgress()
 
-    sendCommand(command, 'playerName').then((command_result) => {
-      if (command_result === 'play') {
-        isPlaying.value = true
-        isPaused.value = false
-
+    sendCommand(command).then(() => {
+      if (isPlaying.value) {
         startAutoProgress()
-      } else if (command_result === 'pause') {
-        isPlaying.value = false
-        isPaused.value = true
-
-        stopAutoProgress()
+      } else {
+        startAutoProgress()
       }
 
       console.log('togglePlayPause', {
@@ -68,10 +65,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
   }
 
   const playNextOrPrev = (nextOrPrev: string) => {
-    sendCommand(nextOrPrev, 'playerName').then((command_result) => {
-      console.log('playNextOrPrev', {
-        command_result: command_result,
-      })
+    sendCommand(nextOrPrev).then(() => {
+      console.log('playNextOrPrev: nextOrPrev')
     })
   }
 
@@ -81,7 +76,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
    * @returns {Promise<boolean>} Success or failure
    */
   // TODO fix Promise<string | boolean>, leave only boolean
-  async function toggleShuffle(playerName: string | null = null): Promise<string | boolean> {
+  async function toggleShuffle(): Promise<string | boolean> {
     console.log('toggleShuffle')
 
     try {
@@ -96,7 +91,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
       if (data.shuffle !== undefined) {
         // Send the opposite of the current shuffle state
-        return await sendCommand(`set_random:${!data.shuffle}`, playerName).then(() => {
+        return await sendCommand(`set_random:${!data.shuffle}`).then(() => {
           isShuffle.value = !data.shuffle
 
           return true
@@ -117,10 +112,9 @@ export const useAudioControls = defineStore('audio-controls', () => {
    */
 
   // TODO fix Promise<string | boolean>, leave only boolean
-  async function cycleLoopMode(
+  async function cycleLoopMode(): Promise<string | boolean> {
     // currentData: currentData, // getting from the State
-    playerName: string | null = null,
-  ): Promise<string | boolean> {
+    // playerName: string | null = null,
     console.log('cycleLoopMode')
 
     if (!currentData) return false
@@ -151,7 +145,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     console.log(`Setting new loop mode: ${nextMode}`)
 
-    return await sendCommand(`set_loop:${nextMode}`, playerName).then(() => {
+    return await sendCommand(`set_loop:${nextMode}`).then(() => {
       currentLoopMode.value = nextMode // TODO get current state from BE
 
       console.log('currentLoopMode', currentLoopMode.value)
@@ -163,30 +157,33 @@ export const useAudioControls = defineStore('audio-controls', () => {
   /**
    * Send a seek command to the player
    * @param {number} position - The position to seek to in seconds
-   * @param {string} playerName - Optional specific player name
-   * @returns {Promise<boolean>} Success or failure
+   * @returns {void} Success or failure
    */
-  // TODO fix Promise<string | boolean>, leave only boolean
-  async function seekToPosition(
-    position: number,
-    playerName: string | null = null,
-  ): Promise<string | boolean> {
+  function seekToPosition(position: number): void {
     try {
       stopAutoProgress()
 
-      const seekCommand = `seek:${Math.floor(position)}`
-      return await sendCommand(seekCommand, playerName).then(() => {
-        seekPosition.value = position
+      if (!currentData.value?.song?.duration) {
+        console.error('Error seeking to position: No Song duration')
 
-        if (isPlaying.value && song.value?.duration) {
+        return
+      }
+
+      const seekToPosition = (currentData.value.song.duration * position) / 100
+
+      console.log('seekToPosition', seekToPosition)
+
+      const seekCommand = `seek:${Math.floor(seekToPosition)}`
+
+      sendCommand(seekCommand).then(() => {
+        if (isPlaying.value && currentSong.value?.duration) {
           startAutoProgress()
         }
-
-        return seekCommand
       })
     } catch (error) {
+      stopAutoProgress()
+
       console.error('Error seeking to position:', error)
-      return false
     }
   }
 
@@ -197,24 +194,16 @@ export const useAudioControls = defineStore('audio-controls', () => {
     stopAutoProgress()
 
     // Do all checks
-
-    if (isPlaying.value && song.value?.duration) {
-      const delta = +(10 / song.value.duration).toFixed(9)
+    if (isPlaying.value && currentSong.value?.duration) {
+      const delta = +(10 / currentSong.value.duration).toFixed(9)
 
       progressInterval.value = setInterval(() => {
         seekPosition.value = +(seekPosition.value + delta).toFixed(9)
 
         if (seekPosition.value >= 100) {
-          // Stop at the end of the song
-          // data.position = data.song.duration
+          stopAutoProgress()
 
-          // Force an update of player state from server when we reach the end
-          // console.log('Track reached the end, fetching current player state from server')
-          // fetchCurrentPlayer()
-
-          togglePlayPause()
-
-          seekPosition.value = 0 // Don't stop the timer yet - it will be managed based on the updated state
+          sendCommand('stop')
         }
       }, 100)
     } else {
@@ -236,7 +225,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
     isPlaying,
     isPaused,
     seekPosition,
-    currentData,
+    // currentData,
     progressInterval,
     canShuffle,
     isShuffle,

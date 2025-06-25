@@ -2,7 +2,7 @@
   <div :class="['song-control-info', { card: isOnSticky }]">
     <div v-if="song" class="song-control-info__box">
       <div class="song-control-info__cover">
-        <AppCover :src="song.thumbnail" />
+        <AppCover :src="song.cover_art_url" :alt="song.artist || 'Artist'" />
       </div>
       <div class="song-control-info__attr">
         <div class="h3">
@@ -26,28 +26,21 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-
 import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppCover from '@/components/app-cover.vue'
 import AppMarquee from '@/components/app-marquee.vue'
 
 import { storeToRefs } from 'pinia'
-import { useSongsStore } from '@/stores/songs'
-const { song } = storeToRefs(useSongsStore())
-const songsStore = useSongsStore()
-const { getSongById } = songsStore
+import { usePlayerStore } from '@/stores/player.ts'
+
+const { currentSong: song } = storeToRefs(usePlayerStore())
 
 interface AudioSongControlInfoProps {
   isOnSticky?: boolean
 }
 
 const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
-
-onMounted(() => {
-  getSongById('')
-})
 </script>
 
 <style scoped lang="scss">

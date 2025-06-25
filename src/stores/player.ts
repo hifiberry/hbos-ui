@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 import { useToastStore } from '@/stores/toast'
@@ -6,17 +6,18 @@ import { useToastStore } from '@/stores/toast'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 
 import type { Track } from '@/types/library'
+import type { Player, CurrentPlayer, Song } from '@/types/player'
 
-const API_BASE_URL = 'http://localhost:1080/api'
+import { API_BASE_URL } from '@/constants/api.ts'
 
 // Configuration
-/* const PLAYER_CONFIG = {
-  pollingInterval: 30000, // Time in milliseconds between updates (30 seconds)
+const PLAYER_CONFIG = {
+  // pollingInterval: 30000, // Time in milliseconds between updates (30 seconds)
   fastUpdateAfterCommand: 300, // Time to wait for quick update after sending a command
-  wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
-  progressUpdateInterval: 500, // Time in milliseconds between progress bar updates (0.5 seconds)
+  // wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
+  // progressUpdateInterval: 500, // Time in milliseconds between progress bar updates (0.5 seconds)
   // apiBasePath: '/api'
-} */
+}
 
 // Default player capabilities (all disabled)
 /* const DEFAULT_CAPABILITIES = {
@@ -36,8 +37,13 @@ export const usePlayerStore = defineStore('player', () => {
   const libraryFetch = useLibraryFetch()
 
   // State
+  const currentData = ref<CurrentPlayer | null>(null)
+
   const loading = ref<boolean>(false)
   const isSendingCommand = ref<boolean>(false)
+
+  // Getters
+  const currentSong = computed<Song | null>(() => currentData.value?.song || null)
 
   // Action
   const addTrackToQueue = async (track: Track) => {
@@ -63,32 +69,12 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   // Fetch available players
-  // async function fetchPlayers() {
-  // const players = await PlayerFunctions.fetchPlayers(API_BASE)
-  // PlayerFunctions.updatePlayerDropdown(players, playerSelect, libraryBtn, (name) => {
-  //   currentPlayerName = name
-  // })
-  // }
-
   /**
    * Fetch available players from the API
    * @param {string} apiBase - The base URL for the API
-   * @returns {Promise<Array>} Array of player objects
+   * @returns {Promise<Array<Player>>} Array of player objects
    */
-
-  /*
-    player object:
-    {
-      "name": "mpd",
-      "id": "mpd:6600",
-      "state": "stopped",
-      "is_active": true,
-      "has_library": true,
-      "last_seen": "2025-06-25T10:55:42.462145804+00:00"
-    }
-  */
-  async function fetchPlayers(apiBase: string = API_BASE_URL): Promise<Array<any>> {
-    console.log('fetchPlayers')
+  async function fetchPlayers(apiBase: string = API_BASE_URL): Promise<Array<Player>> {
     try {
       const response = await fetch(`${apiBase}/players`)
       const data = await response.json()
@@ -181,33 +167,20 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<object | null>} Current player data
    */
-
-  /*
-  CurrentPlayer:
-    {
-      "player": {
-          "name": "mpd",
-          "id": "mpd:6600",
-          "state": "stopped",
-          "is_active": true,
-          "has_library": true,
-          "last_seen": "2025-06-25T10:55:42.462145804+00:00"
-      },
-      "song": null,
-      "state": "stopped",
-      "shuffle": false,
-      "loop_mode": "no",
-      "position": null
-    }
-  */
-  async function fetchCurrentPlayer(apiBase: string = API_BASE_URL): Promise<object | null> {
-    console.log('fetchCurrentPlayer')
+  async function fetchCurrentPlayer(apiBase: string = API_BASE_URL): Promise<CurrentPlayer | null> {
     try {
       const response = await fetch(`${apiBase}/now-playing`)
       const data = await response.json()
 
       console.log('fetchCurrentPlayer data', data)
-      return data
+
+      if (!data) {
+        throw new Error('No Data')
+      }
+
+      currentData.value = data
+
+      return Promise.resolve(data)
     } catch (error) {
       console.error('Failed to fetch current player:', error)
       return Promise.resolve(null)
@@ -222,16 +195,7 @@ export const usePlayerStore = defineStore('player', () => {
     // await fetchPlayers()
     await fetchCurrentPlayer()
 
-    console.log('after fetchPlayers')
-
     isSendingCommand.value = false
-
-    /* return new Promise((resolve) => {
-      setTimeout(() => {
-        isSendingCommand.value = false
-        resolve(true)
-      }, 2400)
-    }) */
   }
 
   /**
@@ -242,26 +206,53 @@ export const usePlayerStore = defineStore('player', () => {
    * @returns {Promise<boolean>} Success or failure
    */
   // TODO fix Promise<string | boolean>, leave only boolean
-  const sendCommand = (
-    command: string,
-    playerName: string | null = null,
-    apiBase: string = API_BASE_URL,
-  ): Promise<string | boolean> => {
+  const sendCommand = async (command: string, apiBase: string = API_BASE_URL): Promise<boolean> => {
+    const playerName = currentData.value?.player?.name
+
     console.log('sendCommand', { command, playerName, apiBase })
 
     isSendingCommand.value = true
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        isSendingCommand.value = false
-        resolve(command)
-      }, 1200)
-    })
+    try {
+      // Build the URL based on whether we're using a specific player or the active player
+      let url
+      if (playerName) {
+        // Send to specific player
+        url = `${apiBase}/player/${playerName}/command/${command}`
+      } else {
+        // Send to active player (default)
+        url = `${apiBase}/player/active/command/${command}`
+      }
+
+      console.log(`Sending command to: ${url}`)
+      const response = await fetch(url, {
+        method: 'POST',
+      })
+
+      console.log('sendCommand', response)
+
+      return new Promise((resolve) => {
+        setTimeout(async () => {
+          const data = await fetchCurrentPlayer()
+
+          resolve(Boolean(data))
+        }, PLAYER_CONFIG.fastUpdateAfterCommand)
+      })
+    } catch (error) {
+      console.error('Error sending command:', error)
+      return false
+    } finally {
+      isSendingCommand.value = false
+    }
   }
 
   return {
     // State
+    currentData,
     isSendingCommand,
+    loading,
+    // Getters
+    currentSong,
     // Action
     addTrackToQueue,
     initPlayer,

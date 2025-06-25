@@ -1,15 +1,12 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Album, AlbumByArtistResponse, AlbumDetails, AlbumResponse } from '@/types/library'
-import { useFetch } from '@vueuse/core'
 
-import { useLibraryStore } from '@/stores/library.ts'
-const libraryStore = useLibraryStore()
+import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
+const libraryFetch = useLibraryFetch()
 
 import { useToastStore } from '@/stores/toast'
 const toastStore = useToastStore()
-
-const API_BASE_URL = `http://localhost:1080/api`
 
 export const useAlbumStore = defineStore('album', () => {
   // State
@@ -21,12 +18,8 @@ export const useAlbumStore = defineStore('album', () => {
   const getAlbumByAlbumId = async (id: string) => {
     loading.value = true
 
-    if (!libraryStore.isAvailableLibrary) {
-      await libraryStore.getAvailableLibrary()
-    }
-
-    const { error, data } = await useFetch<AlbumResponse>(
-      `${API_BASE_URL}/library/${libraryStore.activeLibrary}/album/by-id/${id}`,
+    const { error, data } = await libraryFetch<AlbumResponse>(
+      `/library/:activeLibrary/album/by-id/${id}`,
     ).json()
 
     if (error.value) {
@@ -43,12 +36,8 @@ export const useAlbumStore = defineStore('album', () => {
   const getAlbumByArtistId = async (id: string) => {
     loading.value = true
 
-    if (!libraryStore.isAvailableLibrary) {
-      await libraryStore.getAvailableLibrary()
-    }
-
-    const { error, data } = await useFetch<AlbumByArtistResponse>(
-      `${API_BASE_URL}/library/${libraryStore.activeLibrary}/albums/by-artist-id/${id}`,
+    const { error, data } = await libraryFetch<AlbumByArtistResponse>(
+      `/library/:activeLibrary/albums/by-artist-id/${id}`,
     ).json()
 
     if (error.value) {

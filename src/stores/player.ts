@@ -1,9 +1,10 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
-import { useFetch } from '@vueuse/core'
-import { useLibraryStore } from '@/stores/library.ts'
 import { useToastStore } from '@/stores/toast'
+
+import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
+const libraryFetch = useLibraryFetch()
 
 import type { Track } from '@/types/library'
 
@@ -33,7 +34,7 @@ const API_BASE_URL = 'http://localhost:1080/api'
 
 export const usePlayerStore = defineStore('player', () => {
   const toastStore = useToastStore()
-  const libraryStore = useLibraryStore()
+  // const libraryStore = useLibraryStore()
 
   // State
   const loading = ref<boolean>(false)
@@ -43,15 +44,11 @@ export const usePlayerStore = defineStore('player', () => {
   const addTrackToQueue = async (track: Track) => {
     loading.value = true
 
-    if (!libraryStore.isAvailableLibrary) {
-      await libraryStore.getAvailableLibrary()
-    }
-
     const trackIdentifier = typeof track === 'object' ? track?.id || track.uri : track
 
     if (trackIdentifier) {
-      const { error } = await useFetch(
-        `${API_BASE_URL}/player/${libraryStore.activeLibrary}/command/add_track:${encodeURIComponent(trackIdentifier)}`,
+      const { error } = await libraryFetch(
+        `/player/:activeLibrary/command/add_track:${encodeURIComponent(trackIdentifier)}`,
       )
         .post()
         .json()

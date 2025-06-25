@@ -6,7 +6,7 @@ import { useToastStore } from '@/stores/toast'
 
 import type { LibraryPlayer, LibraryPlayerResponse } from '@/types/library'
 
-const API_BASE_URL = `http://localhost:1080/api`
+import { API_BASE_URL } from '@/constants/api.ts'
 
 export const useLibraryStore = defineStore('library', () => {
   const toastStore = useToastStore()

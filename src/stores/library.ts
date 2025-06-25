@@ -4,7 +4,7 @@ import { useFetch } from '@vueuse/core'
 import { useToastStore } from '@/stores/toast'
 const toastStore = useToastStore()
 
-import type { Player, PlayerResponse } from '@/types/library'
+import type { LibraryPlayer, LibraryPlayerResponse } from '@/types/library'
 
 const API_BASE_URL = `http://localhost:1080/api`
 
@@ -20,7 +20,7 @@ export const useLibraryStore = defineStore('library', () => {
   const getAvailableLibrary = async () => {
     loading.value = true
 
-    const { error, data } = await useFetch<PlayerResponse>(`${API_BASE_URL}/library`).json()
+    const { error, data } = await useFetch<LibraryPlayerResponse>(`${API_BASE_URL}/library`).json()
 
     if (error.value) {
       toastStore.showErrorToast(error.value)
@@ -28,11 +28,11 @@ export const useLibraryStore = defineStore('library', () => {
 
     const players = data.value?.players ?? []
 
-    const availableLibrary = players.find((p: Player) => p.has_library && p.is_loaded)
+    const availableLibrary = players.find((p: LibraryPlayer) => p.has_library && p.is_loaded)
     if (availableLibrary) {
       activeLibrary.value = availableLibrary.player_name
     } else {
-      const anyLibrary = players.find((p: Player) => p.has_library)
+      const anyLibrary = players.find((p: LibraryPlayer) => p.has_library)
       if (anyLibrary) {
         activeLibrary.value = anyLibrary.player_name
       }

@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 
 import { storeToRefs } from 'pinia'
 import { useSongsStore } from '@/stores/songs'
+import { usePlayerStore } from '@/stores/player'
 
 import { formatTime } from '@/helpers/formatTime'
 
@@ -11,10 +12,10 @@ interface currentData {
 }
 
 export const useAudioControls = defineStore('audio-controls', () => {
+  const { sendCommand } = usePlayerStore()
   const { song } = storeToRefs(useSongsStore())
 
   // State
-  const isSendingCommand = ref(false)
   const isPlaying = ref(false)
   const isPaused = ref(true)
 
@@ -40,51 +41,12 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const isPlayingOrPaused = computed(() => isPlaying.value || isPaused.value)
 
   // Actions
-  // TODO move to 'current-player'
-  const initPlayer = () => {
-    console.log('initPlayer')
-
-    isSendingCommand.value = true
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        isSendingCommand.value = false
-        resolve(true)
-      }, 2400)
-    })
-  }
-
-  /**
-   * Send a command to the player
-   * @param {string} command - The command to send
-   * @param {string} playerName - Optional specific player name
-   * @param {string} apiBase - The base URL for the API
-   * @returns {Promise<boolean>} Success or failure
-   */
-  // TODO fix Promise<string | boolean>, leave only boolean
-  const sendCommand = (
-    command: string,
-    playerName: string | null = null,
-    apiBase: string = '',
-  ): Promise<string | boolean> => {
-    console.log('sendCommand', { command, playerName, apiBase })
-
-    isSendingCommand.value = true
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        isSendingCommand.value = false
-        resolve(command)
-      }, 1200)
-    })
-  }
-
   const togglePlayPause = () => {
     const command = isPlaying.value ? 'pause' : 'play'
 
     stopAutoProgress()
 
-    sendCommand(command, 'playerName', 'apiBase').then((command_result) => {
+    sendCommand(command, 'playerName').then((command_result) => {
       if (command_result === 'play') {
         isPlaying.value = true
         isPaused.value = false
@@ -106,7 +68,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
   }
 
   const playNextOrPrev = (nextOrPrev: string) => {
-    sendCommand(nextOrPrev, 'playerName', 'apiBase').then((command_result) => {
+    sendCommand(nextOrPrev, 'playerName').then((command_result) => {
       console.log('playNextOrPrev', {
         command_result: command_result,
       })
@@ -116,19 +78,15 @@ export const useAudioControls = defineStore('audio-controls', () => {
   /**
    * Toggle shuffle state
    * @param {string} playerName - Optional specific player name
-   * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
   // TODO fix Promise<string | boolean>, leave only boolean
-  async function toggleShuffle(
-    playerName: string | null = null,
-    apiBase: string = 'PLAYER_CONFIG.apiBasePath',
-  ): Promise<string | boolean> {
+  async function toggleShuffle(playerName: string | null = null): Promise<string | boolean> {
     console.log('toggleShuffle')
 
     try {
       // First fetch the current state to toggle it
-      // const response = await fetch(`${apiBase}/now-playing`)
+      // const response = await fetch(`${apiBase}/now-playing`) // TODO move to player
       // const data = await response.json()
 
       const data = {
@@ -138,7 +96,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
       if (data.shuffle !== undefined) {
         // Send the opposite of the current shuffle state
-        return await sendCommand(`set_random:${!data.shuffle}`, playerName, apiBase).then(() => {
+        return await sendCommand(`set_random:${!data.shuffle}`, playerName).then(() => {
           isShuffle.value = !data.shuffle
 
           return true
@@ -155,7 +113,6 @@ export const useAudioControls = defineStore('audio-controls', () => {
    * Cycle through loop modes: None -> Track -> Playlist -> None
    *  currentData - The current player data // getting from the State
    * @param {string} playerName - Optional specific player name
-   * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
 
@@ -163,7 +120,6 @@ export const useAudioControls = defineStore('audio-controls', () => {
   async function cycleLoopMode(
     // currentData: currentData, // getting from the State
     playerName: string | null = null,
-    apiBase: string = 'PLAYER_CONFIG.apiBasePath',
   ): Promise<string | boolean> {
     console.log('cycleLoopMode')
 
@@ -195,7 +151,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     console.log(`Setting new loop mode: ${nextMode}`)
 
-    return await sendCommand(`set_loop:${nextMode}`, playerName, apiBase).then(() => {
+    return await sendCommand(`set_loop:${nextMode}`, playerName).then(() => {
       currentLoopMode.value = nextMode // TODO get current state from BE
 
       console.log('currentLoopMode', currentLoopMode.value)
@@ -208,20 +164,18 @@ export const useAudioControls = defineStore('audio-controls', () => {
    * Send a seek command to the player
    * @param {number} position - The position to seek to in seconds
    * @param {string} playerName - Optional specific player name
-   * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
   // TODO fix Promise<string | boolean>, leave only boolean
   async function seekToPosition(
     position: number,
     playerName: string | null = null,
-    apiBase: string = 'PLAYER_CONFIG.apiBasePath',
   ): Promise<string | boolean> {
     try {
       stopAutoProgress()
 
       const seekCommand = `seek:${Math.floor(position)}`
-      return await sendCommand(seekCommand, playerName, apiBase).then(() => {
+      return await sendCommand(seekCommand, playerName).then(() => {
         seekPosition.value = position
 
         if (isPlaying.value && song.value?.duration) {
@@ -279,7 +233,6 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
   return {
     // State
-    isSendingCommand,
     isPlaying,
     isPaused,
     seekPosition,
@@ -294,8 +247,6 @@ export const useAudioControls = defineStore('audio-controls', () => {
     songDurationTime,
     seekPositionTime,
     // Actions
-    initPlayer,
-    sendCommand,
     togglePlayPause,
     playNextOrPrev,
     toggleShuffle,

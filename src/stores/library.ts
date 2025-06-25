@@ -1,14 +1,16 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+
 import { useFetch } from '@vueuse/core'
 import { useToastStore } from '@/stores/toast'
-const toastStore = useToastStore()
 
 import type { LibraryPlayer, LibraryPlayerResponse } from '@/types/library'
 
 const API_BASE_URL = `http://localhost:1080/api`
 
 export const useLibraryStore = defineStore('library', () => {
+  const toastStore = useToastStore()
+
   // State
   const loading = ref<boolean>(false)
   const activeLibrary = ref<string | null>(null)

@@ -6,7 +6,7 @@
       :class="{ active: audioControls.isShuffle }"
       icon="shuffle"
       title="Shuffle"
-      :disabled="audioControls.isSendingCommand || !audioControls.canShuffle"
+      :disabled="player.isSendingCommand || !audioControls.canShuffle"
       @click="audioControls.toggleShuffle"
     />
 
@@ -14,21 +14,21 @@
       <AppIconButton
         icon="prev"
         title="Previous"
-        :disabled="audioControls.isSendingCommand"
+        :disabled="player.isSendingCommand"
         @click="audioControls.playNextOrPrev('previous')"
       />
 
       <AppIconButton
         :icon="audioControls.isPlaying ? 'pause' : 'play'"
         title="Play/Pause"
-        :disabled="audioControls.isSendingCommand"
+        :disabled="player.isSendingCommand"
         @click="audioControls.togglePlayPause"
       />
 
       <AppIconButton
         icon="next"
         title="Next"
-        :disabled="audioControls.isSendingCommand"
+        :disabled="player.isSendingCommand"
         @click="audioControls.playNextOrPrev('next')"
       />
     </div>
@@ -45,7 +45,7 @@
             ? 'Repeat Album'
             : 'Repeat'
       "
-      :disabled="audioControls.isSendingCommand || !audioControls.canLoop"
+      :disabled="player.isSendingCommand || !audioControls.canLoop"
       @click="audioControls.cycleLoopMode"
     />
   </div>
@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 import AppIconButton from '@/components/app-icon-button.vue'
+import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
 interface AppAudioControlsProps {
@@ -62,6 +63,7 @@ interface AppAudioControlsProps {
 
 const { isSeparate = false, isOnSticky = false } = defineProps<AppAudioControlsProps>()
 
+const player = usePlayerStore()
 const audioControls = useAudioControls()
 </script>
 

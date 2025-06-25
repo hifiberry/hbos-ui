@@ -17,40 +17,32 @@ export const useLibraryStore = defineStore('library', () => {
   const isAvailableLibrary = computed(() => Boolean(activeLibrary.value))
 
   // Actions
-  const getAvailableLibrary = async (): Promise<Player | undefined> => {
-    try {
-      loading.value = true
+  const getAvailableLibrary = async () => {
+    loading.value = true
 
-      const { error, data } = await useFetch<PlayerResponse>(`${API_BASE_URL}/library`).json()
+    const { error, data } = await useFetch<PlayerResponse>(`${API_BASE_URL}/library`).json()
 
-      if (error.value) {
-        toastStore.showErrorToast(error.value)
-        throw error.value
-      }
+    if (error.value) {
+      toastStore.showErrorToast(error.value)
+    }
 
-      const players = data.value?.players ?? []
+    const players = data.value?.players ?? []
 
-      const availableLibrary = players.find((p: Player) => p.has_library && p.is_loaded)
-      if (availableLibrary) {
-        activeLibrary.value = availableLibrary.player_name
-        // return availableLibrary
-        return Promise.resolve(availableLibrary)
-      }
-
+    const availableLibrary = players.find((p: Player) => p.has_library && p.is_loaded)
+    if (availableLibrary) {
+      activeLibrary.value = availableLibrary.player_name
+    } else {
       const anyLibrary = players.find((p: Player) => p.has_library)
       if (anyLibrary) {
         activeLibrary.value = anyLibrary.player_name
-        // return anyLibrary
-        return Promise.resolve(anyLibrary)
       }
-      throw new Error('No available libraries found')
-    } catch (err) {
-      toastStore.showErrorToast(err instanceof Error ? err.message : String(err))
-      throw err // let the caller decide what to do
-    } finally {
-      loading.value = false
     }
+
+    loading.value = false
   }
+
+  const getAlbumCover = (id: string) =>
+    `${API_BASE_URL}/library/${activeLibrary.value}/image/album:${id}`
 
   return {
     // Store
@@ -62,5 +54,6 @@ export const useLibraryStore = defineStore('library', () => {
 
     // Actions
     getAvailableLibrary,
+    getAlbumCover,
   }
 })

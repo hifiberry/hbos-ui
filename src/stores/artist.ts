@@ -14,21 +14,9 @@ const API_BASE_URL = `http://localhost:1080/api`
 export const useArtistStore = defineStore('artist', () => {
   // State
   const loading = ref<boolean>(false)
-  const artist = ref<Artist[]>([])
+  const artists = ref<Artist[]>([])
 
   // Action
-  // async function getArtists() {
-  //   loading.value = true
-  //
-  //   return new Promise((resolve) => {
-  //     setTimeout(() => {
-  //       loading.value = false
-  //       artist.value = MOCK_ARTISTS
-  //       resolve(true)
-  //     }, 2400)
-  //   })
-  // }
-
   const getArtists = async (): Promise<Artist[] | undefined> => {
     try {
       loading.value = true
@@ -46,7 +34,8 @@ export const useArtistStore = defineStore('artist', () => {
         throw error.value
       }
 
-      artist.value = data.value.artists
+      artists.value = data.value.artists
+      // artists.value = []
       return data.value.artists
     } catch (err) {
       toastStore.showErrorToast(err instanceof Error ? err.message : String(err))
@@ -59,7 +48,7 @@ export const useArtistStore = defineStore('artist', () => {
   return {
     // State
     loading,
-    artist,
+    artists,
 
     // Action
     getArtists,

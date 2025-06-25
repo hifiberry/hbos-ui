@@ -1,14 +1,14 @@
 <template>
-  <div class="app-songs-card card">
+  <div class="app-tracks-card card">
     <div class="h4 title">Songs</div>
-    <div class="song-list">
+    <div class="track-list">
       <template v-if="loading">
         <div
           v-for="(_, index) in 5"
-          :key="`song-skeleton-${index}`"
-          class="song-item skeleton-item"
+          :key="`track-skeleton-${index}`"
+          class="track-item skeleton-item"
         >
-          <div class="song-item__num">{{ index + 1 }}</div>
+          <div class="track-item__num">{{ index + 1 }}</div>
           <AppSkeleton class="skeleton-cover" height="40px" />
           <div class="skeleton-desc">
             <AppSkeleton width="30%" height="100%" class="h4" />
@@ -19,20 +19,25 @@
       </template>
 
       <template v-else>
-        <div v-for="(song, index) in songs" :key="song.id" class="song-item">
-          <div class="song-item__num">{{ index + 1 }}</div>
-          <div class="song-item__cover">
-            <AppCover :src="song.thumbnail" />
+        <div
+          v-for="(track, index) in tracks"
+          :key="`track-${index}`"
+          class="track-item"
+          @click="onAddTrackToQueue(track)"
+        >
+          <div class="track-item__num">{{ index + 1 }}</div>
+          <div class="track-item__cover">
+            <AppCover :src="''" />
           </div>
-          <div class="song-item__desc">
-            <div class="h3 song-item__desc-name">
-              <AppMarquee>{{ song.title }}</AppMarquee>
+          <div class="track-item__desc">
+            <div class="h3 track-item__desc-name">
+              <AppMarquee>{{ track.name }}</AppMarquee>
             </div>
-            <div class="song-item__desc-artist">
-              <AppMarquee>{{ song.artist }}</AppMarquee>
+            <div class="track-item__desc-artist">
+              <AppMarquee>{{ track.artist }}</AppMarquee>
             </div>
           </div>
-          <div class="song-item__duration">{{ formatTime(song.duration) }}</div>
+          <!--          <div class="track-item__duration">{{ formatTime(track.duration) }}</div>-->
         </div>
       </template>
     </div>
@@ -44,24 +49,32 @@ import AppCover from '@/components/app-cover.vue'
 import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
 import AppMarquee from '@/components/app-marquee.vue'
 
-import type { Song } from '@/types/library'
+import type { Track } from '@/types/library'
 
-interface SongsProps {
-  songs: Song[]
+interface TracksProps {
+  tracks: Track[]
   loading?: boolean
+  albumId?: string
 }
 
-const { songs = [], loading = false } = defineProps<SongsProps>()
+const { tracks = [], loading = false } = defineProps<TracksProps>()
 
 import { formatTime } from '@/helpers/formatTime'
+
+import { usePlayerStore } from '@/stores/player.ts'
+const playerStore = usePlayerStore()
+
+const onAddTrackToQueue = (track: Track): void => {
+  playerStore.addTrackToQueue(track)
+}
 </script>
 
 <style scoped lang="scss">
-.app-songs-card {
+.app-tracks-card {
   .title {
     margin-bottom: 20px;
   }
-  .song {
+  .track {
     &-item {
       display: grid;
       grid-template-columns: 20px 40px minmax(150px, 400px) minmax(50px, auto);
@@ -80,10 +93,14 @@ import { formatTime } from '@/helpers/formatTime'
       }
       &__cover {
         :deep(.app-cover) {
-          width: 100%;
-          height: 100%;
+          width: 40px;
+          height: 40px;
           border-radius: 5px;
           overflow: hidden;
+          svg {
+            width: 50%;
+            height: 50%;
+          }
         }
       }
       &__desc {

@@ -12,7 +12,7 @@
     </template>
     <template v-if="album && !loading">
       <div class="album-cover">
-        <AppCover :src="album.cover_art" />
+        <AppCover :src="albumCover" />
       </div>
       <div class="album-details">
         <div class="h2">{{ album.name }}</div>
@@ -28,6 +28,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import AppCover from '@/components/app-cover.vue'
 import AppListenNow from '@/components/app-listen-now.vue'
 import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
@@ -39,6 +41,11 @@ interface AppAlbumDetailsProps {
 }
 
 const { loading = false, album = null } = defineProps<AppAlbumDetailsProps>()
+
+import { useLibraryStore } from '@/stores/library.ts'
+const libraryStore = useLibraryStore()
+
+const albumCover = computed(() => libraryStore.getAlbumCover(album?.id || ''))
 </script>
 
 <style scoped lang="scss">

@@ -5,9 +5,3 @@ export interface Artist {
   thumb_url: string[]
   is_multi: boolean
 }
-
-export interface ArtistResponse {
-  artists: Artist[]
-  count: number
-  player_name: string
-}

@@ -25,8 +25,8 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 
-import { useAlbumsStore } from '@/stores/albums'
-const albumStore = useAlbumsStore()
+import { useAlbumStore } from '@/stores/album.ts'
+const albumStore = useAlbumStore()
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -36,7 +36,7 @@ import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 
 onMounted(() => {
-  albumStore.getAlbums()
+  albumStore.getAlbum()
 })
 </script>
 

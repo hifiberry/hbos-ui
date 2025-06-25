@@ -1,57 +1,53 @@
 <template>
-  <div class="artists card">
-    <div class="title">
-      <h2>Artists</h2>
+  <div :class="['app-artists', inRow ? 'row' : 'cell']">
+    <AppPosterSkeleton v-if="loading" poster-form="circle" />
 
-      <router-link :to="{ name: 'artists' }" class="text-link">View All</router-link>
-    </div>
+    <template v-else-if="artists.length > 0">
+      <AppPoster
+        v-for="artist in artists"
+        :key="artist.id"
+        :title="artist.name"
+        :subtitle="`${artist.album_count} album${artist.album_count !== 1 ? 's' : ''}`"
+        :src="artist.thumb_url[0]"
+        poster-form="circle"
+        @click="router.push({ name: 'artist-album', params: { artistId: artist.id } })"
+      />
+    </template>
 
-    <div class="artists-list">
-      <AppPosterSkeleton v-if="artistStore.loading" poster-form="circle" />
-
-      <template v-else>
-        <AppPoster
-          v-for="artist in artistStore.artist"
-          :key="artist.id"
-          :title="artist.name"
-          :subtitle="`${artist.album_count} album${artist.album_count !== 1 ? 's' : ''}`"
-          :src="artist.thumb_url[0]"
-          poster-form="circle"
-          @click="router.push({ name: 'album', params: { id: artist.id } })"
-        />
-      </template>
-    </div>
+    <div v-else class="">No Artists</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import type { Artist } from '@/types/library'
+
+interface ArtistsProps {
+  loading?: boolean
+  artists?: Artist[]
+  inRow?: boolean
+}
+
+const { loading = false, artists = [], inRow = false } = defineProps<ArtistsProps>()
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import { useArtistStore } from '@/stores/artist'
-const artistStore = useArtistStore()
-
 import AppPoster from '@/components/app-poster.vue'
 import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
-
-onMounted(() => {
-  artistStore.getArtists()
-})
 </script>
 
 <style scoped lang="scss">
-.artists {
-  &-list {
-    display: grid;
+.app-artists {
+  display: grid;
+  gap: 60px;
+  @include media-down(xl) {
+    gap: 30px;
+  }
+
+  &.row {
     grid-auto-flow: column;
     grid-auto-columns: 140px;
-    gap: 60px;
     overflow: hidden;
-    @include media-down(xl) {
-      gap: 30px;
-    }
     @include media-down(lg) {
       grid-auto-columns: 100px;
     }
@@ -62,13 +58,11 @@ onMounted(() => {
       grid-auto-columns: unset;
     }
   }
-  .title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 25px;
-    h2 {
-      margin-bottom: 0;
+  &.cell {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 60px 80px;
+    @include media-down(md) {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
   }
 }

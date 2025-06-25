@@ -42,7 +42,7 @@ interface PosterProps {
 const { title = '', subtitle = '', src = '', posterForm = 'square' } = defineProps<PosterProps>()
 
 const imageOptions = deepRef({ src })
-const { error } = useImage(imageOptions, { delay: 400 })
+const { error } = useImage(imageOptions, { delay: 0 })
 
 watch(
   () => src,

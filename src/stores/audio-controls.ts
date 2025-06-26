@@ -12,10 +12,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const { currentData, currentSong } = storeToRefs(playerStore)
 
   // State
-  const canShuffle = ref(true) // TODO check on initiating
   const isShuffle = ref(false) // TODO get from response data
 
-  const canLoop = ref(true) // TODO check on initiating
   const currentLoopMode = ref('none') // TODO get from currentData
 
   const seekPosition = ref(0)
@@ -252,9 +250,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
     seekPosition,
     // currentData,
     progressIntervalID,
-    canShuffle,
     isShuffle,
-    canLoop,
     currentLoopMode,
     // Getters
     isPlayingOrPaused,

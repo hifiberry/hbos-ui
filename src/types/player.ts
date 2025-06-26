@@ -5,6 +5,10 @@ export interface Player {
   is_active: boolean
   has_library: boolean
   last_seen: string // '2025-06-25T10:55:42.462145804+00:00'
+  metadata?: {
+    capabilities: string[] // [play, pause, stop, previous, next, seek, queue, shuffle, random, loop]
+  }
+  capabilities?: string[] // [play, pause, stop, previous, next, seek, queue, shuffle, random, loop]
 }
 
 export interface Song {
@@ -23,4 +27,17 @@ export interface CurrentPlayer {
   shuffle: boolean
   loop_mode: string // 'no', 'song', 'playlist'
   position: number | null // 9.561
+}
+
+// Default player capabilities
+export interface Capabilities {
+  canPlay: boolean
+  canPause: boolean
+  canStop: boolean
+  canPrevious: boolean
+  canNext: boolean
+  canSeek: boolean
+  hasQueue: boolean
+  canShuffle: boolean
+  canLoop: boolean
 }

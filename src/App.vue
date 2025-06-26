@@ -7,14 +7,18 @@ import { onBeforeUnmount } from 'vue'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
-const { initPlayer } = usePlayerStore()
+const playerStore = usePlayerStore()
 const audioControls = useAudioControls()
 
-initPlayer()
+playerStore.initPlayer()
 
 onBeforeUnmount(() => {
   if (audioControls.progressIntervalID) {
     audioControls.stopAutoProgress()
+  }
+
+  if (playerStore.updateIntervalID) {
+    playerStore.clearPollingInterval()
   }
 })
 </script>

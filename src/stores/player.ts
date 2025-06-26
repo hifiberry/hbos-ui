@@ -2,45 +2,37 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 import { useToastStore } from '@/stores/toast'
-
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 
+import {
+  DEFAULT_CAPABILITIES,
+  extractPlayerCapabilities,
+} from '@/helpers/extractPlayerCapabilities'
+
 import type { Track } from '@/types/library'
-import type { Player, CurrentPlayer, Song } from '@/types/player'
+import type { Player, CurrentPlayer, Song, Capabilities } from '@/types/player'
 
 import { API_BASE_URL } from '@/constants/api.ts'
 
 // Configuration
-const PLAYER_CONFIG = {
-  // pollingInterval: 30000, // Time in milliseconds between updates (30 seconds)
+export const PLAYER_CONFIG = {
+  pollingInterval: 30000, // Time in milliseconds between updates (30 seconds)
   fastUpdateAfterCommand: 300, // Time to wait for quick update after sending a command
   // wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
-  // progressUpdateInterval: 500, // Time in milliseconds between progress bar updates (0.5 seconds)
-  // apiBasePath: '/api'
 }
-
-// Default player capabilities (all disabled)
-/* const DEFAULT_CAPABILITIES = {
-  canPlay: false,
-  canPause: false,
-  canStop: false,
-  canPrevious: false,
-  canNext: false,
-  canSeek: false,
-  hasQueue: false,
-  canShuffle: false,
-  canLoop: false,
-} */
 
 export const usePlayerStore = defineStore('player', () => {
   const toastStore = useToastStore()
   const libraryFetch = useLibraryFetch()
 
   // State
+  const updateIntervalID = ref<number | undefined>(undefined)
   const currentData = ref<CurrentPlayer | null>(null)
 
   const loading = ref<boolean>(false)
   const isSendingCommand = ref<boolean>(false)
+
+  const playerCapabilities = ref<Capabilities>(DEFAULT_CAPABILITIES)
 
   // Getters
   const currentSong = computed<Song | null>(() => currentData.value?.song || null)
@@ -180,6 +172,11 @@ export const usePlayerStore = defineStore('player', () => {
 
       currentData.value = data
 
+      // Extract player capabilities
+      playerCapabilities.value = extractPlayerCapabilities(data)
+
+      console.log('playerCapabilities.value', playerCapabilities.value)
+
       return Promise.resolve(data)
     } catch (error) {
       console.error('Failed to fetch current player:', error)
@@ -195,13 +192,21 @@ export const usePlayerStore = defineStore('player', () => {
     // await fetchPlayers()
     await fetchCurrentPlayer()
 
+    // Set up periodic updates using the configured polling interval
+    updateIntervalID.value = setInterval(fetchCurrentPlayer, PLAYER_CONFIG.pollingInterval)
+
     isSendingCommand.value = false
+  }
+
+  const clearPollingInterval = () => {
+    clearInterval(updateIntervalID.value)
+
+    updateIntervalID.value = undefined
   }
 
   /**
    * Send a command to the player
    * @param {string} command - The command to send
-   * @param {string} playerName - Optional specific player name
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
@@ -248,12 +253,15 @@ export const usePlayerStore = defineStore('player', () => {
 
   return {
     // State
+    updateIntervalID,
     currentData,
     isSendingCommand,
     loading,
+    playerCapabilities,
     // Getters
     currentSong,
     // Action
+    clearPollingInterval,
     addTrackToQueue,
     initPlayer,
     fetchPlayers,

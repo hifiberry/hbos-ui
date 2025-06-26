@@ -13,7 +13,7 @@ const audioControls = useAudioControls()
 initPlayer()
 
 onBeforeUnmount(() => {
-  if (audioControls.progressInterval) {
+  if (audioControls.progressIntervalID) {
     audioControls.stopAutoProgress()
   }
 })

@@ -12,6 +12,7 @@ import AppIcon from '@/components/app-icon.vue'
 
 const icons: string[] = [
   'music-note-simple-light',
+  'magnifying-glass-light',
   'users-thin',
   'moon-thin',
   'caret-down',
@@ -26,6 +27,7 @@ const icons: string[] = [
   'loop',
   'music',
   'loading',
+  'clear',
 ]
 </script>
 

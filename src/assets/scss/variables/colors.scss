@@ -37,7 +37,10 @@ $background-card: #fff;                                           $background-ca
 $background-start-skeleton: #ddd;                                 $background-start-skeleton--dark: #444;
 $background-end-skeleton: #eee;                                   $background-end-skeleton--dark: #555;
 
-
 $progress-slider-bg: rgba(112, 112, 112, 0.1);                    $progress-slider-bg--dark: #AAAAAA;
 $progress-slider-on-header-bg: rgba(112, 112, 112, 0.2);          $progress-slider-on-header-bg--dark: rgba(170, 170, 170, 1);
 $progress-slider-on-header-progess: rgba(112, 112, 112, 0.4);     $progress-slider-on-header-progess--dark: #FFFFFF;
+
+$search-background: #fff;                                         $search-background--dark: #333;
+$search-color-placeholder: #ababab;
+$search-color: #333;                                              $search-color--dark: #fff;

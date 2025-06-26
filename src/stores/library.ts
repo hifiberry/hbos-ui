@@ -25,7 +25,7 @@ export const useLibraryStore = defineStore('library', () => {
     const { error, data } = await useFetch<LibraryPlayerResponse>(`${API_BASE_URL}/library`).json()
 
     if (error.value) {
-      toastStore.showErrorToast(error.value)
+      toastStore.showErrorToast(`Get Available Library Error: ${error.value}`)
     }
 
     const players = data.value?.players ?? []

@@ -1,6 +1,6 @@
 <template>
   <div class="app-albums">
-    <div class="albums-list">
+    <div :class="['album-grid', inRow ? 'row' : 'cell']">
       <AppPosterSkeleton v-if="loading" />
 
       <template v-else>
@@ -14,6 +14,8 @@
         />
       </template>
     </div>
+
+    <div v-if="loaded && albums.length === 0" class="no-albums">No available albums found</div>
   </div>
 </template>
 
@@ -22,10 +24,12 @@ import type { Album } from '@/types/library'
 
 interface AlbumsProps {
   loading?: boolean
+  loaded?: boolean
   albums?: Album[]
+  inRow?: boolean
 }
 
-const { loading = false, albums = [] } = defineProps<AlbumsProps>()
+const { loading = false, loaded = false, albums = [], inRow = false } = defineProps<AlbumsProps>()
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -36,8 +40,8 @@ import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
 
 <style scoped lang="scss">
 .app-albums {
-  .albums {
-    &-list {
+  .album {
+    &-grid {
       display: grid;
       grid-auto-flow: column;
       grid-auto-columns: 140px;
@@ -55,6 +59,15 @@ import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         grid-auto-columns: unset;
       }
+    }
+  }
+  .no-albums {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    @include media-down(lg) {
+      min-height: 100px;
     }
   }
 }

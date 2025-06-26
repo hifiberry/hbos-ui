@@ -17,19 +17,21 @@ export const useAlbumStore = defineStore('album', () => {
 
   // State
   const loading = ref<boolean>(false)
+  const loaded = ref<boolean>(false)
   const albums = ref<Album[]>([])
   const album = ref<AlbumDetails | null>(null)
 
   // Action
   const getAlbums = async () => {
     loading.value = true
+    loaded.value = false
 
-    const { error, data } = await libraryFetch<AlbumsResponse>(
+    const { error, data, isFinished } = await libraryFetch<AlbumsResponse>(
       '/library/:activeLibrary/albums',
     ).json()
 
     if (error.value) {
-      toastStore.showErrorToast(error.value)
+      toastStore.showErrorToast(`Get Albums Error: ${error.value}`)
     }
 
     if (data.value?.albums && data.value.albums.length) {
@@ -37,6 +39,7 @@ export const useAlbumStore = defineStore('album', () => {
     }
 
     loading.value = false
+    loaded.value = isFinished.value
   }
 
   const getAlbumByAlbumId = async (id: string) => {
@@ -78,6 +81,7 @@ export const useAlbumStore = defineStore('album', () => {
   return {
     // State
     loading,
+    loaded,
     albums,
     album,
 

@@ -55,6 +55,10 @@ $colors: (
   ),
   toast: (
     toastify-color-light: $background-body,
+  ),
+  search: (
+    search-background: $search-background,
+    search-color: $search-color,
   )
 );
 
@@ -111,6 +115,10 @@ $colors--dark: (
   ),
   toast: (
     toastify-color-dark: $background-body--dark,
+  ),
+  search: (
+    search-background: $search-background--dark,
+    search-color: $search-color--dark,
   )
 );
 

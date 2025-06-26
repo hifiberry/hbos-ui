@@ -4,7 +4,7 @@
       <AppBackRouter :to="{ name: 'library' }">Albums</AppBackRouter>
     </div>
     <div class="card">
-      <AppAlbums :loading="loading" :albums="albums" />
+      <AppAlbums :loading="loading" :loaded="loaded" :albums="albums" />
     </div>
   </div>
 </template>
@@ -19,7 +19,7 @@ import AppAlbums from '@/components/app-albums.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
 const albumStore = useAlbumStore()
-const { loading, albums } = storeToRefs(albumStore)
+const { loading, loaded, albums } = storeToRefs(albumStore)
 const { getAlbums } = albumStore
 
 onMounted(() => {

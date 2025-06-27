@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Artist } from '@/types/library'
+import type { Artist, ArtistMetadata } from '@/types/library'
 
 import { useToastStore } from '@/stores/toast'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
@@ -12,7 +12,7 @@ export const useArtistStore = defineStore('artist', () => {
   // State
   const loading = ref<boolean>(false)
   const loaded = ref<boolean>(false)
-  const artists = ref<Artist[]>([])
+  const artists = ref<Artist | ArtistMetadata[]>([])
 
   // Action
   const getArtists = async () => {
@@ -46,7 +46,9 @@ export const useArtistStore = defineStore('artist', () => {
       toastStore.showErrorToast(`Get Artists by Name Error: ${error.value}`)
     }
 
-    if (data.value?.artists && data.value.artists.length > 0) {
+    if (name && data.value?.artist) {
+      artists.value = [data.value.artist]
+    } else if (data.value?.artists && data.value.artists.length > 0) {
       artists.value = data.value.artists
     }
 

@@ -58,16 +58,15 @@ const toastStore = useToastStore()
 const onListenNow = async () => {
   try {
     if (album?.tracks?.length) {
-      if (audioControls.isPlayingOrPaused) {
-        await playerStore.sendCommand('stop')
-        await playerStore.sendCommand('clear_queue')
-      }
-      const trackRequests = []
+      await playerStore.sendCommand('stop')
+      await playerStore.sendCommand('clear_queue')
+
       for (let i = 0; i < album.tracks.length; i++) {
         const track = album.tracks[i] as Track
-        trackRequests.push(playerStore.addTrackToQueue(track))
+
+        await playerStore.addTrackToQueue(track)
       }
-      await Promise.all(trackRequests)
+
       audioControls.togglePlayPause()
     }
   } catch (err) {

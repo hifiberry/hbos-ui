@@ -20,12 +20,15 @@ export interface Song {
   stream_url: string // 'Limujii/Limujii - November (freetouse.com).mp3'
   source: string // 'mpd'
 }
+
+export type LoopMode = 'no' | 'none' | 'song' | 'track' | 'playlist' | undefined
+
 export interface CurrentPlayer {
   player: Player
   song: Song | null
   state: string // 'stopped', 'playing', 'paused'
   shuffle: boolean | undefined
-  loop_mode: string // 'no', 'song', 'playlist'
+  loop_mode: LoopMode
   position: number | null // 9.561
 }
 

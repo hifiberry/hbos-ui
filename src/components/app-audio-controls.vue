@@ -36,14 +36,14 @@
     <AppIconButton
       v-if="!isOnSticky"
       class="app-audio-controls__secondary"
-      :class="{ active: audioControls.currentLoopMode !== 'none' }"
-      :icon="audioControls.currentLoopMode === 'track' ? 'loop-one' : 'loop'"
+      :class="{ active: !audioControls.iscurrentLoopModeNone }"
+      :icon="audioControls.iscurrentLoopModeTrack ? 'loop-one' : 'loop'"
       :title="
-        audioControls.currentLoopMode === 'track'
-          ? 'Repeat Track'
-          : audioControls.currentLoopMode === 'playlist'
-            ? 'Repeat Album'
-            : 'Repeat'
+        audioControls.iscurrentLoopModeTrack
+          ? 'Loop Track'
+          : audioControls.iscurrentLoopModePlaylist
+            ? 'Loop Playlist'
+            : 'Loop'
       "
       :disabled="isSendingCommand || !caps.canLoop"
       @click="audioControls.cycleLoopMode"

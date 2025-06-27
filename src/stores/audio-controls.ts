@@ -6,15 +6,20 @@ import { usePlayerStore } from '@/stores/player'
 
 import { formatTime } from '@/helpers/formatTime'
 
+import type { LoopMode } from '@/types/player'
+
+function isLoopMode(value: string): value is Exclude<LoopMode, undefined> {
+  return ['no', 'none', 'song', 'track', 'playlist'].includes(value)
+}
+
 export const useAudioControls = defineStore('audio-controls', () => {
   const playerStore = usePlayerStore()
   const { sendCommand } = playerStore
   const { currentData, currentSong } = storeToRefs(playerStore)
 
   // State
-  const currentLoopMode = ref('none') // TODO get from currentData
-
   const seekPosition = ref(0)
+  const progressIntervalID = ref<number | undefined>(undefined)
 
   // Getters
   const isPlaying = computed(() => currentData.value?.state === 'playing')
@@ -23,12 +28,25 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
   const isShuffle = computed(() => currentData.value?.shuffle)
 
+  // Check the loop mode value case-insensitively since API might use different cases
+  const currentLoopMode = computed(() => {
+    const mode = (currentData.value?.loop_mode || 'none').toLowerCase()
+
+    return isLoopMode(mode) ? mode : 'none'
+  })
+
+  const iscurrentLoopModeNone = computed(
+    () => currentLoopMode.value === 'none' || currentLoopMode.value === 'no',
+  )
+  const iscurrentLoopModeTrack = computed(
+    () => currentLoopMode.value === 'track' || currentLoopMode.value === 'song',
+  )
+  const iscurrentLoopModePlaylist = computed(() => currentLoopMode.value === 'playlist')
+
   const songDurationTime = computed(() => formatTime(currentSong.value?.duration))
   const seekPositionTime = computed(() =>
     formatTime(((currentSong.value?.duration || 0) * (seekPosition.value || 0)) / 100),
   )
-
-  const progressIntervalID = ref<number | undefined>(undefined)
 
   watch(
     () => currentData.value,
@@ -79,51 +97,31 @@ export const useAudioControls = defineStore('audio-controls', () => {
     }
   }
 
-  /**
-   * Cycle through loop modes: None -> Track -> Playlist -> None
-   *  currentData - The current player data // getting from the State
-   * @returns {Promise<boolean>} Success or failure
-   */
-  async function cycleLoopMode(): Promise<boolean> {
-    // currentData: currentData, // getting from the State
-    // playerName: string | null = null,
-    console.log('cycleLoopMode')
+  async function cycleLoopMode() {
+    console.log('cycleLoopMode currentLoopMode', currentLoopMode.value)
 
-    if (!currentData) return false
+    if (!currentData.value) return
 
     let nextMode: string | undefined
-    // Check the loop mode value case-insensitively since API might use different cases
-    // const currentMode = (currentData.loop_mode || '').toLowerCase()
 
-    // console.log(`Current loop mode: ${currentMode}`)
-
-    // switch (currentMode) {
-    switch (
-      currentLoopMode.value // TODO get from currentData
-    ) {
+    switch (currentLoopMode.value) {
       case 'none':
       case 'no':
-        nextMode = 'track' // May be change to 'playlist'
+        nextMode = 'track'
         break
       case 'track':
       case 'song':
-        nextMode = 'playlist' // May be change to 'none'
+        nextMode = 'playlist'
         break
       case 'playlist':
       default:
-        nextMode = 'none' // May be change to 'track'
+        nextMode = 'none'
         break
     }
 
     console.log(`Setting new loop mode: ${nextMode}`)
 
-    return await sendCommand(`set_loop:${nextMode}`).then(() => {
-      currentLoopMode.value = nextMode // TODO get current state from BE
-
-      console.log('currentLoopMode', currentLoopMode.value)
-
-      return true
-    })
+    sendCommand(`set_loop:${nextMode}`)
   }
 
   /**
@@ -203,12 +201,15 @@ export const useAudioControls = defineStore('audio-controls', () => {
     // State
     seekPosition,
     progressIntervalID,
-    currentLoopMode,
     // Getters
     isPlaying,
     isPaused,
     isPlayingOrPaused,
     isShuffle,
+    currentLoopMode,
+    iscurrentLoopModeNone,
+    iscurrentLoopModeTrack,
+    iscurrentLoopModePlaylist,
     songDurationTime,
     seekPositionTime,
     // Actions

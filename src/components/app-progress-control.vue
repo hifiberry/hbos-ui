@@ -8,7 +8,7 @@
 
     <AppProgressSlider
       :value="audioControls.seekPosition"
-      :disabled="audioControls.isSendingCommand"
+      :disabled="isSendingCommand || !caps.canSeek"
       :min="min"
       :max="max"
       :step="step"
@@ -21,6 +21,8 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
+import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
 import AppProgressSlider from '@/components/app-progress-slider.vue'
@@ -44,6 +46,7 @@ const {
   isOnHeader = false,
 } = defineProps<AppProgressControlProps>()
 
+const { isSendingCommand, playerCapabilities: caps } = storeToRefs(usePlayerStore())
 const audioControls = useAudioControls()
 </script>
 

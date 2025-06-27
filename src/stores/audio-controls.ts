@@ -12,10 +12,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const { currentData, currentSong } = storeToRefs(playerStore)
 
   // State
-  const canShuffle = ref(true) // TODO check on initiating
   const isShuffle = ref(false) // TODO get from response data
 
-  const canLoop = ref(true) // TODO check on initiating
   const currentLoopMode = ref('none') // TODO get from currentData
 
   const seekPosition = ref(0)
@@ -30,17 +28,31 @@ export const useAudioControls = defineStore('audio-controls', () => {
     formatTime(((currentSong.value?.duration || 0) * (seekPosition.value || 0)) / 100),
   )
 
+  const progressIntervalID = ref<number | undefined>(undefined)
+
   watch(
     () => currentData.value,
     (newcurrentData) => {
+      console.log('newcurrentData', newcurrentData)
+
       if (currentSong.value?.duration) {
         const percentage = ((newcurrentData?.position || 0) / currentSong.value.duration) * 100
 
         seekPosition.value = percentage
+
+        if (isPlaying.value && !progressIntervalID.value) {
+          startAutoProgress()
+        }
+
+        if (!isPlaying.value && progressIntervalID.value) {
+          stopAutoProgress()
+        }
       } else {
         seekPosition.value = 0
+        stopAutoProgress()
       }
     },
+    { immediate: true },
   )
 
   // Actions
@@ -187,36 +199,47 @@ export const useAudioControls = defineStore('audio-controls', () => {
     }
   }
 
-  const progressInterval = ref<number | undefined>(undefined)
+  const lastProgressUpdate = ref<number | null>(null)
+  const progressInterval = 100 // 100 ms
 
   function startAutoProgress() {
-    // Stop any existing interval first
+    console.log('startAutoProgress')
+
     stopAutoProgress()
 
-    // Do all checks
     if (isPlaying.value && currentSong.value?.duration) {
-      const delta = +(10 / currentSong.value.duration).toFixed(9)
+      // Reset the timestamp to now
+      lastProgressUpdate.value = Date.now()
 
-      progressInterval.value = setInterval(() => {
-        seekPosition.value = +(seekPosition.value + delta).toFixed(9)
+      const duration = currentSong.value.duration
+
+      progressIntervalID.value = setInterval(() => {
+        // Calculate how much time has passed since the last position update
+        const now = Date.now()
+        const elapsedSeconds = (now - (lastProgressUpdate.value || 0)) / 1000
+        lastProgressUpdate.value = now
+
+        const delta = +((elapsedSeconds / duration) * 100).toFixed(9) // + 0.0808 (%) ... every 100ms
+
+        seekPosition.value = +(seekPosition.value + delta).toFixed(9) // 48.3168 (%) ...
 
         if (seekPosition.value >= 100) {
           stopAutoProgress()
 
           sendCommand('stop')
         }
-      }, 100)
+      }, progressInterval)
     } else {
       stopAutoProgress()
     }
   }
 
   function stopAutoProgress() {
-    if (progressInterval.value) {
+    if (progressIntervalID.value) {
       console.log('clearInterval')
 
-      clearInterval(progressInterval.value)
-      progressInterval.value = undefined
+      clearInterval(progressIntervalID.value)
+      progressIntervalID.value = undefined
     }
   }
 
@@ -226,10 +249,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
     isPaused,
     seekPosition,
     // currentData,
-    progressInterval,
-    canShuffle,
+    progressIntervalID,
     isShuffle,
-    canLoop,
     currentLoopMode,
     // Getters
     isPlayingOrPaused,

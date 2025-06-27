@@ -224,6 +224,8 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .app-progress-slider {
+  $root: &;
+
   position: relative;
   display: flex;
   align-items: center;
@@ -235,6 +237,12 @@ onBeforeUnmount(() => {
   &.disabled {
     opacity: 0.5;
     pointer-events: none;
+
+    #{$root}__thumb {
+      background-color: $progress-slider-bg--dark;
+      pointer-events: all;
+      cursor: not-allowed;
+    }
   }
 
   &__track {

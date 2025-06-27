@@ -1,17 +1,23 @@
 <template>
   <div class="app-progress-time">
-    <span>{{ seekPositionTime }}</span>
-    <span>{{ songDurationTime }}</span>
+    <template v-if="hasSongDurationTime">
+      <span>{{ seekPositionTime }}</span>
+      <span>{{ songDurationTime }}</span>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 interface AppProgressTime {
   seekPositionTime?: string
   songDurationTime?: string
 }
 
 const { seekPositionTime = '00:00', songDurationTime = '00:00' } = defineProps<AppProgressTime>()
+
+const hasSongDurationTime = computed(() => songDurationTime !== '00:00')
 </script>
 
 <style lang="scss">
@@ -21,5 +27,6 @@ const { seekPositionTime = '00:00', songDurationTime = '00:00' } = defineProps<A
   justify-content: space-between;
   margin-bottom: 10px;
   font-size: 14px;
+  min-height: 14px;
 }
 </style>

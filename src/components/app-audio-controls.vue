@@ -6,7 +6,7 @@
       :class="{ active: audioControls.isShuffle }"
       icon="shuffle"
       title="Shuffle"
-      :disabled="player.isSendingCommand || !audioControls.canShuffle"
+      :disabled="isSendingCommand || !caps.canShuffle"
       @click="audioControls.toggleShuffle"
     />
 
@@ -14,21 +14,21 @@
       <AppIconButton
         icon="prev"
         title="Previous"
-        :disabled="player.isSendingCommand"
+        :disabled="isSendingCommand || !caps.canPrevious"
         @click="audioControls.playNextOrPrev('previous')"
       />
 
       <AppIconButton
         :icon="audioControls.isPlaying ? 'pause' : 'play'"
         title="Play/Pause"
-        :disabled="player.isSendingCommand"
+        :disabled="isSendingCommand || !(caps.canPlay || caps.canPause)"
         @click="audioControls.togglePlayPause"
       />
 
       <AppIconButton
         icon="next"
         title="Next"
-        :disabled="player.isSendingCommand"
+        :disabled="isSendingCommand || !caps.canNext"
         @click="audioControls.playNextOrPrev('next')"
       />
     </div>
@@ -45,7 +45,7 @@
             ? 'Repeat Album'
             : 'Repeat'
       "
-      :disabled="player.isSendingCommand || !audioControls.canLoop"
+      :disabled="isSendingCommand || !caps.canLoop"
       @click="audioControls.cycleLoopMode"
     />
   </div>
@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 import AppIconButton from '@/components/app-icon-button.vue'
+import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
@@ -63,7 +64,8 @@ interface AppAudioControlsProps {
 
 const { isSeparate = false, isOnSticky = false } = defineProps<AppAudioControlsProps>()
 
-const player = usePlayerStore()
+const { isSendingCommand, playerCapabilities: caps } = storeToRefs(usePlayerStore())
+
 const audioControls = useAudioControls()
 </script>
 

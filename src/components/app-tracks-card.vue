@@ -59,8 +59,6 @@ interface TracksProps {
 
 const { tracks = [], loading = false } = defineProps<TracksProps>()
 
-import { formatTime } from '@/helpers/formatTime'
-
 import { usePlayerStore } from '@/stores/player.ts'
 import { useAudioControls } from '@/stores/audio-controls'
 
@@ -68,17 +66,11 @@ const playerStore = usePlayerStore()
 const audioControls = useAudioControls()
 
 const onAddTrackToQueue = async (track: Track) => {
-  if (audioControls.isPlayingOrPaused) {
-    await playerStore.sendCommand('stop')
-    await playerStore.sendCommand('clear_queue')
-    await playerStore.addTrackToQueue(track)
+  await playerStore.sendCommand('stop')
+  await playerStore.sendCommand('clear_queue')
+  await playerStore.addTrackToQueue(track)
 
-    audioControls.togglePlayPause()
-  } else {
-    await playerStore.addTrackToQueue(track)
-
-    audioControls.togglePlayPause()
-  }
+  audioControls.togglePlayPause()
 }
 </script>
 

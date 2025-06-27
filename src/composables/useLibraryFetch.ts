@@ -10,15 +10,13 @@ export const useLibraryFetch = () => {
     combination: 'overwrite',
     options: {
       async beforeFetch({ url, options, cancel }) {
-        if (!libraryStore.isAvailableLibrary) {
-          try {
-            if (!libraryStore.isAvailableLibrary) {
-              await libraryStore.getAvailableLibrary()
-            }
-          } catch (error) {
-            console.error('Active player name failed:', error)
-            cancel()
+        try {
+          if (!libraryStore.isAvailableLibrary) {
+            await libraryStore.getAvailableLibrary()
           }
+        } catch (error) {
+          console.error('Active player name failed:', error)
+          cancel()
         }
         url = url.replace(/:activeLibrary(\/|\?|$)/gi, `${libraryStore.activeLibrary}$1`)
         return { options, url }

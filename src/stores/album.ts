@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type {
   Album,
@@ -20,6 +20,25 @@ export const useAlbumStore = defineStore('album', () => {
   const loaded = ref<boolean>(false)
   const albums = ref<Album[]>([])
   const album = ref<AlbumDetails | null>(null)
+
+  // Getter
+  const sortedAlbumsByReleaseDate = computed(() => {
+    return albums.value.sort((a: Album, b: Album) => {
+      if (a.release_date && b.release_date) {
+        // Sort newest first
+        return new Date(b.release_date).getTime() - new Date(a.release_date).getTime()
+      } else if (a.release_date) {
+        // a has date, b doesn't - a is newer
+        return -1
+      } else if (b.release_date) {
+        // b has date, a doesn't - b is newer
+        return 1
+      } else {
+        // Neither has a date, sort by name
+        return a.name.localeCompare(b.name)
+      }
+    })
+  })
 
   // Action
   const getAlbums = async () => {
@@ -84,6 +103,9 @@ export const useAlbumStore = defineStore('album', () => {
     loaded,
     albums,
     album,
+
+    // Getter
+    sortedAlbumsByReleaseDate,
 
     // Action
     getAlbums,

@@ -1,7 +1,7 @@
 <template>
   <div class="album">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'library' }">Albums</AppBackRouter>
+      <AppBackRouter :to="{ name: 'albums' }">{{ album?.name || 'Album' }}</AppBackRouter>
     </div>
 
     <div class="grid">

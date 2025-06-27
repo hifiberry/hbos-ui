@@ -1,14 +1,12 @@
 <template>
   <div class="app-search">
-    <div class="input-group">
-      <input :type="type" :value="modelValue" :placeholder="placeholder" @input="onInput" />
-      <button class="search-btn">
-        <AppIcon icon="magnifying-glass-light" />
-      </button>
-      <button v-if="modelValue.length" class="clear-btn" @click="onClear">
-        <AppIcon icon="clear" />
-      </button>
-    </div>
+    <input :type="type" :value="modelValue" :placeholder="placeholder" @input="onInput" />
+    <button class="search-btn">
+      <AppIcon icon="magnifying-glass-light" />
+    </button>
+    <button v-if="modelValue.length" class="clear-btn" @click="onClear">
+      <AppIcon icon="clear" />
+    </button>
   </div>
 </template>
 
@@ -17,10 +15,9 @@ import { useDebounceFn } from '@vueuse/core'
 
 import AppIcon from '@/components/app-icon.vue'
 
-type Type = 'text' | 'number'
 interface InputProps {
   modelValue: string
-  type?: Type
+  type?: string
   required?: boolean
   debounce?: number
   placeholder?: string
@@ -62,22 +59,51 @@ const onClear = () => {
 
 <style scoped lang="scss">
 .app-search {
-  .input-group {
-    position: relative;
+  position: relative;
+  &:focus-within {
     input {
-      height: 32px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 500;
-      padding: 0 40px;
-      width: 100%;
-      background-color: var(--search-background);
-      box-shadow: $box-shadow-main-content;
-      color: var(--search-color);
-      &::placeholder {
-        color: $search-color-placeholder;
+      @include media-down(md) {
+        width: calc(100vw - 70px);
+        height: 32px;
+        padding: 0 40px 0 20px;
+        opacity: 1;
+        transform: translateX(0);
       }
+    }
+  }
+  &:not(:focus-within) {
+    .clear-btn {
+      display: none;
+    }
+  }
+  input {
+    height: 32px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 0 40px;
+    width: 100%;
+    background-color: var(--search-background);
+    box-shadow: $box-shadow-main-content;
+    color: var(--search-color);
+    &::placeholder {
+      color: $search-color-placeholder;
+    }
+    @include media-down(md) {
+      height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition:
+        max-height 0.3s ease,
+        opacity 0.3s ease,
+        transform 0.3s ease;
+      transform: translateX(10px);
+      width: 0;
+      padding: 0;
+      position: absolute;
+      top: -5px;
+      right: 40px;
     }
   }
   .search-btn,
@@ -94,9 +120,16 @@ const onClear = () => {
   }
   .search-btn {
     left: 5px;
+    @include media-down(md) {
+      position: static;
+    }
   }
   .clear-btn {
     right: 0;
+    @include media-down(md) {
+      right: 45px;
+      top: -2px;
+    }
   }
 }
 </style>

@@ -56,8 +56,12 @@ const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
     border-radius: 5px;
     overflow: hidden;
     &:deep(.app-cover) {
-      width: 40px;
-      height: 40px;
+      width: 100%;
+      height: 100%;
+      svg {
+        width: 50%;
+        height: 50%;
+      }
     }
   }
   &__box {

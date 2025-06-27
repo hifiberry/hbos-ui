@@ -44,11 +44,15 @@ const debouncedFn = useDebounceFn((value: string) => {
 const onInput = ($event: Event) => {
   const target = $event.target as HTMLInputElement
 
-  if (props.debounce) {
-    debouncedFn(target.value)
-  } else {
-    emit('update:modelValue', target.value)
-    emit('change', target.value)
+  const value = target.value.trim()
+
+  if (value) {
+    if (props.debounce) {
+      debouncedFn(value)
+    } else {
+      emit('update:modelValue', value)
+      emit('change', value)
+    }
   }
 }
 

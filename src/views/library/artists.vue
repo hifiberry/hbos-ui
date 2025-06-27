@@ -3,7 +3,7 @@
     <div class="breadcrumbs">
       <AppBackRouter :to="{ name: 'library' }">Artists</AppBackRouter>
       <div class="search-bar">
-        <AppSearch v-model="search" :debounce="1000" @update:modelValue="onSearch" />
+        <AppSearch v-model="search" :debounce="1000" @change="onSearch" />
       </div>
     </div>
     <div class="card">

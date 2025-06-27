@@ -34,7 +34,7 @@ import AppCover from '@/components/app-cover.vue'
 import AppListenNow from '@/components/app-listen-now.vue'
 import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
 
-import type { Album, AlbumDetails, Track } from '@/types/library'
+import type { AlbumDetails, Track } from '@/types/library'
 interface AppAlbumDetailsProps {
   loading?: boolean
   album?: AlbumDetails | null
@@ -62,7 +62,12 @@ const onListenNow = async () => {
         await playerStore.sendCommand('stop')
         await playerStore.sendCommand('clear_queue')
       }
-      await Promise.all(album.tracks.map((track: Track) => playerStore.addTrackToQueue(track)))
+      const trackRequests = []
+      for (let i = 0; i < album.tracks.length; i++) {
+        const track = album.tracks[i] as Track
+        trackRequests.push(playerStore.addTrackToQueue(track))
+      }
+      await Promise.all(trackRequests)
       audioControls.togglePlayPause()
     }
   } catch (err) {

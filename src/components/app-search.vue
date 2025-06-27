@@ -5,7 +5,7 @@
       <button class="search-btn">
         <AppIcon icon="magnifying-glass-light" />
       </button>
-      <button v-if="modelValue" class="clear-btn" @click="onClear">
+      <button v-if="modelValue.length" class="clear-btn" @click="onClear">
         <AppIcon icon="clear" />
       </button>
     </div>
@@ -46,13 +46,11 @@ const onInput = ($event: Event) => {
 
   const value = target.value.trim()
 
-  if (value) {
-    if (props.debounce) {
-      debouncedFn(value)
-    } else {
-      emit('update:modelValue', value)
-      emit('change', value)
-    }
+  if (props.debounce) {
+    debouncedFn(value)
+  } else {
+    emit('update:modelValue', value)
+    emit('change', value)
   }
 }
 

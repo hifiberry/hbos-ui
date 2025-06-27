@@ -26,6 +26,8 @@ export const useLibraryStore = defineStore('library', () => {
 
     if (error.value) {
       toastStore.showErrorToast(`Get Available Library Error: ${error.value}`)
+      loading.value = false
+      return Promise.reject(error.value)
     }
 
     const players = data.value?.players ?? []
@@ -41,6 +43,7 @@ export const useLibraryStore = defineStore('library', () => {
     }
 
     loading.value = false
+    return Promise.resolve(activeLibrary.value)
   }
 
   const getAlbumCover = (id: string) =>

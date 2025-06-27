@@ -12,16 +12,16 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const { currentData, currentSong } = storeToRefs(playerStore)
 
   // State
-  const isShuffle = ref(false) // TODO get from response data
-
   const currentLoopMode = ref('none') // TODO get from currentData
 
   const seekPosition = ref(0)
 
   // Getters
   const isPlaying = computed(() => currentData.value?.state === 'playing')
-  const isPaused = computed(() => !isPlaying.value) // as we don't have 'stop' button
-  const isPlayingOrPaused = computed(() => isPlaying.value || isPaused.value)
+  const isPaused = computed(() => currentData.value?.state === 'paused')
+  const isPlayingOrPaused = computed(() => isPlaying.value || isPaused.value) // not used as we don't have Stop button
+
+  const isShuffle = computed(() => currentData.value?.shuffle)
 
   const songDurationTime = computed(() => formatTime(currentSong.value?.duration))
   const seekPositionTime = computed(() =>
@@ -61,64 +61,30 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     stopAutoProgress()
 
-    sendCommand(command).then(() => {
-      console.log('togglePlayPause', {
-        isPlaying: isPlaying.value,
-        isPaused: isPaused.value,
-        isPlayingOrPaused: isPlayingOrPaused.value,
-      })
-    })
+    sendCommand(command)
   }
 
   const playNextOrPrev = (nextOrPrev: string) => {
-    sendCommand(nextOrPrev).then(() => {
-      console.log('playNextOrPrev: nextOrPrev')
-    })
+    console.log('playNextOrPrev', nextOrPrev)
+
+    sendCommand(nextOrPrev)
   }
 
-  /**
-   * Toggle shuffle state
-   * @param {string} playerName - Optional specific player name
-   * @returns {Promise<boolean>} Success or failure
-   */
-  // TODO fix Promise<string | boolean>, leave only boolean
-  async function toggleShuffle(): Promise<string | boolean> {
+  const toggleShuffle = () => {
     console.log('toggleShuffle')
 
-    try {
-      // First fetch the current state to toggle it
-      // const response = await fetch(`${apiBase}/now-playing`) // TODO move to player
-      // const data = await response.json()
-
-      const data = {
-        // shuffle: true, // or false
-        shuffle: isShuffle.value, // TODO get from response data
-      }
-
-      if (data.shuffle !== undefined) {
-        // Send the opposite of the current shuffle state
-        return await sendCommand(`set_random:${!data.shuffle}`).then(() => {
-          isShuffle.value = !data.shuffle
-
-          return true
-        })
-      }
-      return false
-    } catch (error) {
-      console.error('Error toggling shuffle:', error)
-      return false
+    if (isShuffle.value !== undefined) {
+      // can be undefined if can't Shuffle
+      sendCommand(`set_random:${!isShuffle.value}`)
     }
   }
 
   /**
    * Cycle through loop modes: None -> Track -> Playlist -> None
    *  currentData - The current player data // getting from the State
-   * @param {string} playerName - Optional specific player name
    * @returns {Promise<boolean>} Success or failure
    */
-
-  // TODO fix Promise<string | boolean>, leave only boolean
-  async function cycleLoopMode(): Promise<string | boolean> {
+  async function cycleLoopMode(): Promise<boolean> {
     // currentData: currentData, // getting from the State
     // playerName: string | null = null,
     console.log('cycleLoopMode')
@@ -235,15 +201,14 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
   return {
     // State
-    isPlaying,
-    isPaused,
     seekPosition,
-    // currentData,
     progressIntervalID,
-    isShuffle,
     currentLoopMode,
     // Getters
+    isPlaying,
+    isPaused,
     isPlayingOrPaused,
+    isShuffle,
     songDurationTime,
     seekPositionTime,
     // Actions

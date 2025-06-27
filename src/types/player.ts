@@ -24,7 +24,7 @@ export interface CurrentPlayer {
   player: Player
   song: Song | null
   state: string // 'stopped', 'playing', 'paused'
-  shuffle: boolean
+  shuffle: boolean | undefined
   loop_mode: string // 'no', 'song', 'playlist'
   position: number | null // 9.561
 }

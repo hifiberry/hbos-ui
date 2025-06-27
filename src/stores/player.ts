@@ -157,7 +157,7 @@ export const usePlayerStore = defineStore('player', () => {
   /**
    * Fetch current player and now playing information
    * @param {string} apiBase - The base URL for the API
-   * @returns {Promise<object | null>} Current player data
+   * @returns {Promise<CurrentPlayer | null>} Current player data
    */
   async function fetchCurrentPlayer(apiBase: string = API_BASE_URL): Promise<CurrentPlayer | null> {
     try {
@@ -189,7 +189,7 @@ export const usePlayerStore = defineStore('player', () => {
 
     isSendingCommand.value = true
 
-    // await fetchPlayers()
+    // await fetchPlayers() // yet not using other players
     await fetchCurrentPlayer()
 
     // Set up periodic updates using the configured polling interval
@@ -210,7 +210,6 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
-  // TODO fix Promise<string | boolean>, leave only boolean
   const sendCommand = async (command: string, apiBase: string = API_BASE_URL): Promise<boolean> => {
     const playerName = currentData.value?.player?.name
 
@@ -230,6 +229,7 @@ export const usePlayerStore = defineStore('player', () => {
       }
 
       console.log(`Sending command to: ${url}`)
+
       const response = await fetch(url, {
         method: 'POST',
       })

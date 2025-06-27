@@ -62,12 +62,6 @@ export const useAudioControls = defineStore('audio-controls', () => {
     stopAutoProgress()
 
     sendCommand(command).then(() => {
-      if (isPlaying.value) {
-        startAutoProgress()
-      } else {
-        startAutoProgress()
-      }
-
       console.log('togglePlayPause', {
         isPlaying: isPlaying.value,
         isPaused: isPaused.value,
@@ -187,11 +181,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
       const seekCommand = `seek:${Math.floor(seekToPosition)}`
 
-      sendCommand(seekCommand).then(() => {
-        if (isPlaying.value && currentSong.value?.duration) {
-          startAutoProgress()
-        }
-      })
+      sendCommand(seekCommand)
     } catch (error) {
       stopAutoProgress()
 

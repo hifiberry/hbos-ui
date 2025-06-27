@@ -1,5 +1,5 @@
 <template>
-  <button class="app-listen-now">
+  <button class="app-listen-now" @click="emit('click')">
     <span class="listen-now-icon">
       <AppIcon icon="play" />
     </span>
@@ -9,6 +9,8 @@
 
 <script setup lang="ts">
 import AppIcon from '@/components/app-icon.vue'
+
+const emit = defineEmits(['click'])
 </script>
 
 <style scoped lang="scss">

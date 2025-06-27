@@ -20,7 +20,7 @@
           {{ album.tracks_count }} track{{ album.tracks_count !== 1 ? 's' : '' }}
         </div>
         <div class="album-details__listen">
-          <AppListenNow />
+          <AppListenNow @click="onListenNow" />
         </div>
       </div>
     </template>
@@ -34,10 +34,10 @@ import AppCover from '@/components/app-cover.vue'
 import AppListenNow from '@/components/app-listen-now.vue'
 import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
 
-import type { Album } from '@/types/library'
+import type { Album, AlbumDetails, Track } from '@/types/library'
 interface AppAlbumDetailsProps {
   loading?: boolean
-  album?: Album | null
+  album?: AlbumDetails | null
 }
 
 const { loading = false, album = null } = defineProps<AppAlbumDetailsProps>()
@@ -46,6 +46,32 @@ import { useLibraryStore } from '@/stores/library.ts'
 const libraryStore = useLibraryStore()
 
 const albumCover = computed(() => libraryStore.getAlbumCover(album?.id || ''))
+
+import { usePlayerStore } from '@/stores/player.ts'
+import { useAudioControls } from '@/stores/audio-controls'
+import { useToastStore } from '@/stores/toast'
+
+const playerStore = usePlayerStore()
+const audioControls = useAudioControls()
+const toastStore = useToastStore()
+
+const onListenNow = async () => {
+  try {
+    if (album?.tracks?.length) {
+      if (audioControls.isPlayingOrPaused) {
+        await playerStore.sendCommand('stop')
+        await playerStore.sendCommand('clear_queue')
+      }
+      await Promise.all(album.tracks.map((track: Track) => playerStore.addTrackToQueue(track)))
+      audioControls.togglePlayPause()
+    }
+  } catch (err) {
+    const errorMessage =
+      err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err)
+
+    toastStore.showErrorToast(`Listen now Error: ${errorMessage}`)
+  }
+}
 </script>
 
 <style scoped lang="scss">

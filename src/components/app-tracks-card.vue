@@ -59,8 +59,6 @@ interface TracksProps {
 
 const { tracks = [], loading = false } = defineProps<TracksProps>()
 
-import { formatTime } from '@/helpers/formatTime'
-
 import { usePlayerStore } from '@/stores/player.ts'
 import { useAudioControls } from '@/stores/audio-controls'
 

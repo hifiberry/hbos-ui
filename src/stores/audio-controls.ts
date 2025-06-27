@@ -14,7 +14,7 @@ function isLoopMode(value: string): value is Exclude<LoopMode, undefined> {
 
 export const useAudioControls = defineStore('audio-controls', () => {
   const playerStore = usePlayerStore()
-  const { sendCommand } = playerStore
+  const { fetchCurrentPlayer, sendCommand } = playerStore
   const { currentData, currentSong } = storeToRefs(playerStore)
 
   // State
@@ -180,7 +180,9 @@ export const useAudioControls = defineStore('audio-controls', () => {
         if (seekPosition.value >= 100) {
           stopAutoProgress()
 
-          sendCommand('stop')
+          // Force an update of player state from server when we reach the end
+          console.log('Track reached the end, fetching current player state from server')
+          fetchCurrentPlayer()
         }
       }, progressInterval)
     } else {

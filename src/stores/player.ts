@@ -265,6 +265,7 @@ export const usePlayerStore = defineStore('player', () => {
     addTrackToQueue,
     initPlayer,
     fetchPlayers,
+    fetchCurrentPlayer,
     sendCommand,
   }
 })

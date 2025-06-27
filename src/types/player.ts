@@ -21,14 +21,15 @@ export interface Song {
   source: string // 'mpd'
 }
 
-export type LoopMode = 'no' | 'none' | 'song' | 'track' | 'playlist' | undefined
+export type LoopModeLowercase = 'no' | 'none' | 'song' | 'track' | 'playlist'
+export type LoopMode = LoopModeLowercase | Capitalize<LoopModeLowercase>
 
 export interface CurrentPlayer {
   player: Player
   song: Song | null
   state: string // 'stopped', 'playing', 'paused'
   shuffle: boolean | undefined
-  loop_mode: LoopMode
+  loop_mode?: LoopMode
   position: number | null // 9.561
 }
 

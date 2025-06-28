@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
+import { usePlayerWebSocket } from '@/stores/player-web-socket.ts'
+
 import { useToastStore } from '@/stores/toast'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 
@@ -18,12 +20,13 @@ import { API_BASE_URL } from '@/constants/api.ts'
 export const PLAYER_CONFIG = {
   pollingInterval: 30000, // Time in milliseconds between updates (30 seconds)
   fastUpdateAfterCommand: 300, // Time to wait for quick update after sending a command
-  // wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
+  wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
 }
 
 export const usePlayerStore = defineStore('player', () => {
   const toastStore = useToastStore()
   const libraryFetch = useLibraryFetch()
+  const playerWebSocket = usePlayerWebSocket()
 
   // State
   const updateIntervalID = ref<number | undefined>(undefined)
@@ -192,10 +195,13 @@ export const usePlayerStore = defineStore('player', () => {
     // await fetchPlayers() // yet not using other players
     await fetchCurrentPlayer()
 
+    isSendingCommand.value = false
+
     // Set up periodic updates using the configured polling interval
     updateIntervalID.value = setInterval(fetchCurrentPlayer, PLAYER_CONFIG.pollingInterval)
 
-    isSendingCommand.value = false
+    // Initialize WebSocket connection
+    playerWebSocket.setupWebSocket()
   }
 
   const clearPollingInterval = () => {

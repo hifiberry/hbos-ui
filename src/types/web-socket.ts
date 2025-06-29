@@ -1,3 +1,5 @@
+import type { LoopMode, Song } from '@/types/player'
+
 export interface Subscription {
   players: string[] | null
   event_types: string[] | null
@@ -24,19 +26,14 @@ export interface WsPlayerEvent {
     artist: string // 'Updated Artist'
     album: string // 'Updated Album'
     artwork_url: string // 'http://example.com/updated_image.jpg'
+    song?: Song
   }
   capabilities?: string[] // ['play', 'pause', 'stop', 'next', 'previous', 'seek', 'shuffle', 'loop', 'queue']
   shuffle?: boolean // true | false
   enabled?: boolean // true | false
-  mode?: string //  'none|track|playlist'
-  song?: {
-    title: string // 'Song Title'
-    artist: string // 'Artist Name'
-    album: string // 'Album Name'
-    duration: number // 180
-    uri: string // 'spotify:track:1234567890'
-    artwork_url: string // 'http://example.com/image.jpg'
-  }
+  mode?: LoopMode // LoopModeLowercase | "No" | "None" | "Song" | "Track" | "Playlist"
+  loop_mode?: LoopMode // LoopModeLowercase | "No" | "None" | "Song" | "Track" | "Playlist"
+  song?: Song
   percentage?: number // 75
   position?:
     | {

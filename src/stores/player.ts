@@ -38,6 +38,7 @@ export const usePlayerStore = defineStore('player', () => {
   const playerCapabilities = ref<Capabilities>(DEFAULT_CAPABILITIES)
 
   // Getters
+  const currentPlayerName = computed<string | null>(() => currentData.value?.player?.name || null)
   const currentSong = computed<Song | null>(() => currentData.value?.song || null)
 
   // Action
@@ -63,6 +64,15 @@ export const usePlayerStore = defineStore('player', () => {
     loading.value = false
   }
 
+  // ! for now we have only mpd player
+  async function fetchPlayersAndUpdatePlayerDropdown() {
+    const players = await fetchPlayers()
+
+    console.log('players', players)
+
+    // UpdatePlayerDropdown (not implemented yet)
+  }
+
   // Fetch available players
   /**
    * Fetch available players from the API
@@ -70,6 +80,8 @@ export const usePlayerStore = defineStore('player', () => {
    * @returns {Promise<Array<Player>>} Array of player objects
    */
   async function fetchPlayers(apiBase: string = API_BASE_URL): Promise<Array<Player>> {
+    console.log('fetchPlayers')
+
     try {
       const response = await fetch(`${apiBase}/players`)
       const data = await response.json()
@@ -163,6 +175,8 @@ export const usePlayerStore = defineStore('player', () => {
    * @returns {Promise<CurrentPlayer | null>} Current player data
    */
   async function fetchCurrentPlayer(apiBase: string = API_BASE_URL): Promise<CurrentPlayer | null> {
+    console.log('*** fetchCurrentPlayer')
+
     try {
       const response = await fetch(`${apiBase}/now-playing`)
       const data = await response.json()
@@ -192,7 +206,7 @@ export const usePlayerStore = defineStore('player', () => {
 
     isSendingCommand.value = true
 
-    // await fetchPlayers() // yet not using other players
+    // await fetchPlayersAndUpdatePlayerDropdown() // for now we have only mpd player
     await fetchCurrentPlayer()
 
     isSendingCommand.value = false
@@ -217,18 +231,16 @@ export const usePlayerStore = defineStore('player', () => {
    * @returns {Promise<boolean>} Success or failure
    */
   const sendCommand = async (command: string, apiBase: string = API_BASE_URL): Promise<boolean> => {
-    const playerName = currentData.value?.player?.name
-
-    console.log('sendCommand', { command, playerName, apiBase })
+    console.log('sendCommand', { command, currentPlayerName: currentPlayerName.value, apiBase })
 
     isSendingCommand.value = true
 
     try {
       // Build the URL based on whether we're using a specific player or the active player
       let url
-      if (playerName) {
+      if (currentPlayerName.value) {
         // Send to specific player
-        url = `${apiBase}/player/${playerName}/command/${command}`
+        url = `${apiBase}/player/${currentPlayerName.value}/command/${command}`
       } else {
         // Send to active player (default)
         url = `${apiBase}/player/active/command/${command}`
@@ -265,12 +277,14 @@ export const usePlayerStore = defineStore('player', () => {
     loading,
     playerCapabilities,
     // Getters
+    currentPlayerName,
     currentSong,
     // Action
     clearPollingInterval,
     addTrackToQueue,
     initPlayer,
     fetchPlayers,
+    fetchPlayersAndUpdatePlayerDropdown,
     fetchCurrentPlayer,
     sendCommand,
   }

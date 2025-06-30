@@ -6,29 +6,47 @@ import { usePlayerStore } from '@/stores/player'
 
 import { formatTime } from '@/helpers/formatTime'
 
+import type { LoopMode } from '@/types/player'
+
+function isLoopMode(value: string): value is Exclude<LoopMode, undefined> {
+  return ['no', 'none', 'song', 'track', 'playlist'].includes(value)
+}
+
 export const useAudioControls = defineStore('audio-controls', () => {
   const playerStore = usePlayerStore()
-  const { sendCommand } = playerStore
+  const { fetchCurrentPlayer, sendCommand } = playerStore
   const { currentData, currentSong } = storeToRefs(playerStore)
 
   // State
-  const isShuffle = ref(false) // TODO get from response data
-
-  const currentLoopMode = ref('none') // TODO get from currentData
-
   const seekPosition = ref(0)
+  const progressIntervalID = ref<number | undefined>(undefined)
 
   // Getters
   const isPlaying = computed(() => currentData.value?.state === 'playing')
-  const isPaused = computed(() => !isPlaying.value) // as we don't have 'stop' button
-  const isPlayingOrPaused = computed(() => isPlaying.value || isPaused.value)
+  const isPaused = computed(() => currentData.value?.state === 'paused')
+  const isPlayingOrPaused = computed(() => isPlaying.value || isPaused.value) // not used as we don't have Stop button
+
+  const isShuffle = computed(() => currentData.value?.shuffle)
+
+  // Check the loop mode value case-insensitively since API might use different cases
+  const currentLoopMode = computed(() => {
+    const mode = (currentData.value?.loop_mode || 'none').toLowerCase()
+
+    return isLoopMode(mode) ? mode : 'none'
+  })
+
+  const iscurrentLoopModeNone = computed(
+    () => currentLoopMode.value === 'none' || currentLoopMode.value === 'no',
+  )
+  const iscurrentLoopModeTrack = computed(
+    () => currentLoopMode.value === 'track' || currentLoopMode.value === 'song',
+  )
+  const iscurrentLoopModePlaylist = computed(() => currentLoopMode.value === 'playlist')
 
   const songDurationTime = computed(() => formatTime(currentSong.value?.duration))
   const seekPositionTime = computed(() =>
     formatTime(((currentSong.value?.duration || 0) * (seekPosition.value || 0)) / 100),
   )
-
-  const progressIntervalID = ref<number | undefined>(undefined)
 
   watch(
     () => currentData.value,
@@ -61,103 +79,49 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     stopAutoProgress()
 
-    sendCommand(command).then(() => {
-      console.log('togglePlayPause', {
-        isPlaying: isPlaying.value,
-        isPaused: isPaused.value,
-        isPlayingOrPaused: isPlayingOrPaused.value,
-      })
-    })
+    sendCommand(command)
   }
 
   const playNextOrPrev = (nextOrPrev: string) => {
-    sendCommand(nextOrPrev).then(() => {
-      console.log('playNextOrPrev: nextOrPrev')
-    })
+    console.log('playNextOrPrev', nextOrPrev)
+
+    sendCommand(nextOrPrev)
   }
 
-  /**
-   * Toggle shuffle state
-   * @param {string} playerName - Optional specific player name
-   * @returns {Promise<boolean>} Success or failure
-   */
-  // TODO fix Promise<string | boolean>, leave only boolean
-  async function toggleShuffle(): Promise<string | boolean> {
+  const toggleShuffle = () => {
     console.log('toggleShuffle')
 
-    try {
-      // First fetch the current state to toggle it
-      // const response = await fetch(`${apiBase}/now-playing`) // TODO move to player
-      // const data = await response.json()
-
-      const data = {
-        // shuffle: true, // or false
-        shuffle: isShuffle.value, // TODO get from response data
-      }
-
-      if (data.shuffle !== undefined) {
-        // Send the opposite of the current shuffle state
-        return await sendCommand(`set_random:${!data.shuffle}`).then(() => {
-          isShuffle.value = !data.shuffle
-
-          return true
-        })
-      }
-      return false
-    } catch (error) {
-      console.error('Error toggling shuffle:', error)
-      return false
+    if (isShuffle.value !== undefined) {
+      // can be undefined if can't Shuffle
+      sendCommand(`set_random:${!isShuffle.value}`)
     }
   }
 
-  /**
-   * Cycle through loop modes: None -> Track -> Playlist -> None
-   *  currentData - The current player data // getting from the State
-   * @param {string} playerName - Optional specific player name
-   * @returns {Promise<boolean>} Success or failure
-   */
+  async function cycleLoopMode() {
+    console.log('cycleLoopMode currentLoopMode', currentLoopMode.value)
 
-  // TODO fix Promise<string | boolean>, leave only boolean
-  async function cycleLoopMode(): Promise<string | boolean> {
-    // currentData: currentData, // getting from the State
-    // playerName: string | null = null,
-    console.log('cycleLoopMode')
-
-    if (!currentData) return false
+    if (!currentData.value) return
 
     let nextMode: string | undefined
-    // Check the loop mode value case-insensitively since API might use different cases
-    // const currentMode = (currentData.loop_mode || '').toLowerCase()
 
-    // console.log(`Current loop mode: ${currentMode}`)
-
-    // switch (currentMode) {
-    switch (
-      currentLoopMode.value // TODO get from currentData
-    ) {
+    switch (currentLoopMode.value) {
       case 'none':
       case 'no':
-        nextMode = 'track' // May be change to 'playlist'
+        nextMode = 'track'
         break
       case 'track':
       case 'song':
-        nextMode = 'playlist' // May be change to 'none'
+        nextMode = 'playlist'
         break
       case 'playlist':
       default:
-        nextMode = 'none' // May be change to 'track'
+        nextMode = 'none'
         break
     }
 
     console.log(`Setting new loop mode: ${nextMode}`)
 
-    return await sendCommand(`set_loop:${nextMode}`).then(() => {
-      currentLoopMode.value = nextMode // TODO get current state from BE
-
-      console.log('currentLoopMode', currentLoopMode.value)
-
-      return true
-    })
+    sendCommand(`set_loop:${nextMode}`)
   }
 
   /**
@@ -216,7 +180,9 @@ export const useAudioControls = defineStore('audio-controls', () => {
         if (seekPosition.value >= 100) {
           stopAutoProgress()
 
-          sendCommand('stop')
+          // Force an update of player state from server when we reach the end
+          console.log('Track reached the end, fetching current player state from server')
+          fetchCurrentPlayer()
         }
       }, progressInterval)
     } else {
@@ -235,15 +201,17 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
   return {
     // State
+    seekPosition,
+    progressIntervalID,
+    // Getters
     isPlaying,
     isPaused,
-    seekPosition,
-    // currentData,
-    progressIntervalID,
+    isPlayingOrPaused,
     isShuffle,
     currentLoopMode,
-    // Getters
-    isPlayingOrPaused,
+    iscurrentLoopModeNone,
+    iscurrentLoopModeTrack,
+    iscurrentLoopModePlaylist,
     songDurationTime,
     seekPositionTime,
     // Actions

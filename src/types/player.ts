@@ -14,19 +14,26 @@ export interface Player {
 export interface Song {
   title: string // 'November'
   artist: string // 'Limujii'
-  track_number: number // 0
+  album?: string // 'Album Name'
+  track_number?: number // 0
   duration: number // 167
-  cover_art_url: string // '/api/library/mpd/image/Limujii%2FLimujii%20-%20November%20%28freetouse.com%29.mp3'
-  stream_url: string // 'Limujii/Limujii - November (freetouse.com).mp3'
-  source: string // 'mpd'
+  uri?: string // 'spotify:track:1234567890'
+  artwork_url?: string // 'http://example.com/image.jpg'
+  cover_art_url?: string // '/api/library/mpd/image/Limujii%2FLimujii%20-%20November%20%28freetouse.com%29.mp3'
+  stream_url?: string // 'Limujii/Limujii - November (freetouse.com).mp3'
+  source?: string // 'mpd'
 }
+
+export type LoopModeLowercase = 'no' | 'none' | 'song' | 'track' | 'playlist'
+export type LoopMode = LoopModeLowercase | Capitalize<LoopModeLowercase>
+
 export interface CurrentPlayer {
-  player: Player
-  song: Song | null
-  state: string // 'stopped', 'playing', 'paused'
-  shuffle: boolean
-  loop_mode: string // 'no', 'song', 'playlist'
-  position: number | null // 9.561
+  player?: Player
+  song?: Song | null
+  state?: string // 'stopped', 'playing', 'paused'
+  shuffle: boolean | undefined
+  loop_mode?: LoopMode
+  position?: number | null // 9.561
 }
 
 // Default player capabilities

@@ -18,7 +18,7 @@ import { API_BASE_URL } from '@/constants/api.ts'
 export const PLAYER_CONFIG = {
   pollingInterval: 30000, // Time in milliseconds between updates (30 seconds)
   fastUpdateAfterCommand: 300, // Time to wait for quick update after sending a command
-  // wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
+  wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
 }
 
 export const usePlayerStore = defineStore('player', () => {
@@ -35,6 +35,7 @@ export const usePlayerStore = defineStore('player', () => {
   const playerCapabilities = ref<Capabilities>(DEFAULT_CAPABILITIES)
 
   // Getters
+  const currentPlayerName = computed<string | null>(() => currentData.value?.player?.name || null)
   const currentSong = computed<Song | null>(() => currentData.value?.song || null)
 
   // Action
@@ -60,6 +61,15 @@ export const usePlayerStore = defineStore('player', () => {
     loading.value = false
   }
 
+  // ! for now we have only mpd player
+  async function fetchPlayersAndUpdatePlayerDropdown() {
+    const players = await fetchPlayers()
+
+    console.log('players', players)
+
+    // UpdatePlayerDropdown (not implemented yet)
+  }
+
   // Fetch available players
   /**
    * Fetch available players from the API
@@ -67,6 +77,8 @@ export const usePlayerStore = defineStore('player', () => {
    * @returns {Promise<Array<Player>>} Array of player objects
    */
   async function fetchPlayers(apiBase: string = API_BASE_URL): Promise<Array<Player>> {
+    console.log('fetchPlayers')
+
     try {
       const response = await fetch(`${apiBase}/players`)
       const data = await response.json()
@@ -157,9 +169,11 @@ export const usePlayerStore = defineStore('player', () => {
   /**
    * Fetch current player and now playing information
    * @param {string} apiBase - The base URL for the API
-   * @returns {Promise<object | null>} Current player data
+   * @returns {Promise<CurrentPlayer | null>} Current player data
    */
   async function fetchCurrentPlayer(apiBase: string = API_BASE_URL): Promise<CurrentPlayer | null> {
+    console.log('*** fetchCurrentPlayer')
+
     try {
       const response = await fetch(`${apiBase}/now-playing`)
       const data = await response.json()
@@ -189,13 +203,13 @@ export const usePlayerStore = defineStore('player', () => {
 
     isSendingCommand.value = true
 
-    // await fetchPlayers()
+    // await fetchPlayersAndUpdatePlayerDropdown() // for now we have only mpd player
     await fetchCurrentPlayer()
+
+    isSendingCommand.value = false
 
     // Set up periodic updates using the configured polling interval
     updateIntervalID.value = setInterval(fetchCurrentPlayer, PLAYER_CONFIG.pollingInterval)
-
-    isSendingCommand.value = false
   }
 
   const clearPollingInterval = () => {
@@ -210,32 +224,33 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
-  // TODO fix Promise<string | boolean>, leave only boolean
   const sendCommand = async (command: string, apiBase: string = API_BASE_URL): Promise<boolean> => {
-    const playerName = currentData.value?.player?.name
-
-    console.log('sendCommand', { command, playerName, apiBase })
+    console.log('sendCommand', { command, currentPlayerName: currentPlayerName.value, apiBase })
 
     isSendingCommand.value = true
 
     try {
       // Build the URL based on whether we're using a specific player or the active player
       let url
-      if (playerName) {
+      if (currentPlayerName.value) {
         // Send to specific player
-        url = `${apiBase}/player/${playerName}/command/${command}`
+        url = `${apiBase}/player/${currentPlayerName.value}/command/${command}`
       } else {
         // Send to active player (default)
         url = `${apiBase}/player/active/command/${command}`
       }
 
       console.log(`Sending command to: ${url}`)
+
       const response = await fetch(url, {
         method: 'POST',
       })
 
       console.log('sendCommand', response)
 
+      // ! We could updatу UI and State on getting WebSocket message
+      // ! but we dont get messages on 'loop_mode_changed' and 'shuffle_changed'
+      // ! that's why we leave this code
       return new Promise((resolve) => {
         setTimeout(async () => {
           const data = await fetchCurrentPlayer()
@@ -259,12 +274,15 @@ export const usePlayerStore = defineStore('player', () => {
     loading,
     playerCapabilities,
     // Getters
+    currentPlayerName,
     currentSong,
     // Action
     clearPollingInterval,
     addTrackToQueue,
     initPlayer,
     fetchPlayers,
+    fetchPlayersAndUpdatePlayerDropdown,
+    fetchCurrentPlayer,
     sendCommand,
   }
 })

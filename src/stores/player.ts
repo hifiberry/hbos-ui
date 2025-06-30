@@ -1,8 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-import { usePlayerWebSocket } from '@/stores/player-web-socket.ts'
-
 import { useToastStore } from '@/stores/toast'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 
@@ -26,7 +24,6 @@ export const PLAYER_CONFIG = {
 export const usePlayerStore = defineStore('player', () => {
   const toastStore = useToastStore()
   const libraryFetch = useLibraryFetch()
-  const playerWebSocket = usePlayerWebSocket()
 
   // State
   const updateIntervalID = ref<number | undefined>(undefined)
@@ -213,9 +210,6 @@ export const usePlayerStore = defineStore('player', () => {
 
     // Set up periodic updates using the configured polling interval
     updateIntervalID.value = setInterval(fetchCurrentPlayer, PLAYER_CONFIG.pollingInterval)
-
-    // Initialize WebSocket connection
-    playerWebSocket.setupWebSocket()
   }
 
   const clearPollingInterval = () => {
@@ -254,6 +248,9 @@ export const usePlayerStore = defineStore('player', () => {
 
       console.log('sendCommand', response)
 
+      // ! We could updatу UI and State on getting WebSocket message
+      // ! but we dont get messages on 'loop_mode_changed' and 'shuffle_changed'
+      // ! that's why we leave this code
       return new Promise((resolve) => {
         setTimeout(async () => {
           const data = await fetchCurrentPlayer()

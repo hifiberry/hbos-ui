@@ -512,7 +512,10 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     */
   }
 
-  const debounceHandlePlayerEvent = useDebounceFn((data) => handlePlayerEvent(data), 300)
+  const debounceHandlePlayerEvent = useDebounceFn(
+    (data) => handlePlayerEvent(data),
+    PLAYER_CONFIG.fastUpdateAfterCommand,
+  )
 
   return {
     // State

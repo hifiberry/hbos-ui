@@ -13,6 +13,7 @@ const audioControls = useAudioControls()
 const playerWebSocket = usePlayerWebSocket()
 
 playerStore.initPlayer()
+playerWebSocket.setupWebSocket()
 
 onBeforeUnmount(() => {
   if (audioControls.progressIntervalID) {

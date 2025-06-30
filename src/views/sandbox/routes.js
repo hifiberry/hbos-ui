@@ -21,6 +21,6 @@ delete modules['./example.vue']
 
 for (const name in modules) {
   const path = name.replace(/(\.\/|\.vue)/g, '')
-  routes.push({ path, name: `sandbox-${ path }`, component: (await modules[name]()).default })
+  routes.push({ path, name: `sandbox-${ path }`, component: modules[name] })
 }
 export default routes

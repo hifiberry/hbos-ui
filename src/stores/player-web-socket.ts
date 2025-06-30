@@ -82,7 +82,7 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
         socket = new WebSocket(wsUrl)
 
         socket.onopen = () => {
-          console.log('WebSocket connected')
+          console.log('socket.onopen')
           if (options.onConnect) {
             options.onConnect()
           }
@@ -192,7 +192,13 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
 
   // Subscribe to events for the current player
   async function subscribeToPlayerEvents() {
-    if (!wsController.value) return
+    console.log('subscribeToPlayerEvents')
+
+    if (!wsController.value) {
+      console.warn('Cannot subscribe to player events: No wsController')
+
+      return
+    }
 
     const socket = wsController.value.getSocket()
     if (!socket || socket.readyState !== WebSocket.OPEN) {
@@ -201,21 +207,25 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     }
 
     // Get the player name to subscribe to
-    /*
+
     let playerToSubscribe
 
-    if (currentPlayerName) {
+    if (playerStore.currentPlayerName) {
       // We have a specific player selected
-      playerToSubscribe = currentPlayerName
+      playerToSubscribe = playerStore.currentPlayerName
       console.log(`Using selected player for subscription: ${playerToSubscribe}`)
     } else {
       // No specific player selected, get the actual active player name
       try {
-        playerToSubscribe = await PlayerFunctions.change_active_player()
+        playerToSubscribe = await playerStore.retrieveActivePlayer()
+        console.log('playerToSubscribe after retrieveActivePlayer()', playerToSubscribe)
+
         if (!playerToSubscribe) {
           console.warn('Failed to get active player name, using first available player')
           // Try to fetch all players and use the first one if available
-          const players = await PlayerFunctions.fetchPlayers()
+          const players = await playerStore.fetchPlayers()
+          console.log('players after fetchPlayers()', players)
+
           if (players && players.length > 0) {
             playerToSubscribe = players[0].name
             console.log(`Using first available player for subscription: ${playerToSubscribe}`)
@@ -238,11 +248,9 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     }
 
     console.log(`Subscribing to player events for: ${playerToSubscribe}`)
-    */
 
     // Subscribe to player events
-    // wsController.value.subscribe(playerToSubscribe, [
-    wsController.value.subscribe('mpd', [
+    wsController.value.subscribe(playerToSubscribe, [
       'state_changed', // ! We don't get the data.position on 'state_changed'
       'song_changed',
       'position_changed', // ! We don't get 'position_changed', instead getting 'state_changed'

@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite",
     "dev-expose": "vite --host",
+    "device": "vite --mode test-device",
+    "device-expose": "vite --host --mode test-device",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
+    "preview-expose": "vite preview --host",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",

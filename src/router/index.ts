@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import sandbox_routes from '@/views/sandbox/routes'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -67,10 +69,10 @@ const router = createRouter({
           name: 'sandbox-bundle',
           component: () => import('@/views/sandbox/bundle.vue'),
         },
-        ...(await import('@/views/sandbox/routes')).default,
+        ...sandbox_routes,
       ],
       beforeEnter: () => {
-        if (import.meta.env.MODE === 'development') {
+        if (import.meta.env.DEV) {
           return true
         } else {
           return { path: '/' }

@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 
 import { useToastStore } from '@/stores/toast'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
+import { usePlayerWebSocket } from '@/stores/player-web-socket'
 
 import {
   DEFAULT_CAPABILITIES,
@@ -24,6 +25,7 @@ export const PLAYER_CONFIG = {
 export const usePlayerStore = defineStore('player', () => {
   const toastStore = useToastStore()
   const libraryFetch = useLibraryFetch()
+  const playerWebSocket = usePlayerWebSocket()
 
   // State
   const updateIntervalID = ref<number | undefined>(undefined)
@@ -97,75 +99,6 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
-  // Fetch current player and now playing information
-  /* async function fetchCurrentPlayer() {
-    try {
-      const data = await PlayerFunctions.fetchCurrentPlayer(API_BASE)
-
-      if (data) {
-        // If we're using the "Default (Active Player)" option (currentPlayerName is null)
-        // and the active player has changed, we need to resubscribe
-        const oldPlayerName = currentData?.player?.name
-        const newPlayerName = data.player?.name
-        const needsResubscribe = !currentPlayerName && oldPlayerName !== newPlayerName
-
-        currentData = data
-
-        // Extract player capabilities
-        playerCapabilities = PlayerFunctions.extractPlayerCapabilities(data)
-
-        // Update UI components
-        PlayerFunctions.updatePlayerInfo(data, currentPlayerInfo, libraryBtn)
-
-        PlayerFunctions.updateNowPlaying(
-          data,
-          nowPlayingInfo,
-          progressBar,
-          songThumbnail,
-          noThumbnail,
-          startAutoProgress,
-          stopAutoProgress,
-        )
-
-        const buttons = {
-          playPauseBtn,
-          stopBtn,
-          prevBtn,
-          nextBtn,
-          loopModeBtn,
-          toggleShuffleBtn,
-          libraryBtn,
-        }
-
-        PlayerFunctions.updateControlButtons(
-          data,
-          playerCapabilities,
-          buttons,
-          queuePanel,
-          queueContainer,
-          fetchQueue,
-        )
-
-        // If the player has a library, update the library button
-        if (data.player && data.player.has_library) {
-          libraryBtn.disabled = false
-        } else {
-          libraryBtn.disabled = true
-        }
-
-        // Resubscribe if needed (active player changed while using default selection)
-        if (needsResubscribe) {
-          console.log(
-            `Active player changed from ${oldPlayerName || 'none'} to ${newPlayerName || 'none'}, resubscribing...`,
-          )
-          await subscribeToPlayerEvents()
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch current player:', error)
-    }
-  } */
-
   /**
    * Fetch current player and now playing information
    * @param {string} apiBase - The base URL for the API
@@ -184,6 +117,14 @@ export const usePlayerStore = defineStore('player', () => {
         throw new Error('No Data')
       }
 
+      // If we're using the "Default (Active Player)" option (currentPlayerName is null)
+      // and the active player has changed, we need to resubscribe
+      const oldPlayerName = currentData.value?.player?.name
+      const newPlayerName = data.player?.name
+      const needsResubscribe = !currentPlayerName.value && oldPlayerName !== newPlayerName
+
+      console.log('needsResubscribe', needsResubscribe)
+
       currentData.value = data
 
       // Extract player capabilities
@@ -191,10 +132,39 @@ export const usePlayerStore = defineStore('player', () => {
 
       console.log('playerCapabilities.value', playerCapabilities.value)
 
+      // Resubscribe if needed (active player changed while using default selection)
+      if (needsResubscribe) {
+        console.log(
+          `Active player changed from ${oldPlayerName || 'none'} to ${newPlayerName || 'none'}, resubscribing...`,
+        )
+
+        await playerWebSocket.subscribeToPlayerEvents()
+      }
+
       return Promise.resolve(data)
     } catch (error) {
       console.error('Failed to fetch current player:', error)
       return Promise.resolve(null)
+    }
+  }
+
+  async function retrieveActivePlayer(apiBase: string = API_BASE_URL) {
+    console.log('retrieveActivePlayer')
+
+    try {
+      const response = await fetch(`${apiBase}/now-playing`)
+      const data = await response.json()
+
+      if (data && data.player && data.player.name) {
+        console.log(`Retrieved active player name: ${data.player.name}`)
+        return data.player.name
+      } else {
+        console.warn('No active player found or player name not available')
+        return null
+      }
+    } catch (error) {
+      console.error('Failed to get active player name:', error)
+      return null
     }
   }
 
@@ -210,6 +180,8 @@ export const usePlayerStore = defineStore('player', () => {
 
     // Set up periodic updates using the configured polling interval
     updateIntervalID.value = setInterval(fetchCurrentPlayer, PLAYER_CONFIG.pollingInterval)
+
+    playerWebSocket.setupWebSocket()
   }
 
   const clearPollingInterval = () => {
@@ -248,9 +220,9 @@ export const usePlayerStore = defineStore('player', () => {
 
       console.log('sendCommand', response)
 
-      // ! We could updatу UI and State on getting WebSocket message
+      // ! We could update UI and State when getting WebSocket message
       // ! but we dont get messages on 'loop_mode_changed' and 'shuffle_changed'
-      // ! that's why we leave this code
+      // ! that's why we fetchCurrentPlayer()
       return new Promise((resolve) => {
         setTimeout(async () => {
           const data = await fetchCurrentPlayer()
@@ -283,6 +255,7 @@ export const usePlayerStore = defineStore('player', () => {
     fetchPlayers,
     fetchPlayersAndUpdatePlayerDropdown,
     fetchCurrentPlayer,
+    retrieveActivePlayer,
     sendCommand,
   }
 })

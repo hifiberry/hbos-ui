@@ -30,8 +30,12 @@ const { getArtists, getArtistByName } = artistStore
 
 const search = ref<string>('')
 
-const onSearch = (search: string) => {
-  getArtistByName(search)
+const onSearch = async (search: string) => {
+  if (search) {
+    getArtistByName(search)
+  } else {
+    getArtists()
+  }
 }
 
 onMounted(() => {

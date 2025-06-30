@@ -11,6 +11,9 @@ export const useArtistStore = defineStore('artist', () => {
   const toastStore = useToastStore()
   const router = useRouter()
 
+  const page = ref<number>(1)
+  const hasMore = ref<boolean>(true)
+
   // State
   const loading = ref<boolean>(false)
   const loaded = ref<boolean>(false)
@@ -30,6 +33,28 @@ export const useArtistStore = defineStore('artist', () => {
 
     if (data.value?.artists && data.value.artists.length > 0) {
       artists.value = data.value.artists
+    }
+
+    loading.value = false
+    loaded.value = isFinished.value
+  }
+
+  const getMoreArtists = async () => {
+    if (!hasMore.value || loading.value) return
+
+    const { error, data, isFinished } = await libraryFetch(
+      `/library/:activeLibrary/artists?page=${page.value}`,
+    ).json()
+
+    if (error.value) {
+      toastStore.showErrorToast(`Get Artists Error: ${error.value}`)
+    }
+
+    if (data.value?.artists.length) {
+      artists.value.push(...data.value.artists)
+      page.value++
+    } else {
+      hasMore.value = false
     }
 
     loading.value = false
@@ -74,5 +99,6 @@ export const useArtistStore = defineStore('artist', () => {
     // Action
     getArtists,
     getArtistByName,
+    getMoreArtists,
   }
 })

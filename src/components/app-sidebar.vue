@@ -102,11 +102,10 @@ const routes: Route[] = [
   z-index: 5;
   @include media-down(lg) {
     top: auto;
-    background-color: transparent;
+    background-color: var(--background-body);
     width: 100% !important;
     height: auto;
-    bottom: 30px;
-    padding: 0 15px;
+    padding: 20px 15px;
   }
   &:hover {
     width: 200px;

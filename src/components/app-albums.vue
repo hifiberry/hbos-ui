@@ -5,7 +5,7 @@
 
       <template v-else>
         <AppPoster
-          v-for="album in albums"
+          v-for="album in data"
           :key="album.id"
           :title="album.name"
           :subtitle="`${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'} • ${album.tracks_count} track${album.tracks_count !== 1 ? 's' : ''}`"
@@ -15,7 +15,7 @@
       </template>
     </div>
 
-    <div v-if="loaded && albums.length === 0" class="no-albums">No available albums found</div>
+    <div v-if="loaded && data.length === 0" class="no-albums">No available albums found</div>
   </div>
 </template>
 
@@ -38,7 +38,56 @@ import AppPoster from '@/components/app-poster.vue'
 import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 const albumStore = useAlbumStore()
+
+const chunkSize = 30
+const currentPage = ref(0)
+const data = ref<Album[]>([])
+
+function loadNextChunk() {
+  if (inRow) {
+    data.value = albums.slice(0, 10)
+  } else {
+    if (albums.length > 0) {
+      const start = currentPage.value * chunkSize
+      const end = start + chunkSize
+      const nextChunk = albums.slice(start, end)
+
+      data.value.push(...nextChunk)
+      currentPage.value++
+    } else {
+      data.value = []
+      currentPage.value = 0
+    }
+  }
+}
+
+const scrolledToBottom = ref<boolean>(false)
+
+const handleScroll = () => {
+  if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
+    scrolledToBottom.value = true
+    loadNextChunk()
+  } else {
+    scrolledToBottom.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
+
+watch(
+  () => albums,
+  () => {
+    loadNextChunk()
+  },
+)
 </script>
 
 <style scoped lang="scss">
@@ -46,13 +95,11 @@ const albumStore = useAlbumStore()
   .album {
     &-grid {
       display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: 140px;
       gap: 60px;
-      overflow: hidden;
       @include media-down(xl) {
         gap: 30px;
       }
+
       &.row {
         grid-auto-flow: column;
         grid-auto-columns: 140px;

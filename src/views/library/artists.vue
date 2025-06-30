@@ -13,15 +13,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppArtists from '@/components/app-artists.vue'
 import AppSearch from '@/components/app-search.vue'
 
 import { storeToRefs } from 'pinia'
-
-import { onMounted } from 'vue'
 
 import { useArtistStore } from '@/stores/artist.ts'
 const artistStore = useArtistStore()

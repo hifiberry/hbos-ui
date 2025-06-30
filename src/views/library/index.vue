@@ -21,12 +21,7 @@
         >
       </div>
 
-      <AppAlbums
-        :albums="sortedAlbumsByReleaseDate"
-        :loaded="loadedAlbums"
-        :loading="loadingAlbums"
-        in-row
-      />
+      <AppAlbums :albums="albums" :loaded="loadedAlbums" :loading="loadingAlbums" in-row />
     </div>
   </div>
 </template>
@@ -48,12 +43,7 @@ const { getArtists } = artistStore
 
 import { useAlbumStore } from '@/stores/album'
 const albumStore = useAlbumStore()
-const {
-  sortedAlbumsByReleaseDate,
-  albums,
-  loading: loadingAlbums,
-  loaded: loadedAlbums,
-} = storeToRefs(albumStore)
+const { albums, loading: loadingAlbums, loaded: loadedAlbums } = storeToRefs(albumStore)
 const { getAlbums } = albumStore
 
 onMounted(async () => {

@@ -1,0 +1,18 @@
+::-webkit-scrollbar {
+  -webkit-appearance: none;
+  &:vertical {
+    width: 8px;
+  }
+  &:horizontal {
+    height: 8px;
+  }
+  &-thumb {
+    border-radius: 14px;
+    background-color: var(--scroll-thumb-background);
+  }
+
+  &-track {
+    border-radius: 10px;
+    background-color: var(--scroll-track-background);
+  }
+}

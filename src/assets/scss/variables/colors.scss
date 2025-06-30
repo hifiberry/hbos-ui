@@ -3,7 +3,7 @@ $primary: #E11E4A;                                                $primary--dark
 $background-body: #fafafa;                                        $background-body--dark: #000;
 $color-body: #707070;                                             $color-body--dark: #fff;
 $color-body-secondary: #707070;                                   $color-body-secondary--dark: #aaa;
-$color-link: $primary;                                              $color-link--dark: #fff;
+$color-link: $primary;                                            $color-link--dark: #fff;
 
 $background-header: #fff;                                         $background-header--dark: #333;
 $color-header-border: #f5f5f5;                                    $color-header-border--dark: transparent;
@@ -44,3 +44,6 @@ $progress-slider-on-header-progess: rgba(112, 112, 112, 0.4);     $progress-slid
 $search-background: #fff;                                         $search-background--dark: #333;
 $search-color-placeholder: #ababab;
 $search-color: #333;                                              $search-color--dark: #fff;
+
+$scroll-track-background: #fff;                                   $scroll-track-background--dark: #000;
+$scroll-thumb-background: #707070;                                $scroll-thumb-background--dark: #333;

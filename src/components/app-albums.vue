@@ -53,14 +53,27 @@ const albumStore = useAlbumStore()
       @include media-down(xl) {
         gap: 30px;
       }
-      @include media-down(lg) {
-        grid-auto-columns: 100px;
+      &.row {
+        grid-auto-flow: column;
+        grid-auto-columns: 140px;
+        overflow: hidden;
+        @include media-down(lg) {
+          grid-auto-columns: 100px;
+        }
+        @include media-down(md) {
+          gap: 15px;
+          grid-auto-flow: initial;
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          grid-auto-columns: unset;
+        }
       }
-      @include media-down(md) {
-        gap: 15px;
-        grid-auto-flow: initial;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        grid-auto-columns: unset;
+      &.cell {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 60px 80px;
+        @include media-down(md) {
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 24px 15px;
+        }
       }
     }
   }

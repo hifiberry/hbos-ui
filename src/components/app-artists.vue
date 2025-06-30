@@ -68,6 +68,7 @@ import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
         gap: 60px 80px;
         @include media-down(md) {
           grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 24px 15px;
         }
       }
     }

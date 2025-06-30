@@ -59,6 +59,10 @@ $colors: (
   search: (
     search-background: $search-background,
     search-color: $search-color,
+  ),
+  scroll: (
+    scroll-track-background: $scroll-track-background,
+    scroll-thumb-background: $scroll-thumb-background
   )
 );
 
@@ -119,6 +123,10 @@ $colors--dark: (
   search: (
     search-background: $search-background--dark,
     search-color: $search-color--dark,
+  ),
+  scroll: (
+    scroll-track-background: $scroll-track-background--dark,
+    scroll-thumb-background: $scroll-thumb-background--dark,
   )
 );
 

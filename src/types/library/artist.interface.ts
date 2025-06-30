@@ -7,6 +7,7 @@ export interface ArtistBase {
 }
 export interface Artist extends ArtistBase {
   thumb_url: string[]
+  album_count: number
 }
 export interface ArtistMetadata extends ArtistBase {
   metadata: Metadata

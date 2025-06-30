@@ -108,9 +108,9 @@ watch(
         }
         @include media-down(md) {
           gap: 15px;
-          //grid-auto-flow: initial;
-          //grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-          //grid-auto-columns: unset;
+          grid-auto-flow: initial;
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          grid-auto-columns: unset;
         }
       }
       &.cell {

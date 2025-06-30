@@ -42,10 +42,10 @@ interface AppAlbumDetailsProps {
 
 const { loading = false, album = null } = defineProps<AppAlbumDetailsProps>()
 
-import { useLibraryStore } from '@/stores/library.ts'
-const libraryStore = useLibraryStore()
+import { useAlbumStore } from '@/stores/album.ts'
+const libraryStore = useAlbumStore()
 
-const albumCover = computed(() => libraryStore.getAlbumCover(album?.id || ''))
+const albumCover = computed(() => libraryStore.getAlbumCoverById(album?.id || ''))
 
 import { usePlayerStore } from '@/stores/player.ts'
 import { useAudioControls } from '@/stores/audio-controls'

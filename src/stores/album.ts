@@ -10,10 +10,14 @@ import type {
 
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { useToastStore } from '@/stores/toast'
+import { useLibraryStore } from '@/stores/library.ts'
+
+import { API_BASE_URL } from '@/constants/api.ts'
 
 export const useAlbumStore = defineStore('album', () => {
   const libraryFetch = useLibraryFetch()
   const toastStore = useToastStore()
+  const libraryStore = useLibraryStore()
 
   // State
   const loading = ref<boolean>(false)
@@ -97,6 +101,9 @@ export const useAlbumStore = defineStore('album', () => {
     loading.value = false
   }
 
+  const getAlbumCoverById = (id: string) =>
+    `${API_BASE_URL}/library/${libraryStore.activeLibrary}/image/album:${id}`
+
   return {
     // State
     loading,
@@ -111,5 +118,6 @@ export const useAlbumStore = defineStore('album', () => {
     getAlbums,
     getAlbumByArtistId,
     getAlbumByAlbumId,
+    getAlbumCoverById,
   }
 })

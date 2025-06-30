@@ -9,7 +9,7 @@
           :key="album.id"
           :title="album.name"
           :subtitle="`${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'} • ${album.tracks_count} track${album.tracks_count !== 1 ? 's' : ''}`"
-          :src="album.cover_art"
+          :src="albumStore.getAlbumCoverById(album.id)"
           @click="router.push({ name: 'album', params: { albumId: album.id } })"
         />
       </template>
@@ -36,6 +36,9 @@ const router = useRouter()
 
 import AppPoster from '@/components/app-poster.vue'
 import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
+
+import { useAlbumStore } from '@/stores/album.ts'
+const albumStore = useAlbumStore()
 </script>
 
 <style scoped lang="scss">

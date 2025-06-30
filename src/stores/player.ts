@@ -12,7 +12,7 @@ import {
 import type { Track } from '@/types/library'
 import type { Player, CurrentPlayer, Song, Capabilities } from '@/types/player'
 
-import { API_URL } from '@/constants/api.ts'
+import { API_BASE_URL } from '@/constants/api.ts'
 
 // Configuration
 export const PLAYER_CONFIG = {
@@ -76,7 +76,7 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<Array<Player>>} Array of player objects
    */
-  async function fetchPlayers(apiBase: string = API_URL): Promise<Array<Player>> {
+  async function fetchPlayers(apiBase: string = API_BASE_URL): Promise<Array<Player>> {
     console.log('fetchPlayers')
 
     try {
@@ -171,7 +171,7 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<CurrentPlayer | null>} Current player data
    */
-  async function fetchCurrentPlayer(apiBase: string = API_URL): Promise<CurrentPlayer | null> {
+  async function fetchCurrentPlayer(apiBase: string = API_BASE_URL): Promise<CurrentPlayer | null> {
     console.log('*** fetchCurrentPlayer')
 
     try {
@@ -224,7 +224,7 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
-  const sendCommand = async (command: string, apiBase: string = API_URL): Promise<boolean> => {
+  const sendCommand = async (command: string, apiBase: string = API_BASE_URL): Promise<boolean> => {
     console.log('sendCommand', { command, currentPlayerName: currentPlayerName.value, apiBase })
 
     isSendingCommand.value = true

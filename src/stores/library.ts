@@ -6,7 +6,7 @@ import { useToastStore } from '@/stores/toast'
 
 import type { LibraryPlayer, LibraryPlayerResponse } from '@/types/library'
 
-import { API_URL } from '@/constants/api.ts'
+import { API_BASE_URL } from '@/constants/api.ts'
 
 export const useLibraryStore = defineStore('library', () => {
   const toastStore = useToastStore()
@@ -22,7 +22,7 @@ export const useLibraryStore = defineStore('library', () => {
   const getAvailableLibrary = async () => {
     loading.value = true
 
-    const { error, data } = await useFetch<LibraryPlayerResponse>(`${API_URL}/library`).json()
+    const { error, data } = await useFetch<LibraryPlayerResponse>(`${API_BASE_URL}/library`).json()
 
     if (error.value) {
       toastStore.showErrorToast(`Get Available Library Error: ${error.value}`)
@@ -47,7 +47,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   const getAlbumCover = (id: string) =>
-    `${API_URL}/library/${activeLibrary.value}/image/album:${id}`
+    `${API_BASE_URL}/library/${activeLibrary.value}/image/album:${id}`
 
   return {
     // Store

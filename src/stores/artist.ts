@@ -64,29 +64,6 @@ export const useArtistStore = defineStore('artist', () => {
     loaded.value = isFinished.value
   }
 
-  // const getArtistByName = async (name: string) => {
-  //   loading.value = true
-  //   loaded.value = false
-  //   artists.value = []
-  //
-  //   const { error, data, isFinished } = await libraryFetch(
-  //     `/library/:activeLibrary/artist${name ? `/by-name/${name}` : 's'}`,
-  //   ).json()
-  //
-  //   if (error.value) {
-  //     toastStore.showErrorToast(`Get Artists by Name Error: ${error.value}`)
-  //   }
-  //
-  //   if (name && data.value?.artist) {
-  //     artistByName.value = data.value.artist
-  //   } else if (data.value?.artists && data.value.artists.length > 0) {
-  //     artists.value = data.value.artists
-  //   }
-  //
-  //   loading.value = false
-  //   loaded.value = isFinished.value
-  // }
-
   return {
     // State
     loading,

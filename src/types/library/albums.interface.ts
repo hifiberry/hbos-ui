@@ -1,7 +1,8 @@
 import type { Artist } from '@/types/library'
 import type { Track } from '@/types/library'
+import type { PosterItem } from '@/types/library'
 
-export interface Album {
+export interface Album extends PosterItem {
   id: string
   name: string
   release_date: string

@@ -58,7 +58,15 @@ export const useAlbumStore = defineStore('album', () => {
     }
 
     if (data.value?.albums && data.value.albums.length) {
-      albums.value = data.value.albums
+      albums.value = data.value.albums.map((album: Album) => {
+        return {
+          ...album,
+          $id: album.id,
+          $title: album.name,
+          $subtitle: `${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'} • ${album.tracks_count} track${album.tracks_count !== 1 ? 's' : ''}`,
+          $cover_src: getAlbumCoverById(album.id),
+        }
+      })
     }
 
     loading.value = false

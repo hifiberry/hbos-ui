@@ -10,7 +10,14 @@
         >
       </div>
 
-      <AppArtists :artists="artists" :loaded="loadedArtists" :loading="loadingArtists" in-row />
+      <AppPosterGrid
+        :loading="loadingArtists"
+        :loaded="loadedArtists"
+        :items="artists"
+        poster-form="circle"
+        in-row
+        @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })"
+      />
     </div>
 
     <div class="card">
@@ -21,7 +28,13 @@
         >
       </div>
 
-      <AppAlbums :albums="albums" :loaded="loadedAlbums" :loading="loadingAlbums" in-row />
+      <AppPosterGrid
+        :loading="loadingAlbums"
+        :loaded="loadedAlbums"
+        :items="albums"
+        in-row
+        @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })"
+      />
     </div>
   </div>
 </template>
@@ -30,8 +43,8 @@
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import AppArtists from '@/components/app-artists.vue'
-import AppAlbums from '@/components/app-albums.vue'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 import { useLibraryStore } from '@/stores/library'
 const libraryStore = useLibraryStore()
@@ -42,6 +55,7 @@ const { artists, loading: loadingArtists, loaded: loadedArtists } = storeToRefs(
 const { getArtists } = artistStore
 
 import { useAlbumStore } from '@/stores/album'
+import AppPosterGrid from '@/components/app-poster-grid.vue'
 const albumStore = useAlbumStore()
 const { albums, loading: loadingAlbums, loaded: loadedAlbums } = storeToRefs(albumStore)
 const { getAlbums } = albumStore

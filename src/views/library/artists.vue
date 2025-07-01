@@ -7,17 +7,25 @@
       </div>
     </div>
     <div class="card">
-      <AppArtists :loading="loading" :loaded="loaded" :artists="artists" />
+      <AppPosterGrid
+        :loading="loading"
+        :loaded="loaded"
+        :items="artists"
+        poster-form="circle"
+        @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 import AppBackRouter from '@/components/app-back-router.vue'
-import AppArtists from '@/components/app-artists.vue'
 import AppSearch from '@/components/app-search.vue'
+import AppPosterGrid from '@/components/app-poster-grid.vue'
 
 import { storeToRefs } from 'pinia'
 

@@ -32,7 +32,15 @@ export const useArtistStore = defineStore('artist', () => {
     }
 
     if (data.value?.artists && data.value.artists.length > 0) {
-      artists.value = data.value.artists
+      artists.value = data.value.artists.map((artist: Artist) => {
+        return {
+          ...artist,
+          $id: artist.id,
+          $title: artist.name,
+          $subtitle: `${artist.album_count} album${artist.album_count !== 1 ? 's' : ''}`,
+          $cover_src: artist.thumb_url[0],
+        }
+      })
     }
 
     loading.value = false

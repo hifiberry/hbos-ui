@@ -14,7 +14,7 @@ interface IconSvgProps {
 
 const { icon = 'logo', width = 24, height = 24 } = defineProps<IconSvgProps>()
 
-const imgUrl = computed(() => `/images/svg/${icon}.svg`)
+const imgUrl = computed(() => `${import.meta.env.BASE_URL}images/svg/${icon}.svg`)
 </script>
 
 <style scoped lang="scss">

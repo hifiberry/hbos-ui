@@ -1,5 +1,5 @@
 <template>
-  <div class="app-poster-grid">
+  <div :class="['app-poster-grid']">
     <div :class="['poster-grid', inRow ? 'row' : 'cell']">
       <AppPosterSkeleton v-if="loading" :posterForm="posterForm" :is-note="isNote" />
 
@@ -17,7 +17,7 @@
       </template>
     </div>
 
-    <div v-if="loaded && data.length === 0" class="no-items">No available items found</div>
+    <div v-if="loaded && items.length === 0" class="no-items">No available items found</div>
   </div>
 </template>
 

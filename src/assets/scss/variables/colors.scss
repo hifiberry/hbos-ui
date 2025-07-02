@@ -3,7 +3,7 @@ $primary: #E11E4A;                                                $primary--dark
 $background-body: #fafafa;                                        $background-body--dark: #000;
 $color-body: #707070;                                             $color-body--dark: #fff;
 $color-body-secondary: #707070;                                   $color-body-secondary--dark: #aaa;
-$color-link: $primary;                                            $color-link--dark: #fff;
+$color-link: $primary;                                              $color-link--dark: #fff;
 
 $background-header: #fff;                                         $background-header--dark: #333;
 $color-header-border: #f5f5f5;                                    $color-header-border--dark: transparent;
@@ -22,12 +22,12 @@ $icon-color-primary: $primary;                                      $icon-color-
 $background-main-content: #FFFFFF;                                $background-main-content--dark: rgba(255, 255, 255, 0.2);
 $box-shadow-main-content: 0px 2px 8px 0px rgba(0, 0, 0, 0.04);
 
-$color-head: #191717;                                             $color-head--dark: #FFFFFF;
+$color-head: #1c1818;                                             $color-head--dark: #FFFFFF;
 $color-text: #707070;                                             $color-text--dark: #FFFFFF;
 
-$main-audio-controls: $primary;                                     $main-audio-controls--dark: #AAAAAA;
-$main-audio-controls-separate: rgba(112, 112, 112, 0.5);          $main-audio-controls-separate--dark: #AAAAAA;
-$secondary-audio-controls: rgba(112, 112, 112, 0.6);              $secondary-audio-controls--dark: #AAAAAA;
+$main-audio-controls: $primary;                                     $main-audio-controls--dark: $primary--dark;
+$main-audio-controls-separate: $primary;                            $main-audio-controls-separate--dark: $primary--dark;
+$secondary-audio-controls: #1c1818;                               $secondary-audio-controls--dark: #FFFFFF;
 
 $cover-placeholder-bg: rgba(225, 30, 74, 0.05);                   $cover-placeholder-bg--dark: rgba(170, 170, 170, 0.5);
 $cover-placeholder-icon-color: #E11E4A;                           $cover-placeholder-icon-color--dark: #FFFFFF;
@@ -39,7 +39,7 @@ $background-end-skeleton: #eee;                                   $background-en
 
 $progress-slider-bg: rgba(112, 112, 112, 0.1);                    $progress-slider-bg--dark: #AAAAAA;
 $progress-slider-on-header-bg: rgba(112, 112, 112, 0.2);          $progress-slider-on-header-bg--dark: rgba(170, 170, 170, 1);
-$progress-slider-on-header-progess: rgba(112, 112, 112, 0.4);     $progress-slider-on-header-progess--dark: #FFFFFF;
+$progress-slider-on-header-progess: $primary;                       $progress-slider-on-header-progess--dark: $primary--dark;
 
 $search-background: #fff;                                         $search-background--dark: #333;
 $search-color-placeholder: #ababab;

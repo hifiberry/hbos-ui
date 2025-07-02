@@ -33,7 +33,7 @@
         :loaded="loadedAlbums"
         :items="albums"
         in-row
-        @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })"
+        @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
       />
     </div>
   </div>

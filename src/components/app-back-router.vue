@@ -10,9 +10,10 @@
 <script setup lang="ts">
 import AppIcon from '@/components/app-icon.vue'
 
-defineProps<{
+interface BackRouterProps {
   to: string | object
-}>()
+}
+const { to = '' } = defineProps<BackRouterProps>()
 </script>
 
 <style scoped lang="scss">
@@ -20,6 +21,10 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  min-height: 28px;
+  @include media-down(lg) {
+    min-height: 24px;
+  }
   .h1 {
     margin-bottom: 0;
     text-decoration: underline;

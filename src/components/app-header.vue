@@ -1,7 +1,7 @@
 <template>
   <header>
     <router-link to="/">
-      <img src="/images/logo.svg" alt="" />
+      <img :src="logoUrl" alt="" />
     </router-link>
 
     <div v-if="isPlayerControls" class="header-controls">
@@ -15,9 +15,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
+
+const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 
 import AppIconButton from '@/components/app-icon-button.vue'
 import AppSongControlInfo from '@/components/app-song-control-info.vue'

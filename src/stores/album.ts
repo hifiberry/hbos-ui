@@ -27,20 +27,14 @@ export const useAlbumStore = defineStore('album', () => {
 
   // Getter
   const sortedAlbumsByReleaseDate = computed(() => {
-    return albums.value.sort((a: Album, b: Album) => {
-      if (a.release_date && b.release_date) {
-        // Sort newest first
-        return new Date(b.release_date).getTime() - new Date(a.release_date).getTime()
-      } else if (a.release_date) {
-        // a has date, b doesn't - a is newer
-        return -1
-      } else if (b.release_date) {
-        // b has date, a doesn't - b is newer
-        return 1
-      } else {
-        // Neither has a date, sort by name
-        return a.name.localeCompare(b.name)
-      }
+    return [...albums.value].sort((a, b) => {
+      const aDate = a.release_date ? new Date(a.release_date).getTime() : null
+      const bDate = b.release_date ? new Date(b.release_date).getTime() : null
+
+      if (aDate && bDate) return bDate - aDate
+      if (aDate) return -1
+      if (bDate) return 1
+      return a.name.localeCompare(b.name)
     })
   })
 
@@ -63,7 +57,8 @@ export const useAlbumStore = defineStore('album', () => {
           ...album,
           $id: album.id,
           $title: album.name,
-          $subtitle: `${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'} • ${album.tracks_count} track${album.tracks_count !== 1 ? 's' : ''}`,
+          $subtitle: `${album.artists[0]}`,
+          $note: `${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'}`,
           $cover_src: getAlbumCoverById(album.id),
         }
       })
@@ -74,6 +69,7 @@ export const useAlbumStore = defineStore('album', () => {
   }
 
   const getAlbumByAlbumId = async (id: string) => {
+    album.value = null
     loading.value = true
 
     const { error, data } = await libraryFetch<AlbumResponse>(
@@ -104,7 +100,17 @@ export const useAlbumStore = defineStore('album', () => {
     }
 
     if (data.value?.albums && data.value.albums.length > 0) {
-      albums.value = data.value.albums
+      // albums.value = data.value.albums
+      albums.value = data.value.albums.map((album: Album) => {
+        return {
+          ...album,
+          $id: album.id,
+          $title: album.name,
+          $subtitle: `${album.artists[0]}`,
+          $note: `${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'}`,
+          $cover_src: getAlbumCoverById(album.id),
+        }
+      })
     }
 
     loading.value = false

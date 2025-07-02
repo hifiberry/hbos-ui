@@ -45,6 +45,7 @@
 * Scroll bar with letters on the right for album and artist view
 * Lyrics support - display lyrics in "Now playing"
 * Enable user to upload artist/album art
+* Support for additional meta data in "Now playing" (format, sample rate, ...)
  
 # Later?
 

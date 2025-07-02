@@ -47,7 +47,6 @@ const emit = defineEmits(['click'])
 
 const chunkSize = 30
 const currentPage = ref<number>(0)
-// const data = ref<T[]>([])
 const data = ref<T[]>([]) as Ref<T[]>
 
 const scrolledToBottom = ref<boolean>(false)
@@ -121,7 +120,6 @@ watch(
       }
       &.cell {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 60px 80px;
         @include media-down(md) {
           grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
           gap: 24px 15px;

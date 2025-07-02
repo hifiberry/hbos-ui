@@ -12,6 +12,7 @@
 * Queue management (clear queue, add album, add song, ...)
 * Web radio browser
 * like/unlike song
+* Sorting & filtering for albums & artists
 
 # Phase 3
 

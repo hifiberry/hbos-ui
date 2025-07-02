@@ -9,16 +9,21 @@
       <img v-else :src="src" :alt="title" loading="lazy" />
     </div>
     <div class="poster-attr">
-      <h4>
+      <div class="h4">
         <AppMarquee>
           {{ title }}
         </AppMarquee>
-      </h4>
-      <p>
+      </div>
+      <div class="h5">
         <AppMarquee>
           {{ subtitle }}
         </AppMarquee>
-      </p>
+      </div>
+      <div v-if="note" class="note">
+        <AppMarquee>
+          {{ note }}
+        </AppMarquee>
+      </div>
     </div>
   </div>
 </template>
@@ -35,11 +40,18 @@ type PoserForm = 'square' | 'circle'
 interface PosterProps {
   title: string
   subtitle: string
+  note?: string
   src: string
   posterForm?: PoserForm
 }
 
-const { title = '', subtitle = '', src = '', posterForm = 'square' } = defineProps<PosterProps>()
+const {
+  title = '',
+  subtitle = '',
+  note = '',
+  src = '',
+  posterForm = 'square',
+} = defineProps<PosterProps>()
 
 const imageOptions = deepRef({ src })
 const { error } = useImage(imageOptions, { delay: 0 })
@@ -64,7 +76,8 @@ watch(
   white-space: nowrap;
   &:hover {
     color: $primary;
-    h4 {
+    .h4,
+    .h5 {
       color: $primary;
     }
     .poster-img {
@@ -106,11 +119,14 @@ watch(
   &-attr {
     width: 100%;
     text-align: center;
-    h4 {
+    font-size: 12px;
+    .h4,
+    .h5 {
       transition: all 0.2s linear;
+      margin-bottom: 3px;
     }
-    p {
-      font-weight: 500;
+    .h5 {
+      color: var(--color-body-secondary);
     }
   }
 }

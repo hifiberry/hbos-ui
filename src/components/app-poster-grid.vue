@@ -1,7 +1,7 @@
 <template>
-  <div class="app-poster-grid">
+  <div :class="['app-poster-grid']">
     <div :class="['poster-grid', inRow ? 'row' : 'cell']">
-      <AppPosterSkeleton v-if="loading" :posterForm="posterForm" />
+      <AppPosterSkeleton v-if="loading" :posterForm="posterForm" :is-note="isNote" />
 
       <template v-else>
         <AppPoster
@@ -10,18 +10,19 @@
           :posterForm="posterForm"
           :title="item.$title || ''"
           :subtitle="item.$subtitle || ''"
+          :note="item.$note || ''"
           :src="item.$cover_src || ''"
           @click="emit('click', item)"
         />
       </template>
     </div>
 
-    <div v-if="loaded && data.length === 0" class="no-items">No available albums found</div>
+    <div v-if="loaded && items.length === 0" class="no-items">No available items found</div>
   </div>
 </template>
 
 <script setup lang="ts" generic="T extends PosterItem">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { Ref } from 'vue'
 import AppPoster from '@/components/app-poster.vue'
 import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
@@ -47,7 +48,6 @@ const emit = defineEmits(['click'])
 
 const chunkSize = 30
 const currentPage = ref<number>(0)
-// const data = ref<T[]>([])
 const data = ref<T[]>([]) as Ref<T[]>
 
 const scrolledToBottom = ref<boolean>(false)
@@ -79,6 +79,16 @@ function handleScroll() {
   }
 }
 
+const isNote = computed(() => {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if ('$note' in item) {
+      return true
+    }
+  }
+  return false
+})
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
 })
@@ -100,10 +110,7 @@ watch(
   .poster {
     &-grid {
       display: grid;
-      gap: 60px;
-      @include media-down(xl) {
-        gap: 30px;
-      }
+      gap: 30px;
 
       &.row {
         grid-auto-flow: column;
@@ -121,7 +128,6 @@ watch(
       }
       &.cell {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 60px 80px;
         @include media-down(md) {
           grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
           gap: 24px 15px;

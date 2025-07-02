@@ -1,15 +1,15 @@
 <template>
   <div class="album">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'albums' }">{{ album?.name || 'Album' }}</AppBackRouter>
+      <AppBackRouter :to="{ name: 'albums' }" :loading="loading">{{ artistName }}</AppBackRouter>
     </div>
 
     <div class="grid">
       <div class="col-6-md">
-        <AppAlbumDetailsCard :album="album" :loading="loadingAlbum" />
+        <AppAlbumDetailsCard :album="album" :loading="loading" />
       </div>
       <div class="col-6-md">
-        <AppTracksCard :tracks="album?.tracks || []" :loading="loadingAlbum" />
+        <AppTracksCard :tracks="album?.tracks || []" :loading="loading" />
       </div>
     </div>
   </div>
@@ -28,10 +28,16 @@ const route = useRoute()
 
 import { useAlbumStore } from '@/stores/album.ts'
 const albumsStore = useAlbumStore()
-const { album, loading: loadingAlbum } = storeToRefs(albumsStore)
+const { album, loading } = storeToRefs(albumsStore)
 const { getAlbumByAlbumId } = albumsStore
 
 const id = computed(() => route.params.albumId as string)
+const artistName = computed(() => {
+  if (album.value && album.value.artists.length > 0) {
+    return album.value.artists[0]
+  }
+  return ''
+})
 
 onMounted(() => {
   getAlbumByAlbumId(id.value as string)

@@ -7,8 +7,7 @@
       <AppPosterGrid
         :loading="loading"
         :loaded="loaded"
-        :items="albums"
-        poster-form="circle"
+        :items="sortedAlbumsByReleaseDate"
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
       />
     </div>
@@ -28,15 +27,10 @@ import AppBackRouter from '@/components/app-back-router.vue'
 import { useAlbumStore } from '@/stores/album.ts'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
 const albumStore = useAlbumStore()
-const { loading, loaded, albums } = storeToRefs(albumStore)
+const { loading, loaded, sortedAlbumsByReleaseDate } = storeToRefs(albumStore)
 const { getAlbums } = albumStore
 
 onMounted(() => {
   getAlbums()
 })
 </script>
-
-<style scoped lang="scss">
-.albums {
-}
-</style>

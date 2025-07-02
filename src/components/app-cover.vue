@@ -1,5 +1,5 @@
 <template>
-  <div class="app-cover">
+  <div class="app-cover" :class="{ 'no-img': isLoading || error }">
     <AppIcon
       v-if="isLoading || error"
       class="app-cover__placeholder-icon"
@@ -12,8 +12,6 @@
         v-if="!(isLoading || error)"
         :src="imageOptions.src"
         :alt="alt"
-        width="450"
-        height="450"
         loading="lazy"
       />
     </Transition>
@@ -60,24 +58,22 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 450px;
-  width: 450px;
-  background-color: var(--cover-placeholder-bg);
-
-  @include media-down(md) {
-    height: 350px;
-    width: 350px;
-  }
-
-  @include media-down(sm) {
-    height: 250px;
-    width: 250px;
-  }
+  background-color: unset;
 
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    display: block;
+    object-fit: contain;
+    object-position: center center;
+  }
+
+  &.no-img {
+    width: 100%;
+    height: 100%;
+    max-width: min(80vw, 40vh);
+    max-height: min(80vw, 40vh);
+    background-color: var(--cover-placeholder-bg);
   }
 }
 

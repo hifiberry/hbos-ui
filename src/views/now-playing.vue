@@ -46,52 +46,38 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
   }
 
   &__player {
-    flex: 1;
     display: flex;
+    flex-grow: 1;
     flex-direction: column;
     align-items: center;
     border-radius: 10px;
     padding: $padding-main-content;
+    padding-top: 32px;
     background-color: var(--background-main-content);
     box-shadow: $box-shadow-main-content;
+
+    @include media-down(sm) {
+      padding-top: 24px;
+    }
   }
 
   &__cover {
+    height: calc(100vh - 500px);
+    min-height: 120px;
+    overflow: hidden;
+
+    flex: 1 1 auto;
     margin-top: auto;
-    margin-bottom: 20px;
+    margin-bottom: 32px;
 
-    &.app-cover {
-      @media (max-height: 768px) {
-        height: 30dvh;
-        width: 30dvh;
-        min-height: 150px;
-        min-width: 150px;
-      }
-
-      @media (max-height: 650px) {
-        height: 25dvh;
-        width: 25dvh;
-      }
-
-      @media (max-height: 568px) {
-        height: 20dvh;
-        width: 20dvh;
-        min-height: 115px;
-        min-width: 115px;
-      }
-
-      @media (orientation: landscape) and (max-height: 650px) {
-        height: 50dvh;
-        width: 50dvh;
-        min-height: 200px;
-        min-width: 200px;
-      }
+    @include media-down(sm) {
+      margin-bottom: 24px;
     }
   }
 
   &__info {
+    margin-top: auto;
     text-align: center;
-    margin: auto 0 50px;
     font-size: 18px;
   }
 

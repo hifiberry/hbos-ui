@@ -24,13 +24,16 @@
 
 # Phase 4
 
-* Bluetooth
+* Settings/Bluetooth
   - Pair device
   - remove paired device
 * Settings/Services
   - connect Spotify
   - connect LastFM
-  - connect PlexAmp   
+  - connect PlexAmp
+* Settings/Music library
+  - mount SMB share
+  - update library 
 * Settings/Players
   - enable/disable players
 * Settings/Others

@@ -13,6 +13,7 @@
 * Web radio browser
 * like/unlike song
 * Sorting & filtering for albums & artists
+* Scroll bar with letters on the right for album and artist view
 
 # Phase 3
 

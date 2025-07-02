@@ -24,6 +24,9 @@
 
 # Phase 4
 
+* Bluetooth
+  - Pair device
+  - remove paired device
 * Settings/Services
   - connect Spotify
   - connect LastFM

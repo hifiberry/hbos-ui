@@ -3,7 +3,11 @@
     <AppHeader :isPlayerControls="isPlayerControls" />
     <AppSidebar :isPlayerControls="isPlayerControls" />
     <main :class="[{ 'no-player-controls': !isPlayerControls }]">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <Transition name="page-opacity" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </router-view>
     </main>
   </div>
 </template>
@@ -41,6 +45,16 @@ const isPlayerControls = computed(
         padding-bottom: 100px;
       }
     }
+  }
+
+  .page-opacity-enter-active,
+  .page-opacity-leave-active {
+    transition: all 0.2s ease;
+  }
+
+  .page-opacity-enter-from,
+  .page-opacity-leave-to {
+    opacity: 0;
   }
 }
 </style>

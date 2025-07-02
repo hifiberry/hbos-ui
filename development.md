@@ -30,6 +30,8 @@
   - connect PlexAmp   
 * Settings/Players
   - enable/disable players
+* Settings/Others
+  - tbd
  
 # Later?
 

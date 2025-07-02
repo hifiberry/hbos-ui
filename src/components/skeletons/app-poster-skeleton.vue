@@ -3,10 +3,9 @@
     <div class="poster-skeleton__img">
       <AppSkeleton :shape="posterForm === 'circle' ? 'circle' : 'square'" />
     </div>
-    <div class="poster-skeleton__title">
-      <AppSkeleton width="100%" height="16px" />
-    </div>
-    <AppSkeleton width="100%" height="16px" />
+    <AppSkeleton width="100%" height="12px" class="poster-skeleton__row" />
+    <AppSkeleton width="100%" height="12px" class="poster-skeleton__row" />
+    <AppSkeleton v-if="isNote" width="100%" height="10px" />
   </div>
 </template>
 
@@ -16,8 +15,9 @@ import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
 type posterForm = 'square' | 'circle'
 interface PosterProps {
   posterForm?: posterForm
+  isNote?: boolean
 }
-const { posterForm = 'square' } = defineProps<PosterProps>()
+const { posterForm = 'square', isNote = false } = defineProps<PosterProps>()
 </script>
 
 <style scoped lang="scss">
@@ -37,9 +37,8 @@ const { posterForm = 'square' } = defineProps<PosterProps>()
       }
     }
   }
-  &__title {
+  &__row {
     margin-bottom: 8px;
-    width: 100%;
   }
 }
 </style>

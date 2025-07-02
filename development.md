@@ -22,6 +22,7 @@
 * Web radio browser
 * like/unlike song
 * volume control
+* Show library loading progress
 
 # Phase 4
 

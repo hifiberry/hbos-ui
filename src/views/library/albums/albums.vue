@@ -8,7 +8,6 @@
         :loading="loading"
         :loaded="loaded"
         :items="albums"
-        poster-form="circle"
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
       />
     </div>

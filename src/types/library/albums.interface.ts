@@ -8,9 +8,9 @@ export interface Album extends PosterItem {
   release_date: string
   tracks_count: number
   cover_art: string
+  artists: string[]
 }
 export interface AlbumDetails extends Album {
-  artists: string[]
   tracks: Track[]
 }
 export interface AlbumResponse {

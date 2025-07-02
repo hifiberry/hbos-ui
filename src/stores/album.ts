@@ -93,6 +93,7 @@ export const useAlbumStore = defineStore('album', () => {
 
   const getAlbumByArtistId = async (id: string) => {
     loading.value = true
+    albums.value = []
 
     const { error, data } = await libraryFetch<AlbumByArtistResponse>(
       `/library/:activeLibrary/albums/by-artist-id/${id}`,

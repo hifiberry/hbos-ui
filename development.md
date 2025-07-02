@@ -16,11 +16,14 @@
 
 # Phase 3
 
+* Player change in audiocontrol (another player becomes active)
+* Show active player
 * Queue management (clear queue, add album, add song, ...)
 * Web radio browser
 * like/unlike song
 * Sorting & filtering for albums & artists
 * Scroll bar with letters on the right for album and artist view
+* Lyrcis support - display lyrics in "Now playing"
 
 # Phase 4
 

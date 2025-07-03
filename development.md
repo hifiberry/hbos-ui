@@ -26,6 +26,7 @@
 * Improve album view (e.g. /library/albums/10518654235945294040):
   - display some meta data on the songs (e.g. length)
   - if the artist isn't the same at the album artist, display artist name on the song
+  - remove the icon on each song 
 
 # Phase 4
 

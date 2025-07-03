@@ -48,8 +48,9 @@
 * Lyrics support - display lyrics in "Now playing"
 * Enable user to upload artist/album art
 * Support for additional meta data in "Now playing" (format, sample rate, ...)
+* Add (optional) password verification to use the UI, also add some kind of authorisation to API calls 
  
-# Later?
+# Later
 
 * Playlist management
 * More settings

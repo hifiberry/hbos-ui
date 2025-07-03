@@ -46,7 +46,7 @@ const {
 
 const emit = defineEmits(['click'])
 
-const chunkSize = 30
+const chunkSize = 50
 const currentPage = ref<number>(0)
 const data = ref<T[]>([]) as Ref<T[]>
 

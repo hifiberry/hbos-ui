@@ -6,7 +6,7 @@
 
     <div class="card">
       <AppPosterGrid
-        :items="albums"
+        :items="sortedAlbumsByReleaseDate"
         :loading="loading"
         :loaded="loaded"
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
@@ -32,7 +32,7 @@ const id = computed(() => route.params.artistId as string)
 
 import { useAlbumStore } from '@/stores/album.ts'
 const albumsStore = useAlbumStore()
-const { albums, loading, loaded } = storeToRefs(albumsStore)
+const { loading, loaded, sortedAlbumsByReleaseDate } = storeToRefs(albumsStore)
 const { getAlbumByArtistId } = albumsStore
 
 onMounted(() => {

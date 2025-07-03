@@ -41,7 +41,7 @@ const debouncedFn = useDebounceFn((value: string) => {
 const onInput = ($event: Event) => {
   const target = $event.target as HTMLInputElement
 
-  const value = target.value.trim().toLowerCase()
+  const value = target.value.trim()
 
   if (props.debounce) {
     debouncedFn(value)

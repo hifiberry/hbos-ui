@@ -74,7 +74,7 @@ export const useArtistStore = defineStore('artist', () => {
     loaded.value = false
 
     const { error, data, isFinished } = await libraryFetch(
-      `/library/:activeLibrary/artist/by-name/${name}`,
+      `/library/:activeLibrary/artist/by-name/${name.toLowerCase()}`,
     ).json()
 
     if (error.value) {

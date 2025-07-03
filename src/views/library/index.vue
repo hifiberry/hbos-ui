@@ -23,7 +23,10 @@
     <div class="card">
       <div class="title">
         <h2>Albums</h2>
-        <router-link v-if="albums.length > 0" :to="{ name: 'albums' }" class="text-link"
+        <router-link
+          v-if="sortedAlbumsByReleaseDate.length > 0"
+          :to="{ name: 'albums' }"
+          class="text-link"
           >View All</router-link
         >
       </div>
@@ -31,7 +34,7 @@
       <AppPosterGrid
         :loading="loadingAlbums"
         :loaded="loadedAlbums"
-        :items="albums"
+        :items="sortedAlbumsByReleaseDate"
         in-row
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
       />
@@ -57,7 +60,11 @@ const { getArtists } = artistStore
 import { useAlbumStore } from '@/stores/album'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
 const albumStore = useAlbumStore()
-const { albums, loading: loadingAlbums, loaded: loadedAlbums } = storeToRefs(albumStore)
+const {
+  sortedAlbumsByReleaseDate,
+  loading: loadingAlbums,
+  loaded: loadedAlbums,
+} = storeToRefs(albumStore)
 const { getAlbums } = albumStore
 
 onMounted(async () => {

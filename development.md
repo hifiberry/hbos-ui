@@ -43,7 +43,7 @@
 * Settings/Players
   - enable/disable players
 * Settings/Others
-  - tbd
+  - change system name
  
 # Phase 5
 

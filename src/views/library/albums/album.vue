@@ -34,7 +34,7 @@ const { getAlbumByAlbumId } = albumsStore
 const id = computed(() => route.params.albumId as string)
 const artistName = computed(() => {
   if (album.value && album.value.artists.length > 0) {
-    return album.value.artists[0]
+    return album.value.artists.join(', ')
   }
   return ''
 })

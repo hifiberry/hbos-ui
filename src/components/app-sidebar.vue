@@ -64,7 +64,7 @@ const routes: Route[] = [
     children: [
       {
         name: 'playlist',
-        title: 'Playlist',
+        title: 'Queue',
         icon: 'playlist-light',
       },
     ],

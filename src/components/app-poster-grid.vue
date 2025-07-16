@@ -66,9 +66,31 @@ const data = ref<T[]>([]) as Ref<T[]>
 
 const scrolledToBottom = ref<boolean>(false)
 
+// Calculate how many items fit based on screen size
+const getMaxItemsForRow = () => {
+  if (!inRow) return 20 // For grid view, keep existing behavior
+
+  const width = window.innerWidth
+
+  // Desktop: 1 row, Mobile: 2 rows
+  if (width >= 960) {
+    // Desktop - calculate items that fit in one row
+    // Item width: 140px + gap: 30px = 170px per item (with some padding)
+    const availableWidth = width - 100 // Account for padding
+    const itemsPerRow = Math.floor(availableWidth / 170)
+    return Math.max(1, itemsPerRow) // At least 1 item
+  } else {
+    // Mobile - 2 rows, items are smaller (100px + 15px gap = 115px per item)
+    const availableWidth = width - 60 // Account for padding
+    const itemsPerRow = Math.floor(availableWidth / 115)
+    return Math.max(2, itemsPerRow * 2) // At least 2 items (2 rows)
+  }
+}
+
 function loadNextChunk() {
   if (inRow) {
-    data.value = items.slice(0, 20)
+    const maxItems = getMaxItemsForRow()
+    data.value = items.slice(0, maxItems)
   } else {
     if (items.length > 0) {
       const start = currentPage.value * chunkSize.value
@@ -100,6 +122,11 @@ function handleResize() {
     // Reset and reload with new chunk size
     currentPage.value = 0
     data.value = []
+    loadNextChunk()
+  }
+
+  // Also recalculate for row mode
+  if (inRow) {
     loadNextChunk()
   }
 }
@@ -149,7 +176,8 @@ watch(
         @include media-down(md) {
           gap: 15px;
           grid-auto-flow: initial;
-          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+          grid-template-rows: repeat(2, 1fr);
           grid-auto-columns: unset;
         }
       }

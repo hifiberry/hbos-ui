@@ -65,6 +65,8 @@ watch(
 </script>
 
 <style scoped lang="scss">
+@import '@/assets/scss/mixins.scss';
+
 .poster {
   color: var(--color-body-secondary);
   cursor: pointer;
@@ -125,8 +127,14 @@ watch(
       transition: all 0.2s linear;
       margin-bottom: 3px;
     }
+    .h4 {
+      @include poster-title;
+    }
     .h5 {
-      color: var(--color-body-secondary);
+      @include poster-subtitle;
+    }
+    .note {
+      @include poster-note;
     }
   }
 }

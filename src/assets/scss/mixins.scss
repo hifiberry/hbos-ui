@@ -85,3 +85,28 @@
     }
   }
 }
+
+// Poster text styling to match album titles and artist info
+@mixin poster-title {
+  font: 500 16px $font-family-base;
+  line-height: $font-line-height-base;
+  color: var(--color-head);
+  margin-bottom: 3px;
+  transition: all 0.2s linear;
+}
+
+@mixin poster-subtitle {
+  font: 400 16px $font-family-base;
+  line-height: $font-line-height-base;
+  color: var(--color-body-secondary);
+  margin-bottom: 3px;
+  transition: all 0.2s linear;
+}
+
+@mixin poster-note {
+  font: 400 11px $font-family-base;
+  line-height: $font-line-height-base;
+  color: var(--color-body-secondary);
+  margin-bottom: 3px;
+  transition: all 0.2s linear;
+}

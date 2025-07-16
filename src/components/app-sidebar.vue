@@ -95,7 +95,7 @@ const routes = computed(() => {
         {
           name: 'radio',
           title: 'Radio',
-          icon: 'radio',
+          icon: 'radio-wave',
         },
       ],
     },

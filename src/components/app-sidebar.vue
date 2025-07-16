@@ -61,6 +61,13 @@ const routes: Route[] = [
     name: 'now-playing',
     title: 'Now Playing',
     icon: 'play-light',
+    children: [
+      {
+        name: 'playlist',
+        title: 'Playlist',
+        icon: 'playlist-light',
+      },
+    ],
   },
   {
     name: 'library',

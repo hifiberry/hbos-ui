@@ -92,6 +92,11 @@ const routes = computed(() => {
           title: 'Artists',
           icon: 'users-thin',
         },
+        {
+          name: 'radio',
+          title: 'Radio',
+          icon: 'music',
+        },
       ],
     },
     // {

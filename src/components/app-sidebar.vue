@@ -41,13 +41,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/app-icon.vue'
 import AppSongControlInfo from '@/components/app-song-control-info.vue'
+import { usePlayerStore } from '@/stores/player'
 
 interface SidebarProps {
   isPlayerControls?: boolean
 }
 const { isPlayerControls = true } = defineProps<SidebarProps>()
+
+const playerStore = usePlayerStore()
+const { playerCapabilities } = storeToRefs(playerStore)
 
 interface Route {
   name?: string
@@ -56,42 +62,47 @@ interface Route {
   children?: Route[]
 }
 
-const routes: Route[] = [
-  {
-    name: 'now-playing',
-    title: 'Now Playing',
-    icon: 'play-light',
-    children: [
-      {
-        name: 'playlist',
-        title: 'Queue',
-        icon: 'playlist-light',
-      },
-    ],
-  },
-  {
-    name: 'library',
-    title: 'Music Library',
-    icon: 'playlist-light',
-    children: [
-      {
-        name: 'albums',
-        title: 'Albums',
-        icon: 'notebook-thin',
-      },
-      {
-        name: 'artists',
-        title: 'Artists',
-        icon: 'users-thin',
-      },
-    ],
-  },
-  // {
-  //   name: 'sound',
-  //   title: 'Sound',
-  //   icon: 'music-note-simple-light',
-  // },
-]
+const routes = computed(() => {
+  const baseRoutes: Route[] = [
+    {
+      name: 'now-playing',
+      title: 'Now Playing',
+      icon: 'play-light',
+      children: [
+        // Only include Queue if player supports it
+        ...(playerCapabilities.value.hasQueue ? [{
+          name: 'playlist',
+          title: 'Queue',
+          icon: 'playlist-light',
+        }] : []),
+      ],
+    },
+    {
+      name: 'library',
+      title: 'Music Library',
+      icon: 'playlist-light',
+      children: [
+        {
+          name: 'albums',
+          title: 'Albums',
+          icon: 'notebook-thin',
+        },
+        {
+          name: 'artists',
+          title: 'Artists',
+          icon: 'users-thin',
+        },
+      ],
+    },
+    // {
+    //   name: 'sound',
+    //   title: 'Sound',
+    //   icon: 'music-note-simple-light',
+    // },
+  ]
+
+  return baseRoutes
+})
 </script>
 
 <style scoped lang="scss">

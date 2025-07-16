@@ -92,12 +92,12 @@ import AppBackRouter from '@/components/app-back-router.vue'
 
   .services-header {
     margin-bottom: 32px;
-    
+
     h2 {
       margin: 0 0 8px 0;
       color: var(--color-head);
     }
-    
+
     p {
       margin: 0;
       color: var(--color-body-secondary);
@@ -112,43 +112,43 @@ import AppBackRouter from '@/components/app-back-router.vue'
 
     .service-card {
       padding: 20px;
-      
+
       .service-info {
         display: flex;
         align-items: center;
         gap: 16px;
         margin-bottom: 16px;
-        
+
         .service-icon {
           width: 32px;
           height: 32px;
           color: var(--color-primary);
         }
-        
+
         .service-details {
           flex: 1;
-          
+
           h3 {
             margin: 0 0 4px 0;
             color: var(--color-head);
             font-size: 1.125rem;
           }
-          
+
           .service-status {
             margin: 0;
             font-size: 0.875rem;
-            
+
             &.connected {
               color: var(--color-success);
             }
-            
+
             &.disconnected {
               color: var(--color-body-secondary);
             }
           }
         }
       }
-      
+
       .service-actions {
         .btn {
           width: 100%;
@@ -158,20 +158,20 @@ import AppBackRouter from '@/components/app-back-router.vue'
           font-weight: 500;
           cursor: pointer;
           transition: background-color 0.2s ease;
-          
+
           &.btn-primary {
             background: var(--color-primary);
             color: white;
-            
+
             &:hover {
               background: var(--color-primary-dark);
             }
           }
-          
+
           &.btn-secondary {
             background: var(--color-body-secondary);
             color: white;
-            
+
             &:hover {
               background: var(--color-body);
             }
@@ -184,24 +184,24 @@ import AppBackRouter from '@/components/app-back-router.vue'
   .services-info {
     .card {
       padding: 24px;
-      
+
       .info-content {
         display: flex;
         align-items: center;
         gap: 20px;
-        
+
         .info-icon {
           width: 40px;
           height: 40px;
           color: var(--color-primary);
           opacity: 0.8;
         }
-        
+
         h3 {
           margin: 0 0 8px 0;
           color: var(--color-head);
         }
-        
+
         p {
           margin: 0;
           color: var(--color-body-secondary);

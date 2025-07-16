@@ -68,7 +68,7 @@ const scrolledToBottom = ref<boolean>(false)
 
 function loadNextChunk() {
   if (inRow) {
-    data.value = items.slice(0, 10)
+    data.value = items.slice(0, 20)
   } else {
     if (items.length > 0) {
       const start = currentPage.value * chunkSize.value

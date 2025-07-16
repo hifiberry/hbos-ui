@@ -53,6 +53,27 @@ const router = createRouter({
           ],
         },
         {
+          path: '/services',
+          component: () => import('@/views/router-view.vue'),
+          children: [
+            {
+              path: '',
+              name: 'services',
+              component: () => import('@/views/services/index.vue'),
+            },
+            {
+              path: 'players',
+              name: 'players',
+              component: () => import('@/views/services/players.vue'),
+            },
+            {
+              path: 'web-services',
+              name: 'web-services',
+              component: () => import('@/views/services/web-services.vue'),
+            },
+          ],
+        },
+        {
           path: '/now-playing',
           name: 'now-playing',
           component: () => import('@/views/now-playing.vue'),

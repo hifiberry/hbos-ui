@@ -47,7 +47,7 @@ const data = ref<Album[]>([])
 
 function loadNextChunk() {
   if (inRow) {
-    data.value = albums.slice(0, 10)
+    data.value = albums.slice(0, 20)
   } else {
     if (albums.length > 0) {
       const start = currentPage.value * chunkSize

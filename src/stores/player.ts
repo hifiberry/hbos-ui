@@ -5,6 +5,7 @@ import { useToastStore } from '@/stores/toast'
 import { useLibraryStore } from '@/stores/library'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { usePlayerWebSocket } from '@/stores/player-web-socket'
+import { usePlayerChangesStore } from '@/stores/player-changes'
 
 import {
   DEFAULT_CAPABILITIES,
@@ -27,6 +28,7 @@ export const usePlayerStore = defineStore('player', () => {
   const toastStore = useToastStore()
   const libraryFetch = useLibraryFetch()
   const playerWebSocket = usePlayerWebSocket()
+  const playerChangesStore = usePlayerChangesStore()
 
   // State
   const updateIntervalID = ref<number | undefined>(undefined)
@@ -125,6 +127,11 @@ export const usePlayerStore = defineStore('player', () => {
       const needsResubscribe = !currentPlayerName.value && oldPlayerName !== newPlayerName
 
       console.log('needsResubscribe', needsResubscribe)
+
+      // Notify about player change if it actually changed
+      if (oldPlayerName !== newPlayerName) {
+        playerChangesStore.player_changed(oldPlayerName || null, newPlayerName || null)
+      }
 
       currentData.value = data
 

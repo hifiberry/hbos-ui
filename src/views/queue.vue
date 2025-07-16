@@ -256,19 +256,7 @@ onMounted(async () => {
       }
 
       &--current {
-        background-color: var(--primary);
-        color: #ffffff;
-
-        .track-item__num,
-        .track-item__title,
-        .track-item__artist,
-        .track-item__remove {
-          color: #ffffff;
-        }
-
-        .track-item__title {
-          font-weight: 600;
-        }
+        @include current-track-highlight;
 
         .track-item__remove {
           opacity: 1;
@@ -277,11 +265,6 @@ onMounted(async () => {
             background-color: rgba(255, 255, 255, 0.2);
             color: #ffffff;
           }
-        }
-
-        &:hover {
-          background-color: var(--primary);
-          opacity: 0.9;
         }
       }
 

@@ -45,6 +45,11 @@ const router = createRouter({
               name: 'artists',
               component: () => import('@/views/library/artists.vue'),
             },
+            {
+              path: 'radio',
+              name: 'radio',
+              component: () => import('@/views/library/radio.vue'),
+            },
           ],
         },
         {

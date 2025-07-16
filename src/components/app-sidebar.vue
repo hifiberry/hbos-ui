@@ -99,6 +99,23 @@ const routes = computed(() => {
         },
       ],
     },
+    {
+      name: 'services',
+      title: 'Settings',
+      icon: 'settings',
+      children: [
+        {
+          name: 'players',
+          title: 'Players',
+          icon: 'play',
+        },
+        {
+          name: 'web-services',
+          title: 'Web Services',
+          icon: 'cloud',
+        },
+      ],
+    },
     // {
     //   name: 'sound',
     //   title: 'Sound',

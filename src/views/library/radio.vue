@@ -424,12 +424,13 @@ onMounted(async () => {
           }
 
           &.active {
-            color: var(--color-primary);
+            color: white;
           }
 
           svg {
             width: 16px;
             height: 16px;
+            color: white !important;
           }
         }
       }

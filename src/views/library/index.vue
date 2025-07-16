@@ -46,26 +46,25 @@
         <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
       </div>
 
-      <div v-if="radioStations.length === 0 && loadedRadio" class="empty-state">
+      <div v-if="favoritesList.length === 0 && loaded" class="empty-state">
         <AppIcon icon="hifiberry-radio" class="empty-icon" />
         <p>No favorite radio stations saved</p>
       </div>
 
       <AppPosterGrid
         v-else
-        :loading="loadingRadio"
-        :loaded="loadedRadio"
-        :items="radioStations"
-        poster-form="circle"
+        :loading="loading"
+        :loaded="loaded"
+        :items="favoriteStationsForDisplay"
         in-row
-        @click="(station) => router.push({ name: 'radio' })"
+        @click="playStation"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useRouter } from 'vue-router'
@@ -79,10 +78,31 @@ const artistStore = useArtistStore()
 const { artists, loading: loadingArtists, loaded: loadedArtists } = storeToRefs(artistStore)
 const { getArtists } = artistStore
 
-// Radio stations placeholder data - empty for now
-const radioStations = ref([])
-const loadingRadio = ref(false)
-const loadedRadio = ref(true)
+import { useRadioStore, type RadioFavorite } from '@/stores/radio'
+const radioStore = useRadioStore()
+const { 
+  favoritesList, 
+  loading, 
+  loaded 
+} = storeToRefs(radioStore)
+
+// Convert radio favorites to poster grid format
+const favoriteStationsForDisplay = computed(() => {
+  return favoritesList.value.map((station: RadioFavorite) => ({
+    $id: station.id,
+    $title: station.title,
+    $subtitle: 'Radio Station',
+    $cover_src: station.img || ''
+  }))
+})
+
+const playStation = async (station: { $id?: string }) => {
+  // Find the original favorite station data
+  const originalStation = favoritesList.value.find(fav => fav.id === station.$id)
+  if (originalStation) {
+    await radioStore.playStation(originalStation)
+  }
+}
 
 import { useAlbumStore } from '@/stores/album'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
@@ -99,7 +119,7 @@ onMounted(async () => {
   await libraryStore.getAvailableLibrary()
   getArtists()
   getAlbums()
-  // TODO: Add radio stations fetching when API is available
+  await radioStore.initialize()
 })
 </script>
 

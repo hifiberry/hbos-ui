@@ -80,8 +80,8 @@ const getTrackArtist = (track: Track) => {
 }
 
 const onAddTrackToQueue = async (track: Track) => {
-  await playerStore.sendLibraryCommand('stop')
-  await playerStore.sendLibraryCommand('clear_queue')
+  await playerStore.sendCommand('stop')
+  await playerStore.sendCommand('clear_queue')
   await playerStore.addTrackToQueue(track)
 
   audioControls.togglePlayPause()

@@ -14,7 +14,7 @@ function isLoopMode(value: string): value is Exclude<LoopMode, undefined> {
 
 export const useAudioControls = defineStore('audio-controls', () => {
   const playerStore = usePlayerStore()
-  const { fetchCurrentPlayer, sendLibraryCommand } = playerStore
+  const { fetchCurrentPlayer, sendCommand } = playerStore
   const { currentData, currentSong } = storeToRefs(playerStore)
 
   // State
@@ -79,13 +79,15 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     stopAutoProgress()
 
-    sendLibraryCommand(command)
+    // Playback commands go to active player
+    sendCommand(command)
   }
 
   const playNextOrPrev = (nextOrPrev: string) => {
     console.log('playNextOrPrev', nextOrPrev)
 
-    sendLibraryCommand(nextOrPrev)
+    // Playback commands go to active player
+    sendCommand(nextOrPrev)
   }
 
   const toggleShuffle = () => {
@@ -93,7 +95,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     if (isShuffle.value !== undefined) {
       // can be undefined if can't Shuffle
-      sendLibraryCommand(`set_random:${!isShuffle.value}`)
+      // Playback state commands go to active player
+      sendCommand(`set_random:${!isShuffle.value}`)
     }
   }
 
@@ -121,7 +124,8 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     console.log(`Setting new loop mode: ${nextMode}`)
 
-    sendLibraryCommand(`set_loop:${nextMode}`)
+    // Playback state commands go to active player
+    sendCommand(`set_loop:${nextMode}`)
   }
 
   /**
@@ -145,7 +149,9 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
       const seekCommand = `seek:${Math.floor(seekToPosition)}`
 
-      sendLibraryCommand(seekCommand)
+      // Seek commands go to active player
+      sendCommand(seekCommand)
+      sendCommand('play')
     } catch (error) {
       stopAutoProgress()
 

@@ -1,6 +1,16 @@
 <template>
   <div class="playlist">
-    <h1>Queue</h1>
+    <div class="queue-header">
+      <h1>Queue</h1>
+      <button
+        v-if="queue.length > 0 && playerCapabilities.hasQueue"
+        @click="clearQueue"
+        class="clear-queue-btn"
+        title="Clear entire queue"
+      >
+        Clear Queue
+      </button>
+    </div>
 
     <!-- Show message when current player doesn't support playlists -->
     <div v-if="!playerCapabilities.hasQueue" class="playlist-no-support">
@@ -41,18 +51,6 @@
 
       <!-- Playlist with songs -->
       <div v-else class="playlist-content">
-        <div class="playlist-header">
-          <h2>{{ queue.length }} song{{ queue.length !== 1 ? 's' : '' }} in queue</h2>
-          <button
-            v-if="queue.length > 0"
-            @click="clearQueue"
-            class="clear-queue-btn"
-            title="Clear entire queue"
-          >
-            Clear Queue
-          </button>
-        </div>
-
         <div class="track-list">
           <div
             v-for="(track, index) in queue"
@@ -163,6 +161,33 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 .playlist {
+  .queue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0;
+    }
+
+    .clear-queue-btn {
+      background: none;
+      border: 1px solid var(--color-body-secondary);
+      color: var(--color-body-secondary);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+    }
+  }
+
   .playlist-empty,
   .playlist-no-support,
   .playlist-loading {
@@ -203,37 +228,6 @@ onMounted(async () => {
 
       h2 {
         color: var(--color-body-secondary);
-      }
-    }
-  }
-
-  .playlist-content {
-    .playlist-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-
-      h2 {
-        color: var(--color-body-primary);
-        font-size: 1.25rem;
-        margin: 0;
-      }
-
-      .clear-queue-btn {
-        background: none;
-        border: 1px solid var(--color-body-secondary);
-        color: var(--color-body-secondary);
-        padding: 8px 16px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.875rem;
-        transition: all 0.2s ease;
-
-        &:hover {
-          border-color: var(--primary);
-          color: var(--primary);
-        }
       }
     }
   }
@@ -307,7 +301,7 @@ onMounted(async () => {
 
       &__title {
         font-weight: 500;
-        color: var(--color-body-primary);
+        color: var(--color-head);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

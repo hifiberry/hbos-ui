@@ -39,11 +39,32 @@
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
       />
     </div>
+
+    <div class="card">
+      <div class="title">
+        <h2>Radio</h2>
+        <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
+      </div>
+
+      <div v-if="radioStations.length === 0 && loadedRadio" class="empty-state">
+        <p>No favorite radio stations saved</p>
+      </div>
+      
+      <AppPosterGrid
+        v-else
+        :loading="loadingRadio"
+        :loaded="loadedRadio"
+        :items="radioStations"
+        poster-form="circle"
+        in-row
+        @click="(station) => router.push({ name: 'radio' })"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useRouter } from 'vue-router'
@@ -56,6 +77,11 @@ import { useArtistStore } from '@/stores/artist'
 const artistStore = useArtistStore()
 const { artists, loading: loadingArtists, loaded: loadedArtists } = storeToRefs(artistStore)
 const { getArtists } = artistStore
+
+// Radio stations placeholder data - empty for now
+const radioStations = ref([])
+const loadingRadio = ref(false)
+const loadedRadio = ref(true)
 
 import { useAlbumStore } from '@/stores/album'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
@@ -71,6 +97,7 @@ onMounted(async () => {
   await libraryStore.getAvailableLibrary()
   getArtists()
   getAlbums()
+  // TODO: Add radio stations fetching when API is available
 })
 </script>
 
@@ -91,6 +118,15 @@ onMounted(async () => {
     margin-bottom: 25px;
     h2 {
       margin-bottom: 0;
+    }
+  }
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--color-text-secondary);
+    p {
+      margin: 0;
+      font-size: 16px;
     }
   }
 }

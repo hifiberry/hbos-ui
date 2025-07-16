@@ -9,7 +9,7 @@
         <AppAlbumDetailsCard :album="album" :loading="loading" />
       </div>
       <div class="col-6-md">
-        <AppTracksCard :tracks="album?.tracks || []" :loading="loading" />
+        <AppTracksCard :tracks="album?.tracks || []" :loading="loading" :album="album" />
       </div>
     </div>
   </div>

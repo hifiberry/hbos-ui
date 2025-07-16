@@ -105,7 +105,7 @@
                 @click.stop="toggleFavorite(station)"
                 :title="station.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
               >
-                <AppIcon :icon="station.isFavorite ? 'clear' : 'music-note-simple-light'" />
+                <AppIcon :icon="station.isFavorite ? 'clear' : 'plus'" />
               </button>
             </div>
           </div>
@@ -194,7 +194,7 @@ onMounted(async () => {
 
   .radio-content {    .search-section {
       margin-bottom: 40px;
-      
+
       .search-container {
         margin-bottom: 20px;
       }
@@ -216,12 +216,12 @@ onMounted(async () => {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 20px;
-      
+
       @include media-down(lg) {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         gap: 15px;
       }
-      
+
       @include media-down(md) {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       }
@@ -236,45 +236,45 @@ onMounted(async () => {
       align-items: center;
       font-size: 14px;
       position: relative;
-      
+
       &:hover {
         color: var(--color-primary);
-        
+
         .station-title,
         .station-subtitle {
           color: var(--color-primary);
         }
-        
+
         .station-poster-img img {
           transform: scale(1.2);
         }
       }
-      
+
       &.favorite {
         .station-actions .favorite-btn {
           color: var(--color-primary);
         }
       }
-      
+
       .station-poster-img {
         width: 140px;
         height: 140px;
         margin-bottom: 10px;
         overflow: hidden;
         border-radius: 8px;
-        
+
         @include media-down(lg) {
           width: 100px;
           height: 100px;
         }
-        
+
         img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           transition: all 0.2s linear;
         }
-        
+
         .station-poster-placeholder {
           width: 100%;
           height: 100%;
@@ -282,7 +282,7 @@ onMounted(async () => {
           align-items: center;
           justify-content: center;
           background-color: var(--cover-placeholder-bg);
-          
+
           svg {
             width: 50px;
             height: 50px;
@@ -290,54 +290,53 @@ onMounted(async () => {
           }
         }
       }
-      
+
       .station-poster-attr {
         width: 100%;
         text-align: center;
         font-size: 12px;
         margin-bottom: 8px;
-        
+
         .station-title,
         .station-subtitle {
           transition: all 0.2s linear;
           margin-bottom: 3px;
         }
-        
+
         .station-title {
-          font-weight: 500;
-          color: var(--color-body-primary);
+          @include poster-title;
         }
-        
+
         .station-subtitle {
-          color: var(--color-body-secondary);
-          font-size: 11px;
+          @include poster-subtitle;
         }
-        
+
         .station-tags {
+          @include poster-note;
           display: flex;
           gap: 4px;
           flex-wrap: wrap;
           justify-content: center;
           margin-top: 4px;
-          
+
           .tag {
             padding: 1px 4px;
             background: var(--color-background-tag);
             color: var(--color-text-tag);
             border-radius: 3px;
-            font-size: 9px;
+            font-size: inherit;
             border: 1px solid var(--color-border-tag);
           }
         }
       }
-      
+
       .station-actions {
         position: absolute;
         top: 4px;
         right: 4px;
         opacity: 0;
         transition: opacity 0.2s ease;
-        
+
         .favorite-btn {
           background: rgba(0, 0, 0, 0.7);
           border: none;
@@ -349,23 +348,23 @@ onMounted(async () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          
+
           &:hover {
             background: rgba(0, 0, 0, 0.9);
             transform: scale(1.1);
           }
-          
+
           &.active {
             color: var(--color-primary);
           }
-          
+
           svg {
             width: 16px;
             height: 16px;
           }
         }
       }
-      
+
       &:hover .station-actions {
         opacity: 1;
       }

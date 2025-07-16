@@ -56,10 +56,8 @@ interface TracksProps {
 const { tracks = [], loading = false, album = null } = defineProps<TracksProps>()
 
 import { usePlayerStore } from '@/stores/player.ts'
-import { useAudioControls } from '@/stores/audio-controls'
 
 const playerStore = usePlayerStore()
-const audioControls = useAudioControls()
 
 // Get artist name for a track, only show if different from album artist
 const getTrackArtist = (track: Track) => {
@@ -80,11 +78,13 @@ const getTrackArtist = (track: Track) => {
 }
 
 const onAddTrackToQueue = async (track: Track) => {
-  await playerStore.sendCommand('stop')
+  // Pause the active player
+  await playerStore.sendCommand('pause')
   await playerStore.sendCommand('clear_queue')
   await playerStore.addTrackToQueue(track)
 
-  audioControls.togglePlayPause()
+  // Play from library player (not active player)
+  await playerStore.sendLibraryCommand('play')
 }
 </script>
 

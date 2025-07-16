@@ -31,15 +31,24 @@ export const useLibraryStore = defineStore('library', () => {
     }
 
     const players = data.value?.players ?? []
+    console.log('Library players available:', players)
 
-    const availableLibrary = players.find((p: LibraryPlayer) => p.has_library && p.is_loaded)
+    // Find any player with library that's loaded
+    let availableLibrary = players.find((p: LibraryPlayer) =>
+      p.has_library && p.is_loaded
+    )
+
+    // Last resort: any player with library
+    if (!availableLibrary) {
+      availableLibrary = players.find((p: LibraryPlayer) => p.has_library)
+    }
+
     if (availableLibrary) {
+      console.log('Selected library player:', availableLibrary.player_name)
       activeLibrary.value = availableLibrary.player_name
     } else {
-      const anyLibrary = players.find((p: LibraryPlayer) => p.has_library)
-      if (anyLibrary) {
-        activeLibrary.value = anyLibrary.player_name
-      }
+      console.warn('No suitable library player found')
+      activeLibrary.value = null
     }
 
     loading.value = false

@@ -40,7 +40,7 @@
       />
     </div>
 
-    <div class="card">
+    <div class="card radio-section">
       <div class="title">
         <h2>Radio</h2>
         <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
@@ -154,6 +154,15 @@ onMounted(async () => {
     p {
       margin: 0;
       font-size: 16px;
+    }
+  }
+
+  // Radio section specific styling
+  .radio-section {
+    :deep(.app-poster-grid .poster-grid.row) {
+      @include media-down(md) {
+        justify-items: start;
+      }
     }
   }
 }

@@ -3,6 +3,9 @@
 @use 'sass:meta';
 @use 'variables' as *;
 
+// Import popup mixins
+@import 'popup';
+
 @mixin dark {
   $ampersand: &;
 

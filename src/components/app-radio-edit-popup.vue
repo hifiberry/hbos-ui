@@ -124,137 +124,41 @@ const saveChanges = () => {
 </script>
 
 <style scoped lang="scss">
+@import '@/assets/scss/mixins.scss';
+
 .radio-edit-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+  @include popup-overlay;
 }
 
 .radio-edit-popup {
-  background: var(--background-card, #ffffff);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 480px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  @include popup-container(480px);
 }
 
 .popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 24px 0;
-  margin-bottom: 24px;
-
-  h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--color-head, #000000);
-  }
+  @include popup-header;
 
   .close-btn {
-    background: none;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    border-radius: 50%;
-    color: var(--color-body-secondary, #666666);
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: var(--cover-placeholder-bg, #f0f0f0);
-      color: var(--color-head, #000000);
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
+    @include popup-close-button;
   }
 }
 
 .popup-form {
-  padding: 0 24px 24px;
+  @include popup-content;
 }
 
 .form-group {
-  margin-bottom: 20px;
-
-  label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: var(--color-head, #000000);
-    font-size: 14px;
-  }
-
-  input {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--color-body-secondary, #cccccc);
-    border-radius: 8px;
-    background: var(--background-body, #ffffff);
-    color: var(--color-text, #000000);
-    font-size: 14px;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-
-    &:focus {
-      outline: none;
-      border-color: var(--primary, #007bff);
-      background: var(--background-card, #ffffff);
-    }
-
-    &::placeholder {
-      color: var(--color-body-secondary, #999999);
-    }
-  }
+  @include popup-form-group;
 }
 
 .form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 32px;
+  @include popup-actions;
 
-  button {
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
+  .btn-cancel {
+    @include popup-button-cancel;
+  }
 
-    &.btn-cancel {
-      background: var(--cover-placeholder-bg, #f0f0f0);
-      color: var(--color-body-secondary, #666666);
-
-      &:hover {
-        background: var(--color-body-secondary, #e0e0e0);
-        color: var(--color-head, #000000);
-      }
-    }
-
-    &.btn-save {
-      background: var(--primary, #007bff);
-      color: white;
-
-      &:hover {
-        background: var(--primary, #0056b3);
-        opacity: 0.9;
-      }
-    }
+  .btn-save {
+    @include popup-button-primary;
   }
 }
 </style>

@@ -55,3 +55,33 @@
     @content;
   }
 }
+
+// Mixin for highlighting the currently playing track
+@mixin current-track-highlight {
+  background-color: var(--primary);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+  margin: -12px;
+
+  // Make all child elements white
+  * {
+    color: #ffffff !important;
+  }
+
+  // Bold the track title
+  .track-item__title,
+  .track-item__desc-name {
+    font-weight: 600;
+  }
+
+  &:hover {
+    background-color: var(--primary);
+    opacity: 0.9;
+
+    // Handle marquee text decorations
+    :deep(.marquee span) {
+      text-decoration-color: #ffffff !important;
+    }
+  }
+}

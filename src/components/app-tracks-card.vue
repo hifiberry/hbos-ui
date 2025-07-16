@@ -22,6 +22,7 @@
           v-for="(track, index) in tracks"
           :key="`track-${index}`"
           class="track-item"
+          :class="{ 'track-item--current': isCurrentTrack(track) }"
           @click="onAddTrackToQueue(track)"
         >
           <div class="track-item__num">{{ index + 1 }}</div>
@@ -33,7 +34,6 @@
               <AppMarquee>{{ getTrackArtist(track) }}</AppMarquee>
             </div>
           </div>
-          <!--          <div class="track-item__duration">{{ formatTime(track.duration) }}</div>-->
         </div>
       </template>
     </div>
@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
 import AppMarquee from '@/components/app-marquee.vue'
 
@@ -58,6 +59,18 @@ const { tracks = [], loading = false, album = null } = defineProps<TracksProps>(
 import { usePlayerStore } from '@/stores/player.ts'
 
 const playerStore = usePlayerStore()
+const { currentSong } = storeToRefs(playerStore)
+
+// Function to check if a track is currently playing
+const isCurrentTrack = (track: Track) => {
+  if (!currentSong.value || !track) return false
+
+  // Match by name and artist (Track uses 'name', currentSong uses 'title')
+  const titleMatch = track.name === currentSong.value.title
+  const artistMatch = track.artist === currentSong.value.artist
+
+  return titleMatch && artistMatch
+}
 
 // Get artist name for a track, only show if different from album artist
 const getTrackArtist = (track: Track) => {
@@ -81,6 +94,8 @@ const onAddTrackToQueue = async (track: Track) => {
   // Pause the active player
   await playerStore.sendCommand('pause')
   await playerStore.sendCommand('clear_queue')
+
+  // Track object already has the correct format for the store method
   await playerStore.addTrackToQueue(track)
 
   // Play from library player (not active player)
@@ -96,7 +111,7 @@ const onAddTrackToQueue = async (track: Track) => {
   .track {
     &-item {
       display: grid;
-      grid-template-columns: 20px minmax(150px, 400px) minmax(50px, auto);
+      grid-template-columns: 20px minmax(150px, 1fr);
       align-items: start;
       gap: 8px;
       color: var(--color-body-secondary);
@@ -121,10 +136,6 @@ const onAddTrackToQueue = async (track: Track) => {
           transition: all 0.2s linear;
         }
       }
-      &__duration {
-        text-align: right;
-        font-size: 14px;
-      }
       &:hover {
         .track-item__desc {
           &-name {
@@ -139,8 +150,13 @@ const onAddTrackToQueue = async (track: Track) => {
           }
         }
       }
+
+      &--current {
+        @include current-track-highlight;
+      }
+
       &.skeleton-item {
-        grid-template-columns: 20px 1fr 50px;
+        grid-template-columns: 20px 1fr;
       }
     }
   }

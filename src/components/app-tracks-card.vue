@@ -9,7 +9,6 @@
           class="track-item skeleton-item"
         >
           <div class="track-item__num">{{ index + 1 }}</div>
-          <AppSkeleton class="skeleton-cover" height="40px" />
           <div class="skeleton-desc">
             <AppSkeleton width="30%" height="100%" class="h4" />
             <AppSkeleton width="30%" height="100%" />
@@ -26,15 +25,12 @@
           @click="onAddTrackToQueue(track)"
         >
           <div class="track-item__num">{{ index + 1 }}</div>
-          <div class="track-item__cover">
-            <AppCover :src="''" />
-          </div>
           <div class="track-item__desc">
             <div class="h3 track-item__desc-name">
               <AppMarquee>{{ track.name }}</AppMarquee>
             </div>
-            <div class="track-item__desc-artist">
-              <AppMarquee>{{ track.artist }}</AppMarquee>
+            <div v-if="getTrackArtist(track)" class="track-item__desc-artist">
+              <AppMarquee>{{ getTrackArtist(track) }}</AppMarquee>
             </div>
           </div>
           <!--          <div class="track-item__duration">{{ formatTime(track.duration) }}</div>-->
@@ -45,25 +41,43 @@
 </template>
 
 <script setup lang="ts">
-import AppCover from '@/components/app-cover.vue'
 import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
 import AppMarquee from '@/components/app-marquee.vue'
 
-import type { Track } from '@/types/library'
+import type { Track, AlbumDetails } from '@/types/library'
 
 interface TracksProps {
   tracks: Track[]
   loading?: boolean
   albumId?: string
+  album?: AlbumDetails | null
 }
 
-const { tracks = [], loading = false } = defineProps<TracksProps>()
+const { tracks = [], loading = false, album = null } = defineProps<TracksProps>()
 
 import { usePlayerStore } from '@/stores/player.ts'
 import { useAudioControls } from '@/stores/audio-controls'
 
 const playerStore = usePlayerStore()
 const audioControls = useAudioControls()
+
+// Get artist name for a track, only show if different from album artist
+const getTrackArtist = (track: Track) => {
+  if (!track.artist) {
+    return '' // No track artist, don't show anything
+  }
+  
+  // If album has artists and track artist matches any of them, don't show
+  if (album && album.artists && album.artists.length > 0) {
+    const albumArtist = album.artists[0] // Primary album artist
+    if (track.artist === albumArtist) {
+      return '' // Same as album artist, don't show
+    }
+  }
+  
+  // Track artist is different from album artist, show it
+  return track.artist
+}
 
 const onAddTrackToQueue = async (track: Track) => {
   await playerStore.sendCommand('stop')
@@ -82,8 +96,8 @@ const onAddTrackToQueue = async (track: Track) => {
   .track {
     &-item {
       display: grid;
-      grid-template-columns: 20px 40px minmax(150px, 400px) minmax(50px, auto);
-      align-items: center;
+      grid-template-columns: 20px minmax(150px, 400px) minmax(50px, auto);
+      align-items: start;
       gap: 8px;
       color: var(--color-body-secondary);
       cursor: pointer;
@@ -95,18 +109,7 @@ const onAddTrackToQueue = async (track: Track) => {
       }
       &__num {
         font-size: 14px;
-      }
-      &__cover {
-        :deep(.app-cover) {
-          width: 40px;
-          height: 40px;
-          border-radius: 5px;
-          overflow: hidden;
-          svg {
-            width: 50%;
-            height: 50%;
-          }
-        }
+        padding-top: 2px;
       }
       &__desc {
         .h3 {
@@ -137,7 +140,7 @@ const onAddTrackToQueue = async (track: Track) => {
         }
       }
       &.skeleton-item {
-        grid-template-columns: 20px 40px 1fr 50px;
+        grid-template-columns: 20px 1fr 50px;
       }
     }
   }

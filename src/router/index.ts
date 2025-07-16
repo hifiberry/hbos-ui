@@ -55,7 +55,7 @@ const router = createRouter({
         {
           path: '/playlist',
           name: 'playlist',
-          component: () => import('@/views/playlist.vue'),
+          component: () => import('@/views/queue.vue'),
         },
         {
           path: '/sound',

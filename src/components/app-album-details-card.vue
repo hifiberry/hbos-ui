@@ -48,17 +48,17 @@ const libraryStore = useAlbumStore()
 const albumCover = computed(() => libraryStore.getAlbumCoverById(album?.id || ''))
 
 import { usePlayerStore } from '@/stores/player.ts'
-import { useAudioControls } from '@/stores/audio-controls'
 import { useToastStore } from '@/stores/toast'
 
 const playerStore = usePlayerStore()
-const audioControls = useAudioControls()
+const { sendLibraryCommand } = playerStore
 const toastStore = useToastStore()
 
 const onListenNow = async () => {
   try {
     if (album?.tracks?.length) {
-      await playerStore.sendCommand('stop')
+      // Pause the active player
+      await playerStore.sendCommand('pause')
       await playerStore.sendCommand('clear_queue')
 
       for (let i = 0; i < album.tracks.length; i++) {
@@ -67,7 +67,8 @@ const onListenNow = async () => {
         await playerStore.addTrackToQueue(track)
       }
 
-      audioControls.togglePlayPause()
+      // Play from library player (not active player)
+      await sendLibraryCommand('play')
     }
   } catch (err) {
     const errorMessage =

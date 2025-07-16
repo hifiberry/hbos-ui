@@ -101,8 +101,11 @@ const { fetchQueue } = playlistStore
 // Function to play a track at a specific queue index
 const playTrackAtIndex = async (index: number) => {
   try {
+    // Playback commands go to active player
     await sendCommand('pause')
+    // Queue navigation goes to active player
     await sendCommand(`play_queue_index:${index}`)
+    // Playback commands go to active player
     await sendCommand('play')
   } catch (error) {
     console.error('Failed to play track at index:', index, error)
@@ -113,6 +116,7 @@ const playTrackAtIndex = async (index: number) => {
 const removeTrackFromQueue = async (index: number, event: Event) => {
   event.stopPropagation() // Prevent triggering the play function
   try {
+    // Queue modification goes to active player
     await sendCommand(`remove_track:${index}`)
     // Refresh the queue after removal
     await fetchQueue()
@@ -124,6 +128,7 @@ const removeTrackFromQueue = async (index: number, event: Event) => {
 // Function to clear the entire queue
 const clearQueue = async () => {
   try {
+    // Queue modification goes to active player
     await sendCommand('clear_queue')
     // Refresh the queue after clearing
     await fetchQueue()

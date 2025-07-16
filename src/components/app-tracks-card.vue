@@ -66,7 +66,7 @@ const getTrackArtist = (track: Track) => {
   if (!track.artist) {
     return '' // No track artist, don't show anything
   }
-  
+
   // If album has artists and track artist matches any of them, don't show
   if (album && album.artists && album.artists.length > 0) {
     const albumArtist = album.artists[0] // Primary album artist
@@ -74,14 +74,14 @@ const getTrackArtist = (track: Track) => {
       return '' // Same as album artist, don't show
     }
   }
-  
+
   // Track artist is different from album artist, show it
   return track.artist
 }
 
 const onAddTrackToQueue = async (track: Track) => {
-  await playerStore.sendCommand('stop')
-  await playerStore.sendCommand('clear_queue')
+  await playerStore.sendLibraryCommand('stop')
+  await playerStore.sendLibraryCommand('clear_queue')
   await playerStore.addTrackToQueue(track)
 
   audioControls.togglePlayPause()

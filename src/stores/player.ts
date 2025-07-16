@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 import { useToastStore } from '@/stores/toast'
+import { useLibraryStore } from '@/stores/library'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { usePlayerWebSocket } from '@/stores/player-web-socket'
 
@@ -238,6 +239,56 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  // Send a command to the library player (not the active player)
+  const sendLibraryCommand = async (command: string): Promise<boolean> => {
+    const libraryStore = useLibraryStore()
+    console.log('sendLibraryCommand', {
+      command,
+      activeLibrary: libraryStore.activeLibrary,
+      isAvailableLibrary: libraryStore.isAvailableLibrary
+    })
+
+    isSendingCommand.value = true
+
+    try {
+      if (!libraryStore.activeLibrary) {
+        console.log('No active library, fetching available library...')
+        await libraryStore.getAvailableLibrary()
+        console.log('After fetching, activeLibrary is:', libraryStore.activeLibrary)
+      }
+
+      if (!libraryStore.activeLibrary) {
+        throw new Error('No library player available')
+      }
+
+      const url = `/player/:activeLibrary/command/${command}`
+      console.log('Sending library command to URL:', url, 'which will resolve to:', url.replace(':activeLibrary', libraryStore.activeLibrary))
+
+      const { error } = await libraryFetch(url)
+        .post()
+        .json()
+
+      if (error.value) {
+        console.error('Error sending library command:', error.value)
+        toastStore.showErrorToast(`Command error: ${error.value}`)
+        return false
+      }
+
+      // Update player state after command
+      return new Promise((resolve) => {
+        setTimeout(async () => {
+          const data = await fetchCurrentPlayer()
+          resolve(Boolean(data))
+        }, PLAYER_CONFIG.fastUpdateAfterCommand)
+      })
+    } catch (error) {
+      console.error('Error sending library command:', error)
+      return false
+    } finally {
+      isSendingCommand.value = false
+    }
+  }
+
   return {
     // State
     updateIntervalID,
@@ -257,5 +308,6 @@ export const usePlayerStore = defineStore('player', () => {
     fetchCurrentPlayer,
     retrieveActivePlayer,
     sendCommand,
+    sendLibraryCommand,
   }
 })

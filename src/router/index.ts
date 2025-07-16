@@ -53,6 +53,11 @@ const router = createRouter({
           component: () => import('@/views/now-playing.vue'),
         },
         {
+          path: '/playlist',
+          name: 'playlist',
+          component: () => import('@/views/playlist.vue'),
+        },
+        {
           path: '/sound',
           name: 'sound',
           component: () => import('@/views/sound.vue'),

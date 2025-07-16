@@ -47,9 +47,10 @@
       </div>
 
       <div v-if="radioStations.length === 0 && loadedRadio" class="empty-state">
+        <AppIcon icon="hifiberry-radio" class="empty-icon" />
         <p>No favorite radio stations saved</p>
       </div>
-      
+
       <AppPosterGrid
         v-else
         :loading="loadingRadio"
@@ -85,6 +86,7 @@ const loadedRadio = ref(true)
 
 import { useAlbumStore } from '@/stores/album'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
+import AppIcon from '@/components/app-icon.vue'
 const albumStore = useAlbumStore()
 const {
   sortedAlbumsByReleaseDate,
@@ -124,6 +126,10 @@ onMounted(async () => {
     padding: 40px 20px;
     text-align: center;
     color: var(--color-text-secondary);
+    .empty-icon {
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
     p {
       margin: 0;
       font-size: 16px;

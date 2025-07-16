@@ -1,24 +1,187 @@
 <template>
   <div class="radio">
     <div class="breadcrumbs">
-      <h1>Radio</h1>
+      <AppBackRouter :to="{ name: 'library' }">Radio</AppBackRouter>
     </div>
 
     <div class="radio-content">
-      <div class="empty-state">
-        <AppIcon icon="music" class="empty-icon" />
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-container">
+          <AppSearch
+            v-model="searchQuery"
+            :debounce="1000"
+            placeholder="Search for radio stations with radiobrowser"
+            @change="onSearch"
+          />
+        </div>
+      </div>
+
+      <!-- Favorites Section -->
+      <div v-if="hasFavorites" class="favorites-section">
+        <h2>Favorites</h2>
+        <div class="stations-grid">
+          <div
+            v-for="favorite in favoritesList"
+            :key="favorite.id"
+            class="station-poster favorite"
+            @click="playStation(favorite)"
+          >
+            <div class="station-poster-img">
+              <img
+                v-if="favorite.img"
+                :src="favorite.img"
+                :alt="favorite.title"
+                loading="lazy"
+                @error="onImageError"
+              />
+              <AppIcon v-else icon="hifiberry-radio" class="station-poster-placeholder" />
+            </div>
+            <div class="station-poster-attr">
+              <div class="station-title">
+                <AppMarquee>{{ favorite.title }}</AppMarquee>
+              </div>
+            </div>
+            <div class="station-actions">
+              <button
+                class="favorite-btn active"
+                @click.stop="removeFromFavorites(favorite.id)"
+                title="Remove from favorites"
+              >
+                <AppIcon icon="clear" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Results Section -->
+      <div v-if="hasSearched" class="search-results-section">
+        <h2>Search Results</h2>
+
+        <div v-if="loading" class="loading-state">
+          <AppIcon icon="loading" />
+          <p>Searching stations...</p>
+        </div>
+
+        <div v-else-if="searchResults.length === 0" class="no-results">
+          <h3>No results found</h3>
+          <p>Try searching with different keywords</p>
+        </div>
+
+        <div v-else class="stations-grid">
+          <div
+            v-for="station in searchResults"
+            :key="station.id"
+            class="station-poster"
+            @click="playStation(station)"
+          >
+            <div class="station-poster-img">
+              <img
+                v-if="station.image"
+                :src="station.image"
+                :alt="station.name"
+                loading="lazy"
+                @error="onImageError"
+              />
+              <AppIcon v-else icon="hifiberry-radio" class="station-poster-placeholder" />
+            </div>
+            <div class="station-poster-attr">
+              <div class="station-title">
+                <AppMarquee>{{ station.name }}</AppMarquee>
+              </div>
+              <div class="station-subtitle">
+                <AppMarquee>{{ station.country || 'Unknown' }}</AppMarquee>
+              </div>
+              <div v-if="station.tags" class="station-tags">
+                <span v-for="tag in getStationTags(station.tags)" :key="tag" class="tag">
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+            <div class="station-actions">
+              <button
+                :class="['favorite-btn', { active: station.isFavorite }]"
+                @click.stop="toggleFavorite(station)"
+                :title="station.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
+              >
+                <AppIcon :icon="station.isFavorite ? 'clear' : 'music-note-simple-light'" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-if="!hasFavorites && !hasSearched" class="empty-state">
+        <AppIcon icon="hifiberry-radio" class="empty-icon" />
         <h2>Radio Stations</h2>
-        <p>Radio functionality coming soon</p>
+        <p>Search for radio stations to get started</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/app-icon.vue'
+import AppBackRouter from '@/components/app-back-router.vue'
+import AppSearch from '@/components/app-search.vue'
+import AppMarquee from '@/components/app-marquee.vue'
+import { useRadioStore, type RadioStation, type RadioFavorite } from '@/stores/radio'
+
+const radioStore = useRadioStore()
+const {
+  searchResults,
+  loading,
+  favoritesList,
+  hasFavorites
+} = storeToRefs(radioStore)
+
+const searchQuery = ref('')
+const hasSearched = ref(false)
+
+const onSearch = async (query: string) => {
+  if (query.trim()) {
+    hasSearched.value = true
+    await radioStore.search(query)
+  } else {
+    hasSearched.value = false
+    radioStore.clearSearchResults()
+  }
+}
+
+const playStation = async (station: RadioStation | RadioFavorite) => {
+  await radioStore.playStation(station)
+}
+
+const toggleFavorite = (station: RadioStation) => {
+  radioStore.toggleFavorite(station)
+}
+
+const removeFromFavorites = (stationId: string) => {
+  radioStore.removeFromFavorites(stationId)
+}
+
+const onImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+}
+
+const getStationTags = (tags?: string): string[] => {
+  if (!tags) return []
+  return tags.split(',').map(tag => tag.trim()).slice(0, 3)
+}
+
+onMounted(async () => {
+  await radioStore.initialize()
+})
 </script>
 
 <style scoped lang="scss">
+@import '@/assets/scss/mixins.scss';
+
 .radio {
   .breadcrumbs {
     margin-bottom: 32px;
@@ -29,7 +192,214 @@ import AppIcon from '@/components/app-icon.vue'
     }
   }
 
-  .radio-content {
+  .radio-content {    .search-section {
+      margin-bottom: 40px;
+      
+      .search-container {
+        margin-bottom: 20px;
+      }
+    }
+
+    .favorites-section,
+    .search-results-section {
+      margin-bottom: 40px;
+
+      h2 {
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--color-head);
+      }
+    }
+
+    .stations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 20px;
+      
+      @include media-down(lg) {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 15px;
+      }
+      
+      @include media-down(md) {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      }
+    }
+
+    .station-poster {
+      color: var(--color-body-secondary);
+      cursor: pointer;
+      transition: all 0.2s linear;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 14px;
+      position: relative;
+      
+      &:hover {
+        color: var(--color-primary);
+        
+        .station-title,
+        .station-subtitle {
+          color: var(--color-primary);
+        }
+        
+        .station-poster-img img {
+          transform: scale(1.2);
+        }
+      }
+      
+      &.favorite {
+        .station-actions .favorite-btn {
+          color: var(--color-primary);
+        }
+      }
+      
+      .station-poster-img {
+        width: 140px;
+        height: 140px;
+        margin-bottom: 10px;
+        overflow: hidden;
+        border-radius: 8px;
+        
+        @include media-down(lg) {
+          width: 100px;
+          height: 100px;
+        }
+        
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: all 0.2s linear;
+        }
+        
+        .station-poster-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: var(--cover-placeholder-bg);
+          
+          svg {
+            width: 50px;
+            height: 50px;
+            color: var(--color-icon-primary);
+          }
+        }
+      }
+      
+      .station-poster-attr {
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 8px;
+        
+        .station-title,
+        .station-subtitle {
+          transition: all 0.2s linear;
+          margin-bottom: 3px;
+        }
+        
+        .station-title {
+          font-weight: 500;
+          color: var(--color-body-primary);
+        }
+        
+        .station-subtitle {
+          color: var(--color-body-secondary);
+          font-size: 11px;
+        }
+        
+        .station-tags {
+          display: flex;
+          gap: 4px;
+          flex-wrap: wrap;
+          justify-content: center;
+          margin-top: 4px;
+          
+          .tag {
+            padding: 1px 4px;
+            background: var(--color-background-tag);
+            color: var(--color-text-tag);
+            border-radius: 3px;
+            font-size: 9px;
+            border: 1px solid var(--color-border-tag);
+          }
+        }
+      }
+      
+      .station-actions {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        
+        .favorite-btn {
+          background: rgba(0, 0, 0, 0.7);
+          border: none;
+          padding: 6px;
+          cursor: pointer;
+          border-radius: 50%;
+          color: white;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          &:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+          }
+          
+          &.active {
+            color: var(--color-primary);
+          }
+          
+          svg {
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+      
+      &:hover .station-actions {
+        opacity: 1;
+      }
+    }
+
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 60px 20px;
+      color: var(--color-body-secondary);
+
+      .app-icon {
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--color-body-secondary);
+
+      h3 {
+        margin: 0 0 8px 0;
+        font-size: 1.25rem;
+        color: var(--color-body-primary);
+      }
+
+      p {
+        margin: 0;
+      }
+    }
+
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -59,5 +429,10 @@ import AppIcon from '@/components/app-icon.vue'
       }
     }
   }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -43,6 +43,14 @@
       <div v-else class="playlist-content">
         <div class="playlist-header">
           <h2>{{ queue.length }} song{{ queue.length !== 1 ? 's' : '' }} in queue</h2>
+          <button
+            v-if="queue.length > 0"
+            @click="clearQueue"
+            class="clear-queue-btn"
+            title="Clear entire queue"
+          >
+            Clear Queue
+          </button>
         </div>
 
         <div class="track-list">
@@ -58,6 +66,13 @@
               <div class="track-item__title">{{ track.name || 'Unknown Title' }}</div>
               <div class="track-item__artist">{{ track.artist || 'Unknown Artist' }}</div>
             </div>
+            <button
+              @click="removeTrackFromQueue(index, $event)"
+              class="track-item__remove"
+              title="Remove from queue"
+            >
+              <AppIcon icon="clear" />
+            </button>
           </div>
         </div>
       </div>
@@ -91,6 +106,29 @@ const playTrackAtIndex = async (index: number) => {
     await sendCommand('play')
   } catch (error) {
     console.error('Failed to play track at index:', index, error)
+  }
+}
+
+// Function to remove a track from the queue
+const removeTrackFromQueue = async (index: number, event: Event) => {
+  event.stopPropagation() // Prevent triggering the play function
+  try {
+    await sendCommand(`remove_track:${index}`)
+    // Refresh the queue after removal
+    await fetchQueue()
+  } catch (error) {
+    console.error('Failed to remove track at index:', index, error)
+  }
+}
+
+// Function to clear the entire queue
+const clearQueue = async () => {
+  try {
+    await sendCommand('clear_queue')
+    // Refresh the queue after clearing
+    await fetchQueue()
+  } catch (error) {
+    console.error('Failed to clear queue:', error)
   }
 }
 
@@ -166,12 +204,31 @@ onMounted(async () => {
 
   .playlist-content {
     .playlist-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 24px;
 
       h2 {
         color: var(--color-body-primary);
         font-size: 1.25rem;
         margin: 0;
+      }
+
+      .clear-queue-btn {
+        background: none;
+        border: 1px solid var(--color-body-secondary);
+        color: var(--color-body-secondary);
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+
+        &:hover {
+          border-color: var(--primary);
+          color: var(--primary);
+        }
       }
     }
   }
@@ -183,7 +240,7 @@ onMounted(async () => {
 
     .track-item {
       display: grid;
-      grid-template-columns: 40px 1fr;
+      grid-template-columns: 40px 1fr auto;
       gap: 16px;
       align-items: center;
       padding: 12px;
@@ -193,6 +250,10 @@ onMounted(async () => {
 
       &:hover {
         background-color: var(--color-background-hover, rgba(255, 255, 255, 0.05));
+
+        .track-item__remove {
+          opacity: 1;
+        }
       }
 
       &--current {
@@ -201,12 +262,22 @@ onMounted(async () => {
 
         .track-item__num,
         .track-item__title,
-        .track-item__artist {
+        .track-item__artist,
+        .track-item__remove {
           color: #ffffff;
         }
 
         .track-item__title {
           font-weight: 600;
+        }
+
+        .track-item__remove {
+          opacity: 1;
+
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+          }
         }
 
         &:hover {
@@ -243,6 +314,30 @@ onMounted(async () => {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+
+      &__remove {
+        background: none;
+        border: none;
+        color: var(--color-body-secondary);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        opacity: 0;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+          background-color: rgba(225, 30, 74, 0.1);
+          color: var(--primary);
+        }
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
       }
 
       &.skeleton-item {

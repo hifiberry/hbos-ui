@@ -35,11 +35,19 @@
                 loading="lazy"
                 @error="onImageError"
               />
-              <AppIcon v-else icon="hifiberry-radio" class="station-poster-placeholder" />
+              <AppIcon v-else icon="radio" class="station-poster-placeholder" />
             </div>
             <div class="station-poster-attr">
               <div class="station-title">
                 <AppMarquee>{{ favorite.title }}</AppMarquee>
+              </div>
+              <div class="station-subtitle">
+                <AppMarquee>{{ favorite.country || 'Unknown' }}</AppMarquee>
+              </div>
+              <div v-if="favorite.tags" class="station-tags">
+                <span v-for="tag in getStationTags(favorite.tags)" :key="tag" class="tag">
+                  {{ tag }}
+                </span>
               </div>
             </div>
             <div class="station-actions">
@@ -84,7 +92,7 @@
                 loading="lazy"
                 @error="onImageError"
               />
-              <AppIcon v-else icon="hifiberry-radio" class="station-poster-placeholder" />
+              <AppIcon v-else icon="radio" class="station-poster-placeholder" />
             </div>
             <div class="station-poster-attr">
               <div class="station-title">
@@ -114,7 +122,7 @@
 
       <!-- Empty State -->
       <div v-if="!hasFavorites && !hasSearched" class="empty-state">
-        <AppIcon icon="hifiberry-radio" class="empty-icon" />
+        <AppIcon icon="radio" class="empty-icon" />
         <h2>Radio Stations</h2>
         <p>Search for radio stations to get started</p>
       </div>

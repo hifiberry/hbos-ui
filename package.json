@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev-expose": "vite --host",
+    "dev-server": "vite --config vite.config.dev-server.ts",
+    "dev-server-expose": "vite --host --config vite.config.dev-server.ts",
     "device": "vite --mode test-device",
     "device-expose": "vite --host --mode test-device",
     "build": "run-p type-check \"build-only {@}\" --",

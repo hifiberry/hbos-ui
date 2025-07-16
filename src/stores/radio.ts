@@ -158,6 +158,13 @@ export const useRadioStore = defineStore('radio', () => {
     }
   }
 
+  const editFavorite = (editedStation: RadioFavorite) => {
+    if (favorites.value[editedStation.id]) {
+      favorites.value[editedStation.id] = editedStation
+      saveFavorites()
+    }
+  }
+
   const playStation = async (station: RadioStation | RadioFavorite) => {
     try {
       // In a real implementation, this would communicate with your audio player
@@ -233,6 +240,7 @@ export const useRadioStore = defineStore('radio', () => {
     searchRadioBrowser,
     addToFavorites,
     removeFromFavorites,
+    editFavorite,
     toggleFavorite,
     playStation,
     clearSearchResults,

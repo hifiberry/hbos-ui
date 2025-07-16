@@ -26,6 +26,12 @@
             :key="favorite.id"
             class="station-poster favorite"
             @click="playStation(favorite)"
+            @mousedown="startLongPress(favorite)"
+            @mouseup="cancelLongPress"
+            @mouseleave="cancelLongPress"
+            @touchstart="startLongPress(favorite)"
+            @touchend="cancelLongPress"
+            @touchcancel="cancelLongPress"
           >
             <div class="station-poster-img">
               <img
@@ -127,6 +133,14 @@
         <p>Search for radio stations to get started</p>
       </div>
     </div>
+
+    <!-- Edit Popup -->
+    <AppRadioEditPopup
+      :is-visible="showEditPopup"
+      :station="editingStation"
+      @close="closeEditPopup"
+      @save="saveEditedStation"
+    />
   </div>
 </template>
 
@@ -137,6 +151,7 @@ import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppSearch from '@/components/app-search.vue'
 import AppMarquee from '@/components/app-marquee.vue'
+import AppRadioEditPopup from '@/components/app-radio-edit-popup.vue'
 import { useRadioStore, type RadioStation, type RadioFavorite } from '@/stores/radio'
 
 const radioStore = useRadioStore()
@@ -150,6 +165,15 @@ const {
 const searchQuery = ref('')
 const hasSearched = ref(false)
 
+// Edit popup state
+const showEditPopup = ref(false)
+const editingStation = ref<RadioFavorite | null>(null)
+
+// Long press handling
+const longPressTimer = ref<number | null>(null)
+const longPressDelay = 500 // milliseconds
+const isLongPressing = ref(false)
+
 const onSearch = async (query: string) => {
   if (query.trim()) {
     hasSearched.value = true
@@ -161,6 +185,11 @@ const onSearch = async (query: string) => {
 }
 
 const playStation = async (station: RadioStation | RadioFavorite) => {
+  // Don't play if this was a long press
+  if (isLongPressing.value) {
+    isLongPressing.value = false
+    return
+  }
   await radioStore.playStation(station)
 }
 
@@ -180,6 +209,38 @@ const onImageError = (event: Event) => {
 const getStationTags = (tags?: string): string[] => {
   if (!tags) return []
   return tags.split(',').map(tag => tag.trim()).slice(0, 3)
+}
+
+// Long press handling functions
+const startLongPress = (station: RadioFavorite) => {
+  isLongPressing.value = false
+  longPressTimer.value = window.setTimeout(() => {
+    isLongPressing.value = true
+    openEditPopup(station)
+  }, longPressDelay)
+}
+
+const cancelLongPress = () => {
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value)
+    longPressTimer.value = null
+  }
+}
+
+// Edit popup functions
+const openEditPopup = (station: RadioFavorite) => {
+  editingStation.value = station
+  showEditPopup.value = true
+}
+
+const closeEditPopup = () => {
+  showEditPopup.value = false
+  editingStation.value = null
+}
+
+const saveEditedStation = (editedStation: RadioFavorite) => {
+  radioStore.editFavorite(editedStation)
+  closeEditPopup()
 }
 
 onMounted(async () => {

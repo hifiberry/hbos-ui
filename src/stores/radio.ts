@@ -21,6 +21,8 @@ export interface RadioFavorite {
   title: string
   url: string
   img?: string
+  country?: string
+  tags?: string
 }
 
 export interface RadioSearchResult {
@@ -120,7 +122,9 @@ export const useRadioStore = defineStore('radio', () => {
       id: station.id,
       title: station.name,
       url: station.url,
-      img: station.image
+      img: station.image,
+      country: station.country,
+      tags: station.tags
     }
 
     // Update the station in search results
@@ -180,7 +184,20 @@ export const useRadioStore = defineStore('radio', () => {
     try {
       const saved = localStorage.getItem('radioFavorites')
       if (saved) {
-        favorites.value = JSON.parse(saved)
+        const loadedFavorites = JSON.parse(saved)
+
+        // Migrate old favorites that might not have country and tags
+        for (const favorite of Object.values(loadedFavorites)) {
+          const fav = favorite as RadioFavorite
+          if (typeof fav.country === 'undefined') {
+            fav.country = undefined
+          }
+          if (typeof fav.tags === 'undefined') {
+            fav.tags = undefined
+          }
+        }
+
+        favorites.value = loadedFavorites
       }
     } catch (error) {
       console.error('Failed to load radio favorites:', error)

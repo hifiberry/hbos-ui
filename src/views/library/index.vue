@@ -47,7 +47,7 @@
       </div>
 
       <div v-if="favoritesList.length === 0 && loaded" class="empty-state">
-        <AppIcon icon="hifiberry-radio" class="empty-icon" />
+        <AppIcon icon="radio" class="empty-icon" />
         <p>No favorite radio stations saved</p>
       </div>
 
@@ -80,10 +80,10 @@ const { getArtists } = artistStore
 
 import { useRadioStore, type RadioFavorite } from '@/stores/radio'
 const radioStore = useRadioStore()
-const { 
-  favoritesList, 
-  loading, 
-  loaded 
+const {
+  favoritesList,
+  loading,
+  loaded
 } = storeToRefs(radioStore)
 
 // Convert radio favorites to poster grid format
@@ -91,7 +91,8 @@ const favoriteStationsForDisplay = computed(() => {
   return favoritesList.value.map((station: RadioFavorite) => ({
     $id: station.id,
     $title: station.title,
-    $subtitle: 'Radio Station',
+    $subtitle: station.country || 'Radio Station',
+    $note: station.tags ? station.tags.split(',').map(tag => tag.trim()).slice(0, 3).join(', ') : '',
     $cover_src: station.img || ''
   }))
 })

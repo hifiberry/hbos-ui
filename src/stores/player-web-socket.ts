@@ -472,10 +472,16 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
           case 'QueueChanged':
             console.log('QueueChanged')
 
-            // ! we dont handle this yet: Queue has changed, refresh it
-            // if (playerCapabilities.hasQueue) {
-            //   fetchQueue()
-            // }
+            // Queue has changed, refresh playlist if player supports it
+            const { playerCapabilities } = playerStore
+            if (playerCapabilities.hasQueue) {
+              // Import and refresh playlist store
+              import('@/stores/playlist').then((module) => {
+                const { usePlaylistStore } = module
+                const playlistStore = usePlaylistStore()
+                playlistStore.fetchQueue()
+              })
+            }
             break
           case 'SongInformationUpdate':
           case 'song_information_update':

@@ -42,11 +42,25 @@ const {
   loaded = false,
   items = [],
   inRow = false,
+  posterForm = 'square',
 } = defineProps<PosterGridProps<T>>()
 
 const emit = defineEmits(['click'])
 
-const chunkSize = 50
+// Dynamic chunk size based on browser window size
+const getChunkSize = () => {
+  const width = window.innerWidth
+  const height = window.innerHeight
+
+  if (width > 3000 && height > 1500) {
+    return 100
+  } else if (width > 1920 && height > 1080) {
+    return 80
+  }
+  return 50
+}
+
+const chunkSize = ref(getChunkSize())
 const currentPage = ref<number>(0)
 const data = ref<T[]>([]) as Ref<T[]>
 
@@ -57,8 +71,8 @@ function loadNextChunk() {
     data.value = items.slice(0, 10)
   } else {
     if (items.length > 0) {
-      const start = currentPage.value * chunkSize
-      const end = start + chunkSize
+      const start = currentPage.value * chunkSize.value
+      const end = start + chunkSize.value
       const nextChunk = items.slice(start, end)
 
       data.value.push(...nextChunk)
@@ -79,6 +93,17 @@ function handleScroll() {
   }
 }
 
+function handleResize() {
+  const newChunkSize = getChunkSize()
+  if (newChunkSize !== chunkSize.value) {
+    chunkSize.value = newChunkSize
+    // Reset and reload with new chunk size
+    currentPage.value = 0
+    data.value = []
+    loadNextChunk()
+  }
+}
+
 const isNote = computed(() => {
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
@@ -91,10 +116,12 @@ const isNote = computed(() => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleResize)
 })
 
 watch(

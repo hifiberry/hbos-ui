@@ -26,13 +26,11 @@
 
 # Phase 4
 
-* Settings/Bluetooth
-  * Pair device
-  * remove paired device
+
 * Settings/Services **improved**
-  * connect Spotify
+  * connect Spotify **done**
   * connect LastFM **done**
-  * connect PlexAmp
+  * connect PlexAmp **later - no plexamp yet***
 * Settings/Music library
   * mount SMB share **started**
   * update library 
@@ -42,6 +40,9 @@
   * forbidden operation handling **done**
   * visual state management **done**
   * error handling and user feedback **done**
+* Settings/Bluetooth
+  * Pair device
+  * remove paired device
 * Settings/Others
   * change system name
  

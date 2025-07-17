@@ -6,12 +6,12 @@
       <AppCover
         class="now-playing__cover"
         :src="song?.cover_art_url"
-        :alt="song?.artist || 'Artist'"
+        :alt="song?.artist || song?.title || 'Now Playing'"
       />
 
       <div class="now-playing__info">
-        <h2>{{ song?.title || 'Song Name' }}</h2>
-        <p>{{ song?.artist || 'Artist' }}</p>
+        <h2 v-if="song?.title">{{ song.title }}</h2>
+        <p v-if="song?.artist">{{ song.artist }}</p>
       </div>
 
       <AppProgressControl class="now-playing__progress-control" isDraggable />

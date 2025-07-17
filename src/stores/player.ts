@@ -164,20 +164,21 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   const initPlayer = async () => {
-    console.log('player.ts: initPlayer() called - starting player initialization')
     console.log('initPlayer')
 
     isSendingCommand.value = true
 
     // await fetchPlayersAndUpdatePlayerDropdown() // for now we have only mpd player
+    
+    // Set up WebSocket connection first, before fetching current player
+    playerWebSocket.setupWebSocket()
+    
     await fetchCurrentPlayer()
 
     isSendingCommand.value = false
 
     // Set up periodic updates using the configured polling interval
     updateIntervalID.value = setInterval(fetchCurrentPlayer, PLAYER_CONFIG.pollingInterval)
-
-    playerWebSocket.setupWebSocket()
   }
 
   const clearPollingInterval = () => {

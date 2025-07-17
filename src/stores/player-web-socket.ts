@@ -207,14 +207,13 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     console.log('subscribeToPlayerEvents')
 
     if (!wsController.value) {
-      console.warn('Cannot subscribe to player events: No wsController')
-
+      console.warn('Cannot subscribe to player events: No wsController - will retry when connected')
       return
     }
 
     const socket = wsController.value.getSocket()
     if (!socket || socket.readyState !== WebSocket.OPEN) {
-      console.warn('Cannot subscribe to player events: WebSocket not open')
+      console.warn('Cannot subscribe to player events: WebSocket not open - will retry when connected')
       return
     }
 

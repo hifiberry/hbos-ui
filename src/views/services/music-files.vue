@@ -37,7 +37,7 @@
         </div>
 
         <div v-else class="mounts-list">
-          <div v-for="mount in mounts" :key="`${mount.server}-${mount.share}`" class="card">
+          <div v-for="mount in mounts" :key="mount.id" class="card">
             <div class="mount-item" :class="{ expanded: isExpanded(mount) }">
               <div class="mount-main">
                 <div class="mount-info">
@@ -124,7 +124,7 @@
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
-import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
+import { getSmbMounts, unmountSmbShare, mountSmbShareById, unmountSmbShareById, type SmbMount } from '@/api/smb'
 
 // State
 const loading = ref(true)
@@ -133,11 +133,11 @@ const mounts = ref<SmbMount[]>([])
 const mounting = ref(false)
 const unmounting = ref(false)
 const removing = ref(false)
-const expandedMounts = ref<Set<string>>(new Set())
+const expandedMounts = ref<Set<number>>(new Set())
 
 // Methods
 const toggleMountDetails = (mount: SmbMount) => {
-  const key = `${mount.server}-${mount.share}`
+  const key = mount.id
   if (expandedMounts.value.has(key)) {
     expandedMounts.value.delete(key)
   } else {
@@ -146,7 +146,7 @@ const toggleMountDetails = (mount: SmbMount) => {
 }
 
 const isExpanded = (mount: SmbMount) => {
-  const key = `${mount.server}-${mount.share}`
+  const key = mount.id
   return expandedMounts.value.has(key)
 }
 const refreshMounts = async () => {
@@ -184,9 +184,9 @@ const handleToggleMount = async (event: Event, mount: SmbMount) => {
 
   try {
     if (wasEnabled) {
-      // Unmount the share
+      // Unmount the share using ID
       unmounting.value = true
-      const response = await unmountSmbShare(mount.server, mount.share)
+      const response = await unmountSmbShareById(mount.id)
 
       if (response.status === 'success') {
         await refreshMounts()
@@ -194,11 +194,15 @@ const handleToggleMount = async (event: Event, mount: SmbMount) => {
         error.value = response.message || 'Failed to unmount share'
       }
     } else {
-      // Mount the share
+      // Mount the share using ID
       mounting.value = true
-      // TODO: Implement mounting functionality
-      console.log('Mounting share:', mount)
-      await refreshMounts()
+      const response = await mountSmbShareById(mount.id)
+
+      if (response.status === 'success') {
+        await refreshMounts()
+      } else {
+        error.value = response.message || 'Failed to mount share'
+      }
     }
   } catch (err) {
     console.error('Error toggling mount:', err)
@@ -213,6 +217,7 @@ const removeMount = async (mount: SmbMount) => {
   removing.value = true
 
   try {
+    // Use the legacy server/share endpoint for complete removal
     const response = await unmountSmbShare(mount.server, mount.share)
 
     if (response.status === 'success') {

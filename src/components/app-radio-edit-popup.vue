@@ -180,6 +180,8 @@ const handleImageUpload = (event: Event) => {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/scss/popup' as *;
+
 .radio-edit-popup-overlay {
   @include popup-overlay;
 }

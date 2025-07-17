@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 import AppBackRouter from '@/components/app-back-router.vue'
-import LastFMIntegration from '@/components/lastfm.vue'
+import LastFMIntegration from '@/components/app-lastfm.vue'
 </script>
 
 <style scoped lang="scss">

@@ -37,6 +37,7 @@ export interface SmbSharesResponse {
 }
 
 export interface SmbMount {
+  id: number
   server: string
   share: string
   mountpoint: string
@@ -51,6 +52,11 @@ export interface SmbMountsResponse {
   data: {
     mounts: SmbMount[]
     count: number
+    summary: {
+      total: number
+      mounted: number
+      unmounted: number
+    }
   }
   message?: string
 }
@@ -80,10 +86,12 @@ export interface SmbMountResponse {
   status: 'success' | 'error'
   message: string
   data?: {
+    id?: number
     server: string
     share: string
     mountpoint: string
-    mounted: boolean
+    mounted?: boolean
+    unmounted?: boolean
   }
   error?: string
 }
@@ -224,7 +232,49 @@ export const unmountSmbShare = async (server: string, share: string): Promise<Sm
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
   const response = await fetch(`${baseUrl}/smb/unmount/${encodeURIComponent(server)}/${encodeURIComponent(share)}`, {
-    method: 'DELETE',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
+}
+
+/**
+ * Mount a specific SMB share by its configuration ID
+ */
+export const mountSmbShareById = async (id: number): Promise<SmbMountResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/smb/mount/${id}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
+}
+
+/**
+ * Unmount a specific SMB share by its configuration ID
+ */
+export const unmountSmbShareById = async (id: number): Promise<SmbMountResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/smb/unmount/${id}`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },

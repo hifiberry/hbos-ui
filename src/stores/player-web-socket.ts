@@ -33,11 +33,16 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
 
     // Create a new WebSocket controller
     const wsUrl = configStore.getWsBaseUrl()
-    const url = new URL(wsUrl)
-    wsController.value = createPlayerWebSocket({
-      hostname: url.hostname,
-      port: parseInt(url.port) || configStore.config.audiocontrol_api.devicePort,
-      apiPrefix: url.pathname,
+    console.log('WebSocket URL from config:', wsUrl)
+
+    try {
+      const url = new URL(wsUrl)
+      console.log('Parsed WebSocket URL - hostname:', url.hostname, 'port:', url.port, 'pathname:', url.pathname)
+
+      wsController.value = createPlayerWebSocket({
+        hostname: url.hostname,
+        port: parseInt(url.port) || configStore.config.audiocontrol_api.devicePort,
+        apiPrefix: url.pathname,
       onConnect: () => {
         console.log('WebSocket connected')
         // Use async/await with the subscribe function
@@ -60,6 +65,11 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
 
     // Connect to the WebSocket
     wsController.value.connect()
+    } catch (error) {
+      console.error('Failed to parse WebSocket URL:', wsUrl, error)
+      // Don't create WebSocket controller if URL parsing fails
+      wsController.value = null
+    }
   }
 
   function createPlayerWebSocket(options: createPlayerWebSocketOptions) {

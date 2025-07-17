@@ -213,7 +213,7 @@ export const useRadioStore = defineStore('radio', () => {
   const saveFavoritesToConfig = async () => {
     try {
       const serializedFavorites = JSON.stringify(favorites.value)
-      const response = await setConfigValue('radiostations', serializedFavorites)
+      const response = await setConfigValue('ui.radiostations', serializedFavorites)
       if (response.status === 'success') {
         console.log('Radio favorites saved to Config API')
       } else {
@@ -226,10 +226,10 @@ export const useRadioStore = defineStore('radio', () => {
 
   const loadFavoritesFromConfig = async () => {
     try {
-      const response = await getConfigValue('radiostations')
+      const response = await getConfigValue('ui.radiostations')
       if (response.status === 'success' && response.data) {
         const loadedFavorites = JSON.parse(response.data.value)
-        
+
         // Migrate old favorites that might not have country and tags
         for (const favorite of Object.values(loadedFavorites)) {
           const fav = favorite as RadioFavorite

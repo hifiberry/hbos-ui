@@ -75,7 +75,9 @@ export const useConfigStore = defineStore('config', () => {
   const getWsBaseUrl = (): string => {
     const { deviceIP, devicePort, apiPrefix } = config.value.audiocontrol_api
     // WebSocket always connects directly to API server (no proxy)
-    return `ws://${deviceIP}:${devicePort}${apiPrefix}`
+    const wsUrl = `ws://${deviceIP}:${devicePort}${apiPrefix}`
+    console.log('Generated WebSocket URL:', wsUrl, 'from config:', { deviceIP, devicePort, apiPrefix })
+    return wsUrl
   }
 
   return {

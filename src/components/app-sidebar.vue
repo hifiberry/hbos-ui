@@ -119,6 +119,11 @@ const routes = computed(() => {
           title: 'Music Files',
           icon: 'nas',
         },
+        {
+          name: 'system-info',
+          title: 'System Info',
+          icon: 'computer',
+        },
       ],
     },
     // {

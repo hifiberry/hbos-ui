@@ -12,6 +12,17 @@ export interface SystemInfo {
     uuid: string
     vendor_card: string
   }
+  soundcard: {
+    name: string
+    volume_control: string
+    hardware_index: number
+    output_channels: number
+    input_channels: number
+    features: string[]
+    hat_name: string
+    supports_dsp: boolean
+    card_type: string[]
+  }
   system: {
     uuid: string
   }

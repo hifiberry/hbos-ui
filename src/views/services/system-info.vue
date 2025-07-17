@@ -19,7 +19,10 @@
       <div v-else-if="systemInfo" class="info-tables">
         <!-- Raspberry Pi Information -->
         <div class="info-card">
-          <h2>Raspberry Pi</h2>
+          <div class="card-header">
+            <AppIcon icon="computer" class="card-icon" />
+            <h2>Raspberry Pi</h2>
+          </div>
           <table class="info-table">
             <tbody>
               <tr>
@@ -27,8 +30,8 @@
                 <td class="value">{{ systemInfo.pi_model.name }}</td>
               </tr>
               <tr>
-                <td class="label">Version</td>
-                <td class="value">{{ systemInfo.pi_model.version }}</td>
+                <td class="label">System UUID</td>
+                <td class="value uuid">{{ systemInfo.system.uuid }}</td>
               </tr>
             </tbody>
           </table>
@@ -36,7 +39,10 @@
 
         <!-- HAT Information -->
         <div class="info-card">
-          <h2>HAT Information</h2>
+          <div class="card-header">
+            <AppIcon icon="hifiberry" class="card-icon" />
+            <h2>HAT Information</h2>
+          </div>
           <table class="info-table">
             <tbody>
               <tr>
@@ -48,10 +54,6 @@
                 <td class="value">{{ systemInfo.hat_info.product }}</td>
               </tr>
               <tr>
-                <td class="label">Vendor Card</td>
-                <td class="value">{{ systemInfo.hat_info.vendor_card }}</td>
-              </tr>
-              <tr>
                 <td class="label">UUID</td>
                 <td class="value uuid">{{ systemInfo.hat_info.uuid }}</td>
               </tr>
@@ -59,14 +61,41 @@
           </table>
         </div>
 
-        <!-- System Information -->
+        <!-- Sound Card Information -->
         <div class="info-card">
-          <h2>System</h2>
+          <div class="card-header">
+            <AppIcon icon="volume" class="card-icon" />
+            <h2>Sound Card</h2>
+          </div>
           <table class="info-table">
             <tbody>
               <tr>
-                <td class="label">System UUID</td>
-                <td class="value uuid">{{ systemInfo.system.uuid }}</td>
+                <td class="label">Name</td>
+                <td class="value">{{ systemInfo.soundcard.name }}</td>
+              </tr>
+              <tr>
+                <td class="label">Volume Control</td>
+                <td class="value">{{ systemInfo.soundcard.volume_control }}</td>
+              </tr>
+              <tr>
+                <td class="label">Hardware Index</td>
+                <td class="value">{{ systemInfo.soundcard.hardware_index }}</td>
+              </tr>
+              <tr>
+                <td class="label">Channels</td>
+                <td class="value">{{ systemInfo.soundcard.output_channels }} out, {{ systemInfo.soundcard.input_channels }} in</td>
+              </tr>
+              <tr>
+                <td class="label">Card Type</td>
+                <td class="value">{{ systemInfo.soundcard.card_type.join(', ') }}</td>
+              </tr>
+              <tr>
+                <td class="label">Features</td>
+                <td class="value">{{ systemInfo.soundcard.features.join(', ') }}</td>
+              </tr>
+              <tr>
+                <td class="label">DSP Support</td>
+                <td class="value">{{ systemInfo.soundcard.supports_dsp ? 'Yes' : 'No' }}</td>
               </tr>
             </tbody>
           </table>
@@ -78,6 +107,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import AppIcon from '@/components/app-icon.vue'
 import { getSystemInfo, type SystemInfo } from '@/api/system'
 
 // State
@@ -89,10 +119,10 @@ const systemInfo = ref<SystemInfo | null>(null)
 const fetchSystemInfo = async () => {
   loading.value = true
   error.value = ''
-  
+
   try {
     const data = await getSystemInfo()
-    
+
     if (data.status === 'success') {
       systemInfo.value = data
     } else {
@@ -161,20 +191,31 @@ onMounted(() => {
       gap: 24px;
       grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
 
-      .info-card {
-        background: var(--background-card);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        padding: 24px;
+        .info-card {
+          background: var(--background-card);
+          border: 1px solid var(--color-border);
+          border-radius: 8px;
+          padding: 24px;
 
-        h2 {
-          margin: 0 0 16px 0;
-          color: var(--color-head);
-          font-size: 1.25rem;
-          font-weight: 600;
-        }
+          .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
 
-        .info-table {
+            .card-icon {
+              width: 20px;
+              height: 20px;
+              color: var(--color-primary);
+            }
+
+            h2 {
+              margin: 0;
+              color: var(--color-head);
+              font-size: 1.25rem;
+              font-weight: 600;
+            }
+          }        .info-table {
           width: 100%;
           border-collapse: collapse;
 
@@ -199,7 +240,7 @@ onMounted(() => {
 
                 &.value {
                   color: var(--color-body);
-                  font-family: var(--font-family-mono, 'Courier New', monospace);
+                  font-family: 'Metropolis', sans-serif;
 
                   &.uuid {
                     font-size: 0.9em;

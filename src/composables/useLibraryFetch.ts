@@ -1,12 +1,13 @@
 import { createFetch } from '@vueuse/core'
 import { useLibraryStore } from '@/stores/library.ts'
 
-import { API_BASE_URL } from '@/constants/api.ts'
+import { useConfigStore } from '@/stores/config'
 
 export const useLibraryFetch = () => {
+  const configStore = useConfigStore()
   const libraryStore = useLibraryStore()
   return createFetch({
-    baseUrl: API_BASE_URL,
+    baseUrl: configStore.getApiBaseUrl(),
     combination: 'overwrite',
     options: {
       async beforeFetch({ url, options, cancel }) {

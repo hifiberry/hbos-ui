@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 import { usePlayerStore, PLAYER_CONFIG } from '@/stores/player'
 import { useDebounceFn } from '@vueuse/core'
 
-import { WS_DEVICE_IP, WS_PORT } from '@/constants/api.ts'
+import { useConfigStore } from '@/stores/config'
 
 import type {
   WsController,
@@ -14,6 +14,7 @@ import type {
 } from '@/types/web-socket'
 
 export const usePlayerWebSocket = defineStore('player-web-socket', () => {
+  const configStore = useConfigStore()
   const playerStore = usePlayerStore()
 
   // State
@@ -31,11 +32,13 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     }
 
     // Create a new WebSocket controller
+    const wsUrl = configStore.getWsBaseUrl()
+    const url = new URL(wsUrl)
     wsController.value = createPlayerWebSocket({
       // hostname: window.location.hostname,
-      hostname: WS_DEVICE_IP,
+      hostname: url.hostname,
       // port: window.location.port || 1080, // TODO uncomment when prod is ready
-      port: WS_PORT,
+      port: parseInt(url.port) || 1080,
       onConnect: () => {
         console.log('WebSocket connected')
         // Use async/await with the subscribe function

@@ -3,12 +3,24 @@ import { defineStore } from 'pinia'
 
 export interface AppConfig {
   radioPlayer: string
+  api: {
+    deviceIP: string
+    devicePort: number
+    apiPrefix: string
+    useProxy: boolean
+  }
 }
 
 export const useConfigStore = defineStore('config', () => {
   // State
   const config = ref<AppConfig>({
-    radioPlayer: 'mpd' // Default radio player
+    radioPlayer: 'mpd', // Default radio player
+    api: {
+      deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
+      devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '1080', 10),
+      apiPrefix: '/api',
+      useProxy: !import.meta.env.PROD // Use proxy in development
+    }
   })
   const loading = ref(false)
 
@@ -45,6 +57,27 @@ export const useConfigStore = defineStore('config', () => {
     return updateConfig({ radioPlayer: playerName })
   }
 
+  const setApiConfig = async (apiConfig: Partial<AppConfig['api']>): Promise<boolean> => {
+    return updateConfig({ api: { ...config.value.api, ...apiConfig } })
+  }
+
+  // API URL getters
+  const getApiBaseUrl = (): string => {
+    const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.api
+
+    if (useProxy) {
+      return `http://localhost:5173${apiPrefix}` // Use proxy in development
+    }
+
+    return `http://${deviceIP}:${devicePort}${apiPrefix}`
+  }
+
+  const getWsBaseUrl = (): string => {
+    const { deviceIP, devicePort, apiPrefix } = config.value.api
+    // WebSocket always connects directly to API server (no proxy)
+    return `ws://${deviceIP}:${devicePort}${apiPrefix}`
+  }
+
   return {
     // State
     config,
@@ -54,8 +87,14 @@ export const useConfigStore = defineStore('config', () => {
     getConfig,
     updateConfig,
     setRadioPlayer,
+    setApiConfig,
+
+    // API URL getters
+    getApiBaseUrl,
+    getWsBaseUrl,
 
     // Getters
-    radioPlayer: () => config.value.radioPlayer
+    radioPlayer: () => config.value.radioPlayer,
+    apiConfig: () => config.value.api
   }
 })

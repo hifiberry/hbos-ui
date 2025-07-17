@@ -12,9 +12,10 @@ import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { useToastStore } from '@/stores/toast'
 import { useLibraryStore } from '@/stores/library.ts'
 
-import { API_BASE_URL } from '@/constants/api.ts'
+import { useConfigStore } from '@/stores/config'
 
 export const useAlbumStore = defineStore('album', () => {
+  const configStore = useConfigStore()
   const libraryFetch = useLibraryFetch()
   const toastStore = useToastStore()
   const libraryStore = useLibraryStore()
@@ -116,8 +117,10 @@ export const useAlbumStore = defineStore('album', () => {
     loading.value = false
   }
 
-  const getAlbumCoverById = (id: string) =>
-    `${API_BASE_URL}/library/${libraryStore.activeLibrary}/image/album:${id}`
+  const getAlbumCoverById = (id: string) => {
+    const apiBase = configStore.getApiBaseUrl()
+    return `${apiBase}/library/${libraryStore.activeLibrary}/image/album:${id}`
+  }
 
   return {
     // State

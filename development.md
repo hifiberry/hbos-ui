@@ -19,7 +19,7 @@
 * Player change in audiocontrol (another player becomes active) **tested**
 * Queue management (clear queue, add album, add song, ...) **done**
 * Web radio browser **done**
-* like/unlike song
+* like/unlike song **started**
 * volume control
 * Improve album view (e.g. /library/albums/10518654235945294040) **done**
   - if the artist isn't the same at the album artist, display artist name on the song **done**
@@ -32,13 +32,13 @@
   - remove paired device
 * Settings/Services
   - connect Spotify
-  - connect LastFM
+  - connect LastFM **started**
   - connect PlexAmp
 * Settings/Music library
-  - mount SMB share
+  - mount SMB share ** started**
   - update library 
 * Settings/Players
-  - enable/disable players
+  - enable/disable players **started**
 * Settings/Others
   - change system name
  
@@ -52,7 +52,8 @@
 * Lyrics support - display lyrics in "Now playing"
 * Enable user to upload artist/album art
 * Support for additional meta data in "Now playing" (format, sample rate, ...)
-* Add (optional) password verification to use the UI, also add some kind of authorisation to API calls 
+* Add (optional) password verification to use the UI, also add some kind of authorisation to API calls
+* Improve icons
  
 # Later
 

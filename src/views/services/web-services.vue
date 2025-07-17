@@ -12,6 +12,9 @@
 
       <!-- Last.FM Integration -->
       <LastFMIntegration />
+
+      <!-- Spotify Integration -->
+      <SpotifyIntegration />
     </div>
   </div>
 </template>
@@ -19,6 +22,7 @@
 <script setup lang="ts">
 import AppBackRouter from '@/components/app-back-router.vue'
 import LastFMIntegration from '@/components/app-lastfm.vue'
+import SpotifyIntegration from '@/components/app-spotify.vue'
 </script>
 
 <style scoped lang="scss">

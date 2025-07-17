@@ -17,16 +17,15 @@
 # Phase 3
 
 * Player change in audiocontrol (another player becomes active)
-* Show active player
-* Queue management (clear queue, add album, add song, ...)
-* Web radio browser
+* Queue management (clear queue, add album, add song, ...) *done*
+* Web radio browser *done*
 * like/unlike song
 * volume control
 * Show library loading progress
 * Improve album view (e.g. /library/albums/10518654235945294040):
   - display some meta data on the songs (e.g. length)
-  - if the artist isn't the same at the album artist, display artist name on the song
-  - remove the icon on each song 
+  - if the artist isn't the same at the album artist, display artist name on the song *done*
+  - remove the icon on each song *done*
 
 # Phase 4
 
@@ -47,6 +46,7 @@
  
 # Phase 5
 
+* Show active player
 * Sorting & filtering for albums & artists
 * Scroll bar with letters on the right for album and artist view
 * Lyrics support - display lyrics in "Now playing"

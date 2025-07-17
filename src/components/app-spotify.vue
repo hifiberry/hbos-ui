@@ -7,7 +7,7 @@
             <AppIcon icon="spotify" class="service-icon" />
             <div class="service-details">
               <h3>Spotify</h3>
-              <p class="service-description">Connect to stream music, control playback, and access your playlists</p>
+              <p class="service-description">Connect to control playback, and enhance songs with additional meta data</p>
               <div class="service-status">
                 <span :class="statusIndicatorClass">
                   {{ statusText }}
@@ -225,8 +225,9 @@ const connectToSpotify = async () => {
 
     // Get login URL
     const loginData = await getSpotifyLoginUrl(sessionData.session_id)
+    console.log('Login response received:', loginData)
 
-    if (loginData.status === 'success' && loginData.message) {
+    if ((loginData.status === 'success' || loginData.status === 'redirect') && loginData.message) {
       authProgressStep.value = 'Opening Spotify authorization...'
 
       // Clean up the URL
@@ -242,7 +243,8 @@ const connectToSpotify = async () => {
       updateStatus('Please authorize on the Spotify page that just opened. We will check for completion automatically.')
       startAuthPolling(sessionData.session_id)
     } else {
-      const errorMsg = 'Could not get Spotify authorization URL.'
+      console.error('Login response does not contain expected format:', loginData)
+      const errorMsg = `Could not get Spotify authorization URL. Response: ${JSON.stringify(loginData)}`
       errorMessage.value = `Error: ${errorMsg}`
       updateStatus('Failed to start Spotify connection.')
       isConnecting.value = false

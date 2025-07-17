@@ -23,12 +23,29 @@ export const rewrite_audiocontrol_api_url = (url: string): string => {
   // In production, use the full API base URL
   const apiBaseUrl = configStore.getApiBaseUrl()
 
+  // Split the URL into parts to handle encoding properly
+  const urlParts = url.split('/')
+
+  // Encode each part of the path after /api/
+  const encodedParts = urlParts.map((part, index) => {
+    if (index <= 2) {
+      // Don't encode /api/ part
+      return part
+    }
+    // Encode the path segments properly
+    return encodeURIComponent(part)
+  })
+
+  // Reconstruct the URL with proper encoding
+  const encodedUrl = encodedParts.join('/')
+
   // Replace /api/ with the full API base URL + /
-  const rewrittenUrl = url.replace('/api/', `${apiBaseUrl}/`)
+  const rewrittenUrl = encodedUrl.replace('/api/', `${apiBaseUrl}/`)
 
   // Debug logging to understand what's happening in production
   console.log('URL rewriting:', {
     original: url,
+    encoded: encodedUrl,
     rewritten: rewrittenUrl,
     apiBaseUrl,
     config: configStore.apiConfig()

@@ -2,10 +2,10 @@
 
 ## Phase 1
 
-* Browse music library
-* Start playback
-* Now-playing
-* Player controls
+* Browse music library **done**
+* Start playback **done**
+* Now-playing **done**
+* Player controls **done**
 
 # Phase 2
 
@@ -16,7 +16,7 @@
 
 # Phase 3
 
-* Player change in audiocontrol (another player becomes active)
+* Player change in audiocontrol (another player becomes active) **tested**
 * Queue management (clear queue, add album, add song, ...) **done**
 * Web radio browser **done**
 * like/unlike song

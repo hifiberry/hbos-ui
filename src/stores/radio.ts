@@ -1,5 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { usePlayerStore } from '@/stores/player'
+import { useConfigStore } from '@/stores/config'
+import { API_BASE_URL } from '@/constants/api'
 
 export interface RadioStation {
   id: string
@@ -167,15 +170,68 @@ export const useRadioStore = defineStore('radio', () => {
 
   const playStation = async (station: RadioStation | RadioFavorite) => {
     try {
-      // In a real implementation, this would communicate with your audio player
-      console.log('Playing radio station:', 'name' in station ? station.name : station.title, station.url)
+      const playerStore = usePlayerStore()
+      const configStore = useConfigStore()
 
-      // Here you would integrate with your existing player store
-      // For example:
-      // await playerStore.playUrl(station.url, station.name || station.title)
+      // Get the configured radio player (default: "mpd")
+      const radioPlayerName = configStore.radioPlayer()
+      const stationName = 'name' in station ? station.name : station.title
+
+      console.log('Playing radio station:', stationName, 'on player:', radioPlayerName)
+      console.log('Station URL:', station.url)
+
+      // Step 1: Pause the current player
+      console.log('Step 1: Pausing current player...')
+      await playerStore.sendCommand('pause')
+      console.log('Step 1: Current player paused')
+
+      // Step 2: Clear the queue of the radioPlayer
+      console.log('Step 2: Clearing radio player queue...')
+      await sendRadioPlayerCommand(radioPlayerName, 'clear_queue')
+      console.log('Step 2: Radio player queue cleared')
+
+      // Step 3: Add the URL of the radio station to the queue of the radioPlayer
+      console.log('Step 3: Adding station URL to radio player queue...')
+      await sendRadioPlayerCommand(radioPlayerName, `add_track:${encodeURIComponent(station.url)}`)
+      console.log('Step 3: Station URL added to radio player queue')
+
+      // Step 4: Send a "play" command to the radioPlayer
+      console.log('Step 4: Starting radio player playback...')
+      await sendRadioPlayerCommand(radioPlayerName, 'play')
+      console.log('Step 4: Radio player playback started')
+
+      console.log('Successfully started radio playback')
 
     } catch (error) {
       console.error('Failed to play radio station:', error)
+      throw error
+    }
+  }
+
+  // Helper function to send commands to a specific radio player
+  const sendRadioPlayerCommand = async (playerName: string, command: string): Promise<boolean> => {
+    try {
+      const url = `${API_BASE_URL}/player/${playerName}/command/${command}`
+      console.log('Sending radio player command:', { playerName, command, url })
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to send command to radio player: ${response.status} ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      console.log('Radio player command response:', result)
+      return true
+
+    } catch (error) {
+      console.error('Error sending radio player command:', error)
+      throw error
     }
   }
 
@@ -219,6 +275,11 @@ export const useRadioStore = defineStore('radio', () => {
 
   // Initialize
   const initialize = async () => {
+    // Initialize configuration store
+    const configStore = useConfigStore()
+    await configStore.getConfig()
+
+    // Load favorites
     loadFavorites()
     await setRadioBrowserBaseUrl()
   }

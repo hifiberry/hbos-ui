@@ -52,6 +52,7 @@ export interface WsPlayerEvent {
 export interface createPlayerWebSocketOptions {
   hostname?: string
   port?: string | number
+  apiPrefix?: string
   onConnect: () => void
   onDisconnect: (event: Event) => void
   onMessage: (data: WsPlayerEvent) => void

@@ -180,8 +180,6 @@ const handleImageUpload = (event: Event) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/scss/mixins.scss';
-
 .radio-edit-popup-overlay {
   @include popup-overlay;
 }

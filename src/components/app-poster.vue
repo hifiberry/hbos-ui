@@ -65,8 +65,6 @@ watch(
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/scss/mixins.scss';
-
 .poster {
   color: var(--color-body-secondary);
   cursor: pointer;

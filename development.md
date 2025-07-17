@@ -44,6 +44,7 @@
  
 # Phase 5
 
+* Use [material icons](https://fonts.google.com/icons)
 * Show active player
 * display some meta data on the songs (e.g. length)
 * Show library loading progress

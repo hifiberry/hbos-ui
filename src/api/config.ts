@@ -72,7 +72,7 @@ export const getConfigValue = async (
   if (secure) params.append('secure', 'true')
   if (defaultValue) params.append('default', defaultValue)
 
-  const url = `${baseUrl}/${encodeURIComponent(key)}${params.toString() ? `?${params.toString()}` : ''}`
+  const url = `${baseUrl}/key/${encodeURIComponent(key)}${params.toString() ? `?${params.toString()}` : ''}`
 
   const response = await fetch(url)
 
@@ -96,7 +96,7 @@ export const setConfigValue = async (
 ): Promise<ConfigApiResponse<ConfigKeyValue>> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
-  const url = `${baseUrl}/${encodeURIComponent(key)}`
+  const url = `${baseUrl}/key/${encodeURIComponent(key)}`
 
   const requestBody: ConfigSetRequest = {
     value,
@@ -131,7 +131,7 @@ export const updateConfigValue = async (
 ): Promise<ConfigApiResponse<ConfigKeyValue>> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
-  const url = `${baseUrl}/${encodeURIComponent(key)}`
+  const url = `${baseUrl}/key/${encodeURIComponent(key)}`
 
   const requestBody: ConfigSetRequest = {
     value,
@@ -160,7 +160,7 @@ export const updateConfigValue = async (
 export const deleteConfigValue = async (key: string): Promise<ConfigApiResponse> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
-  const url = `${baseUrl}/${encodeURIComponent(key)}`
+  const url = `${baseUrl}/key/${encodeURIComponent(key)}`
 
   const response = await fetch(url, {
     method: 'DELETE'

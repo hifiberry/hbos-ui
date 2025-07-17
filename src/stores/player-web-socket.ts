@@ -35,10 +35,8 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     const wsUrl = configStore.getWsBaseUrl()
     const url = new URL(wsUrl)
     wsController.value = createPlayerWebSocket({
-      // hostname: window.location.hostname,
       hostname: url.hostname,
-      // port: window.location.port || 1080, // TODO uncomment when prod is ready
-      port: parseInt(url.port) || 1080,
+      port: parseInt(url.port) || configStore.config.api.devicePort,
       onConnect: () => {
         console.log('WebSocket connected')
         // Use async/await with the subscribe function

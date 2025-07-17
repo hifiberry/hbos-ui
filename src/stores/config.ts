@@ -17,8 +17,8 @@ export const useConfigStore = defineStore('config', () => {
     radioPlayer: 'mpd', // Default radio player
     api: {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
-      devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '1080', 10),
-      apiPrefix: '/api',
+      devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
+      apiPrefix: import.meta.env.VITE_APP_API_PREFIX || '/api/audiocontrol',
       useProxy: !import.meta.env.PROD // Use proxy in development
     }
   })

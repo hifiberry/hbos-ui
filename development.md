@@ -21,8 +21,8 @@
 * Web radio browser **done**
 * like/unlike song
 * volume control
-* Improve album view (e.g. /library/albums/10518654235945294040):
-  - if the artist isn't the same at the album artist, display artist name on the song *done*
+* Improve album view (e.g. /library/albums/10518654235945294040) **done**
+  - if the artist isn't the same at the album artist, display artist name on the song **done**
   - remove the icon on each song **done**
 
 # Phase 4

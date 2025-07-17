@@ -1,6 +1,43 @@
 import { useConfigStore } from '@/stores/config'
 
 /**
+ * Rewrite URLs that start with /api/ to use the full audiocontrol API prefix
+ * This function helps to deal with reverse proxies that rewrite the API url without the API
+ * server knowing the full path.
+ * @param url - The URL to rewrite
+ * @returns The rewritten URL with full API prefix
+ */
+export const rewrite_audiocontrol_api_url = (url: string): string => {
+  if (!url || !url.startsWith('/api/')) {
+    return url
+  }
+
+  const configStore = useConfigStore()
+  const { useProxy } = configStore.apiConfig()
+
+  if (useProxy) {
+    // In development with proxy, just return the original URL
+    return url
+  }
+
+  // In production, use the full API base URL
+  const apiBaseUrl = configStore.getApiBaseUrl()
+
+  // Replace /api/ with the full API base URL + /
+  const rewrittenUrl = url.replace('/api/', `${apiBaseUrl}/`)
+
+  // Debug logging to understand what's happening in production
+  console.log('URL rewriting:', {
+    original: url,
+    rewritten: rewrittenUrl,
+    apiBaseUrl,
+    config: configStore.apiConfig()
+  })
+
+  return rewrittenUrl
+}
+
+/**
  * Add a track to a player's queue using JSON payload
  * @param playerName - The name of the player to add the track to
  * @param trackUri - The URI/URL of the track to add
@@ -9,15 +46,15 @@ import { useConfigStore } from '@/stores/config'
  * @returns Promise<boolean> - Success or failure
  */
 export const addTrackToPlayer = async (
-  playerName: string, 
-  trackUri: string, 
-  title?: string, 
+  playerName: string,
+  trackUri: string,
+  title?: string,
   coverartUrl?: string
 ): Promise<boolean> => {
   try {
     const configStore = useConfigStore()
     const apiBaseUrl = configStore.getApiBaseUrl()
-    
+
     const url = `${apiBaseUrl}/player/${playerName}/command/add_track`
     const payload = {
       uri: trackUri,
@@ -59,12 +96,12 @@ export const sendPlayerCommand = async (playerName: string, command: string): Pr
   try {
     const configStore = useConfigStore()
     const apiBaseUrl = configStore.getApiBaseUrl()
-    
+
     // Prevent add_track commands from being sent through this function
     if (command.startsWith('add_track:')) {
       throw new Error('Use addTrackToPlayer() function for add_track commands instead of sendPlayerCommand()')
     }
-    
+
     const url = `${apiBaseUrl}/player/${playerName}/command/${command}`
     console.log('Sending player command:', { playerName, command, url })
 

@@ -7,7 +7,7 @@
             <AppIcon icon="last-fm" class="service-icon" />
             <div class="service-details">
               <h3>Last.fm</h3>
-              <p class="service-description">Scrobble your music and get personalized recommendations</p>
+              <p class="service-description">Scrobble your music, set your favourite tracks and get recommendations</p>
               <div class="service-status">
                 <span :class="statusIndicatorClass">
                   {{ statusText }}

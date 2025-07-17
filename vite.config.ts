@@ -6,11 +6,11 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // A vite plugin that remove all the specified console types in the production environment
 // https://www.npmjs.com/package/vite-plugin-remove-console
-import removeConsole from 'vite-plugin-remove-console'
+// import removeConsole from 'vite-plugin-remove-console' // Temporarily disabled for debugging
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), vueDevTools(), removeConsole()],
+  plugins: [vue(), vueDevTools()], // Temporarily disable removeConsole for debugging
   css: {
     preprocessorOptions: {
       scss: {

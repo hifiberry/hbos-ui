@@ -164,6 +164,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   const initPlayer = async () => {
+    console.log('player.ts: initPlayer() called - starting player initialization')
     console.log('initPlayer')
 
     isSendingCommand.value = true

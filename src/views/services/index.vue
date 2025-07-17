@@ -37,6 +37,17 @@
           View Music Files
         </span>
       </router-link>
+
+      <router-link :to="{ name: 'system-info' }" class="service-card">
+        <div class="service-header">
+          <AppIcon icon="info" class="service-icon" />
+          <h2>System Information</h2>
+        </div>
+        <p class="service-description">View system details including Pi model, HAT information, and system UUID</p>
+        <span class="service-link">
+          View System Info
+        </span>
+      </router-link>
     </div>
   </div>
 </template>

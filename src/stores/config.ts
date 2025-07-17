@@ -69,13 +69,17 @@ export const useConfigStore = defineStore('config', () => {
       return `http://localhost:5173${apiPrefix}` // Use proxy in development
     }
 
-    return `http://${deviceIP}:${devicePort}${apiPrefix}`
+    // Don't include port 80 in the URL as it's the default HTTP port
+    const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
+    return `http://${deviceIP}${portSuffix}${apiPrefix}`
   }
 
   const getWsBaseUrl = (): string => {
     const { deviceIP, devicePort, apiPrefix } = config.value.audiocontrol_api
     // WebSocket always connects directly to API server (no proxy)
-    const wsUrl = `ws://${deviceIP}:${devicePort}${apiPrefix}`
+    // Don't include port 80 for WebSocket as it's the default HTTP port, but the WebSocket will use port 80
+    const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
+    const wsUrl = `ws://${deviceIP}${portSuffix}${apiPrefix}`
     console.log('Generated WebSocket URL:', wsUrl, 'from config:', { deviceIP, devicePort, apiPrefix })
     return wsUrl
   }

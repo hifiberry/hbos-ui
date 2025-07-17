@@ -76,6 +76,11 @@ const router = createRouter({
               name: 'music-files',
               component: () => import('@/views/services/music-files.vue'),
             },
+            {
+              path: 'system-info',
+              name: 'system-info',
+              component: () => import('@/views/services/system-info.vue'),
+            },
           ],
         },
         {

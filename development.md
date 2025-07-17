@@ -45,6 +45,7 @@
   * remove paired device
 * Settings/Others
   * change system name
+  * System Information **done**
  
 # Phase 5
 

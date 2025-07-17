@@ -1,6 +1,6 @@
 <template>
   <div :class="['song-control-info', { card: isOnSticky }]">
-    <div v-if="song" class="song-control-info__box">
+    <div v-if="song" class="song-control-info__box" @click="goToNowPlaying">
       <div class="song-control-info__cover">
         <AppCover :src="song.cover_art_url" :alt="song.artist || 'Artist'" />
       </div>
@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppCover from '@/components/app-cover.vue'
@@ -34,6 +35,7 @@ import AppMarquee from '@/components/app-marquee.vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
 
+const router = useRouter()
 const { currentSong: song } = storeToRefs(usePlayerStore())
 
 interface AudioSongControlInfoProps {
@@ -41,6 +43,10 @@ interface AudioSongControlInfoProps {
 }
 
 const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
+
+const goToNowPlaying = () => {
+  router.push({ name: 'now-playing' })
+}
 </script>
 
 <style scoped lang="scss">
@@ -69,6 +75,23 @@ const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
     gap: 10px;
     align-items: center;
     width: calc(100% - 120px);
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 4px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: var(--color-background-hover, rgba(255, 255, 255, 0.05));
+
+      .h3 {
+        color: var(--color-head);
+      }
+
+      p {
+        color: var(--color-body-primary);
+      }
+    }
+
     &__attr {
       flex: 1;
     }

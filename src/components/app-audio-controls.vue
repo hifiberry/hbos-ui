@@ -1,16 +1,20 @@
 <template>
   <div class="app-audio-controls" :class="{ 'is-separate': isSeparate }">
-    <AppIconButton
-      v-if="!isOnSticky"
-      class="app-audio-controls__secondary"
-      :class="{ active: audioControls.isShuffle }"
-      icon="shuffle"
-      title="Shuffle"
-      :disabled="isSendingCommand || !caps.canShuffle"
-      @click="audioControls.toggleShuffle"
-    />
+    <div class="app-audio-controls__left">
+      <!-- Empty left column for balance -->
+    </div>
 
     <div class="app-audio-controls--main">
+      <AppIconButton
+        v-if="!isOnSticky"
+        class="app-audio-controls__secondary"
+        :class="{ active: audioControls.isShuffle }"
+        icon="shuffle"
+        title="Shuffle"
+        :disabled="isSendingCommand || !caps.canShuffle"
+        @click="audioControls.toggleShuffle"
+      />
+
       <AppIconButton
         icon="prev"
         title="Previous"
@@ -31,23 +35,34 @@
         :disabled="isSendingCommand || !caps.canNext"
         @click="audioControls.playNextOrPrev('next')"
       />
+
+      <AppIconButton
+        v-if="!isOnSticky"
+        class="app-audio-controls__secondary"
+        :class="{ active: !audioControls.iscurrentLoopModeNone }"
+        :icon="audioControls.iscurrentLoopModeTrack ? 'loop-one' : 'loop'"
+        :title="
+          audioControls.iscurrentLoopModeTrack
+            ? 'Loop Track'
+            : audioControls.iscurrentLoopModePlaylist
+              ? 'Loop Playlist'
+              : 'Loop'
+        "
+        :disabled="isSendingCommand || !caps.canLoop"
+        @click="audioControls.cycleLoopMode"
+      />
     </div>
 
-    <AppIconButton
-      v-if="!isOnSticky"
-      class="app-audio-controls__secondary"
-      :class="{ active: !audioControls.iscurrentLoopModeNone }"
-      :icon="audioControls.iscurrentLoopModeTrack ? 'loop-one' : 'loop'"
-      :title="
-        audioControls.iscurrentLoopModeTrack
-          ? 'Loop Track'
-          : audioControls.iscurrentLoopModePlaylist
-            ? 'Loop Playlist'
-            : 'Loop'
-      "
-      :disabled="isSendingCommand || !caps.canLoop"
-      @click="audioControls.cycleLoopMode"
-    />
+    <div class="app-audio-controls__right">
+      <AppIconButton
+        v-if="!isOnSticky"
+        class="app-audio-controls__secondary heart-button"
+        icon="heart"
+        title="Add to favorites"
+        :disabled="true"
+        @click="toggleFavorite"
+      />
+    </div>
   </div>
 </template>
 
@@ -67,6 +82,11 @@ const { isSeparate = false, isOnSticky = false } = defineProps<AppAudioControlsP
 const { isSendingCommand, playerCapabilities: caps } = storeToRefs(usePlayerStore())
 
 const audioControls = useAudioControls()
+
+const toggleFavorite = () => {
+  // TODO: Implement favorite functionality
+  console.log('Toggle favorite clicked')
+}
 </script>
 
 <style lang="scss">
@@ -74,18 +94,37 @@ const audioControls = useAudioControls()
   $root: &;
 
   width: 100%;
-  display: flex;
+  max-width: 600px; /* Match typical progress bar width */
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 48px;
 
   @include media-down(md) {
-    gap: 24px;
+    max-width: 500px;
   }
 
   @include media-down(sm) {
-    gap: 12px;
-    justify-content: space-between;
+    max-width: 100%;
+  }
+
+  &__left {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  &__right {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
+
+    @include media-down(md) {
+      gap: 16px;
+    }
+
+    @include media-down(sm) {
+      gap: 12px;
+    }
   }
 
   svg {
@@ -102,6 +141,7 @@ const audioControls = useAudioControls()
   &--main {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 32px;
 
     @include media-down(md) {
@@ -126,6 +166,14 @@ const audioControls = useAudioControls()
 
   svg.active#{$root}__secondary {
     color: var(--primary);
+  }
+
+  .heart-button {
+    opacity: 0.4;
+
+    &:disabled {
+      cursor: not-allowed;
+    }
   }
 }
 

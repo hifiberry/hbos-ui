@@ -9,6 +9,12 @@ export interface AppConfig {
     apiPrefix: string
     useProxy: boolean
   }
+  config_api: {
+    deviceIP: string
+    devicePort: number
+    apiPrefix: string
+    useProxy: boolean
+  }
 }
 
 export const useConfigStore = defineStore('config', () => {
@@ -19,6 +25,12 @@ export const useConfigStore = defineStore('config', () => {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
       devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
       apiPrefix: import.meta.env.VITE_APP_API_PREFIX || '/api/audiocontrol',
+      useProxy: !import.meta.env.PROD // Use proxy in development
+    },
+    config_api: {
+      deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
+      devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
+      apiPrefix: import.meta.env.VITE_APP_CONFIG_API_PREFIX || '/api/config/v1',
       useProxy: !import.meta.env.PROD // Use proxy in development
     }
   })

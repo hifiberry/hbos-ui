@@ -65,7 +65,7 @@ export const usePlayerStore = defineStore('player', () => {
 
         // Use the new addTrackToPlayer function with JSON payload
         await addTrackToPlayer(libraryStore.activeLibrary, trackIdentifier)
-        
+
       } catch (error) {
         console.error('Error adding track to queue:', error)
         toastStore.showErrorToast(`Failed to add track to queue: ${error}`)

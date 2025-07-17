@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useConfigStore } from '@/stores/config'
+import { sendPlayerCommand, addTrackToPlayer } from '@/api/player'
 
 export interface RadioStation {
   id: string
@@ -186,52 +187,24 @@ export const useRadioStore = defineStore('radio', () => {
 
       // Step 2: Clear the queue of the radioPlayer
       console.log('Step 2: Clearing radio player queue...')
-      await sendRadioPlayerCommand(radioPlayerName, 'clear_queue')
+      await sendPlayerCommand(radioPlayerName, 'clear_queue')
       console.log('Step 2: Radio player queue cleared')
 
       // Step 3: Add the URL of the radio station to the queue of the radioPlayer
       console.log('Step 3: Adding station URL to radio player queue...')
-      await sendRadioPlayerCommand(radioPlayerName, `add_track:${encodeURIComponent(station.url)}`)
+      // Use the new addTrackToPlayer function with JSON payload
+      await addTrackToPlayer(radioPlayerName, station.url)
       console.log('Step 3: Station URL added to radio player queue')
 
       // Step 4: Send a "play" command to the radioPlayer
       console.log('Step 4: Starting radio player playback...')
-      await sendRadioPlayerCommand(radioPlayerName, 'play')
+      await sendPlayerCommand(radioPlayerName, 'play')
       console.log('Step 4: Radio player playback started')
 
       console.log('Successfully started radio playback')
 
     } catch (error) {
       console.error('Failed to play radio station:', error)
-      throw error
-    }
-  }
-
-  // Helper function to send commands to a specific radio player
-  const sendRadioPlayerCommand = async (playerName: string, command: string): Promise<boolean> => {
-    try {
-      const configStore = useConfigStore()
-      const apiBaseUrl = configStore.getApiBaseUrl()
-      const url = `${apiBaseUrl}/player/${playerName}/command/${command}`
-      console.log('Sending radio player command:', { playerName, command, url })
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to send command to radio player: ${response.status} ${response.statusText}`)
-      }
-
-      const result = await response.json()
-      console.log('Radio player command response:', result)
-      return true
-
-    } catch (error) {
-      console.error('Error sending radio player command:', error)
       throw error
     }
   }

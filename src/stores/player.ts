@@ -6,6 +6,7 @@ import { useLibraryStore } from '@/stores/library'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { usePlayerWebSocket } from '@/stores/player-web-socket'
 import { usePlayerChangesStore } from '@/stores/player-changes'
+import { addTrackToPlayer } from '@/api/player'
 
 import {
   DEFAULT_CAPABILITIES,
@@ -51,14 +52,23 @@ export const usePlayerStore = defineStore('player', () => {
     const trackIdentifier = typeof track === 'object' ? track?.id || track.uri : track
 
     if (trackIdentifier) {
-      const { error } = await libraryFetch(
-        `/player/:activeLibrary/command/add_track:${encodeURIComponent(trackIdentifier)}`,
-      )
-        .post()
-        .json()
+      try {
+        // Get the active library player name
+        const libraryStore = useLibraryStore()
+        if (!libraryStore.activeLibrary) {
+          await libraryStore.getAvailableLibrary()
+        }
 
-      if (error.value) {
-        toastStore.showErrorToast(error.value)
+        if (!libraryStore.activeLibrary) {
+          throw new Error('No library player available')
+        }
+
+        // Use the new addTrackToPlayer function with JSON payload
+        await addTrackToPlayer(libraryStore.activeLibrary, trackIdentifier)
+        
+      } catch (error) {
+        console.error('Error adding track to queue:', error)
+        toastStore.showErrorToast(`Failed to add track to queue: ${error}`)
       }
     } else {
       toastStore.showErrorToast('No valid track identifier available')
@@ -169,10 +179,10 @@ export const usePlayerStore = defineStore('player', () => {
     isSendingCommand.value = true
 
     // await fetchPlayersAndUpdatePlayerDropdown() // for now we have only mpd player
-    
+
     // Set up WebSocket connection first, before fetching current player
     playerWebSocket.setupWebSocket()
-    
+
     await fetchCurrentPlayer()
 
     isSendingCommand.value = false

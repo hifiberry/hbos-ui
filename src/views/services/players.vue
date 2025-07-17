@@ -11,32 +11,49 @@
       </div>
 
       <div class="players-list">
-        <div v-for="player in players" :key="player.name" class="card">
-          <div class="player-item" :class="{ expanded: isConfigExpanded(players.indexOf(player)) }">
+        <div v-for="(player, index) in players" :key="player.name" class="card">
+          <div class="player-item" :class="{
+            expanded: isConfigExpanded(index),
+            'not-installed': player.exists === false
+          }">
             <div class="player-main">
               <div class="player-info">
                 <AppIcon :icon="player.icon" class="player-icon" />
                 <div class="player-details">
                   <h3>{{ player.name }} ({{ player.providedBy }})</h3>
+                  <div class="player-status">
+                    <span :class="['status-badge', player.exists === false ? 'not-installed' : player.status]">
+                      {{ player.exists === false ? 'Not installed' : player.status }}
+                    </span>
+                  </div>
+                  <div v-if="player.error" class="player-error">
+                    <span class="error-message">{{ player.error }}</span>
+                  </div>
                 </div>
               </div>
               <div class="player-actions">
                 <div class="player-toggle">
-                  <label class="toggle-switch">
+                  <label class="toggle-switch" :class="{
+                    'disabled': player.allow_change === false || player.exists === false
+                  }">
                     <input
                       type="checkbox"
                       :checked="player.enabled"
-                      @change="togglePlayer(players.indexOf(player))"
+                      :disabled="player.loading || player.allow_change === false || player.exists === false"
+                      @click="handleToggleClick($event, index)"
                     >
-                    <span class="toggle-slider"></span>
+                    <span class="toggle-slider" :class="{
+                      loading: player.loading,
+                      'not-allowed': player.allow_change === false || player.exists === false
+                    }"></span>
                   </label>
                 </div>
                 <!-- Caret column for expandable services -->
                 <div class="player-expand">
                   <div v-if="player.name === 'Airplay' && typeof player.config === 'object'"
                        class="expand-caret"
-                       @click="toggleConfigExpanded(players.indexOf(player))">
-                    <AppIcon :icon="'caret-down'" class="config-caret" :class="{ expanded: isConfigExpanded(players.indexOf(player)) }" />
+                       @click="toggleConfigExpanded(index)">
+                    <AppIcon :icon="'caret-down'" class="config-caret" :class="{ expanded: isConfigExpanded(index) }" />
                   </div>
                 </div>
               </div>
@@ -44,13 +61,13 @@
 
             <!-- Configuration section that expands the whole card -->
             <div v-if="player.name === 'Airplay' && typeof player.config === 'object'" class="config-section">
-              <div v-if="isConfigExpanded(players.indexOf(player))" class="config-content">
+              <div v-if="isConfigExpanded(index)" class="config-content">
                 <div class="config-form">
                   <label class="config-option">
                     Airplay version:
                     <select
                       :value="(player.config as Record<string, number>).airplayVersion"
-                      @change="updateAirplayVersion(players.indexOf(player), parseInt(($event.target as HTMLSelectElement).value))"
+                      @change="updateAirplayVersion(index, parseInt(($event.target as HTMLSelectElement).value))"
                       class="version-select"
                     >
                       <option value="1">1</option>
@@ -61,14 +78,14 @@
                 <div class="config-actions">
                   <button
                     class="config-btn config-btn--cancel"
-                    @click="cancelConfig(players.indexOf(player))"
+                    @click="cancelConfig(index)"
                     type="button"
                   >
                     Cancel
                   </button>
                   <button
                     class="config-btn config-btn--save"
-                    @click="saveConfig(players.indexOf(player))"
+                    @click="saveConfig(index)"
                     type="button"
                   >
                     Save
@@ -84,38 +101,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
+import {
+  getMultipleServiceStatus,
+  enableService,
+  disableService,
+  checkSystemdServiceExists
+} from '@/api/config'
 
 interface Player {
   name: string
   providedBy: string
   systemdService: string
   config: string | Record<string, string | number>
-  status: 'active' | 'inactive'
+  status: 'active' | 'inactive' | 'failed'
   icon: string
   enabled: boolean
+  loading?: boolean
+  error?: string
+  allow_change?: boolean
+  exists?: boolean
 }
 
-const players: Player[] = [
+const players = ref<Player[]>([
   {
     name: 'Local music',
     providedBy: 'mpd',
     systemdService: 'mpd',
     config: 'none',
-    status: 'active',
+    status: 'inactive',
     icon: 'mpd',
-    enabled: true
+    enabled: false,
+    loading: false,
+    error: undefined,
+    allow_change: false,
+    exists: true
   },
   {
     name: 'Roon',
     providedBy: 'raat',
-    systemdService: 'mpd',
+    systemdService: 'raat',
     config: 'none',
     status: 'inactive',
     icon: 'roon',
-    enabled: false
+    enabled: false,
+    loading: false,
+    error: undefined,
+    allow_change: true,
+    exists: true
   },
   {
     name: 'Airplay',
@@ -124,7 +159,11 @@ const players: Player[] = [
     config: { airplayVersion: 2 },
     status: 'inactive',
     icon: 'airplay',
-    enabled: false
+    enabled: false,
+    loading: false,
+    error: undefined,
+    allow_change: true,
+    exists: true
   },
   {
     name: 'Spotify',
@@ -133,7 +172,11 @@ const players: Player[] = [
     config: 'none',
     status: 'inactive',
     icon: 'spotify',
-    enabled: false
+    enabled: false,
+    loading: false,
+    error: undefined,
+    allow_change: true,
+    exists: true
   },
   {
     name: 'LMS',
@@ -142,22 +185,176 @@ const players: Player[] = [
     config: 'none',
     status: 'inactive',
     icon: 'squeezelite',
-    enabled: false
+    enabled: false,
+    loading: false,
+    error: undefined,
+    allow_change: true,
+    exists: true
   }
-]
+])
 
 // State for tracking which config sections are expanded
 const expandedConfigs = ref<Set<number>>(new Set())
 
-const togglePlayer = (playerIndex: number) => {
-  players[playerIndex].enabled = !players[playerIndex].enabled
-  // Here you would typically make an API call to enable/disable the service
-  console.log(`${players[playerIndex].name} ${players[playerIndex].enabled ? 'enabled' : 'disabled'}`)
+// Load service status on component mount
+onMounted(async () => {
+  await loadServiceStatus()
+})
+
+const loadServiceStatus = async () => {
+  try {
+    const serviceNames = players.value.map(p => p.systemdService)
+
+    // Check service existence first
+    const existencePromises = serviceNames.map(async (serviceName) => {
+      try {
+        const response = await checkSystemdServiceExists(serviceName)
+        return { service: serviceName, exists: response.data?.exists || false }
+      } catch (error) {
+        console.error(`Failed to check existence for ${serviceName}:`, error)
+        return { service: serviceName, exists: false }
+      }
+    })
+
+    const existenceResults = await Promise.all(existencePromises)
+    const existenceMap = new Map(existenceResults.map(r => [r.service, r.exists]))
+
+    // Get status for existing services only
+    const existingServices = serviceNames.filter(name => existenceMap.get(name))
+    const statusMap = existingServices.length > 0 ?
+      await getMultipleServiceStatus(existingServices) :
+      new Map()
+
+    players.value.forEach(player => {
+      const exists = existenceMap.get(player.systemdService) || false
+      player.exists = exists
+
+      if (exists) {
+        const status = statusMap.get(player.systemdService)
+        if (status) {
+          player.status = status.active
+          player.enabled = status.enabled === 'enabled'
+
+          // Update allow_change based on allowed operations
+          // If the service has start/stop/enable/disable operations, allow changes
+          if (status.allowed_operations && status.allowed_operations.length > 0) {
+            const canChange = status.allowed_operations.some((op: string) =>
+              ['start', 'stop', 'enable', 'disable'].includes(op)
+            )
+            // Only update if not explicitly set to false in the player definition
+            if (player.allow_change !== false) {
+              player.allow_change = canChange
+            }
+          }
+        }
+      } else {
+        // Service doesn't exist - set default values
+        player.status = 'inactive'
+        player.enabled = false
+        player.allow_change = false
+      }
+
+      // Clear any previous errors when loading status
+      player.error = undefined
+    })
+  } catch (error) {
+    console.error('Failed to load service status:', error)
+  }
+}
+
+const refreshSingleServiceStatus = async (serviceName: string, playerIndex: number) => {
+  try {
+    const player = players.value[playerIndex]
+
+    // Check if service exists first
+    const existenceResponse = await checkSystemdServiceExists(serviceName)
+    const exists = existenceResponse.data?.exists || false
+    player.exists = exists
+
+    if (exists) {
+      const statusMap = await getMultipleServiceStatus([serviceName])
+      const status = statusMap.get(serviceName)
+
+      if (status) {
+        player.status = status.active
+        player.enabled = status.enabled === 'enabled'
+
+        // Update allow_change based on allowed operations
+        if (status.allowed_operations && status.allowed_operations.length > 0) {
+          const canChange = status.allowed_operations.some((op: string) =>
+            ['start', 'stop', 'enable', 'disable'].includes(op)
+          )
+          // Only update if not explicitly set to false in the player definition
+          if (player.allow_change !== false) {
+            player.allow_change = canChange
+          }
+        }
+      }
+    } else {
+      // Service doesn't exist - set default values
+      player.status = 'inactive'
+      player.enabled = false
+      player.allow_change = false
+    }
+  } catch (error) {
+    console.error(`Failed to refresh status for ${serviceName}:`, error)
+  }
+}
+
+const handleToggleClick = async (event: Event, playerIndex: number) => {
+  // Prevent the default checkbox behavior
+  event.preventDefault()
+
+  const player = players.value[playerIndex]
+  if (player.loading) return
+
+  // Check if service exists
+  if (player.exists === false) {
+    player.error = 'Service is not installed'
+    return
+  }
+
+  // Check if changes are allowed for this service
+  if (player.allow_change === false) {
+    player.error = 'This service cannot be changed'
+    return
+  }
+
+  player.loading = true
+  player.error = undefined // Clear any previous error
+  const wasEnabled = player.enabled
+
+  try {
+    if (wasEnabled) {
+      // Disable the service (stops and disables)
+      await disableService(player.systemdService)
+    } else {
+      // Enable the service (enables and starts)
+      await enableService(player.systemdService)
+    }
+
+    console.log(`${player.name} ${player.enabled ? 'enabled' : 'disabled'}`)
+  } catch (error) {
+    console.error(`Failed to toggle ${player.name}:`, error)
+
+    // Check if it's a forbidden error
+    if (error instanceof Error && error.message.includes('403')) {
+      player.error = 'Not allowed to change the service state'
+    } else {
+      player.error = 'Failed to change service state'
+    }
+  } finally {
+    // Always refresh the service status after any operation
+    // This ensures the UI reflects the actual service state
+    await refreshSingleServiceStatus(player.systemdService, playerIndex)
+    player.loading = false
+  }
 }
 
 const updateAirplayVersion = (playerIndex: number, version: number) => {
-  if (players[playerIndex].name === 'Airplay' && typeof players[playerIndex].config === 'object') {
-    (players[playerIndex].config as Record<string, number>).airplayVersion = version
+  const player = players.value[playerIndex]
+  if (player.name === 'Airplay' && typeof player.config === 'object') {
+    (player.config as Record<string, number>).airplayVersion = version
     console.log(`Airplay version updated to ${version}`)
   }
 }
@@ -177,13 +374,15 @@ const isConfigExpanded = (playerIndex: number) => {
 const cancelConfig = (playerIndex: number) => {
   // Close the configuration section without saving changes
   expandedConfigs.value.delete(playerIndex)
-  console.log(`Configuration cancelled for ${players[playerIndex].name}`)
+  const player = players.value[playerIndex]
+  console.log(`Configuration cancelled for ${player.name}`)
 }
 
 const saveConfig = (playerIndex: number) => {
   // Save the configuration and close the section
   expandedConfigs.value.delete(playerIndex)
-  console.log(`Configuration saved for ${players[playerIndex].name}`)
+  const player = players.value[playerIndex]
+  console.log(`Configuration saved for ${player.name}`)
   // Here you would typically make an API call to save the configuration
 }
 </script>
@@ -269,9 +468,57 @@ const saveConfig = (playerIndex: number) => {
           flex: 1;
 
           h3 {
-            margin: 0;
+            margin: 0 0 4px 0;
             color: var(--color-head);
             font-size: 1.125rem;
+          }
+
+          .player-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+
+            .status-badge {
+              padding: 2px 8px;
+              border-radius: 4px;
+              font-size: 12px;
+              font-weight: 500;
+              text-transform: capitalize;
+
+              &.active {
+                background-color: #e6f7e6;
+                color: #2d7d2d;
+              }
+
+              &.inactive {
+                background-color: #f5f5f5;
+                color: #666;
+              }
+
+              &.failed {
+                background-color: #ffe6e6;
+                color: #d51007;
+              }
+
+              &.not-installed {
+                background-color: #f8f8f8;
+                color: #999;
+              }
+            }
+          }
+
+          .player-error {
+            margin-top: 4px;
+
+            .error-message {
+              padding: 2px 8px;
+              border-radius: 4px;
+              font-size: 12px;
+              font-weight: 500;
+              background-color: #ffe6e6;
+              color: #d51007;
+            }
           }
         }
       }
@@ -344,6 +591,10 @@ const saveConfig = (playerIndex: number) => {
             transition: 0.3s;
             border-radius: 24px;
 
+            &.loading {
+              opacity: 0.6;
+            }
+
             &:before {
               position: absolute;
               content: "";
@@ -367,6 +618,32 @@ const saveConfig = (playerIndex: number) => {
 
           input:focus + .toggle-slider {
             box-shadow: 0 0 1px var(--primary);
+          }
+
+          &.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+
+            .toggle-slider {
+              background-color: #e5e5e5;
+              cursor: not-allowed;
+
+              &.not-allowed {
+                background-color: #f0f0f0;
+              }
+
+              &:before {
+                background-color: #d0d0d0;
+              }
+            }
+
+            input:checked + .toggle-slider {
+              background-color: #c0c0c0;
+
+              &:before {
+                background-color: #a0a0a0;
+              }
+            }
           }
         }
       }
@@ -465,6 +742,18 @@ const saveConfig = (playerIndex: number) => {
               }
             }
           }
+        }
+      }
+
+      &.not-installed {
+        opacity: 0.6;
+
+        .player-icon {
+          color: #999;
+        }
+
+        .player-details h3 {
+          color: #999;
         }
       }
     }

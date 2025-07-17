@@ -2,7 +2,6 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useConfigStore } from '@/stores/config'
-import { API_BASE_URL } from '@/constants/api'
 
 export interface RadioStation {
   id: string
@@ -211,7 +210,9 @@ export const useRadioStore = defineStore('radio', () => {
   // Helper function to send commands to a specific radio player
   const sendRadioPlayerCommand = async (playerName: string, command: string): Promise<boolean> => {
     try {
-      const url = `${API_BASE_URL}/player/${playerName}/command/${command}`
+      const configStore = useConfigStore()
+      const apiBaseUrl = configStore.getApiBaseUrl()
+      const url = `${apiBaseUrl}/player/${playerName}/command/${command}`
       console.log('Sending radio player command:', { playerName, command, url })
 
       const response = await fetch(url, {

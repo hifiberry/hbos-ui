@@ -15,7 +15,7 @@ import {
 import type { Track } from '@/types/library'
 import type { Player, CurrentPlayer, Song, Capabilities } from '@/types/player'
 
-import { API_BASE_URL } from '@/constants/api.ts'
+import { useConfigStore } from '@/stores/config'
 
 // Configuration
 export const PLAYER_CONFIG = {
@@ -25,6 +25,7 @@ export const PLAYER_CONFIG = {
 }
 
 export const usePlayerStore = defineStore('player', () => {
+  const configStore = useConfigStore()
   const toastStore = useToastStore()
   const libraryFetch = useLibraryFetch()
   const playerWebSocket = usePlayerWebSocket()
@@ -81,15 +82,13 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<Array<Player>>} Array of player objects
    */
-  async function fetchPlayers(apiBase: string = API_BASE_URL): Promise<Array<Player>> {
+  async function fetchPlayers(): Promise<Array<Player>> {
     console.log('fetchPlayers')
-
     try {
+      const apiBase = configStore.getApiBaseUrl()
       const response = await fetch(`${apiBase}/players`)
       const data = await response.json()
-
       console.log('fetchPlayers data', data)
-
       if (data.players && Array.isArray(data.players)) {
         return data.players
       } else {
@@ -107,48 +106,37 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<CurrentPlayer | null>} Current player data
    */
-  async function fetchCurrentPlayer(apiBase: string = API_BASE_URL): Promise<CurrentPlayer | null> {
+  async function fetchCurrentPlayer(): Promise<CurrentPlayer | null> {
     console.log('*** fetchCurrentPlayer')
-
     try {
+      const apiBase = configStore.getApiBaseUrl()
       const response = await fetch(`${apiBase}/now-playing`)
       const data = await response.json()
-
       console.log('fetchCurrentPlayer data', data)
-
       if (!data) {
         throw new Error('No Data')
       }
-
       // If we're using the "Default (Active Player)" option (currentPlayerName is null)
       // and the active player has changed, we need to resubscribe
       const oldPlayerName = currentData.value?.player?.name
       const newPlayerName = data.player?.name
       const needsResubscribe = !currentPlayerName.value && oldPlayerName !== newPlayerName
-
       console.log('needsResubscribe', needsResubscribe)
-
       // Notify about player change if it actually changed
       if (oldPlayerName !== newPlayerName) {
         playerChangesStore.player_changed(oldPlayerName || null, newPlayerName || null)
       }
-
       currentData.value = data
-
       // Extract player capabilities
       playerCapabilities.value = extractPlayerCapabilities(data)
-
       console.log('playerCapabilities.value', playerCapabilities.value)
-
       // Resubscribe if needed (active player changed while using default selection)
       if (needsResubscribe) {
         console.log(
           `Active player changed from ${oldPlayerName || 'none'} to ${newPlayerName || 'none'}, resubscribing...`,
         )
-
         await playerWebSocket.subscribeToPlayerEvents()
       }
-
       return Promise.resolve(data)
     } catch (error) {
       console.error('Failed to fetch current player:', error)
@@ -156,13 +144,12 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
-  async function retrieveActivePlayer(apiBase: string = API_BASE_URL) {
+  async function retrieveActivePlayer() {
     console.log('retrieveActivePlayer')
-
     try {
+      const apiBase = configStore.getApiBaseUrl()
       const response = await fetch(`${apiBase}/now-playing`)
       const data = await response.json()
-
       if (data && data.player && data.player.name) {
         console.log(`Retrieved active player name: ${data.player.name}`)
         return data.player.name
@@ -204,11 +191,10 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {string} apiBase - The base URL for the API
    * @returns {Promise<boolean>} Success or failure
    */
-  const sendCommand = async (command: string, apiBase: string = API_BASE_URL): Promise<boolean> => {
+  const sendCommand = async (command: string): Promise<boolean> => {
+    const apiBase = configStore.getApiBaseUrl()
     console.log('sendCommand', { command, currentPlayerName: currentPlayerName.value, apiBase })
-
     isSendingCommand.value = true
-
     try {
       // Build the URL based on whether we're using a specific player or the active player
       let url
@@ -219,22 +205,17 @@ export const usePlayerStore = defineStore('player', () => {
         // Send to active player (default)
         url = `${apiBase}/player/active/command/${command}`
       }
-
       console.log(`Sending command to: ${url}`)
-
       const response = await fetch(url, {
         method: 'POST',
       })
-
       console.log('sendCommand', response)
-
       // ! We could update UI and State when getting WebSocket message
       // ! but we dont get messages on 'loop_mode_changed' and 'shuffle_changed'
       // ! that's why we fetchCurrentPlayer()
       return new Promise((resolve) => {
         setTimeout(async () => {
           const data = await fetchCurrentPlayer()
-
           resolve(Boolean(data))
         }, PLAYER_CONFIG.fastUpdateAfterCommand)
       })

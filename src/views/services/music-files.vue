@@ -8,9 +8,8 @@
       <div class="section">
         <div class="section-header">
           <h2>SMB/CIFS Mounts</h2>
-          <button @click="refreshMounts" :disabled="loading" class="refresh-button">
+          <button @click="refreshMounts" :disabled="loading" class="refresh-button" title="Refresh">
             <AppIcon icon="refresh" />
-            Refresh
           </button>
         </div>
 
@@ -243,9 +242,10 @@ onMounted(() => {
     .section {
       .section-header {
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        justify-content: space-between;
         margin-bottom: 24px;
+        width: 100%;
 
         h2 {
           margin: 0;
@@ -257,8 +257,10 @@ onMounted(() => {
         .refresh-button {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
+          justify-content: center;
+          padding: 8px;
+          width: 32px;
+          height: 32px;
           background: var(--color-primary);
           color: white;
           border: none;
@@ -277,8 +279,9 @@ onMounted(() => {
           }
 
           svg {
-            width: 16px;
-            height: 16px;
+            width: 100%;
+            height: 100%;
+            flex-shrink: 0;
           }
         }
       }

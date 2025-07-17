@@ -36,7 +36,7 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     const url = new URL(wsUrl)
     wsController.value = createPlayerWebSocket({
       hostname: url.hostname,
-      port: parseInt(url.port) || configStore.config.api.devicePort,
+      port: parseInt(url.port) || configStore.config.audiocontrol_api.devicePort,
       onConnect: () => {
         console.log('WebSocket connected')
         // Use async/await with the subscribe function

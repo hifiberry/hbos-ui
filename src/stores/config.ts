@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 
 export interface AppConfig {
   radioPlayer: string
-  api: {
+  audiocontrol_api: {
     deviceIP: string
     devicePort: number
     apiPrefix: string
@@ -15,7 +15,7 @@ export const useConfigStore = defineStore('config', () => {
   // State
   const config = ref<AppConfig>({
     radioPlayer: 'mpd', // Default radio player
-    api: {
+    audiocontrol_api: {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
       devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
       apiPrefix: import.meta.env.VITE_APP_API_PREFIX || '/api/audiocontrol',
@@ -57,13 +57,13 @@ export const useConfigStore = defineStore('config', () => {
     return updateConfig({ radioPlayer: playerName })
   }
 
-  const setApiConfig = async (apiConfig: Partial<AppConfig['api']>): Promise<boolean> => {
-    return updateConfig({ api: { ...config.value.api, ...apiConfig } })
+  const setApiConfig = async (apiConfig: Partial<AppConfig['audiocontrol_api']>): Promise<boolean> => {
+    return updateConfig({ audiocontrol_api: { ...config.value.audiocontrol_api, ...apiConfig } })
   }
 
   // API URL getters
   const getApiBaseUrl = (): string => {
-    const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.api
+    const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.audiocontrol_api
 
     if (useProxy) {
       return `http://localhost:5173${apiPrefix}` // Use proxy in development
@@ -73,7 +73,7 @@ export const useConfigStore = defineStore('config', () => {
   }
 
   const getWsBaseUrl = (): string => {
-    const { deviceIP, devicePort, apiPrefix } = config.value.api
+    const { deviceIP, devicePort, apiPrefix } = config.value.audiocontrol_api
     // WebSocket always connects directly to API server (no proxy)
     return `ws://${deviceIP}:${devicePort}${apiPrefix}`
   }
@@ -95,6 +95,6 @@ export const useConfigStore = defineStore('config', () => {
 
     // Getters
     radioPlayer: () => config.value.radioPlayer,
-    apiConfig: () => config.value.api
+    apiConfig: () => config.value.audiocontrol_api
   }
 })

@@ -12,10 +12,10 @@ import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { useToastStore } from '@/stores/toast'
 import { useLibraryStore } from '@/stores/library.ts'
 
-import { useConfigStore } from '@/stores/config'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 export const useAlbumStore = defineStore('album', () => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const libraryFetch = useLibraryFetch()
   const toastStore = useToastStore()
   const libraryStore = useLibraryStore()

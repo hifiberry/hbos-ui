@@ -17,7 +17,7 @@ export interface AppConfig {
   }
 }
 
-export const useConfigStore = defineStore('config', () => {
+export const useAppConfigStore = defineStore('appconfig', () => {
   // State
   const config = ref<AppConfig>({
     radioPlayer: 'mpd', // Default radio player
@@ -25,13 +25,13 @@ export const useConfigStore = defineStore('config', () => {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
       devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
       apiPrefix: import.meta.env.VITE_APP_API_PREFIX || '/api/audiocontrol',
-      useProxy: !import.meta.env.PROD // Use proxy in development
+      useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
     },
     config_api: {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
       devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
       apiPrefix: import.meta.env.VITE_APP_CONFIG_API_PREFIX || '/api/config/v1',
-      useProxy: !import.meta.env.PROD // Use proxy in development
+      useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
     }
   })
   const loading = ref(false)
@@ -96,6 +96,18 @@ export const useConfigStore = defineStore('config', () => {
     return wsUrl
   }
 
+  const getConfigApiBaseUrl = (): string => {
+    const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.config_api
+
+    if (useProxy) {
+      return `http://localhost:5173${apiPrefix}` // Use proxy in development
+    }
+
+    // Don't include port 80 in the URL as it's the default HTTP port
+    const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
+    return `http://${deviceIP}${portSuffix}${apiPrefix}`
+  }
+
   return {
     // State
     config,
@@ -110,9 +122,11 @@ export const useConfigStore = defineStore('config', () => {
     // API URL getters
     getApiBaseUrl,
     getWsBaseUrl,
+    getConfigApiBaseUrl,
 
     // Getters
     radioPlayer: () => config.value.radioPlayer,
-    apiConfig: () => config.value.audiocontrol_api
+    apiConfig: () => config.value.audiocontrol_api,
+    configApiConfig: () => config.value.config_api
   }
 })

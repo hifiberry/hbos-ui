@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
-import { useConfigStore } from '@/stores/config'
+import { useAppConfigStore } from '@/stores/appconfig'
 import { sendPlayerCommand, addTrackToPlayer } from '@/api/player'
 
 export interface RadioStation {
@@ -171,7 +171,7 @@ export const useRadioStore = defineStore('radio', () => {
   const playStation = async (station: RadioStation | RadioFavorite) => {
     try {
       const playerStore = usePlayerStore()
-      const configStore = useConfigStore()
+      const configStore = useAppConfigStore()
 
       // Get the configured radio player (default: "mpd")
       const radioPlayerName = configStore.radioPlayer()
@@ -250,7 +250,7 @@ export const useRadioStore = defineStore('radio', () => {
   // Initialize
   const initialize = async () => {
     // Initialize configuration store
-    const configStore = useConfigStore()
+    const configStore = useAppConfigStore()
     await configStore.getConfig()
 
     // Load favorites

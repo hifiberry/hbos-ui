@@ -1,4 +1,4 @@
-import { useConfigStore } from '@/stores/config'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 /**
  * Rewrite URLs that start with /api/ to use the full audiocontrol API prefix
@@ -12,7 +12,7 @@ export const rewrite_audiocontrol_api_url = (url: string): string => {
     return url
   }
 
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const { useProxy } = configStore.apiConfig()
 
   if (useProxy) {
@@ -69,7 +69,7 @@ export const addTrackToPlayer = async (
   coverartUrl?: string
 ): Promise<boolean> => {
   try {
-    const configStore = useConfigStore()
+    const configStore = useAppConfigStore()
     const apiBaseUrl = configStore.getApiBaseUrl()
 
     const url = `${apiBaseUrl}/player/${playerName}/command/add_track`
@@ -111,7 +111,7 @@ export const addTrackToPlayer = async (
  */
 export const sendPlayerCommand = async (playerName: string, command: string): Promise<boolean> => {
   try {
-    const configStore = useConfigStore()
+    const configStore = useAppConfigStore()
     const apiBaseUrl = configStore.getApiBaseUrl()
 
     // Prevent add_track commands from being sent through this function

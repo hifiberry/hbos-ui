@@ -1,10 +1,10 @@
 import { createFetch } from '@vueuse/core'
 import { useLibraryStore } from '@/stores/library.ts'
 
-import { useConfigStore } from '@/stores/config'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 export const useLibraryFetch = () => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const libraryStore = useLibraryStore()
   return createFetch({
     baseUrl: configStore.getApiBaseUrl(),

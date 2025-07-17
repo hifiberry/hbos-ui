@@ -6,10 +6,10 @@ import { useToastStore } from '@/stores/toast'
 
 import type { LibraryPlayer, LibraryPlayerResponse } from '@/types/library'
 
-import { useConfigStore } from '@/stores/config'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 export const useLibraryStore = defineStore('library', () => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const toastStore = useToastStore()
 
   // State

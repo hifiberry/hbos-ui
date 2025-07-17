@@ -16,7 +16,7 @@ import {
 import type { Track } from '@/types/library'
 import type { Player, CurrentPlayer, Song, Capabilities } from '@/types/player'
 
-import { useConfigStore } from '@/stores/config'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 // Configuration
 export const PLAYER_CONFIG = {
@@ -26,7 +26,7 @@ export const PLAYER_CONFIG = {
 }
 
 export const usePlayerStore = defineStore('player', () => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const toastStore = useToastStore()
   const libraryFetch = useLibraryFetch()
   const playerWebSocket = usePlayerWebSocket()

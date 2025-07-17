@@ -1,4 +1,4 @@
-import { useConfigStore } from '@/stores/config'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 // Types for the Config API
 export interface ConfigApiResponse<T = unknown> {
@@ -23,7 +23,7 @@ export interface ConfigSetRequest {
  * @param prefix - Optional prefix to filter keys
  */
 export const getAllConfig = async (prefix?: string): Promise<ConfigApiResponse<Record<string, string>>> => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = prefix ? `${baseUrl}?prefix=${encodeURIComponent(prefix)}` : baseUrl
 
@@ -41,7 +41,7 @@ export const getAllConfig = async (prefix?: string): Promise<ConfigApiResponse<R
  * @param prefix - Optional prefix to filter keys
  */
 export const getConfigKeys = async (prefix?: string): Promise<ConfigApiResponse<string[]>> => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = prefix ? `${baseUrl}/keys?prefix=${encodeURIComponent(prefix)}` : `${baseUrl}/keys`
 
@@ -65,7 +65,7 @@ export const getConfigValue = async (
   secure?: boolean,
   defaultValue?: string
 ): Promise<ConfigApiResponse<ConfigKeyValue>> => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
   const params = new URLSearchParams()
 
@@ -94,7 +94,7 @@ export const setConfigValue = async (
   value: string,
   secure?: boolean
 ): Promise<ConfigApiResponse<ConfigKeyValue>> => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/${encodeURIComponent(key)}`
 
@@ -129,7 +129,7 @@ export const updateConfigValue = async (
   value: string,
   secure?: boolean
 ): Promise<ConfigApiResponse<ConfigKeyValue>> => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/${encodeURIComponent(key)}`
 
@@ -158,7 +158,7 @@ export const updateConfigValue = async (
  * @param key - Configuration key name
  */
 export const deleteConfigValue = async (key: string): Promise<ConfigApiResponse> => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/${encodeURIComponent(key)}`
 

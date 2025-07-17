@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 import { usePlayerStore, PLAYER_CONFIG } from '@/stores/player'
 import { useDebounceFn } from '@vueuse/core'
 
-import { useConfigStore } from '@/stores/config'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 import type {
   WsController,
@@ -14,7 +14,7 @@ import type {
 } from '@/types/web-socket'
 
 export const usePlayerWebSocket = defineStore('player-web-socket', () => {
-  const configStore = useConfigStore()
+  const configStore = useAppConfigStore()
   const playerStore = usePlayerStore()
 
   // State

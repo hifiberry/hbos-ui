@@ -24,4 +24,8 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    minify: false, // Disable minification for readable error messages
+    sourcemap: true, // Enable source maps for debugging
+  },
 })

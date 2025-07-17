@@ -12,7 +12,6 @@ const playerStore = usePlayerStore()
 const audioControls = useAudioControls()
 const playerWebSocket = usePlayerWebSocket()
 
-console.log('App.vue: Starting application initialization')
 playerStore.initPlayer()
 
 onBeforeUnmount(() => {

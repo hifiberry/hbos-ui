@@ -7,6 +7,7 @@ import Vue3Toastify from 'vue3-toastify'
 import App from './App.vue'
 import router from './router'
 
+console.log('main.ts: Vue application starting up')
 const app = createApp(App)
 
 app.use(createPinia())
@@ -19,6 +20,7 @@ app.use(Vue3Toastify, {
   // autoClose: 30000, // Optional: configure global options
 })
 
+console.log('main.ts: Mounting Vue app to DOM')
 app.mount('#app')
 
 //

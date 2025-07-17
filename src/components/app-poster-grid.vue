@@ -107,7 +107,11 @@ function loadNextChunk() {
 }
 
 function handleScroll() {
-  if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
+  // Load more content when user is within 1000px (approximately 6 rows) of the bottom
+  const scrollBuffer = 1000
+  const scrollPosition = window.innerHeight + window.scrollY + scrollBuffer
+
+  if (scrollPosition >= document.body.scrollHeight) {
     scrolledToBottom.value = true
     loadNextChunk()
   } else {

@@ -249,8 +249,6 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/scss/mixins.scss';
-
 .radio {
   .breadcrumbs {
     margin-bottom: 32px;

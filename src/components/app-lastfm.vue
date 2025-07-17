@@ -352,180 +352,64 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/scss/service-item' as *;
+
 .lastfm-integration {
   .card {
-    margin-bottom: 24px;
+    @include service-card-base;
   }
 
   .service-item {
-    display: flex;
-    flex-direction: column;
-    padding: 24px 32px 24px 20px;
-    transition: all 0.3s ease;
+    @include service-item-base;
 
     .service-main {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      gap: 16px;
+      @include service-main-layout;
     }
 
-    @media (max-width: 768px) {
-      padding: 20px;
-
-      .service-main {
-        flex-direction: row;
-        align-items: center;
-        gap: 16px;
-      }
+    &.expanded {
+      @include service-expanded-state;
     }
 
     .service-info {
-      display: flex;
-      align-items: center;
-      gap: 28px;
-      flex: 1;
+      @include service-info-layout;
 
       .service-icon {
-        width: 40px;
-        height: 40px;
-        color: var(--color-icon-primary);
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        :deep(svg) {
-          width: 28px;
-          height: 28px;
-          object-fit: contain;
-        }
+        @include service-icon-base;
       }
 
       .service-details {
-        flex: 1;
-
-        h3 {
-          margin: 0 0 4px 0;
-          color: var(--color-head);
-          font-size: 1.125rem;
-        }
-
-        .service-description {
-          margin: 0 0 8px 0;
-          font-size: 14px;
-          color: var(--color-body-secondary);
-        }
-
-        .service-status {
-          font-size: 14px;
-        }
+        @include service-details-base;
       }
     }
 
     .service-actions {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 16px;
+      @include service-actions-base;
     }
   }
 
   .status-indicator {
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-
-    &.connected {
-      background-color: #e6f7e6;
-      color: #2d7d2d;
-    }
-
-    &.disconnected {
-      background-color: #f5f5f5;
-      color: #666;
-    }
-
-    &.error {
-      background-color: #ffe6e6;
-      color: #d51007;
-    }
+    @include status-indicator-base;
   }
 
   .btn-action {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 80px;
-
     &.btn-connect {
-      background: var(--primary);
-      color: white;
-
-      &:hover:not(:disabled) {
-        background: var(--primary-dark, var(--primary));
-        opacity: 0.9;
-      }
-
-      &:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3);
-      }
+      @include service-button-primary;
     }
 
     &.btn-disconnect {
-      background: var(--color-error, #dc3545);
-      color: white;
-
-      &:hover:not(:disabled) {
-        background: var(--color-error-dark, #c82333);
-        opacity: 0.9;
-      }
-
-      &:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3);
-      }
+      @include service-button-danger;
     }
 
     &.btn-cancel {
-      background: var(--cover-placeholder-bg, #f0f0f0);
-      color: var(--color-body-secondary);
-      border: 1px solid var(--color-sidebar-border, transparent);
-
-      &:hover:not(:disabled) {
-        background: var(--color-body-secondary, #e0e0e0);
-        color: var(--color-head);
-        border-color: var(--color-head);
-      }
-
-      &:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(var(--color-head-rgb), 0.1);
-      }
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+      @include service-button-secondary;
     }
   }
 
   .auth-section {
-    border-top: 1px solid var(--color-border);
-    padding-top: 15px;
-    margin-top: 15px;
+    @include service-content-section;
 
     .auth-content {
-      background-color: var(--color-background-secondary);
-      padding: 15px;
-      border-radius: 6px;
+      @include service-content-box;
 
       .auth-instructions {
         h4 {
@@ -550,21 +434,10 @@ onUnmounted(() => {
   }
 
   .error-section {
-    border-top: 1px solid var(--color-border);
-    padding-top: 15px;
-    margin-top: 15px;
+    @include service-content-section;
 
     .error-content {
-      background-color: #ffe6e6;
-      padding: 15px;
-      border-radius: 6px;
-
-      .error-message {
-        margin: 0;
-        font-size: 14px;
-        color: #d51007;
-        font-weight: 500;
-      }
+      @include service-error-box;
     }
   }
 }

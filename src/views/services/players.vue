@@ -388,6 +388,8 @@ const saveConfig = (playerIndex: number) => {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/scss/service-item' as *;
+
 .players {
   .breadcrumbs {
     margin-bottom: 32px;
@@ -409,69 +411,29 @@ const saveConfig = (playerIndex: number) => {
 
   .players-list {
     .card {
-      margin-bottom: 24px;
+      @include service-card-base;
     }
 
     .player-item {
-      display: flex;
-      flex-direction: column;
-      padding: 24px 32px 24px 20px;
-      transition: all 0.3s ease;
+      @include service-item-base;
 
       .player-main {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        gap: 16px;
+        @include service-main-layout;
       }
 
       &.expanded {
-        .player-main {
-          margin-bottom: 16px;
-        }
-      }
-
-      @media (max-width: 768px) {
-        padding: 20px;
-
-        .player-main {
-          flex-direction: row;
-          align-items: center;
-          gap: 16px;
-        }
+        @include service-expanded-state;
       }
 
       .player-info {
-        display: flex;
-        align-items: center;
-        gap: 28px;
-        flex: 1;
+        @include service-info-layout;
 
         .player-icon {
-          width: 40px;
-          height: 40px;
-          color: var(--color-icon-primary);
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          :deep(svg) {
-            width: 28px;
-            height: 28px;
-            object-fit: contain;
-          }
+          @include service-icon-base;
         }
 
         .player-details {
-          flex: 1;
-
-          h3 {
-            margin: 0 0 4px 0;
-            color: var(--color-head);
-            font-size: 1.125rem;
-          }
+          @include service-details-base;
 
           .player-status {
             display: flex;
@@ -480,30 +442,19 @@ const saveConfig = (playerIndex: number) => {
             margin-top: 4px;
 
             .status-badge {
-              padding: 2px 8px;
-              border-radius: 4px;
-              font-size: 12px;
-              font-weight: 500;
+              @include status-indicator-base;
               text-transform: capitalize;
 
               &.active {
-                background-color: #e6f7e6;
-                color: #2d7d2d;
+                @extend .connected;
               }
 
               &.inactive {
-                background-color: #f5f5f5;
-                color: #666;
+                @extend .disconnected;
               }
 
               &.failed {
-                background-color: #ffe6e6;
-                color: #d51007;
-              }
-
-              &.not-installed {
-                background-color: #f8f8f8;
-                color: #999;
+                @extend .error;
               }
             }
           }
@@ -512,22 +463,15 @@ const saveConfig = (playerIndex: number) => {
             margin-top: 4px;
 
             .error-message {
-              padding: 2px 8px;
-              border-radius: 4px;
-              font-size: 12px;
-              font-weight: 500;
-              background-color: #ffe6e6;
-              color: #d51007;
+              @include status-indicator-base;
+              @extend .error;
             }
           }
         }
       }
 
       .player-actions {
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        gap: 16px;
+        @include service-actions-base;
 
         .player-toggle {
           display: flex;
@@ -652,8 +596,7 @@ const saveConfig = (playerIndex: number) => {
         width: 100%;
 
         .config-content {
-          padding: 16px;
-          background: var(--background-card);
+          @include service-content-box;
 
           .config-form {
             margin-bottom: 16px;
@@ -699,46 +642,14 @@ const saveConfig = (playerIndex: number) => {
             padding-top: 16px;
 
             .config-btn {
-              padding: 8px 16px;
-              border-radius: 6px;
-              font-size: 0.875rem;
-              font-family: inherit;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              border: 1px solid transparent;
-              min-width: 80px;
-
               &--cancel {
-                background: transparent;
-                color: var(--color-body-secondary);
-                border-color: var(--color-sidebar-border);
-
-                &:hover {
-                  background: var(--cover-placeholder-bg);
-                  color: var(--color-head);
-                  border-color: var(--color-head);
-                }
-
-                &:focus {
-                  outline: none;
-                  box-shadow: 0 0 0 2px rgba(var(--color-head-rgb), 0.1);
-                }
+                @include service-button-secondary;
+                min-width: 80px;
               }
 
               &--save {
-                background: var(--primary);
-                color: white;
-                border-color: var(--primary);
-
-                &:hover {
-                  background: var(--primary-dark, var(--primary));
-                  border-color: var(--primary-dark, var(--primary));
-                }
-
-                &:focus {
-                  outline: none;
-                  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3);
-                }
+                @include service-button-primary;
+                min-width: 80px;
               }
             }
           }

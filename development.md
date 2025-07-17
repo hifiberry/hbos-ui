@@ -31,7 +31,7 @@
   - remove paired device
 * Settings/Services
   - connect Spotify
-  - connect LastFM **started**
+  - connect LastFM **done**
   - connect PlexAmp
 * Settings/Music library
   - mount SMB share ** started**

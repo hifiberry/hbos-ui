@@ -26,6 +26,17 @@
           View Web Services
         </span>
       </router-link>
+
+      <router-link :to="{ name: 'music-files' }" class="service-card">
+        <div class="service-header">
+          <AppIcon icon="music" class="service-icon" />
+          <h2>Music Files</h2>
+        </div>
+        <p class="service-description">Mount SMB shares and manage local music directories</p>
+        <span class="service-link">
+          View Music Files
+        </span>
+      </router-link>
     </div>
   </div>
 </template>

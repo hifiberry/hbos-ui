@@ -71,6 +71,11 @@ const router = createRouter({
               name: 'web-services',
               component: () => import('@/views/services/web-services.vue'),
             },
+            {
+              path: 'music-files',
+              name: 'music-files',
+              component: () => import('@/views/services/music-files.vue'),
+            },
           ],
         },
         {

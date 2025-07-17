@@ -114,6 +114,11 @@ const routes = computed(() => {
           title: 'Web Services',
           icon: 'cloud',
         },
+        {
+          name: 'music-files',
+          title: 'Music Files',
+          icon: 'nas',
+        },
       ],
     },
     // {

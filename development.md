@@ -20,7 +20,6 @@
 * Queue management (clear queue, add album, add song, ...) **done**
 * Web radio browser **done**
 * like/unlike song **started**
-* volume control
 * Improve album view (e.g. /library/albums/10518654235945294040) **done**
   - if the artist isn't the same at the album artist, display artist name on the song **done**
   - remove the icon on each song **done**
@@ -44,6 +43,7 @@
  
 # Phase 5
 
+* volume control, limit, mono/stereo, ... (using Pipewire and ALSA)
 * Use [material icons](https://fonts.google.com/icons)
 * Show active player
 * display some meta data on the songs (e.g. length)

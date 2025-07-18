@@ -5,12 +5,8 @@
     </div>
 
     <div class="card">
-      <AppPosterGrid
-        :items="sortedAlbumsByReleaseDate"
-        :loading="loading"
-        :loaded="loaded"
-        @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
-      />
+      <AppPosterGrid :items="sortedAlbumsByReleaseDate" :loading="loading" :loaded="loaded"
+        @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })" />
     </div>
   </div>
 </template>

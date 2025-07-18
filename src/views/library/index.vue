@@ -5,39 +5,21 @@
     <div class="card">
       <div class="title">
         <h2>Artists</h2>
-        <router-link v-if="artists.length > 0" :to="{ name: 'artists' }" class="text-link"
-          >View All</router-link
-        >
+        <router-link v-if="artists.length > 0" :to="{ name: 'artists' }" class="text-link">View All</router-link>
       </div>
-
-      <AppPosterGrid
-        :loading="loadingArtists"
-        :loaded="loadedArtists"
-        :items="artists"
-        poster-form="circle"
-        in-row
-        @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })"
-      />
+      <AppPosterGrid :loading="loadingArtists" :loaded="loadedArtists" :items="artists" poster-form="circle" in-row
+        @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })" />
     </div>
 
     <div class="card">
       <div class="title">
         <h2>Albums</h2>
-        <router-link
-          v-if="sortedAlbumsByReleaseDate.length > 0"
-          :to="{ name: 'albums' }"
-          class="text-link"
-          >View All</router-link
-        >
+        <router-link v-if="sortedAlbumsByReleaseDate.length > 0" :to="{ name: 'albums' }" class="text-link">View
+          All</router-link>
       </div>
 
-      <AppPosterGrid
-        :loading="loadingAlbums"
-        :loaded="loadedAlbums"
-        :items="sortedAlbumsByReleaseDate"
-        in-row
-        @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
-      />
+      <AppPosterGrid :loading="loadingAlbums" :loaded="loadedAlbums" :items="sortedAlbumsByReleaseDate" in-row
+        @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })" />
     </div>
 
     <div class="card radio-section">
@@ -51,14 +33,8 @@
         <p>No favorite radio stations saved</p>
       </div>
 
-      <AppPosterGrid
-        v-else
-        :loading="loading"
-        :loaded="loaded"
-        :items="favoriteStationsForDisplay"
-        in-row
-        @click="playStation"
-      />
+      <AppPosterGrid v-else :loading="loading" :loaded="loaded" :items="favoriteStationsForDisplay" in-row
+        @click="playStation" />
     </div>
   </div>
 </template>
@@ -129,28 +105,34 @@ onMounted(async () => {
   .card {
     &:not(:last-of-type) {
       margin-bottom: 55px;
+
       @include media-down(lg) {
         margin-bottom: 24px;
       }
     }
   }
+
   .title {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 25px;
+
     h2 {
       margin-bottom: 0;
     }
   }
+
   .empty-state {
     padding: 40px 20px;
     text-align: center;
     color: var(--color-text-secondary);
+
     .empty-icon {
       margin-bottom: 16px;
       opacity: 0.6;
     }
+
     p {
       margin: 0;
       font-size: 16px;

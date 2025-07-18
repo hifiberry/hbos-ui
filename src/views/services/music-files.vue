@@ -14,7 +14,7 @@
             </p>
           </div>
           <div class="header-actions">
-            <button @click="addSmbMount" class="add-button" title="Add SMB Mount">
+            <button @click="showAddDialog = true" class="add-button" title="Add SMB Mount">
               <AppIcon icon="plus" />
             </button>
             <button @click="refreshMounts" :disabled="loading" class="refresh-button" title="Refresh">
@@ -119,6 +119,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Add Mount Dialog -->
+    <AppAddSmbMountDialog
+      :is-open="showAddDialog"
+      @close="showAddDialog = false"
+      @mount-created="handleMountCreated"
+    />
   </div>
 </template>
 
@@ -126,6 +133,7 @@
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
+import AppAddSmbMountDialog from '@/components/app-add-smb-mount-dialog.vue'
 import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
 
 // State
@@ -135,6 +143,7 @@ const mounts = ref<SmbMount[]>([])
 const mountsSummary = ref<{ total: number; mounted: number; unmounted: number } | null>(null)
 const removing = ref(false)
 const expandedMounts = ref<Set<number>>(new Set())
+const showAddDialog = ref(false)
 
 // Methods
 const toggleMountDetails = (mount: SmbMount) => {
@@ -177,14 +186,14 @@ const discoverServers = async () => {
   console.log('Discovering SMB servers...')
 }
 
-const addSmbMount = async () => {
-  // TODO: Implement add SMB mount functionality
-  console.log('Adding new SMB mount...')
+const handleMountCreated = () => {
+  // Refresh mounts list after a new mount is created
+  refreshMounts()
 }
 
 const confirmRemoveMount = async (mount: SmbMount) => {
   const confirmMessage = `Are you sure you want to remove the mount "${mount.server}/${mount.share}"?`
-  
+
   if (confirm(confirmMessage)) {
     await removeMount(mount)
   }

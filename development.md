@@ -27,12 +27,12 @@
 # Phase 4
 
 
-* Settings/Services **improved**
+* Settings/Services
   * connect Spotify **done**
   * connect LastFM **done**
   * connect PlexAmp **later - no plexamp yet***
 * Settings/Music library
-  * mount SMB share **started**
+  * mount SMB share **done**
   * update library 
 * Settings/Players **done**
   * enable/disable players **done**
@@ -51,6 +51,7 @@
     - display sound card details (name, channels, features, DSP support)
     - added to sidebar navigation with proper icons
     - responsive table layout with consistent styling
+  * reset system
  
 # Phase 5
 

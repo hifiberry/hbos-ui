@@ -269,18 +269,35 @@ export const getSmbShares = async (
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const params = new URLSearchParams()
-  if (username) params.append('username', username)
-  if (password) params.append('password', password)
-  if (detailed) params.append('detailed', 'true')
+  const requestBody: {
+    server?: string
+    username?: string
+    password?: string
+    detailed?: boolean
+  } = {}
 
-  const url = `${baseUrl}/smb/shares/${encodeURIComponent(server)}${params.toString() ? `?${params.toString()}` : ''}`
+  if (username) {
+    requestBody.username = username
+  }
 
-  const response = await fetch(url, {
-    method: 'GET',
+  if (password) {
+    requestBody.password = password
+  }
+
+  if (detailed) {
+    requestBody.detailed = detailed
+  }
+
+  // Server can be provided in request body or URL path
+  // Include server in body for compatibility
+  requestBody.server = server
+
+  const response = await fetch(`${baseUrl}/smb/shares/${encodeURIComponent(server)}`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify(requestBody),
   })
 
   if (!response.ok) {
@@ -408,11 +425,17 @@ export const unmountSmbShare = async (server: string, share: string): Promise<Sm
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/unmount/${encodeURIComponent(server)}/${encodeURIComponent(share)}`, {
+  const requestBody = {
+    server: server,
+    share: share
+  }
+
+  const response = await fetch(`${baseUrl}/smb/unmount`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify(requestBody),
   })
 
   if (!response.ok) {

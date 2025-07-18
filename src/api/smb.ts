@@ -218,24 +218,43 @@ export const testSmbServer = async (
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const params = new URLSearchParams()
-  if (username) params.append('username', username)
-  if (password) params.append('password', password)
+  const requestBody: {
+    server: string
+    username?: string
+    password?: string
+  } = {
+    server: server
+  }
 
-  const url = `${baseUrl}/smb/test/${encodeURIComponent(server)}${params.toString() ? `?${params.toString()}` : ''}`
+  if (username) {
+    requestBody.username = username
+  }
 
-  const response = await fetch(url, {
-    method: 'GET',
+  if (password) {
+    requestBody.password = password
+  }
+
+  const response = await fetch(`${baseUrl}/smb/test/${encodeURIComponent(server)}`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify(requestBody),
   })
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)
   }
 
-  return await response.json()
+  const result = await response.json()
+
+  // The API can return HTTP 200 with status: "error" in the response body
+  if (result.status === 'error') {
+    // Return the error response so the UI can display the error message
+    return result
+  }
+
+  return result
 }
 
 /**

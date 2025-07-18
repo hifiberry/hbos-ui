@@ -49,8 +49,11 @@
                 <div class="mount-info">
                   <AppIcon icon="nas" class="mount-icon" />
                   <div class="mount-details">
-                    <h3>{{ mount.server }}/{{ mount.share }}</h3>
-                    <p class="mount-path">mounted on {{ mount.mountpoint }}</p>
+                    <h3>
+                      <span class="mount-source">{{ mount.server }}/{{ mount.share }}</span>
+                      <span class="mount-separator">→</span>
+                      <span class="mount-target">{{ mount.mountpoint }}</span>
+                    </h3>
                   </div>
                 </div>
                 <div class="mount-actions">
@@ -388,6 +391,34 @@ onMounted(() => {
 
               .mount-details {
                 @include service-details-base;
+
+                h3 {
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  flex-wrap: wrap;
+
+                  .mount-source {
+                    color: var(--color-body);
+                    font-weight: 600;
+                  }
+
+                  .mount-separator {
+                    color: var(--color-body-secondary);
+                    font-weight: 400;
+                    font-size: 1.1em;
+                  }
+
+                  .mount-target {
+                    color: var(--color-body-secondary);
+                    font-weight: 400;
+                    font-family: 'Metropolis', monospace;
+                    background: var(--color-bg-secondary);
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 0.9em;
+                  }
+                }
 
                 .mount-path {
                   margin: 0;

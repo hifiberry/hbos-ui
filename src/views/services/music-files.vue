@@ -7,7 +7,12 @@
     <div class="music-files-content">
       <div class="section">
         <div class="section-header">
-          <h2>SMB/CIFS Mounts</h2>
+          <div class="header-title">
+            <h2>SMB/CIFS Mounts</h2>
+            <p v-if="mountsSummary && !loading" class="mounts-summary">
+              {{ mountsSummary.total }} total, {{ mountsSummary.mounted }} mounted
+            </p>
+          </div>
           <div class="header-actions">
             <button @click="addSmbMount" class="add-button" title="Add SMB Mount">
               <AppIcon icon="plus" />
@@ -57,7 +62,7 @@
                     <label class="toggle-switch">
                       <input
                         type="checkbox"
-                        :checked="mount.mounted"
+                        :checked="mount.mounted === true"
                         :disabled="mounting || unmounting"
                         @click="handleToggleMount($event, mount)"
                       >
@@ -135,6 +140,7 @@ import { getSmbMounts, unmountSmbShare, mountSmbShareById, unmountSmbShareById, 
 const loading = ref(true)
 const error = ref('')
 const mounts = ref<SmbMount[]>([])
+const mountsSummary = ref<{ total: number; mounted: number; unmounted: number } | null>(null)
 const mounting = ref(false)
 const unmounting = ref(false)
 const removing = ref(false)
@@ -154,6 +160,7 @@ const isExpanded = (mount: SmbMount) => {
   const key = mount.id
   return expandedMounts.value.has(key)
 }
+
 const refreshMounts = async () => {
   loading.value = true
   error.value = ''
@@ -163,6 +170,7 @@ const refreshMounts = async () => {
 
     if (response.status === 'success') {
       mounts.value = response.data.mounts
+      mountsSummary.value = response.data.summary
     } else {
       error.value = response.message || 'Failed to load SMB mounts'
     }
@@ -262,11 +270,20 @@ onMounted(() => {
         margin-bottom: 24px;
         width: 100%;
 
-        h2 {
-          margin: 0;
-          color: var(--color-head);
-          font-size: 1.5rem;
-          font-weight: 600;
+        .header-title {
+          h2 {
+            margin: 0 0 4px 0;
+            color: var(--color-head);
+            font-size: 1.5rem;
+            font-weight: 600;
+          }
+
+          .mounts-summary {
+            margin: 0;
+            color: var(--color-body-secondary);
+            font-size: 0.9rem;
+            font-weight: 400;
+          }
         }
 
         .header-actions {
@@ -423,6 +440,7 @@ onMounted(() => {
 
             .mount-actions {
               @include service-actions-base;
+              @include service-toggle-switch;
 
               .mount-toggle {
                 position: relative;
@@ -444,7 +462,7 @@ onMounted(() => {
                   right: 0;
                   bottom: 0;
                   background-color: var(--color-body-secondary);
-                  transition: 0.3s;
+                  transition: all 0.3s ease;
                   border-radius: 24px;
 
                   &.loading {
@@ -459,8 +477,9 @@ onMounted(() => {
                     left: 3px;
                     bottom: 3px;
                     background-color: white;
-                    transition: 0.3s;
+                    transition: all 0.3s ease;
                     border-radius: 50%;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
                   }
                 }
 
@@ -473,7 +492,12 @@ onMounted(() => {
                 }
 
                 input:focus + .toggle-slider {
-                  box-shadow: 0 0 1px var(--primary);
+                  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+                }
+
+                input:disabled + .toggle-slider {
+                  opacity: 0.6;
+                  cursor: not-allowed;
                 }
               }
 

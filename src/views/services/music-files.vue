@@ -39,11 +39,7 @@
         <div v-else-if="mounts.length === 0" class="empty-state">
           <AppIcon icon="nas" class="empty-icon" />
           <h3>No SMB Mounts</h3>
-          <p>No SMB/CIFS shares are currently configured for music access.</p>
-          <button @click="discoverServers" class="discover-button">
-            <AppIcon icon="search" />
-            Discover Servers
-          </button>
+          <p>No SMB/CIFS shares are currently configured for music access. Add using the + symbol</p>
         </div>
 
         <div v-else class="mounts-list">
@@ -179,11 +175,6 @@ const refreshMounts = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const discoverServers = async () => {
-  // TODO: Implement server discovery functionality
-  console.log('Discovering SMB servers...')
 }
 
 const handleMountCreated = () => {

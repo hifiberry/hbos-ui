@@ -147,7 +147,7 @@
           </div>
 
           <div v-else-if="shares.length === 0" class="empty-section">
-            <AppIcon icon="share" class="empty-icon" />
+            <AppIcon icon="material/folder-outlined" class="empty-icon" />
             <p>No shares found on this server.</p>
           </div>
 
@@ -162,7 +162,7 @@
                 @click="selectShare(share)"
               >
                 <div class="share-info">
-                  <AppIcon icon="share" class="share-icon" />
+                  <AppIcon icon="material/folder-outlined" class="share-icon" />
                   <div class="share-details">
                     <h5>{{ share.name }}</h5>
                     <p v-if="share.comment">{{ share.comment }}</p>
@@ -616,8 +616,12 @@ watch(() => props.isOpen, (isOpen) => {
 
     .error-message {
       color: #ef4444;
-      margin: 0 0 12px 0;
+      margin: 0;
       font-weight: 500;
+
+      &:not(:last-child) {
+        margin-bottom: 12px;
+      }
     }
 
     .retry-button {
@@ -754,16 +758,29 @@ watch(() => props.isOpen, (isOpen) => {
         background: rgba(var(--primary-rgb), 0.1);
       }
 
+      &.share-item {
+        padding: 16px 32px 16px 20px;
+      }
+
       .server-info, .share-info {
         display: flex;
         align-items: center;
         gap: 12px;
         flex: 1;
 
+        &.share-info {
+          gap: 20px;
+        }
+
         .server-icon, .share-icon {
           width: 24px;
           height: 24px;
           color: var(--color-body-secondary);
+        }
+
+        .share-icon {
+          width: 48px;
+          height: 48px;
         }
 
         .server-details, .share-details {

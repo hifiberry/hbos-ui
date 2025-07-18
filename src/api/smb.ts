@@ -73,6 +73,7 @@ export interface SmbTestResponse {
 }
 
 export interface SmbMountRequest {
+  action?: 'add' | 'remove' // Optional since it's added by the API functions
   server: string
   share: string
   mountpoint?: string
@@ -99,6 +100,17 @@ export interface SmbMountResponse {
     command?: string
     output?: string
     error_details?: string
+    // New fields for mount-all response
+    service?: string
+    action?: string
+    configurations?: Array<{
+      server: string
+      share: string
+      mountpoint: string
+      id: number
+    }>
+    count?: number
+    note?: string
   }
   error?: string
 }
@@ -142,7 +154,66 @@ export interface SmbCapabilitiesResponse {
 }
 
 /**
+ * Parse SMB API error response and return user-friendly error message
+ */
+const parseSmbError = (response: Record<string, unknown>, defaultMessage: string): string => {
+  // If the response has a detailed error message, use it
+  if (response.data && typeof response.data === 'object' && response.data !== null) {
+    const data = response.data as Record<string, unknown>
+    if (data.error_details && typeof data.error_details === 'string') {
+      return data.error_details
+    }
+  }
+
+  // If the response has an error field, use it
+  if (response.error && typeof response.error === 'string') {
+    return response.error
+  }
+
+  // Use the main message field
+  if (response.message && typeof response.message === 'string') {
+    return response.message
+  }
+
+  return defaultMessage
+}
+
+/**
+ * Handle HTTP error responses and return meaningful error messages
+ */
+const handleHttpError = async (response: Response, operation: string): Promise<never> => {
+  let errorMessage = `${operation} failed`
+
+  try {
+    const errorData = await response.json()
+
+    switch (response.status) {
+      case 400:
+        errorMessage = `Bad request: ${parseSmbError(errorData, 'Missing or invalid parameters')}`
+        break
+      case 403:
+        errorMessage = `Access denied: ${parseSmbError(errorData, 'Operation not permitted')}`
+        break
+      case 404:
+        errorMessage = `Not found: ${parseSmbError(errorData, 'Resource not found')}`
+        break
+      case 500:
+        errorMessage = `Server error: ${parseSmbError(errorData, 'Internal server error occurred')}`
+        break
+      default:
+        errorMessage = `${operation} failed: ${parseSmbError(errorData, `HTTP ${response.status}`)}`
+    }
+  } catch {
+    // If we can't parse the error response, use the status code
+    errorMessage = `${operation} failed with HTTP ${response.status}`
+  }
+
+  throw new Error(errorMessage)
+}
+
+/**
  * Create safe mount options for SMB/CIFS mounting
+ * This helps avoid capability issues by using appropriate mount options
  * This helps avoid capability issues by using appropriate mount options
  */
 export const createSafeMountOptions = (
@@ -201,7 +272,7 @@ export const getSmbServers = async (): Promise<SmbServersResponse> => {
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Get SMB servers')
   }
 
   return await response.json()
@@ -243,7 +314,7 @@ export const testSmbServer = async (
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Test SMB server connection')
   }
 
   const result = await response.json()
@@ -270,11 +341,13 @@ export const getSmbShares = async (
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
   const requestBody: {
-    server?: string
+    server: string
     username?: string
     password?: string
     detailed?: boolean
-  } = {}
+  } = {
+    server: server
+  }
 
   if (username) {
     requestBody.username = username
@@ -288,11 +361,7 @@ export const getSmbShares = async (
     requestBody.detailed = detailed
   }
 
-  // Server can be provided in request body or URL path
-  // Include server in body for compatibility
-  requestBody.server = server
-
-  const response = await fetch(`${baseUrl}/smb/shares/${encodeURIComponent(server)}`, {
+  const response = await fetch(`${baseUrl}/smb/shares`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -301,7 +370,7 @@ export const getSmbShares = async (
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Get SMB shares')
   }
 
   return await response.json()
@@ -322,29 +391,35 @@ export const getSmbMounts = async (): Promise<SmbMountsResponse> => {
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Get SMB mounts')
   }
 
   return await response.json()
 }
 
 /**
- * Add and mount a new SMB share for music access
+ * Add an SMB share configuration (does not mount it)
+ * Use mountAllSmbShares() afterward to mount all configured shares
  */
 export const mountSmbShare = async (mountRequest: SmbMountRequest): Promise<SmbMountResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const requestWithAction = {
+    action: 'add',
+    ...mountRequest
+  }
 
   const response = await fetch(`${baseUrl}/smb/mount`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(mountRequest),
+    body: JSON.stringify(requestWithAction),
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Add SMB share configuration')
   }
 
   return await response.json()
@@ -353,6 +428,7 @@ export const mountSmbShare = async (mountRequest: SmbMountRequest): Promise<SmbM
 /**
  * Mount SMB share with retry logic and different option sets
  * This function will try multiple mount configurations to handle capability issues
+ * and ensures the share is actually mounted after configuration using mount-all
  */
 export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Promise<SmbMountResponse> => {
   const appConfigStore = useAppConfigStore()
@@ -368,6 +444,7 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
   )
 
   const requestWithSafeOptions = {
+    action: 'add',
     ...mountRequest,
     options: safeOptions
   }
@@ -382,12 +459,21 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await handleHttpError(response, 'Mount SMB share')
     }
 
     const result = await response.json()
     if (result.status === 'success') {
-      return result
+      // Configuration created successfully, now mount all shares
+      try {
+        const mountResult = await mountAllSmbShares()
+        // Return the mount-all result which shows service status
+        return mountResult
+      } catch (mountError) {
+        console.warn('Configuration created but mount-all failed:', mountError)
+        // Return the original configuration result even if mounting failed
+        return result
+      }
     }
 
     // If the first attempt failed, try with minimal options
@@ -395,6 +481,7 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
 
     const minimalOptions = 'rw,uid=1000,gid=1000,file_mode=0644,dir_mode=0755'
     const minimalRequest = {
+      action: 'add',
       ...mountRequest,
       options: minimalOptions
     }
@@ -408,10 +495,24 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
     })
 
     if (!retryResponse.ok) {
-      throw new Error(`HTTP error! status: ${retryResponse.status}`)
+      await handleHttpError(retryResponse, 'Mount SMB share with minimal options')
     }
 
-    return await retryResponse.json()
+    const retryResult = await retryResponse.json()
+
+    // If retry was successful, mount all shares
+    if (retryResult.status === 'success') {
+      try {
+        const mountResult = await mountAllSmbShares()
+        return mountResult
+      } catch (mountError) {
+        console.warn('Configuration created but mount-all failed:', mountError)
+        // Return the original result even if mounting failed
+        return retryResult
+      }
+    }
+
+    return retryResult
   } catch (error) {
     console.error('SMB mount failed:', error)
     throw error
@@ -419,18 +520,20 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
 }
 
 /**
- * Unmount and remove an SMB share configuration
+ * Remove an SMB share configuration (does not unmount it immediately)
+ * The sambamount service will handle unmounting when restarted
  */
 export const unmountSmbShare = async (server: string, share: string): Promise<SmbMountResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
   const requestBody = {
+    action: 'remove',
     server: server,
     share: share
   }
 
-  const response = await fetch(`${baseUrl}/smb/unmount`, {
+  const response = await fetch(`${baseUrl}/smb/mount`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -439,20 +542,21 @@ export const unmountSmbShare = async (server: string, share: string): Promise<Sm
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Remove SMB share configuration')
   }
 
   return await response.json()
 }
 
 /**
- * Mount a specific SMB share by its configuration ID
+ * Mount all configured SMB shares using the systemd service
+ * This replaces individual mount operations and ensures proper system-wide mounting
  */
-export const mountSmbShareById = async (id: number): Promise<SmbMountResponse> => {
+export const mountAllSmbShares = async (): Promise<SmbMountResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/mounts/mount/${id}`, {
+  const response = await fetch(`${baseUrl}/smb/mount-all`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -460,28 +564,7 @@ export const mountSmbShareById = async (id: number): Promise<SmbMountResponse> =
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-
-  return await response.json()
-}
-
-/**
- * Unmount a specific SMB share by its configuration ID
- */
-export const unmountSmbShareById = async (id: number): Promise<SmbMountResponse> => {
-  const appConfigStore = useAppConfigStore()
-  const baseUrl = appConfigStore.getConfigApiBaseUrl()
-
-  const response = await fetch(`${baseUrl}/smb/mounts/unmount/${id}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Mount all SMB shares')
   }
 
   return await response.json()
@@ -502,7 +585,7 @@ export const getSmbMountDiagnostics = async (id: number): Promise<SmbDiagnostics
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Get SMB mount diagnostics')
   }
 
   return await response.json()
@@ -523,7 +606,7 @@ export const checkSmbCapabilities = async (): Promise<SmbCapabilitiesResponse> =
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    await handleHttpError(response, 'Check SMB capabilities')
   }
 
   return await response.json()

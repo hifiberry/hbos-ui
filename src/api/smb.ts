@@ -520,8 +520,8 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
 }
 
 /**
- * Remove an SMB share configuration (does not unmount it immediately)
- * The sambamount service will handle unmounting when restarted
+ * Remove an SMB share configuration and trigger mount-all to apply changes
+ * This will remove the configuration and unmount the share if it's currently mounted
  */
 export const unmountSmbShare = async (server: string, share: string): Promise<SmbMountResponse> => {
   const appConfigStore = useAppConfigStore()
@@ -545,7 +545,22 @@ export const unmountSmbShare = async (server: string, share: string): Promise<Sm
     await handleHttpError(response, 'Remove SMB share configuration')
   }
 
-  return await response.json()
+  const result = await response.json()
+
+  if (result.status === 'success') {
+    // Configuration removed successfully, now trigger mount-all to apply changes
+    try {
+      const mountAllResult = await mountAllSmbShares()
+      // Return the mount-all result which shows the updated service status
+      return mountAllResult
+    } catch (mountError) {
+      console.warn('Configuration removed but mount-all failed:', mountError)
+      // Return the original removal result even if mount-all failed
+      return result
+    }
+  }
+
+  return result
 }
 
 /**

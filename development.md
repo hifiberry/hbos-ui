@@ -33,6 +33,7 @@
   * connect PlexAmp **later - no plexamp yet***
 * Settings/Music library
   * mount SMB share **done**
+  * use local music files 
   * update library 
 * Settings/Players **done**
   * enable/disable players **done**
@@ -46,11 +47,6 @@
 * Settings/Others
   * change system name
   * System Information **done**
-    - display Pi model and system UUID
-    - show HAT information (vendor, product, UUID)
-    - display sound card details (name, channels, features, DSP support)
-    - added to sidebar navigation with proper icons
-    - responsive table layout with consistent styling
   * reset system
  
 # Phase 5

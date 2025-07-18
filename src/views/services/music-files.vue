@@ -58,18 +58,20 @@
                   </div>
                 </div>
                 <div class="mount-actions">
-                  <div class="mount-toggle">
-                    <label class="toggle-switch">
-                      <input
-                        type="checkbox"
-                        :checked="mount.mounted === true"
-                        :disabled="mounting || unmounting"
-                        @click="handleToggleMount($event, mount)"
-                      >
-                      <span class="toggle-slider" :class="{ loading: mounting || unmounting }"></span>
-                    </label>
+                  <div class="mount-status">
+                    <span class="status-badge" :class="{ mounted: mount.mounted, unmounted: !mount.mounted }">
+                      {{ mount.mounted ? 'Mounted' : 'Unmounted' }}
+                    </span>
                   </div>
-                  <div class="mount-expand">
+                  <div class="mount-controls">
+                    <button
+                      @click="confirmRemoveMount(mount)"
+                      :disabled="removing"
+                      class="delete-button"
+                      title="Remove mount"
+                    >
+                      <AppIcon icon="close" />
+                    </button>
                     <div class="expand-caret" @click="toggleMountDetails(mount)">
                       <AppIcon icon="caret-down" class="config-caret" :class="{ expanded: isExpanded(mount) }" />
                     </div>
@@ -110,16 +112,6 @@
                       </tbody>
                     </table>
                   </div>
-                  <div class="details-actions">
-                    <button
-                      @click="removeMount(mount)"
-                      :disabled="removing"
-                      class="action-btn action-btn--remove"
-                    >
-                      <AppIcon icon="delete" />
-                      Remove Mount
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -134,15 +126,13 @@
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
-import { getSmbMounts, unmountSmbShare, mountSmbShareById, unmountSmbShareById, type SmbMount } from '@/api/smb'
+import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
 
 // State
 const loading = ref(true)
 const error = ref('')
 const mounts = ref<SmbMount[]>([])
 const mountsSummary = ref<{ total: number; mounted: number; unmounted: number } | null>(null)
-const mounting = ref(false)
-const unmounting = ref(false)
 const removing = ref(false)
 const expandedMounts = ref<Set<number>>(new Set())
 
@@ -192,42 +182,11 @@ const addSmbMount = async () => {
   console.log('Adding new SMB mount...')
 }
 
-const handleToggleMount = async (event: Event, mount: SmbMount) => {
-  // Prevent the default checkbox behavior
-  event.preventDefault()
-
-  if (mounting.value || unmounting.value) return
-
-  const wasEnabled = mount.mounted
-
-  try {
-    if (wasEnabled) {
-      // Unmount the share using ID
-      unmounting.value = true
-      const response = await unmountSmbShareById(mount.id)
-
-      if (response.status === 'success') {
-        await refreshMounts()
-      } else {
-        error.value = response.message || 'Failed to unmount share'
-      }
-    } else {
-      // Mount the share using ID
-      mounting.value = true
-      const response = await mountSmbShareById(mount.id)
-
-      if (response.status === 'success') {
-        await refreshMounts()
-      } else {
-        error.value = response.message || 'Failed to mount share'
-      }
-    }
-  } catch (err) {
-    console.error('Error toggling mount:', err)
-    error.value = err instanceof Error ? err.message : 'Failed to toggle mount'
-  } finally {
-    mounting.value = false
-    unmounting.value = false
+const confirmRemoveMount = async (mount: SmbMount) => {
+  const confirmMessage = `Are you sure you want to remove the mount "${mount.server}/${mount.share}"?`
+  
+  if (confirm(confirmMessage)) {
+    await removeMount(mount)
   }
 }
 
@@ -259,6 +218,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 @use '@/assets/scss/service-item' as *;
+@use '@/assets/scss/mixins' as *;
 
 .music-files {
   .music-files-content {
@@ -440,83 +400,58 @@ onMounted(() => {
 
             .mount-actions {
               @include service-actions-base;
-              @include service-toggle-switch;
+              display: flex;
+              align-items: center;
+              gap: 12px;
 
-              .mount-toggle {
-                position: relative;
-                display: inline-block;
-                width: 44px;
-                height: 24px;
-                cursor: pointer;
+              .mount-status {
+                .status-badge {
+                  display: inline-block;
+                  padding: 4px 12px;
+                  border-radius: 12px;
+                  font-size: 0.75rem;
+                  font-weight: 500;
+                  text-transform: uppercase;
+                  letter-spacing: 0.5px;
 
-                input {
-                  opacity: 0;
-                  width: 0;
-                  height: 0;
-                }
-
-                .toggle-slider {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  right: 0;
-                  bottom: 0;
-                  background-color: var(--color-body-secondary);
-                  transition: all 0.3s ease;
-                  border-radius: 24px;
-
-                  &.loading {
-                    opacity: 0.6;
+                  &.mounted {
+                    background-color: rgba(34, 197, 94, 0.1);
+                    color: #22c55e;
                   }
 
-                  &:before {
-                    position: absolute;
-                    content: "";
-                    height: 18px;
-                    width: 18px;
-                    left: 3px;
-                    bottom: 3px;
-                    background-color: white;
-                    transition: all 0.3s ease;
-                    border-radius: 50%;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                  &.unmounted {
+                    background-color: rgba(156, 163, 175, 0.1);
+                    color: #9ca3af;
                   }
-                }
-
-                input:checked + .toggle-slider {
-                  background-color: var(--primary);
-                }
-
-                input:checked + .toggle-slider:before {
-                  transform: translateX(20px);
-                }
-
-                input:focus + .toggle-slider {
-                  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
-                }
-
-                input:disabled + .toggle-slider {
-                  opacity: 0.6;
-                  cursor: not-allowed;
                 }
               }
 
-              .mount-expand {
-                width: 24px;
-                height: 24px;
+              .mount-controls {
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                cursor: pointer;
+                gap: 8px;
 
-                .config-caret {
-                  width: 16px;
-                  height: 16px;
-                  color: var(--color-body-secondary);
-                  transition: transform 0.2s ease;
+                .delete-button {
+                  @include delete-button;
+                }
 
-                  &.expanded {
-                    transform: rotate(180deg);
+                .expand-caret {
+                  width: 24px;
+                  height: 24px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  cursor: pointer;
+
+                  .config-caret {
+                    width: 16px;
+                    height: 16px;
+                    color: var(--color-body-secondary);
+                    transition: transform 0.2s ease;
+
+                    &.expanded {
+                      transform: rotate(180deg);
+                    }
                   }
                 }
               }
@@ -532,7 +467,7 @@ onMounted(() => {
               margin-bottom: 0;
 
               .mount-info-table {
-                margin-bottom: 16px;
+                margin-bottom: 0; // Remove margin since there are no actions below
 
                 table {
                   width: 100%;
@@ -567,23 +502,6 @@ onMounted(() => {
                   }
                 }
               }
-
-              .details-actions {
-                display: flex;
-                gap: 8px;
-                margin-bottom: 0; // Remove any bottom margin
-
-                .action-btn {
-                  @include service-button-base;
-                  display: flex;
-                  align-items: center;
-                  gap: 6px;
-
-                  &--remove {
-                    @include service-button-danger;
-                  }
-                }
-              }
             }
           }
         }
@@ -614,13 +532,6 @@ onMounted(() => {
               }
             }
 
-            .details-section {
-              .details-content {
-                .details-actions {
-                  flex-wrap: wrap;
-                }
-              }
-            }
           }
         }
       }

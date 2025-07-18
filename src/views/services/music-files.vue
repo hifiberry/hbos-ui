@@ -8,9 +8,14 @@
       <div class="section">
         <div class="section-header">
           <h2>SMB/CIFS Mounts</h2>
-          <button @click="refreshMounts" :disabled="loading" class="refresh-button" title="Refresh">
-            <AppIcon icon="refresh" />
-          </button>
+          <div class="header-actions">
+            <button @click="addSmbMount" class="add-button" title="Add SMB Mount">
+              <AppIcon icon="plus" />
+            </button>
+            <button @click="refreshMounts" :disabled="loading" class="refresh-button" title="Refresh">
+              <AppIcon icon="refresh" />
+            </button>
+          </div>
         </div>
 
         <div v-if="loading" class="loading-section">
@@ -174,6 +179,11 @@ const discoverServers = async () => {
   console.log('Discovering SMB servers...')
 }
 
+const addSmbMount = async () => {
+  // TODO: Implement add SMB mount functionality
+  console.log('Adding new SMB mount...')
+}
+
 const handleToggleMount = async (event: Event, mount: SmbMount) => {
   // Prevent the default checkbox behavior
   event.preventDefault()
@@ -259,34 +269,17 @@ onMounted(() => {
           font-weight: 600;
         }
 
-        .refresh-button {
+        .header-actions {
           display: flex;
           align-items: center;
-          justify-content: center;
-          padding: 8px;
-          width: 32px;
-          height: 32px;
-          background: var(--color-primary);
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: background-color 0.2s ease;
+          gap: 12px;
 
-          &:hover:not(:disabled) {
-            background: var(--color-primary-dark);
+          .add-button {
+            @include service-button-small;
           }
 
-          &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-
-          svg {
-            width: 100%;
-            height: 100%;
-            flex-shrink: 0;
+          .refresh-button {
+            @include service-button-small;
           }
         }
       }

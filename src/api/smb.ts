@@ -153,36 +153,36 @@ export const createSafeMountOptions = (
   dirMode?: string
 ): string => {
   const options = []
-  
+
   // Basic options to avoid capability issues
   options.push('rw') // Read-write access
   options.push('file_mode=' + (fileMode || '0644')) // File permissions
   options.push('dir_mode=' + (dirMode || '0755')) // Directory permissions
-  
+
   // User and group mapping
   if (uid !== undefined) {
     options.push(`uid=${uid}`)
   } else {
     options.push('uid=1000') // Default to user 1000 (usually first user)
   }
-  
+
   if (gid !== undefined) {
     options.push(`gid=${gid}`)
   } else {
     options.push('gid=1000') // Default to group 1000
   }
-  
+
   // Username if provided
   if (username) {
     options.push(`username=${username}`)
   }
-  
+
   // Additional options to prevent capability issues
   options.push('nobrl') // Disable byte range locking
   options.push('cache=loose') // Use loose caching
   options.push('iocharset=utf8') // UTF-8 character set
   options.push('vers=3.0') // Use SMB 3.0 by default
-  
+
   return options.join(',')
 }
 
@@ -353,10 +353,10 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
     if (result.status === 'success') {
       return result
     }
-    
+
     // If the first attempt failed, try with minimal options
     console.warn('First mount attempt failed, trying with minimal options:', result.message)
-    
+
     const minimalOptions = 'rw,uid=1000,gid=1000,file_mode=0644,dir_mode=0755'
     const minimalRequest = {
       ...mountRequest,

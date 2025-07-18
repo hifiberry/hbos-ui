@@ -133,23 +133,23 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0; // Hide any text content
-  
+
   &:hover:not(:disabled) {
     background-color: rgba(239, 68, 68, 0.2);
     border-color: rgba(239, 68, 68, 0.3);
   }
-  
+
   &:active:not(:disabled) {
     background-color: rgba(239, 68, 68, 0.3);
     border-color: rgba(239, 68, 68, 0.4);
     transform: translateY(1px);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   // Icon styling
   .app-icon {
     width: 16px;
@@ -164,7 +164,7 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  
+
   .app-icon {
     width: 14px;
     height: 14px;
@@ -176,7 +176,7 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  
+
   .app-icon {
     width: 18px;
     height: 18px;
@@ -189,12 +189,12 @@
   background-color: rgba(251, 146, 60, 0.1);
   color: #fb923c;
   border: 1px solid rgba(251, 146, 60, 0.2);
-  
+
   &:hover:not(:disabled) {
     background-color: rgba(251, 146, 60, 0.2);
     border-color: rgba(251, 146, 60, 0.3);
   }
-  
+
   &:active:not(:disabled) {
     background-color: rgba(251, 146, 60, 0.3);
     border-color: rgba(251, 146, 60, 0.4);

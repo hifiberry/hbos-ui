@@ -158,8 +158,12 @@ onUnmounted(() => {
 watch(
   () => items,
   () => {
+    // Reset the pagination and reload when items change
+    currentPage.value = 0
+    data.value = []
     loadNextChunk()
   },
+  { immediate: true, deep: true }
 )
 </script>
 

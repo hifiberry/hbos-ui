@@ -24,7 +24,9 @@ export const useAlbumStore = defineStore('album', () => {
   const loading = ref<boolean>(false)
   const loaded = ref<boolean>(false)
   const albums = ref<Album[]>([])
+  const allAlbums = ref<Album[]>([]) // Store all albums
   const album = ref<AlbumDetails | null>(null)
+  const searchQuery = ref<string>('')
 
   // Getter
   const sortedAlbumsByReleaseDate = computed(() => {
@@ -39,7 +41,20 @@ export const useAlbumStore = defineStore('album', () => {
     })
   })
 
-  // Action
+  // Filter function that updates the albums array directly
+  const filterAlbums = (query: string) => {
+    if (!query.trim()) {
+      // If no query, show all albums
+      albums.value = [...allAlbums.value]
+    } else {
+      // Filter albums by name or artist
+      const lowerQuery = query.toLowerCase().trim()
+      albums.value = allAlbums.value.filter(album =>
+        album.name.toLowerCase().includes(lowerQuery) ||
+        album.artists.some(artist => artist.toLowerCase().includes(lowerQuery))
+      )
+    }
+  }  // Action
   const getAlbums = async () => {
     loading.value = true
     loaded.value = false
@@ -53,7 +68,7 @@ export const useAlbumStore = defineStore('album', () => {
     }
 
     if (data.value?.albums && data.value.albums.length) {
-      albums.value = data.value.albums.map((album: Album) => {
+      const mappedAlbums = data.value.albums.map((album: Album) => {
         return {
           ...album,
           $id: album.id,
@@ -63,6 +78,10 @@ export const useAlbumStore = defineStore('album', () => {
           $cover_src: getAlbumCoverById(album.id),
         }
       })
+
+      // Store all albums and set the filtered albums
+      allAlbums.value = mappedAlbums
+      albums.value = mappedAlbums
     }
 
     loading.value = false
@@ -122,12 +141,23 @@ export const useAlbumStore = defineStore('album', () => {
     return `${apiBase}/library/${libraryStore.activeLibrary}/image/album:${id}`
   }
 
+  const setSearchQuery = (query: string) => {
+    searchQuery.value = query
+    filterAlbums(query)
+  }
+
+  const clearSearch = () => {
+    searchQuery.value = ''
+    filterAlbums('')
+  }
+
   return {
     // State
     loading,
     loaded,
     albums,
     album,
+    searchQuery,
 
     // Getter
     sortedAlbumsByReleaseDate,
@@ -137,5 +167,8 @@ export const useAlbumStore = defineStore('album', () => {
     getAlbumByArtistId,
     getAlbumByAlbumId,
     getAlbumCoverById,
+    setSearchQuery,
+    clearSearch,
+    filterAlbums,
   }
 })

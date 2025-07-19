@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import removeConsole from 'vite-plugin-remove-console'
 
 // A vite plugin that remove all the specified console types in the production environment
 // https://www.npmjs.com/package/vite-plugin-remove-console
@@ -10,7 +11,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), vueDevTools()], // Temporarily disable removeConsole for debugging
+  plugins: [vue(), vueDevTools(), removeConsole()],
   css: {
     preprocessorOptions: {
       scss: {
@@ -25,7 +26,7 @@ export default defineConfig({
     },
   },
   build: {
-    minify: false, // Disable minification for readable error messages
+    minify: true, // Disable minification for readable error messages
     sourcemap: true, // Enable source maps for debugging
   },
 })

@@ -252,7 +252,7 @@ export const mountSmbShareById = async (id: number): Promise<SmbMountResponse> =
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/mount/${id}`, {
+  const response = await fetch(`${baseUrl}/smb/mounts/mount/${id}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -273,7 +273,7 @@ export const unmountSmbShareById = async (id: number): Promise<SmbMountResponse>
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/unmount/${id}`, {
+  const response = await fetch(`${baseUrl}/smb/mounts/unmount/${id}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

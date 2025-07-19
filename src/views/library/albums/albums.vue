@@ -2,20 +2,28 @@
   <div class="albums">
     <div class="breadcrumbs">
       <AppBackRouter :to="{ name: 'library' }">Albums</AppBackRouter>
-      <div class="search-bar">
-        <AppSearch
-          v-model="search"
-          :debounce="300"
-          placeholder="Search albums..."
-          @change="onSearch"
+      <div class="controls">
+        <AppSortSelector
+          :sort-by="sortBy"
+          :sort-order="sortOrder"
+          @sort-by-change="setSortBy"
+          @toggle-order="toggleSortOrder"
         />
+        <div class="search-bar">
+          <AppSearch
+            v-model="search"
+            :debounce="300"
+            placeholder="Search albums..."
+            @change="onSearch"
+          />
+        </div>
       </div>
     </div>
     <div class="card">
       <AppPosterGrid
         :loading="loading"
         :loaded="loaded"
-        :items="sortedAlbumsByReleaseDate"
+        :items="sortedAlbums"
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
       />
     </div>
@@ -32,13 +40,14 @@ import { storeToRefs } from 'pinia'
 
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppSearch from '@/components/app-search.vue'
+import AppSortSelector from '@/components/app-sort-selector.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
 
 const albumStore = useAlbumStore()
-const { loading, loaded, sortedAlbumsByReleaseDate } = storeToRefs(albumStore)
-const { getAlbums, clearSearch } = albumStore
+const { loading, loaded, sortedAlbums, sortBy, sortOrder } = storeToRefs(albumStore)
+const { getAlbums, clearSearch, setSortBy, toggleSortOrder } = albumStore
 
 const search = ref<string>('')
 
@@ -61,8 +70,15 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    .search-bar {
-      max-width: 200px;
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .search-bar {
+        max-width: 200px;
+      }
     }
   }
 }

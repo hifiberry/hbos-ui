@@ -109,7 +109,6 @@ For quick usage, these combine base + variant + size:
 ```scss
 .edit-button {
   @include button-icon(28px);
-  margin-left: 8px;
   color: var(--color-body-secondary);
   
   &:hover:not(:disabled) {
@@ -118,20 +117,66 @@ For quick usage, these combine base + variant + size:
 }
 ```
 
-### Save/Cancel Buttons
+### Editable Input Field
+```scss
+.hostname-input {
+  flex: 1;
+  max-width: 250px;
+  padding: 8px 12px;
+  border: 2px solid var(--color-accent);
+  border-radius: 6px;
+  background: var(--color-background);
+  color: var(--color-body);
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb, 59, 130, 246), 0.1);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb, 59, 130, 246), 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--color-background-secondary);
+    border-color: var(--color-border);
+    box-shadow: none;
+  }
+}
+```
+
+### Save/Cancel Icon Buttons
 ```scss
 .save-button {
-  @include button-success-sm;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  min-width: 60px;
+  @include button-icon(32px);
+  color: var(--color-success);
+  
+  &:hover:not(:disabled) {
+    background: rgba(var(--color-success-rgb, 34, 197, 94), 0.1);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .cancel-button {
-  @include button-secondary-sm;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  min-width: 60px;
+  @include button-icon(32px);
+  color: var(--color-body-secondary);
+  
+  &:hover:not(:disabled) {
+    color: var(--color-danger);
+    background: rgba(var(--color-danger-rgb, 239, 68, 68), 0.1);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 ```
 

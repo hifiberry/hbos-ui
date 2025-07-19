@@ -6,8 +6,8 @@
         <AppSortSelector
           :sort-by="sortBy"
           :sort-order="sortOrder"
-          @sort-by-change="setSortBy"
-          @toggle-order="toggleSortOrder"
+          @sort-by-change="handleSortByChange"
+          @toggle-order="handleToggleOrder"
         />
         <div class="search-bar">
           <AppSearch
@@ -50,6 +50,17 @@ const { loading, loaded, sortedAlbums, sortBy, sortOrder } = storeToRefs(albumSt
 const { getAlbums, clearSearch, setSortBy, toggleSortOrder } = albumStore
 
 const search = ref<string>('')
+
+const handleSortByChange = (newSortBy: 'release_date' | 'artist') => {
+  setSortBy(newSortBy)
+}
+
+const handleToggleOrder = () => {
+  // Only toggle order for release_date (year) sorting
+  if (sortBy.value === 'release_date') {
+    toggleSortOrder()
+  }
+}
 
 const onSearch = (searchValue: string) => {
   search.value = searchValue

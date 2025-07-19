@@ -244,17 +244,17 @@
     width: 50px;
     height: 24px;
     margin: 0 8px;
-    
+
     input[type="checkbox"] {
       opacity: 0;
       width: 0;
       height: 0;
-      
+
       &:checked + .toggle-slider {
         background-color: var(--primary);
       }
     }
-    
+
     .toggle-slider {
       position: absolute;
       cursor: pointer;
@@ -265,7 +265,7 @@
       background-color: #ccc;
       border-radius: 24px;
       transition: 0.4s;
-      
+
       &::before {
         position: absolute;
         content: "";
@@ -278,7 +278,7 @@
         transition: 0.4s;
       }
     }
-    
+
     input[type="checkbox"]:checked + .toggle-slider::before {
       transform: translateX(26px);
     }

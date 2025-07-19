@@ -16,6 +16,12 @@
       </div>
       <div class="album-details">
         <div class="h2">{{ album.name }}</div>
+        <div v-if="album.artists && album.artists.length > 0" class="album-details__artist">
+          {{ album.artists.join(', ') }}
+        </div>
+        <div v-if="album.release_date" class="album-details__year">
+          {{ new Date(album.release_date).getFullYear() }}
+        </div>
         <div class="album-details__count">
           {{ album.tracks_count }} track{{ album.tracks_count !== 1 ? 's' : '' }}
         </div>
@@ -82,11 +88,11 @@ const onListenNow = async () => {
 <style scoped lang="scss">
 .app-album-details-card {
   display: grid;
-  grid-template-columns: 200px 1fr;
+  grid-template-columns: 400px 1fr;
   gap: 24px;
   color: var(--color-body-secondary);
   @include media-down(xl) {
-    grid-template-columns: 100px 1fr;
+    grid-template-columns: 200px 1fr;
     gap: 12px;
   }
   @include media-down(md) {
@@ -97,15 +103,15 @@ const onListenNow = async () => {
   .album {
     &-cover {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       &:deep(.app-cover),
       &:deep(.skeleton) {
-        width: 200px;
-        height: 200px;
+        width: 400px;
+        height: 400px;
         @include media-down(xl) {
-          width: 100px;
-          height: 100px;
+          width: 200px;
+          height: 200px;
         }
       }
     }
@@ -125,10 +131,31 @@ const onListenNow = async () => {
           }
         }
       }
-      &__count {
-        margin: 24px 0;
+      &__artist {
+        margin: 4px 0 0 0;
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: var(--color-text-secondary);
         @include media-down(xl) {
-          margin: 5px 0;
+          font-size: 1rem;
+          margin: 2px 0 0 0;
+        }
+      }
+      &__year {
+        margin: 4px 0 0 0;
+        font-size: 0.95rem;
+        font-weight: 400;
+        color: var(--color-text-secondary);
+        opacity: 0.8;
+        @include media-down(xl) {
+          font-size: 0.9rem;
+          margin: 2px 0 0 0;
+        }
+      }
+      &__count {
+        margin: 32px 0;
+        @include media-down(xl) {
+          margin: 16px 0;
         }
         &.skeleton {
           width: 40%;

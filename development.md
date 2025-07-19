@@ -32,7 +32,7 @@
   * connect LastFM **done**
   * connect PlexAmp **later - no plexamp yet***
 * Settings/Music library
-  * mount SMB share **started**
+  * mount SMB share **done**
   * update library 
 * Settings/Players **done**
   * enable/disable players **done**

@@ -84,4 +84,6 @@ Please review the documentation before contributing:
 
 ## License
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 This project is part of the HiFiBerryOS ecosystem.

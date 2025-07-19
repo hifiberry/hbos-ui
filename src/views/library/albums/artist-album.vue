@@ -1,7 +1,7 @@
 <template>
   <div class="album">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'artists' }">{{ artistByName?.name || 'Artists' }}</AppBackRouter>
+      <AppBackRouter :to="{ name: 'artists' }">Artists</AppBackRouter>
     </div>
 
     <div class="card">
@@ -23,6 +23,10 @@
           <div v-if="fullArtistData?.metadata?.mbid?.[0]" class="artist-mbid">
             <span class="mbid-label">MBID:</span>
             <span class="mbid-value">{{ fullArtistData.metadata.mbid[0] }}</span>
+          </div>
+          <div v-else class="artist-id">
+            <span class="id-label">Artist ID:</span>
+            <span class="id-value">{{ artistByName.id }}</span>
           </div>
         </div>
       </div>
@@ -74,8 +78,8 @@ const artistByName = computed(() => getArtistByIdFromStore(id.value))
 
 // Function to get full artist metadata
 const getArtistMetadata = async (artistId: string) => {
-  const { error, data } = await libraryFetch(`/library/:activeLibrary/artist/${artistId}`).json()
-
+  const { error, data } = await libraryFetch(`/library/:activeLibrary/artist/by-id/${artistId}`).json()
+  
   if (!error.value && data.value?.artist) {
     artistStore.artistByName = data.value.artist
   }
@@ -110,7 +114,7 @@ onMounted(async () => {
 .artist-img {
   width: 280px;
   height: 280px;
-  border-radius: 8px;
+  border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(var(--color-border-rgb), 0.2);
 }
@@ -118,7 +122,7 @@ onMounted(async () => {
 .artist-img-placeholder {
   width: 280px;
   height: 280px;
-  border-radius: 8px;
+  border-radius: 50%;
   background: var(--color-surface-variant);
   display: flex;
   align-items: center;
@@ -141,8 +145,15 @@ onMounted(async () => {
   margin: 0 0 16px 0;
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--color-head);
   line-height: 1.2;
+}
+
+.artist-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .artist-mbid {
@@ -152,6 +163,7 @@ onMounted(async () => {
   margin-top: 8px;
 }
 
+.id-label,
 .mbid-label {
   font-size: 0.875rem;
   font-weight: 600;
@@ -160,6 +172,7 @@ onMounted(async () => {
   letter-spacing: 0.05em;
 }
 
+.id-value,
 .mbid-value {
   font-size: 0.875rem;
   color: var(--color-text);
@@ -206,7 +219,7 @@ onMounted(async () => {
     font-size: 2rem;
   }
 
-  .artist-mbid {
+  .artist-id {
     flex-direction: column;
     gap: 4px;
   }

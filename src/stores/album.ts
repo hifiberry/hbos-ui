@@ -27,8 +27,47 @@ export const useAlbumStore = defineStore('album', () => {
   const allAlbums = ref<Album[]>([]) // Store all albums
   const album = ref<AlbumDetails | null>(null)
   const searchQuery = ref<string>('')
+  const sortBy = ref<'release_date' | 'artist' | 'name'>('release_date')
+  const sortOrder = ref<'asc' | 'desc'>('desc')
 
   // Getter
+  const sortedAlbums = computed(() => {
+    const sorted = [...albums.value].sort((a, b) => {
+      let comparison = 0
+
+      switch (sortBy.value) {
+        case 'release_date':
+          const aDate = a.release_date ? new Date(a.release_date).getTime() : 0
+          const bDate = b.release_date ? new Date(b.release_date).getTime() : 0
+          comparison = aDate - bDate
+          // Secondary sort by name if dates are equal
+          if (comparison === 0) {
+            comparison = a.name.localeCompare(b.name)
+          }
+          break
+
+        case 'artist':
+          const aArtist = a.artists[0] || ''
+          const bArtist = b.artists[0] || ''
+          comparison = aArtist.localeCompare(bArtist)
+          // Secondary sort by name if artists are equal
+          if (comparison === 0) {
+            comparison = a.name.localeCompare(b.name)
+          }
+          break
+
+        case 'name':
+          comparison = a.name.localeCompare(b.name)
+          break
+      }
+
+      return sortOrder.value === 'desc' ? -comparison : comparison
+    })
+
+    return sorted
+  })
+
+  // Keep the old computed property for backward compatibility
   const sortedAlbumsByReleaseDate = computed(() => {
     return [...albums.value].sort((a, b) => {
       const aDate = a.release_date ? new Date(a.release_date).getTime() : null
@@ -151,6 +190,18 @@ export const useAlbumStore = defineStore('album', () => {
     filterAlbums('')
   }
 
+  const setSortBy = (newSortBy: 'release_date' | 'artist' | 'name') => {
+    sortBy.value = newSortBy
+  }
+
+  const setSortOrder = (newSortOrder: 'asc' | 'desc') => {
+    sortOrder.value = newSortOrder
+  }
+
+  const toggleSortOrder = () => {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  }
+
   return {
     // State
     loading,
@@ -158,8 +209,11 @@ export const useAlbumStore = defineStore('album', () => {
     albums,
     album,
     searchQuery,
+    sortBy,
+    sortOrder,
 
     // Getter
+    sortedAlbums,
     sortedAlbumsByReleaseDate,
 
     // Action
@@ -170,5 +224,8 @@ export const useAlbumStore = defineStore('album', () => {
     setSearchQuery,
     clearSearch,
     filterAlbums,
+    setSortBy,
+    setSortOrder,
+    toggleSortOrder,
   }
 })

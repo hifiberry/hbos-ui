@@ -27,6 +27,11 @@ export const useArtistStore = defineStore('artist', () => {
     return [...artists.value].sort((a, b) => a.name.localeCompare(b.name))
   })
 
+  // Get artist by ID from existing data
+  const getArtistByIdFromStore = (id: string) => {
+    return allArtists.value.find(artist => artist.$id === id) || null
+  }
+
   // Filter function that updates the artists array directly
   const filterArtists = (query: string) => {
     if (!query.trim()) {
@@ -139,6 +144,7 @@ export const useArtistStore = defineStore('artist', () => {
     loading,
     loaded,
     artists,
+    allArtists,
     artistByName,
     searchQuery,
 
@@ -148,6 +154,7 @@ export const useArtistStore = defineStore('artist', () => {
     // Action
     getArtists,
     getArtistByName,
+    getArtistByIdFromStore,
     getMoreArtists,
     setSearchQuery,
     clearSearch,

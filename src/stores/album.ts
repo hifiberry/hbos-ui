@@ -27,7 +27,7 @@ export const useAlbumStore = defineStore('album', () => {
   const allAlbums = ref<Album[]>([]) // Store all albums
   const album = ref<AlbumDetails | null>(null)
   const searchQuery = ref<string>('')
-  const sortBy = ref<'release_date' | 'artist' | 'name'>('release_date')
+  const sortBy = ref<'release_date' | 'artist'>('release_date')
   const sortOrder = ref<'asc' | 'desc'>('desc')
 
   // Getter
@@ -55,12 +55,14 @@ export const useAlbumStore = defineStore('album', () => {
             comparison = a.name.localeCompare(b.name)
           }
           break
-
-        case 'name':
-          comparison = a.name.localeCompare(b.name)
-          break
       }
 
+      // For artist sorting, always use ascending order
+      if (sortBy.value === 'artist') {
+        return comparison
+      }
+
+      // For release_date sorting, respect the sortOrder
       return sortOrder.value === 'desc' ? -comparison : comparison
     })
 
@@ -190,8 +192,13 @@ export const useAlbumStore = defineStore('album', () => {
     filterAlbums('')
   }
 
-  const setSortBy = (newSortBy: 'release_date' | 'artist' | 'name') => {
+  const setSortBy = (newSortBy: 'release_date' | 'artist') => {
     sortBy.value = newSortBy
+
+    // When switching to artist sorting, always set to ascending
+    if (newSortBy === 'artist') {
+      sortOrder.value = 'asc'
+    }
   }
 
   const setSortOrder = (newSortOrder: 'asc' | 'desc') => {

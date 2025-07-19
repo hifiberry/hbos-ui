@@ -33,6 +33,21 @@ export interface SystemInfo {
   error?: string
 }
 
+// Types for Hostname API
+export interface HostnameUpdateRequest {
+  hostname?: string
+  pretty_hostname?: string
+}
+
+export interface HostnameUpdateResponse {
+  status: 'success' | 'error'
+  message: string
+  data?: {
+    hostname: string
+    pretty_hostname: string
+  }
+}
+
 /**
  * Get system information including Pi model, HAT details, and system UUID
  */
@@ -53,4 +68,26 @@ export const getSystemInfo = async (): Promise<SystemInfo> => {
 
   const data = await response.json()
   return data as SystemInfo
+}
+
+/**
+ * Update system hostname and/or pretty hostname
+ */
+export const updateHostname = async (request: HostnameUpdateRequest): Promise<HostnameUpdateResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/hostname`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
 }

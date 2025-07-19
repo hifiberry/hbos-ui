@@ -4,16 +4,21 @@
       <AppPosterSkeleton v-if="loading" :posterForm="posterForm" :is-note="isNote" />
 
       <template v-else>
-        <AppPoster
+        <div
           v-for="item in data"
           :key="item.$id"
-          :posterForm="posterForm"
-          :title="item.$title || ''"
-          :subtitle="item.$subtitle || ''"
-          :note="item.$note || ''"
-          :src="item.$cover_src || ''"
-          @click="emit('click', item)"
-        />
+          :data-id="item.$id"
+          class="poster-item"
+        >
+          <AppPoster
+            :posterForm="posterForm"
+            :title="item.$title || ''"
+            :subtitle="item.$subtitle || ''"
+            :note="item.$note || ''"
+            :src="item.$cover_src || ''"
+            @click="emit('click', item)"
+          />
+        </div>
       </template>
     </div>
 
@@ -35,6 +40,7 @@ interface PosterGridProps<T> {
   items: T[]
   inRow?: boolean
   posterForm?: 'circle' | 'square'
+  showAll?: boolean // New prop to disable pagination
 }
 
 const {
@@ -43,6 +49,7 @@ const {
   items = [],
   inRow = false,
   posterForm = 'square',
+  showAll = false,
 } = defineProps<PosterGridProps<T>>()
 
 const emit = defineEmits(['click'])
@@ -88,7 +95,10 @@ const getMaxItemsForRow = () => {
 }
 
 function loadNextChunk() {
-  if (inRow) {
+  if (showAll) {
+    // When showAll is true, load all items at once
+    data.value = [...items]
+  } else if (inRow) {
     const maxItems = getMaxItemsForRow()
     data.value = items.slice(0, maxItems)
   } else {
@@ -170,6 +180,10 @@ watch(
 <style scoped lang="scss">
 .app-poster-grid {
   .poster {
+    &-item {
+      // Wrapper for individual poster items with data-id for scroll targeting
+      display: contents; // Makes the wrapper transparent to CSS grid
+    }
     &-grid {
       display: grid;
       gap: 30px;

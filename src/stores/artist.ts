@@ -35,7 +35,7 @@ export const useArtistStore = defineStore('artist', () => {
     } else {
       // Filter artists by name
       const lowerQuery = query.toLowerCase().trim()
-      artists.value = allArtists.value.filter(artist => 
+      artists.value = allArtists.value.filter(artist =>
         artist.name.toLowerCase().includes(lowerQuery)
       )
     }
@@ -46,7 +46,8 @@ export const useArtistStore = defineStore('artist', () => {
     loading.value = true
     loaded.value = false
 
-    const { error, data, isFinished } = await libraryFetch('/library/:activeLibrary/artists').json()
+    // Load all artists at once by using a large limit parameter
+    const { error, data, isFinished } = await libraryFetch('/library/:activeLibrary/artists?limit=10000').json()
 
     if (error.value) {
       toastStore.showErrorToast(`Get Artists Error: ${error.value}`)
@@ -62,10 +63,11 @@ export const useArtistStore = defineStore('artist', () => {
           $cover_src: artist.thumb_url[0],
         }
       })
-      
+
       // Store all artists and set the filtered artists
       allArtists.value = mappedArtists
       artists.value = mappedArtists
+      console.log(`Loaded ${mappedArtists.length} artists at once`)
     }
 
     loading.value = false

@@ -113,3 +113,90 @@
   margin-bottom: 3px;
   transition: all 0.2s linear;
 }
+
+// Mixin for delete/remove buttons with destructive styling
+// Usage: @include delete-button;
+// For smaller buttons: @include delete-button-small;
+// For larger buttons: @include delete-button-large;
+// For warning buttons: @include warning-button;
+@mixin delete-button {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0; // Hide any text content
+
+  &:hover:not(:disabled) {
+    background-color: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    background-color: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  // Icon styling
+  .app-icon {
+    width: 16px;
+    height: 16px;
+    color: inherit;
+  }
+}
+
+// Variations of the delete button
+@mixin delete-button-small {
+  @include delete-button;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+
+  .app-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@mixin delete-button-large {
+  @include delete-button;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+
+  .app-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// Alternative delete button with different colors (e.g., orange for warning)
+@mixin warning-button {
+  @include delete-button;
+  background-color: rgba(251, 146, 60, 0.1);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.2);
+
+  &:hover:not(:disabled) {
+    background-color: rgba(251, 146, 60, 0.2);
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    background-color: rgba(251, 146, 60, 0.3);
+    border-color: rgba(251, 146, 60, 0.4);
+  }
+}

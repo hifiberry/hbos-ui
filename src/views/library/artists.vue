@@ -3,14 +3,19 @@
     <div class="breadcrumbs">
       <AppBackRouter :to="{ name: 'library' }">Artists</AppBackRouter>
       <div class="search-bar">
-        <AppSearch v-model="search" :debounce="1000" @change="onSearch" />
+        <AppSearch 
+          v-model="search" 
+          :debounce="300" 
+          placeholder="Search artists..."
+          @change="onSearch" 
+        />
       </div>
     </div>
     <div class="card">
       <AppPosterGrid
         :loading="loading"
         :loaded="loaded"
-        :items="artists"
+        :items="sortedArtists"
         poster-form="circle"
         @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })"
       />
@@ -31,21 +36,21 @@ import { storeToRefs } from 'pinia'
 
 import { useArtistStore } from '@/stores/artist.ts'
 const artistStore = useArtistStore()
-const { loading, loaded, artists } = storeToRefs(artistStore)
-const { getArtists, getArtistByName } = artistStore
+const { loading, loaded, sortedArtists } = storeToRefs(artistStore)
+const { getArtists, setSearchQuery, clearSearch } = artistStore
 
 const search = ref<string>('')
 
-const onSearch = async (search: string) => {
-  if (search) {
-    getArtistByName(search)
-  } else {
-    getArtists()
-  }
+const onSearch = (searchValue: string) => {
+  search.value = searchValue
+  setSearchQuery(searchValue)
 }
 
 onMounted(() => {
   getArtists()
+  // Clear any existing search when component mounts
+  clearSearch()
+  search.value = ''
 })
 </script>
 

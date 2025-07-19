@@ -25,6 +25,8 @@ export interface SystemInfo {
   }
   system: {
     uuid: string
+    hostname: string
+    pretty_hostname: string | null
   }
   status: 'success' | 'error'
   message?: string

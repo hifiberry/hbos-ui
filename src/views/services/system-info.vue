@@ -25,6 +25,10 @@
           </div>
           <table class="info-table">
             <tbody>
+              <tr v-if="systemInfo?.system?.pretty_hostname">
+                <td class="label">System Name</td>
+                <td class="value">{{ systemInfo.system.pretty_hostname }}</td>
+              </tr>
               <tr>
                 <td class="label">Model</td>
                 <td class="value">{{ systemInfo.pi_model.name }}</td>

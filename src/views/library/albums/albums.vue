@@ -24,7 +24,7 @@
         :loading="loading"
         :loaded="loaded"
         :items="sortedAlbums"
-        @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })"
+        @click="(album) => router.push({ name: 'album', params: { albumId: album.id }, query: { from: 'albums' } })"
       />
     </div>
   </div>

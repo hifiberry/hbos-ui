@@ -88,6 +88,14 @@ In your Vue component's `<style>` section:
 
 - `@include button-icon($size)` - Circular icon button (default 32px)
 
+### Editable Field Mixins
+
+- `@include editable-input` - Styled input field for inline editing
+- `@include editable-save-button` - Save button for editable fields
+- `@include editable-cancel-button` - Cancel button for editable fields  
+- `@include editable-actions` - Container for save/cancel buttons
+- `@include editable-field` - Complete editable field layout
+
 ### Complete Combinations
 
 For quick usage, these combine base + variant + size:
@@ -176,6 +184,72 @@ For quick usage, these combine base + variant + size:
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+}
+```
+
+### Complete Editable Field Implementation
+
+```html
+<!-- Template structure -->
+<div class="editable-field">
+  <input 
+    v-model="editValue"
+    type="text"
+    class="editable-input"
+    placeholder="Enter value"
+    :disabled="saving"
+    @keyup.enter="save"
+    @keyup.escape="cancel"
+  />
+  <div class="editable-actions">
+    <button 
+      @click="save"
+      class="save-button"
+      :disabled="saving || !editValue.trim()"
+      title="Save"
+    >
+      <AppIcon icon="checkmark" :width="16" :height="16" />
+    </button>
+    <button 
+      @click="cancel"
+      class="cancel-button"
+      :disabled="saving"
+      title="Cancel"
+    >
+      <AppIcon icon="close" :width="16" :height="16" />
+    </button>
+  </div>
+</div>
+```
+
+```scss
+// Option 1: Use the complete mixin
+.editable-field {
+  @include editable-field;
+}
+
+// Option 2: Use individual mixins for customization
+.my-custom-editable {
+  display: flex;
+  align-items: center;
+  gap: 12px; // Custom spacing
+
+  .my-input {
+    @include editable-input;
+    max-width: 300px; // Custom width
+  }
+
+  .my-actions {
+    @include editable-actions;
+    
+    .save-btn {
+      @include editable-save-button;
+    }
+    
+    .cancel-btn {
+      @include editable-cancel-button;
+    }
   }
 }
 ```

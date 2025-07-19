@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Artist, ArtistMetadata } from '@/types/library'
 import { useRouter } from 'vue-router'
@@ -18,7 +18,28 @@ export const useArtistStore = defineStore('artist', () => {
   const loading = ref<boolean>(false)
   const loaded = ref<boolean>(false)
   const artists = ref<Artist[]>([])
+  const allArtists = ref<Artist[]>([]) // Store all artists
   const artistByName = ref<ArtistMetadata | null>(null)
+  const searchQuery = ref<string>('')
+
+  // Getter
+  const sortedArtists = computed(() => {
+    return [...artists.value].sort((a, b) => a.name.localeCompare(b.name))
+  })
+
+  // Filter function that updates the artists array directly
+  const filterArtists = (query: string) => {
+    if (!query.trim()) {
+      // If no query, show all artists
+      artists.value = [...allArtists.value]
+    } else {
+      // Filter artists by name
+      const lowerQuery = query.toLowerCase().trim()
+      artists.value = allArtists.value.filter(artist => 
+        artist.name.toLowerCase().includes(lowerQuery)
+      )
+    }
+  }
 
   // Action
   const getArtists = async () => {
@@ -32,7 +53,7 @@ export const useArtistStore = defineStore('artist', () => {
     }
 
     if (data.value?.artists && data.value.artists.length > 0) {
-      artists.value = data.value.artists.map((artist: Artist) => {
+      const mappedArtists = data.value.artists.map((artist: Artist) => {
         return {
           ...artist,
           $id: artist.id,
@@ -41,6 +62,10 @@ export const useArtistStore = defineStore('artist', () => {
           $cover_src: artist.thumb_url[0],
         }
       })
+      
+      // Store all artists and set the filtered artists
+      allArtists.value = mappedArtists
+      artists.value = mappedArtists
     }
 
     loading.value = false
@@ -97,16 +122,33 @@ export const useArtistStore = defineStore('artist', () => {
     loaded.value = isFinished.value
   }
 
+  const setSearchQuery = (query: string) => {
+    searchQuery.value = query
+    filterArtists(query)
+  }
+
+  const clearSearch = () => {
+    searchQuery.value = ''
+    filterArtists('')
+  }
+
   return {
     // State
     loading,
     loaded,
     artists,
     artistByName,
+    searchQuery,
+
+    // Getter
+    sortedArtists,
 
     // Action
     getArtists,
     getArtistByName,
     getMoreArtists,
+    setSearchQuery,
+    clearSearch,
+    filterArtists,
   }
 })

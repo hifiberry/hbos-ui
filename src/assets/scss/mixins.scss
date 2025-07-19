@@ -200,3 +200,283 @@
     border-color: rgba(251, 146, 60, 0.4);
   }
 }
+
+// Button Reset Mixin - Removes all default browser button styling
+@mixin button-reset {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
+  
+  &::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+  }
+}
+
+// Base Button Mixin - Common button styling foundation
+@mixin button-base {
+  @include button-reset;
+  
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Metropolis", sans-serif;
+  font-weight: 500;
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+  border-radius: 6px;
+  transition: all 0.15s ease-in-out;
+  line-height: 1;
+  text-decoration: none;
+  
+  &:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+  
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+}
+
+// Button Size Mixins
+@mixin button-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  min-height: 28px;
+}
+
+@mixin button-md {
+  padding: 8px 16px;
+  font-size: 14px;
+  min-height: 36px;
+}
+
+@mixin button-lg {
+  padding: 12px 24px;
+  font-size: 16px;
+  min-height: 44px;
+}
+
+// Button Variant Mixins
+@mixin button-primary {
+  background-color: var(--primary, #E11E4A);
+  border: 1px solid var(--primary, #E11E4A);
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background-color: var(--primary-dark, #c01a40);
+    border-color: var(--primary-dark, #c01a40);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(225, 30, 74, 0.2);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(225, 30, 74, 0.2);
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(225, 30, 74, 0.3);
+  }
+}
+
+@mixin button-secondary {
+  background-color: var(--color-background, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  color: var(--color-body, #707070);
+  
+  &:hover:not(:disabled) {
+    background-color: var(--color-background-secondary, #f9fafb);
+    border-color: var(--color-border-hover, #d1d5db);
+    color: var(--color-body, #374151);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+}
+
+@mixin button-success {
+  background-color: #10b981;
+  border: 1px solid #10b981;
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background-color: #059669;
+    border-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+  }
+}
+
+@mixin button-danger {
+  background-color: #ef4444;
+  border: 1px solid #ef4444;
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  }
+}
+
+@mixin button-ghost {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: var(--color-body, #707070);
+  
+  &:hover:not(:disabled) {
+    background-color: var(--color-background-secondary, #f3f4f6);
+    color: var(--color-body, #374151);
+  }
+  
+  &:active:not(:disabled) {
+    background-color: var(--color-background-secondary, #e5e7eb);
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+}
+
+@mixin button-link {
+  @include button-reset;
+  
+  color: var(--primary, #E11E4A);
+  text-decoration: underline;
+  padding: 0;
+  
+  &:hover:not(:disabled) {
+    color: var(--primary-dark, #c01a40);
+    text-decoration: none;
+  }
+  
+  &:focus {
+    outline: 2px solid var(--primary, #E11E4A);
+    outline-offset: 2px;
+  }
+}
+
+// Icon Button Mixin
+@mixin button-icon($size: 32px) {
+  @include button-reset;
+  
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $size;
+  height: $size;
+  border-radius: 50%;
+  transition: all 0.15s ease-in-out;
+  
+  &:hover:not(:disabled) {
+    background-color: var(--color-background-secondary, #f3f4f6);
+  }
+  
+  &:active:not(:disabled) {
+    background-color: var(--color-background-secondary, #e5e7eb);
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+}
+
+// Complete Button Classes - Use these for quick styling
+@mixin button-primary-sm {
+  @include button-base;
+  @include button-primary;
+  @include button-sm;
+}
+
+@mixin button-primary-md {
+  @include button-base;
+  @include button-primary;
+  @include button-md;
+}
+
+@mixin button-primary-lg {
+  @include button-base;
+  @include button-primary;
+  @include button-lg;
+}
+
+@mixin button-secondary-sm {
+  @include button-base;
+  @include button-secondary;
+  @include button-sm;
+}
+
+@mixin button-secondary-md {
+  @include button-base;
+  @include button-secondary;
+  @include button-md;
+}
+
+@mixin button-secondary-lg {
+  @include button-base;
+  @include button-secondary;
+  @include button-lg;
+}
+
+@mixin button-success-sm {
+  @include button-base;
+  @include button-success;
+  @include button-sm;
+}
+
+@mixin button-success-md {
+  @include button-base;
+  @include button-success;
+  @include button-md;
+}
+
+@mixin button-danger-sm {
+  @include button-base;
+  @include button-danger;
+  @include button-sm;
+}
+
+@mixin button-danger-md {
+  @include button-base;
+  @include button-danger;
+  @include button-md;
+}

@@ -25,9 +25,47 @@
           </div>
           <table class="info-table">
             <tbody>
-              <tr v-if="systemInfo?.system?.pretty_hostname">
+              <tr v-if="systemInfo?.system?.pretty_hostname || isEditingHostname">
                 <td class="label">System Name</td>
-                <td class="value">{{ systemInfo.system.pretty_hostname }}</td>
+                <td class="value">
+                  <div v-if="!isEditingHostname" class="hostname-display">
+                    <span>{{ systemInfo.system.pretty_hostname || 'Not set' }}</span>
+                    <button
+                      @click="startEditingHostname"
+                      class="edit-button"
+                      :disabled="loading"
+                    >
+                      <AppIcon icon="edit" :width="16" :height="16" />
+                    </button>
+                  </div>
+                  <div v-else class="hostname-edit">
+                    <input
+                      v-model="editHostname"
+                      type="text"
+                      placeholder="Enter system name"
+                      class="hostname-input"
+                      :disabled="savingHostname"
+                      @keyup.enter="saveHostname"
+                      @keyup.escape="cancelEditingHostname"
+                    />
+                    <div class="edit-actions">
+                      <button
+                        @click="saveHostname"
+                        class="save-button"
+                        :disabled="savingHostname || !editHostname.trim()"
+                      >
+                        {{ savingHostname ? 'Saving...' : 'Save' }}
+                      </button>
+                      <button
+                        @click="cancelEditingHostname"
+                        class="cancel-button"
+                        :disabled="savingHostname"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </td>
               </tr>
               <tr>
                 <td class="label">Model</td>
@@ -110,14 +148,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
-import { getSystemInfo, type SystemInfo } from '@/api/system'
+import { getSystemInfo, updateHostname, type SystemInfo } from '@/api/system'
+import { useEditableText } from '@/composables/useEditableField'
 
 // State
 const loading = ref(true)
 const error = ref('')
 const systemInfo = ref<SystemInfo | null>(null)
+
+// Computed ref for hostname
+const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
+
+// Hostname editing using composable
+const hostnameEditing = useEditableText(
+  currentHostname,
+  async (newHostname: string) => {
+    try {
+      const response = await updateHostname({
+        pretty_hostname: newHostname
+      })
+
+      if (response.status === 'success') {
+        // Refresh system info to get the updated hostname
+        await fetchSystemInfo()
+        return { status: 'success' }
+      } else {
+        return { status: 'error', message: response.message || 'Failed to update system name' }
+      }
+    } catch (err) {
+      console.error('Error updating hostname:', err)
+      return {
+        status: 'error',
+        message: err instanceof Error ? err.message : 'Unknown error occurred'
+      }
+    }
+  },
+  {
+    minLength: 1,
+    maxLength: 63,
+    required: true
+  }
+)
+
+// Destructure for easier use in template
+const {
+  isEditing: isEditingHostname,
+  editValue: editHostname,
+  isSaving: savingHostname,
+  startEditing: startEditingHostname,
+  cancelEditing: cancelEditingHostname,
+  saveEdit: saveHostname
+} = hostnameEditing
 
 // Methods
 const fetchSystemInfo = async () => {
@@ -147,6 +230,8 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/scss/mixins' as *;
+
 .system-info {
   h1 {
     margin-bottom: 32px;
@@ -279,6 +364,72 @@ onMounted(() => {
             }
           }
         }
+      }
+    }
+  }
+
+  // Hostname editing styles
+  .hostname-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .edit-button {
+      @include button-icon(28px);
+      margin-left: 8px;
+      color: var(--color-body-secondary);
+      
+      &:hover:not(:disabled) {
+        color: var(--color-primary);
+      }
+    }
+  }
+
+  .hostname-edit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .hostname-input {
+      flex: 1;
+      max-width: 250px;
+      padding: 8px 12px;
+      border: 2px solid var(--color-border);
+      border-radius: 6px;
+      background: var(--color-background);
+      color: var(--color-body);
+      font-size: 14px;
+      font-weight: 500;
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb, 59, 130, 246), 0.1);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background: var(--color-background-secondary);
+      }
+    }
+
+    .edit-actions {
+      display: flex;
+      gap: 8px;
+
+      .save-button {
+        @include button-success-sm;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 60px;
+      }
+
+      .cancel-button {
+        @include button-secondary-sm;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 60px;
       }
     }
   }

@@ -19,24 +19,38 @@
           </div>
         </div>
         <div class="artist-details">
-          <h1 class="artist-name">{{ artistByName.name }}</h1>
-          <div v-if="fullArtistData?.metadata?.mbid?.[0]" class="artist-info-extended">
+          <div class="artist-header">
+            <h1 class="artist-name">{{ artistByName.name }}</h1>
+            <button
+              v-if="fullArtistData?.metadata?.mbid?.[0]"
+              class="mobile-toggle"
+              @click="toggleMobileInfo"
+              :class="{ active: showMobileInfo }"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6,9 12,15 18,9"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div v-if="fullArtistData?.metadata?.mbid?.[0]" class="artist-info-extended" :class="{ 'mobile-visible': showMobileInfo }">
             <!-- MusicBrainz Information -->
             <div v-if="mbLoading" class="mb-loading">Loading MusicBrainz data...</div>
             <div v-else-if="mbError" class="mb-error">{{ mbError }}</div>
             <div v-else-if="mbArtistData" class="mb-info">
-              <div v-if="formattedLifeSpan" class="mb-info-item">
-                <span class="mb-label">Active:</span>
-                <span class="mb-value">{{ formattedLifeSpan }}</span>
-              </div>
-              <div v-if="formattedLocation" class="mb-info-item">
-                <span class="mb-label">Location:</span>
-                <span class="mb-value">{{ formattedLocation }}</span>
-              </div>
-              <div v-if="primaryGenre" class="mb-info-item">
-                <span class="mb-label">Genre:</span>
-                <span class="mb-value">{{ primaryGenre }}</span>
-              </div>
+              <table class="mb-table">
+                <tr v-if="formattedLifeSpan">
+                  <td class="mb-label">Active:</td>
+                  <td class="mb-value">{{ formattedLifeSpan }}</td>
+                </tr>
+                <tr v-if="formattedLocation">
+                  <td class="mb-label">Location:</td>
+                  <td class="mb-value">{{ formattedLocation }}</td>
+                </tr>
+                <tr v-if="primaryGenre">
+                  <td class="mb-label">Genre:</td>
+                  <td class="mb-value">{{ primaryGenre }}</td>
+                </tr>
+              </table>
             </div>
           </div>
           <div v-else class="artist-id">
@@ -69,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, watch } from 'vue'
+import { onMounted, computed, watch, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useRouter } from 'vue-router'
@@ -109,6 +123,12 @@ const {
 
 // Get basic artist from store
 const artistByName = computed(() => getArtistByIdFromStore(id.value))
+
+// Mobile toggle for additional info
+const showMobileInfo = ref(false)
+const toggleMobileInfo = () => {
+  showMobileInfo.value = !showMobileInfo.value
+}
 
 // Function to get full artist metadata
 const getArtistMetadata = async (artistId: string) => {
@@ -191,12 +211,43 @@ watch(
   min-width: 0;
 }
 
+.artist-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .artist-name {
   margin: 0 0 16px 0;
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--color-head);
   line-height: 1.2;
+  flex: 1;
+}
+
+.mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+
+  svg {
+    transition: transform 0.2s ease;
+  }
+
+  &.active svg {
+    transform: rotate(180deg);
+  }
+
+  &:hover {
+    background: rgba(var(--color-surface-rgb), 0.5);
+    color: var(--color-text);
+  }
 }
 
 .artist-id {
@@ -222,31 +273,32 @@ watch(
 }
 
 .mb-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  margin-top: 4px;
 }
 
-.mb-info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+.mb-table {
+  border-collapse: collapse;
   font-size: 0.875rem;
   line-height: 1.4;
+
+  td {
+    padding: 3px 0;
+    vertical-align: top;
+  }
 }
 
 .mb-label {
   font-weight: 600;
   color: var(--color-text-secondary);
-  min-width: 70px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.8rem;
+  white-space: nowrap;
+  width: 120px;
 }
 
 .mb-value {
   color: var(--color-text);
-  flex: 1;
 }
 
 .id-label {
@@ -301,6 +353,11 @@ watch(
 
   .artist-name {
     font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  .mobile-toggle {
+    display: block;
   }
 
   .artist-id {
@@ -308,14 +365,24 @@ watch(
     gap: 4px;
   }
 
-  .mb-info-item {
-    flex-direction: column;
-    gap: 2px;
+  .artist-info-extended {
+    display: none;
+
+    &.mobile-visible {
+      display: block;
+      margin-top: 16px;
+    }
+  }
+
+  .mb-table td {
+    display: block;
     text-align: left;
+    padding: 1px 0;
   }
 
   .mb-label {
-    min-width: auto;
+    padding-right: 0;
+    margin-bottom: 2px;
   }
 }
 </style>

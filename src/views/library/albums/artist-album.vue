@@ -46,25 +46,15 @@
                   <td class="mb-label">Location:</td>
                   <td class="mb-value">{{ formattedLocation }}</td>
                 </tr>
+                <tr v-if="uniqueGenres.length">
+                  <td class="mb-label">Genres:</td>
+                  <td class="mb-value">{{ uniqueGenres.join(', ') }}</td>
+                </tr>
               </table>
             </div>
 
             <!-- AudioControl REST API Information -->
             <div v-if="fullArtistData?.metadata" class="acr-info">
-              <!-- Genres from AudioControl -->
-              <div v-if="uniqueGenres.length" class="acr-genres">
-                <h3 class="acr-section-title">Genres</h3>
-                <div class="genre-tags">
-                  <span
-                    v-for="genre in uniqueGenres"
-                    :key="genre"
-                    class="genre-tag"
-                  >
-                    {{ genre }}
-                  </span>
-                </div>
-              </div>
-
               <!-- Biography from AudioControl -->
               <div v-if="fullArtistData.metadata.biography" class="acr-biography">
                 <div class="biography-header">
@@ -89,22 +79,18 @@
 
           <!-- Show AudioControl data when no MusicBrainz ID is available -->
           <div v-else-if="fullArtistData?.metadata && (fullArtistData.metadata.genres?.length || fullArtistData.metadata.biography)" class="artist-info-basic">
+            <!-- Genres table for artists without MusicBrainz data -->
+            <div v-if="uniqueGenres.length" class="mb-info">
+              <table class="mb-table">
+                <tr>
+                  <td class="mb-label">Genres:</td>
+                  <td class="mb-value">{{ uniqueGenres.join(', ') }}</td>
+                </tr>
+              </table>
+            </div>
+
             <!-- AudioControl REST API Information (without MusicBrainz data) -->
             <div class="acr-info">
-              <!-- Genres from AudioControl -->
-              <div v-if="uniqueGenres.length" class="acr-genres">
-                <h3 class="acr-section-title">Genres</h3>
-                <div class="genre-tags">
-                  <span
-                    v-for="genre in uniqueGenres"
-                    :key="genre"
-                    class="genre-tag"
-                  >
-                    {{ genre }}
-                  </span>
-                </div>
-              </div>
-
               <!-- Biography from AudioControl -->
               <div v-if="fullArtistData.metadata.biography" class="acr-biography">
                 <div class="biography-header">
@@ -225,7 +211,7 @@ const toggleBiography = () => {
 const displayedBiography = computed(() => {
   const biography = fullArtistData.value?.metadata?.biography
   if (!biography) return ''
-  
+
   if (isBiographyLong.value && !showFullBiography.value) {
     // Truncate to approximately 4 lines worth of characters
     const maxLength = 400 // Rough estimate for 4 lines
@@ -233,7 +219,7 @@ const displayedBiography = computed(() => {
       return biography.substring(0, maxLength).trim() + '...'
     }
   }
-  
+
   return biography
 })
 
@@ -241,14 +227,14 @@ const displayedBiography = computed(() => {
 const uniqueGenres = computed(() => {
   const genres = fullArtistData.value?.metadata?.genres
   if (!genres || !Array.isArray(genres)) return []
-  
+
   // Filter out empty strings first
   const validGenres = genres.filter(genre => genre && genre.trim().length > 0)
-  
+
   // Remove duplicates using case-insensitive comparison
   const seen = new Set<string>()
   const unique: string[] = []
-  
+
   for (const genre of validGenres) {
     const lowerGenre = genre.toLowerCase().trim()
     if (!seen.has(lowerGenre)) {
@@ -256,7 +242,7 @@ const uniqueGenres = computed(() => {
       unique.push(genre.trim()) // Keep original casing
     }
   }
-  
+
   return unique
 })
 

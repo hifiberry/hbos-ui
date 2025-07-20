@@ -144,6 +144,40 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Favourites Information -->
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="heart" class="card-icon" />
+            <h2>Favourites</h2>
+          </div>
+          <div v-if="favouritesLoading" class="loading-message">
+            Loading favourites information...
+          </div>
+          <div v-else-if="favouritesError" class="error-message">
+            {{ favouritesError }}
+          </div>
+          <table v-else-if="favouritesInfo" class="info-table">
+            <tbody>
+              <tr v-for="provider in favouritesInfo.providers" :key="provider.name">
+                <td class="label">{{ provider.display_name || provider.name }}</td>
+                <td class="value">
+                  <div class="provider-info">
+                    <span :class="['provider-status', getProviderStatusClass(provider)]">
+                      {{ getProviderStatusText(provider) }}
+                    </span>
+                    <span v-if="provider.favourite_count !== null" class="favourites-count">
+                      ({{ provider.favourite_count }} favourites)
+                    </span>
+                    <span v-else class="favourites-count">
+                      (count unavailable)
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -154,11 +188,22 @@ import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import { getSystemInfo, updateHostname, type SystemInfo } from '@/api/system'
 import { useEditableText } from '@/composables/useEditableField'
+import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 
 // State
 const loading = ref(true)
 const error = ref('')
 const systemInfo = ref<SystemInfo | null>(null)
+
+// Favourites composable
+const {
+  loading: favouritesLoading,
+  error: favouritesError,
+  favouritesInfo,
+  getFavouritesInfo,
+  getProviderStatusText,
+  getProviderStatusClass
+} = useFavouritesInfo()
 
 // Computed ref for hostname
 const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
@@ -228,6 +273,7 @@ const fetchSystemInfo = async () => {
 // Lifecycle
 onMounted(() => {
   fetchSystemInfo()
+  getFavouritesInfo()
 })
 </script>
 
@@ -368,6 +414,52 @@ onMounted(() => {
 
 .hostname-edit {
   @include editable-field;
+}
+
+// Favourites styles
+.provider-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .provider-status {
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.875em;
+
+    &.status-active {
+      background: var(--background-success);
+      color: var(--color-success);
+    }
+
+    &.status-inactive {
+      background: var(--background-warning);
+      color: var(--color-warning);
+    }
+
+    &.status-disabled {
+      background: var(--background-error);
+      color: var(--color-error);
+    }
+  }
+
+  .favourites-count {
+    color: var(--color-body-secondary);
+    font-size: 0.875em;
+  }
+}
+
+.loading-message,
+.error-message {
+  padding: 16px;
+  text-align: center;
+  color: var(--color-body-secondary);
+  font-style: italic;
+}
+
+.error-message {
+  color: var(--color-error);
 }@media (max-width: 768px) {
   .system-info {
     .system-info-content {

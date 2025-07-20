@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 import { useToastStore } from '@/stores/toast'
@@ -7,6 +7,7 @@ import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { usePlayerWebSocket } from '@/stores/player-web-socket'
 import { usePlayerChangesStore } from '@/stores/player-changes'
 import { addTrackToPlayer } from '@/api/player'
+import { useFavourites } from '@/composables/useFavourites'
 
 import {
   DEFAULT_CAPABILITIES,
@@ -31,6 +32,7 @@ export const usePlayerStore = defineStore('player', () => {
   const libraryFetch = useLibraryFetch()
   const playerWebSocket = usePlayerWebSocket()
   const playerChangesStore = usePlayerChangesStore()
+  const favourites = useFavourites()
 
   // State
   const updateIntervalID = ref<number | undefined>(undefined)
@@ -40,6 +42,10 @@ export const usePlayerStore = defineStore('player', () => {
   const isSendingCommand = ref<boolean>(false)
 
   const playerCapabilities = ref<Capabilities>(DEFAULT_CAPABILITIES)
+
+  // Favourites state
+  const currentSongIsFavourite = ref<boolean>(false)
+  const checkingFavourite = ref<boolean>(false)
 
   // Getters
   const currentPlayerName = computed<string | null>(() => currentData.value?.player?.name || null)
@@ -110,6 +116,67 @@ export const usePlayerStore = defineStore('player', () => {
       return []
     }
   }
+
+  // Check if current song is favourite
+  const checkCurrentSongFavouriteStatus = async () => {
+    const song = currentSong.value
+    if (!song || !song.artist || !song.title) {
+      currentSongIsFavourite.value = false
+      return
+    }
+
+    try {
+      checkingFavourite.value = true
+      currentSongIsFavourite.value = await favourites.isFavourite({
+        artist: song.artist,
+        title: song.title
+      })
+    } catch (error) {
+      console.error('Error checking favourite status:', error)
+    } finally {
+      checkingFavourite.value = false
+    }
+  }
+
+  // Toggle favourite status of current song
+  const toggleCurrentSongFavourite = async (): Promise<boolean> => {
+    const song = currentSong.value
+    if (!song || !song.artist || !song.title) {
+      toastStore.showErrorToast('No song currently playing')
+      return false
+    }
+
+    try {
+      const success = await favourites.toggleFavourite({
+        artist: song.artist,
+        title: song.title
+      })
+
+      if (success) {
+        // Update the local state immediately
+        currentSongIsFavourite.value = !currentSongIsFavourite.value
+
+        const action = currentSongIsFavourite.value ? 'added to' : 'removed from'
+        toastStore.showSuccessToast(`"${song.title}" ${action} favourites`)
+      } else {
+        toastStore.showErrorToast(favourites.error.value || 'Failed to update favourites')
+      }
+
+      return success
+    } catch (error) {
+      console.error('Error toggling favourite:', error)
+      toastStore.showErrorToast('Failed to update favourites')
+      return false
+    }
+  }
+
+  // Watch for song changes to update favourite status
+  watch(currentSong, (newSong, oldSong) => {
+    // Only check if song actually changed
+    if (newSong?.title !== oldSong?.title || newSong?.artist !== oldSong?.artist) {
+      checkCurrentSongFavouriteStatus()
+    }
+  }, { immediate: true })
 
   /**
    * Fetch current player and now playing information
@@ -296,6 +363,8 @@ export const usePlayerStore = defineStore('player', () => {
     isSendingCommand,
     loading,
     playerCapabilities,
+    currentSongIsFavourite,
+    checkingFavourite,
     // Getters
     currentPlayerName,
     currentSong,
@@ -309,5 +378,8 @@ export const usePlayerStore = defineStore('player', () => {
     retrieveActivePlayer,
     sendCommand,
     sendLibraryCommand,
+    // Favourites
+    checkCurrentSongFavouriteStatus,
+    toggleCurrentSongFavourite,
   }
 })

@@ -57,10 +57,11 @@
       <AppIconButton
         v-if="!isOnSticky"
         class="app-audio-controls__secondary heart-button"
+        :class="{ 'heart-button--active': currentSongIsFavourite }"
         icon="heart"
-        title="Add to favorites"
-        :disabled="true"
-        @click="toggleFavorite"
+        :title="currentSongIsFavourite ? 'Remove from favorites' : 'Add to favorites'"
+        :disabled="isSendingCommand || checkingFavourite"
+        @click="toggleCurrentSongFavourite"
       />
     </div>
   </div>
@@ -79,13 +80,13 @@ interface AppAudioControlsProps {
 
 const { isSeparate = false, isOnSticky = false } = defineProps<AppAudioControlsProps>()
 
-const { isSendingCommand, playerCapabilities: caps } = storeToRefs(usePlayerStore())
+const playerStore = usePlayerStore()
+const { isSendingCommand, playerCapabilities: caps, currentSongIsFavourite, checkingFavourite } = storeToRefs(playerStore)
 
 const audioControls = useAudioControls()
 
-const toggleFavorite = () => {
-  // TODO: Implement favorite functionality
-  console.log('Toggle favorite clicked')
+const toggleCurrentSongFavourite = () => {
+  playerStore.toggleCurrentSongFavourite()
 }
 </script>
 
@@ -173,6 +174,11 @@ const toggleFavorite = () => {
 
     &:disabled {
       cursor: not-allowed;
+    }
+
+    &--active {
+      opacity: 1;
+      color: var(--error) !important; /* Red color for favorited songs */
     }
   }
 }

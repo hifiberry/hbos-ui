@@ -46,13 +46,88 @@
                   <td class="mb-label">Location:</td>
                   <td class="mb-value">{{ formattedLocation }}</td>
                 </tr>
-                <tr v-if="primaryGenre">
-                  <td class="mb-label">Genre:</td>
-                  <td class="mb-value">{{ primaryGenre }}</td>
-                </tr>
               </table>
             </div>
+
+            <!-- AudioControl REST API Information -->
+            <div v-if="fullArtistData?.metadata" class="acr-info">
+              <!-- Genres from AudioControl -->
+              <div v-if="fullArtistData.metadata.genres?.length" class="acr-genres">
+                <h3 class="acr-section-title">Genres</h3>
+                <div class="genre-tags">
+                  <span
+                    v-for="genre in fullArtistData.metadata.genres"
+                    :key="genre"
+                    class="genre-tag"
+                  >
+                    {{ genre }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Biography from AudioControl -->
+              <div v-if="fullArtistData.metadata.biography" class="acr-biography">
+                <div class="biography-header">
+                  <h3 class="acr-section-title">Biography</h3>
+                  <button
+                    v-if="isBiographyLong"
+                    class="biography-toggle"
+                    @click="toggleBiography"
+                    :class="{ active: showFullBiography }"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="6,9 12,15 18,9"></polyline>
+                    </svg>
+                  </button>
+                </div>
+                <div class="biography-content">
+                  <p ref="biographyRef">{{ displayedBiography }}</p>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <!-- Show AudioControl data when no MusicBrainz ID is available -->
+          <div v-else-if="fullArtistData?.metadata && (fullArtistData.metadata.genres?.length || fullArtistData.metadata.biography)" class="artist-info-basic">
+            <!-- AudioControl REST API Information (without MusicBrainz data) -->
+            <div class="acr-info">
+              <!-- Genres from AudioControl -->
+              <div v-if="fullArtistData.metadata.genres?.length" class="acr-genres">
+                <h3 class="acr-section-title">Genres</h3>
+                <div class="genre-tags">
+                  <span
+                    v-for="genre in fullArtistData.metadata.genres"
+                    :key="genre"
+                    class="genre-tag"
+                  >
+                    {{ genre }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Biography from AudioControl -->
+              <div v-if="fullArtistData.metadata.biography" class="acr-biography">
+                <div class="biography-header">
+                  <h3 class="acr-section-title">Biography</h3>
+                  <button
+                    v-if="isBiographyLong"
+                    class="biography-toggle"
+                    @click="toggleBiography"
+                    :class="{ active: showFullBiography }"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="6,9 12,15 18,9"></polyline>
+                    </svg>
+                  </button>
+                </div>
+                <div class="biography-content">
+                  <p>{{ displayedBiography }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fallback to just show artist ID -->
           <div v-else class="artist-id">
             <span class="id-label">Artist ID:</span>
             <span class="id-value">{{ artistByName.id }}</span>
@@ -117,7 +192,6 @@ const {
   error: mbError,
   fetchArtist: fetchMbArtist,
   formattedLifeSpan,
-  primaryGenre,
   formattedLocation
 } = useMusicBrainz()
 
@@ -129,6 +203,39 @@ const showMobileInfo = ref(false)
 const toggleMobileInfo = () => {
   showMobileInfo.value = !showMobileInfo.value
 }
+
+// Biography expand/collapse functionality
+const showFullBiography = ref(false)
+const isBiographyLong = ref(false)
+
+const checkBiographyLength = () => {
+  const biography = fullArtistData.value?.metadata?.biography
+  if (biography) {
+    // Check if the biography is longer than approximately 4 lines worth of characters
+    const maxLength = 400 // Rough estimate for 4 lines
+    isBiographyLong.value = biography.length > maxLength
+  }
+}
+
+const toggleBiography = () => {
+  showFullBiography.value = !showFullBiography.value
+}
+
+// Computed property for displayed biography text
+const displayedBiography = computed(() => {
+  const biography = fullArtistData.value?.metadata?.biography
+  if (!biography) return ''
+  
+  if (isBiographyLong.value && !showFullBiography.value) {
+    // Truncate to approximately 4 lines worth of characters
+    const maxLength = 400 // Rough estimate for 4 lines
+    if (biography.length > maxLength) {
+      return biography.substring(0, maxLength).trim() + '...'
+    }
+  }
+  
+  return biography
+})
 
 // Function to get full artist metadata
 const getArtistMetadata = async (artistId: string) => {
@@ -153,6 +260,9 @@ onMounted(async () => {
   if (mbid) {
     await fetchMbArtist(mbid)
   }
+
+  // Check biography length
+  checkBiographyLength()
 })
 
 // Watch for MBID changes (in case it's loaded after component mounts)
@@ -162,6 +272,14 @@ watch(
     if (newMbid && !mbArtistData.value) {
       fetchMbArtist(newMbid)
     }
+  }
+)
+
+// Watch for biography changes to check length
+watch(
+  () => fullArtistData.value?.metadata?.biography,
+  () => {
+    checkBiographyLength()
   }
 )
 </script>
@@ -299,6 +417,98 @@ watch(
 
 .mb-value {
   color: var(--color-text);
+}
+
+// AudioControl REST API styles
+.acr-info {
+  margin-top: 20px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+.artist-info-basic {
+  margin-top: 16px;
+
+  .acr-info {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
+.acr-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-head);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.acr-genres {
+  margin-bottom: 20px;
+
+  .genre-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .genre-tag {
+    background: var(--color-accent);
+    color: var(--color-accent-text);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    white-space: nowrap;
+  }
+}
+
+.acr-biography {
+  .biography-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .biography-toggle {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      transition: transform 0.2s ease;
+    }
+
+    &.active svg {
+      transform: rotate(180deg);
+    }
+
+    &:hover {
+      background: rgba(var(--color-surface-rgb), 0.5);
+      color: var(--color-text);
+    }
+  }
+
+  .biography-content {
+    p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--color-body);
+      margin: 0;
+      text-align: justify;
+    }
+  }
 }
 
 .id-label {

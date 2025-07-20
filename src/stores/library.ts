@@ -18,6 +18,10 @@ export const useLibraryStore = defineStore('library', () => {
 
   // Getters
   const isAvailableLibrary = computed(() => Boolean(activeLibrary.value))
+  const isLibraryUpdating = computed(() => !isLibraryLoaded.value && Boolean(activeLibrary.value))
+
+  // State for library loading status
+  const isLibraryLoaded = ref<boolean>(false)
 
   // Actions
   const getAvailableLibrary = async () => {
@@ -48,13 +52,33 @@ export const useLibraryStore = defineStore('library', () => {
     if (availableLibrary) {
       console.log('Selected library player:', availableLibrary.player_name)
       activeLibrary.value = availableLibrary.player_name
+      isLibraryLoaded.value = availableLibrary.is_loaded
     } else {
       console.warn('No suitable library player found')
       activeLibrary.value = null
+      isLibraryLoaded.value = false
     }
 
     loading.value = false
     return Promise.resolve(activeLibrary.value)
+  }
+
+  // Method to refresh library status (useful for checking if library update has completed)
+  const refreshLibraryStatus = async () => {
+    if (!activeLibrary.value) {
+      return
+    }
+
+    const apiBase = configStore.getApiBaseUrl()
+    const { error, data } = await useFetch<LibraryPlayerResponse>(`${apiBase}/library`).json()
+
+    if (!error.value && data.value?.players) {
+      const currentPlayer = data.value.players.find((p: LibraryPlayer) => p.player_name === activeLibrary.value)
+      if (currentPlayer) {
+        isLibraryLoaded.value = currentPlayer.is_loaded
+        console.log(`Library ${activeLibrary.value} loaded status: ${isLibraryLoaded.value}`)
+      }
+    }
   }
 
   const getAlbumCover = (id: string) => {
@@ -66,12 +90,15 @@ export const useLibraryStore = defineStore('library', () => {
     // Store
     loading,
     activeLibrary,
+    isLibraryLoaded,
 
     // Getters
     isAvailableLibrary,
+    isLibraryUpdating,
 
     // Actions
     getAvailableLibrary,
+    refreshLibraryStatus,
     getAlbumCover,
   }
 })

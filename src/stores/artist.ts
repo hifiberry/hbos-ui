@@ -4,6 +4,7 @@ import type { Artist, ArtistMetadata } from '@/types/library'
 import { useRouter } from 'vue-router'
 
 import { useToastStore } from '@/stores/toast'
+import { useLibraryStore } from '@/stores/library'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 
 export const useArtistStore = defineStore('artist', () => {
@@ -73,6 +74,10 @@ export const useArtistStore = defineStore('artist', () => {
       allArtists.value = mappedArtists
       artists.value = mappedArtists
       console.log(`Loaded ${mappedArtists.length} artists at once`)
+    } else {
+      // No artists found - refresh library status to check if library is still updating
+      const libraryStore = useLibraryStore()
+      await libraryStore.refreshLibraryStatus()
     }
 
     loading.value = false

@@ -22,17 +22,33 @@
       </template>
     </div>
 
-    <div v-if="loaded && items.length === 0" class="no-items">No available items found</div>
+    <div v-if="loaded && items.length === 0" class="no-items">
+      <div v-if="isLibraryUpdating" class="library-updating">
+        <div class="updating-content">
+          <div class="loading-icon">
+            <AppIcon name="loading" />
+          </div>
+          <div class="updating-text">
+            <div class="primary-text">Library update still running</div>
+            <div class="secondary-text">Please wait while your music library is being scanned and updated...</div>
+          </div>
+        </div>
+      </div>
+      <div v-else>No available items found</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts" generic="T extends PosterItem">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { Ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import AppPoster from '@/components/app-poster.vue'
 import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
+import AppIcon from '@/components/app-icon.vue'
 
 import type { PosterItem } from '@/types/library'
+import { useLibraryStore } from '@/stores/library'
 
 interface PosterGridProps<T> {
   loading?: boolean
@@ -53,6 +69,10 @@ const {
 } = defineProps<PosterGridProps<T>>()
 
 const emit = defineEmits(['click'])
+
+// Library store for checking update status
+const libraryStore = useLibraryStore()
+const { isLibraryUpdating } = storeToRefs(libraryStore)
 
 // Dynamic chunk size based on browser window size
 const getChunkSize = () => {
@@ -220,6 +240,51 @@ watch(
     @include media-down(lg) {
       min-height: 100px;
     }
+
+    .library-updating {
+      .updating-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+        border-radius: 8px;
+        background-color: var(--color-background-secondary);
+        border: 1px solid var(--color-border);
+
+        .loading-icon {
+          flex-shrink: 0;
+          svg {
+            width: 24px;
+            height: 24px;
+            color: var(--color-accent);
+            animation: spin 1s linear infinite;
+          }
+        }
+
+        .updating-text {
+          .primary-text {
+            font-weight: 600;
+            color: var(--color-head);
+            margin-bottom: 4px;
+          }
+
+          .secondary-text {
+            font-size: 0.9rem;
+            color: var(--color-body-secondary);
+            line-height: 1.4;
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

@@ -95,7 +95,9 @@ export const useAlbumStore = defineStore('album', () => {
         album.artists.some(artist => artist.toLowerCase().includes(lowerQuery))
       )
     }
-  }  // Action
+  }
+
+  // Action
   const getAlbums = async () => {
     loading.value = true
     loaded.value = false
@@ -123,6 +125,10 @@ export const useAlbumStore = defineStore('album', () => {
       // Store all albums and set the filtered albums
       allAlbums.value = mappedAlbums
       albums.value = mappedAlbums
+    } else {
+      // No albums found - refresh library status to check if library is still updating
+      const libraryStore = useLibraryStore()
+      await libraryStore.refreshLibraryStatus()
     }
 
     loading.value = false
@@ -213,6 +219,7 @@ export const useAlbumStore = defineStore('album', () => {
     // State
     loading,
     loaded,
+    allAlbums,
     albums,
     album,
     searchQuery,

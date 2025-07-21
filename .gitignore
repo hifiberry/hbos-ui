@@ -34,3 +34,12 @@ coverage
 .env.development.local
 vite.config.dev-server.ts
 src/constants/api.dev-server.ts
+
+# Debian build artifacts
+debian/webui-dist/
+*.deb
+*.build
+*.changes
+*.dsc
+*.tar.xz
+*.buildinfo

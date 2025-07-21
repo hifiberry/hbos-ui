@@ -140,6 +140,24 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
     text-align: center;
     font-size: 18px;
     margin-bottom: 20px; /* Add space between track info and controls */
+
+    // Larger font sizes for ultra-wide screens (>2000px)
+    @media (min-width: 2000px) {
+      font-size: 20px; /* Slightly increased from 18px */
+      margin-bottom: 24px; /* Slightly more space */
+
+      h2 {
+        font-size: 2rem; /* More moderate increase */
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      p {
+        font-size: 1.25rem; /* More moderate increase */
+        font-weight: 400;
+        opacity: 0.8;
+      }
+    }
   }
 
   &__progress-control {

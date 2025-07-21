@@ -121,6 +121,11 @@ const router = createRouter({
       },
     },
     {
+      path: '/now-playing-minimal',
+      name: 'now-playing-minimal',
+      component: () => import('@/views/now-playing-minimal.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: { path: '/' },
     },

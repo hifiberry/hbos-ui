@@ -20,7 +20,7 @@
 
     <!-- Column 3: Volume Control -->
     <div class="header-column header-column--volume">
-      <AppVolumeControl />
+      <AppVolumeControl size="compact" />
     </div>
 
     <!-- Spacer 3 -->

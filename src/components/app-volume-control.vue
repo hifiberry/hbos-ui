@@ -1,5 +1,5 @@
 <template>
-  <div class="volume-control">
+  <div :class="['volume-control', `volume-control--${props.size}`]">
     <svg class="volume-icon volume-icon--mute" width="27" height="27" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M15 8a5 5 0 0 1 1.912 4.934m-1.377 2.602a5 5 0 0 1 -.535 .464" />
@@ -35,6 +35,15 @@ import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import AppProgressSlider from '@/components/app-progress-slider.vue'
 
+// Props for size variants
+interface Props {
+  size?: 'compact' | 'normal' | 'large'
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  size: 'compact'
+})
+
 const playerStore = usePlayerStore()
 const { currentData } = storeToRefs(playerStore)
 
@@ -58,31 +67,66 @@ const handleVolumeChange = (newVolume: number) => {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 160px;
-  max-width: 200px;
-  width: auto; // Don't try to fill container
 
-  // In the simple header layout (now-playing), allow wider volume control
-  .header--simple & {
-    max-width: none; // Remove max-width constraint
-    min-width: 50%; // Take at least half of the available space
-    width: 90%; // Use 90% of the allocated column space
+  // Compact size (for header)
+  &--compact {
+    min-width: 160px;
+    max-width: 200px;
+    width: auto;
+
+    .volume-slider-container {
+      flex: 1;
+      max-width: 150px;
+      min-width: 100px;
+      display: flex;
+      align-items: center;
+    }
+
+    // In the simple header layout, allow wider volume control
+    .header--simple & {
+      max-width: none;
+      min-width: 50%;
+      width: 90%;
+
+      .volume-slider-container {
+        max-width: none;
+        min-width: 50%;
+        width: 85%;
+      }
+    }
+  }
+
+  // Normal size (for now-playing view)
+  &--normal {
+    width: 100%;
+    max-width: none;
+    min-width: 200px;
+
+    .volume-slider-container {
+      flex: 1;
+      max-width: none;
+      min-width: 150px;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  // Large size (for expanded/full-screen views)
+  &--large {
+    width: 100%;
+    max-width: none;
+    min-width: 300px;
+
+    .volume-slider-container {
+      flex: 1;
+      max-width: none;
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+    }
   }
 
   .volume-slider-container {
-    flex: 1;
-    max-width: 150px; // Increased from 120px
-    min-width: 100px; // Increased from 80px
-    display: flex;
-    align-items: center;
-
-    // In the simple header layout, make slider much wider
-    .header--simple & {
-      max-width: none; // Remove max-width constraint
-      min-width: 50%; // Take at least half of the container
-      width: 85%; // Use most of the container space for the slider
-    }
-
     // Counter the margin-top from is-on-header to center properly
     margin-top: -4px;
 

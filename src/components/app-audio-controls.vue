@@ -167,16 +167,6 @@ const toggleCurrentSongFavourite = () => {
     }
   }
 
-  // Styling for secondary buttons (shuffle, repeat) when not active
-  &__secondary:not(.active) svg {
-    color: var(--color-body-secondary); /* Lighter color instead of opacity */
-    @include icon-stroke-thin; /* Thinner stroke width (1px instead of 1.25px) */
-  }
-
-  svg.active#{$root}__secondary {
-    color: var(--primary);
-  }
-
   .heart-button {
     opacity: 0.4;
 
@@ -227,12 +217,6 @@ const toggleCurrentSongFavourite = () => {
       color: var(--main-audio-controls-separate);
       @include audio-control-stroke; /* Use mixin for consistent stroke width */
     }
-  }
-
-  // Styling for secondary buttons (shuffle, repeat) when not active in separate mode
-  &__secondary:not(.active) svg {
-    color: var(--color-body-secondary); /* Lighter color instead of opacity */
-    @include icon-stroke-thin; /* Thinner stroke width (1px instead of 1.25px) */
   }
 }
 </style>

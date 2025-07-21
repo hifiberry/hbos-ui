@@ -103,3 +103,20 @@ button {
     @include button-icon(40px);
   }
 }
+
+// Audio controls secondary buttons styling (shuffle, repeat)
+.app-audio-controls__secondary:not(.active) {
+  color: rgba(225, 30, 74, 0.4) !important; /* Lighter reddish tone (40% opacity of primary red) */
+
+  svg {
+    stroke-width: 1px !important; /* Thinner stroke for inactive state */
+  }
+}
+
+.app-audio-controls__secondary.active {
+  color: var(--primary) !important;
+
+  svg {
+    stroke-width: 1.25px !important; /* Normal stroke for active state */
+  }
+}

@@ -98,7 +98,7 @@ const goToNowPlaying = () => {
       flex: 1;
     }
   }
-  
+
   // Compact styling when used in header
   &.is-on-header {
     .song-control-info__box {

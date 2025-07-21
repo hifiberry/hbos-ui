@@ -1,5 +1,5 @@
 <template>
-  <div :class="['song-control-info', { card: isOnSticky }]">
+  <div :class="['song-control-info', { card: isOnSticky, 'is-on-header': isOnHeader }]">
     <div v-if="song" class="song-control-info__box" @click="goToNowPlaying">
       <div class="song-control-info__cover">
         <AppCover :src="rewrite_audiocontrol_api_url(song.cover_art_url || '')" :alt="song.artist || 'Artist'" />
@@ -41,9 +41,10 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
 
 interface AudioSongControlInfoProps {
   isOnSticky?: boolean
+  isOnHeader?: boolean
 }
 
-const { isOnSticky = false } = defineProps<AudioSongControlInfoProps>()
+const { isOnSticky = false, isOnHeader = false } = defineProps<AudioSongControlInfoProps>()
 
 const goToNowPlaying = () => {
   router.push({ name: 'now-playing' })
@@ -95,6 +96,15 @@ const goToNowPlaying = () => {
 
     &__attr {
       flex: 1;
+    }
+  }
+  
+  // Compact styling when used in header
+  &.is-on-header {
+    .song-control-info__box {
+      width: auto; // Don't take full width
+      max-width: 280px; // Limit to reasonable size
+      min-width: 200px; // Ensure minimum readable width
     }
   }
   &__attr {

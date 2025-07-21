@@ -306,6 +306,16 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  // Set volume for the current player
+  const setVolume = async (volume: number): Promise<boolean> => {
+    if (volume < 0 || volume > 100) {
+      console.error('Volume must be between 0 and 100')
+      return false
+    }
+
+    return await sendCommand(`set_volume:${Math.round(volume)}`)
+  }
+
   // Send a command to the library player (not the active player)
   const sendLibraryCommand = async (command: string): Promise<boolean> => {
     const libraryStore = useLibraryStore()
@@ -378,6 +388,7 @@ export const usePlayerStore = defineStore('player', () => {
     retrieveActivePlayer,
     sendCommand,
     sendLibraryCommand,
+    setVolume,
     // Favourites
     checkCurrentSongFavouriteStatus,
     toggleCurrentSongFavourite,

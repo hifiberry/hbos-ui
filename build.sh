@@ -89,4 +89,4 @@ echo "Build artifacts cleaned up"
 
 echo "Package built successfully"
 echo "Built packages:"
-ls -la *.deb 2>/dev/null || echo "No packages found"
+ls -la *.deb 2>/dev/null

@@ -572,3 +572,25 @@
     }
   }
 }
+
+// Icon stroke width mixins
+@mixin icon-stroke-thin {
+  stroke-width: 1;
+}
+
+@mixin icon-stroke-normal {
+  stroke-width: 1.25;
+}
+
+@mixin icon-stroke-medium {
+  stroke-width: 1.5;
+}
+
+@mixin icon-stroke-bold {
+  stroke-width: 2;
+}
+
+// Default thin stroke for audio controls
+@mixin audio-control-stroke {
+  @include icon-stroke-normal;
+}

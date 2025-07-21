@@ -1,210 +1,210 @@
 <template>
-  <div class="now-playing-minimal">
-    <!-- Minimal now playing without header/sidebar -->
-    <div class="minimal-player">
-      <!-- Album art and main info -->
-      <div class="album-section">
-        <div class="album-cover">
-          <AppCover
-            v-if="song?.cover_art_url"
-            :src="rewrite_audiocontrol_api_url(song.cover_art_url)"
-            :alt="song?.artist || song?.title || 'Album cover'"
-            size="large"
-          />
-          <div v-else class="no-cover">
-            <AppIcon name="music" size="120" />
-          </div>
-        </div>
+  <div class="now-playing now-playing--minimal">
+    <!-- Hide the title in minimal view -->
+    <h1 class="now-playing__title" style="display: none;">
+      <router-link to="/now-playing-minimal" class="title-link">
+        Now Playing
+        <span class="minimal-hint">Switch to minimal view</span>
+      </router-link>
+    </h1>
 
-        <div class="track-info">
-          <h1 class="track-title">{{ song?.title || 'No title' }}</h1>
-          <h2 class="track-artist">{{ song?.artist || 'Unknown artist' }}</h2>
-          <h3 class="track-album">{{ song?.album || 'Unknown album' }}</h3>
-        </div>
+    <div class="now-playing__player">
+      <AppCover
+        class="now-playing__cover"
+        :src="rewrite_audiocontrol_api_url(song?.cover_art_url || '')"
+        :alt="song?.artist || song?.title || 'Now Playing'"
+      />
+
+      <div class="now-playing__info">
+        <h2 v-if="song?.title">{{ song.title }}</h2>
+        <p v-if="song?.artist">{{ song.artist }}</p>
       </div>
 
-      <!-- Player controls -->
-      <div class="player-controls">
-        <AppAudioControls />
-        <AppProgressControl class="progress-control" isDraggable />
-      </div>
+      <AppAudioControls class="now-playing__audio-controls" />
+
+      <AppProgressControl class="now-playing__progress-control" isDraggable />
 
       <!-- Volume control -->
-      <div class="volume-section">
-        <AppVolumeControl size="normal" />
+      <div class="now-playing__volume">
+        <AppVolumeControl size="wide" />
       </div>
+    </div>
 
-      <!-- Exit hint -->
-      <div class="exit-hint">
-        Use browser back button to return to normal view
-      </div>
+    <!-- Exit hint for minimal view -->
+    <div class="exit-hint">
+      Use browser back button to return to normal view
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { usePlayerStore } from '@/stores/player'
-import { rewrite_audiocontrol_api_url } from '@/api/player'
 import AppCover from '@/components/app-cover.vue'
-import AppIcon from '@/components/app-icon.vue'
-import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
+import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppVolumeControl from '@/components/app-volume-control.vue'
+import { rewrite_audiocontrol_api_url } from '@/api/player'
 
-const playerStore = usePlayerStore()
-const { currentSong: song } = storeToRefs(playerStore)
+import { storeToRefs } from 'pinia'
+import { usePlayerStore } from '@/stores/player.ts'
+
+const { currentSong: song } = storeToRefs(usePlayerStore())
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 @use '@/assets/scss/mixins' as *;
 
-.now-playing-minimal {
-  height: 100vh;
-  width: 100vw;
-  background: var(--background-primary);
-  color: var(--color-text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.minimal-player {
+.now-playing {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  max-width: 90vw;
-  width: 100%;
+  min-width: 100%;
   height: 100%;
-  padding: 20px;
-  text-align: center;
-  gap: 20px;
-}
 
-.album-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  flex: 1;
-  justify-content: center;
-}
+  // Minimal view specific overrides
+  &--minimal {
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: var(--background-primary);
+    z-index: 1000;
+  }
 
-.album-cover {
-  width: 400px;
-  height: 400px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  &__title {
+    @include media-down(sm) {
+      display: none;
+    }
 
-  .no-cover {
-    width: 100%;
-    height: 100%;
-    background: var(--background-secondary);
+    .title-link {
+      color: var(--color-text);
+      text-decoration: none;
+      position: relative;
+      display: inline-block;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: var(--color-accent);
+        cursor: pointer;
+
+        .minimal-hint {
+          opacity: 1;
+          visibility: visible;
+        }
+      }
+    }
+
+    .minimal-hint {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--background-secondary);
+      color: var(--color-text-secondary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 400;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 4px solid transparent;
+        border-bottom-color: var(--background-secondary);
+      }
+    }
+  }
+
+  &__player {
     display: flex;
+    flex-grow: 1;
+    flex-direction: column;
     align-items: center;
+    border-radius: 10px;
+    padding: $padding-main-content;
+    padding-top: 32px;
+    background-color: var(--background-main-content);
+    box-shadow: $box-shadow-main-content;
+
+    // Minimal view adjustments
+    .now-playing--minimal & {
+      background-color: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      justify-content: center;
+      height: 100%;
+    }
+
+    @include media-down(sm) {
+      padding-top: 24px;
+    }
+  }
+
+  &__cover {
+    height: calc(100vh - 500px);
+    min-height: 120px;
+    overflow: hidden;
+
+    flex: 1 1 auto;
+    margin-top: auto;
+    margin-bottom: 32px;
+
+    @include media-down(sm) {
+      margin-bottom: 24px;
+    }
+  }
+
+  &__info {
+    margin-top: auto;
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 20px; /* Add space between track info and controls */
+  }
+
+  &__progress-control {
+    width: 60%;
+    margin-bottom: 32px;
+
+    @include media-down(lg) {
+      width: 80%;
+    }
+
+    @include media-down(md) {
+      width: 100%;
+    }
+  }
+
+  &__audio-controls {
+    margin-bottom: 20px;
+  }
+
+  &__volume {
+    width: 66%; /* Increased from 60% - now 10% wider */
+    max-width: 440px; /* Increased from 400px proportionally */
+    display: flex;
     justify-content: center;
-    color: var(--color-text-secondary);
-  }
+    margin-bottom: 40px; /* 40px space at bottom */
 
-  @include media-down(lg) {
-    width: 350px;
-    height: 350px;
-  }
-
-  @include media-down(md) {
-    width: 300px;
-    height: 300px;
-  }
-
-  @include media-down(sm) {
-    width: 250px;
-    height: 250px;
-  }
-}
-
-.track-info {
-  max-width: 600px;
-
-  .track-title {
-    font-size: 2.5rem;
-    font-weight: 600;
-    margin: 0 0 10px 0;
-    color: var(--color-text);
+    @include media-down(lg) {
+      width: 88%; /* Increased from 80% proportionally */
+    }
 
     @include media-down(md) {
-      font-size: 2rem;
-    }
-
-    @include media-down(sm) {
-      font-size: 1.5rem;
-    }
-  }
-
-  .track-artist {
-    font-size: 1.5rem;
-    font-weight: 400;
-    margin: 0 0 8px 0;
-    color: var(--color-text-secondary);
-
-    @include media-down(md) {
-      font-size: 1.25rem;
-    }
-
-    @include media-down(sm) {
-      font-size: 1rem;
-    }
-  }
-
-  .track-album {
-    font-size: 1.125rem;
-    font-weight: 300;
-    margin: 0;
-    color: var(--color-text-tertiary);
-
-    @include media-down(md) {
-      font-size: 1rem;
-    }
-
-    @include media-down(sm) {
-      font-size: 0.875rem;
+      width: 100%; /* Keep at 100% on mobile */
     }
   }
 }
 
-.player-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  width: 100%;
-  max-width: 600px;
-
-  .progress-control {
-    width: 100%;
-  }
-}
-
-.volume-section {
-  width: 70%; /* 70% of the progress control width */
-  max-width: 420px; /* 70% of 600px */
-  display: flex;
-  justify-content: center;
-
-  :deep(.volume-control) {
-    max-width: none;
-    width: 100%;
-    justify-content: center;
-
-    .volume-slider-container {
-      max-width: 280px; /* 70% of 400px */
-      min-width: 175px; /* 70% of 250px */
-    }
-  }
-}
-
+// Exit hint for minimal view
 .exit-hint {
   position: absolute;
   bottom: 15px;

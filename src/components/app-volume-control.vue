@@ -37,7 +37,7 @@ import AppProgressSlider from '@/components/app-progress-slider.vue'
 
 // Props for size variants
 interface Props {
-  size?: 'compact' | 'normal' | 'large'
+  size?: 'compact' | 'normal' | 'wide' | 'large'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -100,12 +100,27 @@ const handleVolumeChange = (newVolume: number) => {
   &--normal {
     width: 100%;
     max-width: none;
-    min-width: 200px;
+    min-width: 220px; // Increased from 200px
 
     .volume-slider-container {
       flex: 1;
       max-width: none;
-      min-width: 150px;
+      min-width: 180px; // Increased from 150px
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  // Wide size (for now-playing view - 10% wider than normal)
+  &--wide {
+    width: 100%;
+    max-width: none;
+    min-width: 250px; // Even wider than normal
+
+    .volume-slider-container {
+      flex: 1;
+      max-width: none;
+      min-width: 220px; // Significantly wider slider
       display: flex;
       align-items: center;
     }
@@ -151,7 +166,7 @@ const handleVolumeChange = (newVolume: number) => {
   }
 }
 
-@include media-down(lg) {
+@include media-down(md) {
   .volume-control {
     display: none;
   }

@@ -34,6 +34,7 @@ export interface CurrentPlayer {
   shuffle: boolean | undefined
   loop_mode?: LoopMode
   position?: number | null // 9.561
+  volume?: number // 0-100
 }
 
 // Default player capabilities

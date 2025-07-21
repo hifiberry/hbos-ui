@@ -18,13 +18,13 @@
     <!-- Spacer 2 (only show when player controls are visible) -->
     <div v-if="isPlayerControls" class="header-spacer"></div>
 
-    <!-- Column 3: Volume Control -->
-    <div class="header-column header-column--volume">
+    <!-- Column 3: Volume Control (only show when player controls are visible) -->
+    <div v-if="isPlayerControls" class="header-column header-column--volume">
       <AppVolumeControl size="compact" />
     </div>
 
-    <!-- Spacer 3 -->
-    <div class="header-spacer"></div>
+    <!-- Spacer 3 (only show when player controls are visible) -->
+    <div v-if="isPlayerControls" class="header-spacer"></div>
 
     <!-- Column 4: Dark Mode Toggle -->
     <div class="header-column header-column--actions">
@@ -71,9 +71,9 @@ header {
   z-index: 9;
   width: 100%;
 
-  // Simple layout for now-playing screen (no player controls)
+  // Simple layout for now-playing screen (no player controls, no volume)
   &.header--simple {
-    grid-template-columns: 160px 1fr 40% 1fr 160px; // Logo, spacer, volume (40% of screen), spacer, dark-mode
+    grid-template-columns: 160px 1fr 160px; // Logo, spacer, dark-mode
   }
 
   @include media-down(lg) {

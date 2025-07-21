@@ -25,7 +25,7 @@
 
       <!-- Volume control -->
       <div class="now-playing__volume">
-        <AppVolumeControl size="normal" />
+        <AppVolumeControl size="wide" />
       </div>
     </div>
   </div>
@@ -160,18 +160,18 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
   }
 
   &__volume {
-    width: 60%; /* Match the progress control width */
-    max-width: 400px; /* Match the progress control max-width */
+    width: 66%; /* Increased from 60% - now 10% wider */
+    max-width: 440px; /* Increased from 400px proportionally */
     display: flex;
     justify-content: center;
     margin-bottom: 40px; /* 40px space at bottom */
 
     @include media-down(lg) {
-      width: 80%; /* Match the progress control width on lg */
+      width: 88%; /* Increased from 80% proportionally */
     }
 
     @include media-down(md) {
-      width: 100%; /* Match the progress control width on md */
+      width: 100%; /* Keep at 100% on mobile */
     }
   }
 }

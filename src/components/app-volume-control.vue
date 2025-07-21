@@ -62,12 +62,26 @@ const handleVolumeChange = (newVolume: number) => {
   max-width: 200px;
   width: auto; // Don't try to fill container
 
+  // In the simple header layout (now-playing), allow wider volume control
+  .header--simple & {
+    max-width: none; // Remove max-width constraint
+    min-width: 50%; // Take at least half of the available space
+    width: 90%; // Use 90% of the allocated column space
+  }
+
   .volume-slider-container {
     flex: 1;
-    max-width: 120px;
-    min-width: 80px;
+    max-width: 150px; // Increased from 120px
+    min-width: 100px; // Increased from 80px
     display: flex;
     align-items: center;
+
+    // In the simple header layout, make slider much wider
+    .header--simple & {
+      max-width: none; // Remove max-width constraint
+      min-width: 50%; // Take at least half of the container
+      width: 85%; // Use most of the container space for the slider
+    }
 
     // Counter the margin-top from is-on-header to center properly
     margin-top: -4px;
@@ -82,7 +96,7 @@ const handleVolumeChange = (newVolume: number) => {
     color: var(--color-icon);
     transition: all 0.2s linear;
     @include audio-control-stroke;
-    
+
     &--mute {
       opacity: 0.6;
     }

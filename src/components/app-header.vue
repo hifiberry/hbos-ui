@@ -1,5 +1,5 @@
 <template>
-  <header>
+  <header :class="{ 'header--simple': !isPlayerControls }">
     <!-- Column 1: Logo -->
     <div class="header-column header-column--logo">
       <router-link to="/">
@@ -11,16 +11,16 @@
     <div class="header-spacer"></div>
 
     <!-- Column 2: Song Info + Player Controls Combined -->
-    <div class="header-column header-column--player">
-      <AppSongControlInfo v-if="isPlayerControls" isOnHeader />
+    <div v-if="isPlayerControls" class="header-column header-column--player">
+      <AppSongControlInfo isOnHeader />
     </div>
 
-    <!-- Spacer 2 -->
-    <div class="header-spacer"></div>
+    <!-- Spacer 2 (only show when player controls are visible) -->
+    <div v-if="isPlayerControls" class="header-spacer"></div>
 
     <!-- Column 3: Volume Control -->
     <div class="header-column header-column--volume">
-      <AppVolumeControl v-if="isPlayerControls" />
+      <AppVolumeControl />
     </div>
 
     <!-- Spacer 3 -->
@@ -62,7 +62,7 @@ header {
   padding: 20px 15px;
   border-bottom: 1px solid var(--color-header-border);
   display: grid;
-  grid-template-columns: 160px 1fr auto 1fr 200px 1fr 40px; // Logo (147px + padding), spacer, player, spacer, volume, spacer, dark-mode
+  grid-template-columns: 160px 1fr auto 1fr 200px 1fr 160px; // Logo (147px + padding), spacer, player, spacer, volume, spacer, dark-mode (same width as logo)
   align-items: center;
   height: 80px;
   position: fixed;
@@ -70,6 +70,11 @@ header {
   left: 0;
   z-index: 9;
   width: 100%;
+
+  // Simple layout for now-playing screen (no player controls)
+  &.header--simple {
+    grid-template-columns: 160px 1fr 40% 1fr 160px; // Logo, spacer, volume (40% of screen), spacer, dark-mode
+  }
 
   @include media-down(lg) {
     background-color: transparent;
@@ -127,7 +132,7 @@ header {
     justify-content: center;
 
     @include media-down(lg) {
-      display: none;
+      flex: 0 0 auto;
     }
   }
 
@@ -161,7 +166,7 @@ header {
   min-width: auto !important;
   width: auto !important;
   height: auto !important;
-  
+
   .dark-mode-icon {
     color: var(--color-icon);
     opacity: 0.8;

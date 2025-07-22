@@ -39,6 +39,44 @@
             >
               Cancel
             </button>
+            <!-- Settings caret -->
+            <div class="settings-expand">
+              <div class="expand-caret" @click="toggleSettingsExpanded">
+                <AppIcon icon="caret-down" class="settings-caret" :class="{ expanded: isSettingsExpanded }" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div v-if="isSettingsExpanded" class="settings-section">
+          <div class="settings-content">
+            <div class="settings-form">
+              <div class="setting-option">
+                <span class="setting-label">Enable scrobbling:</span>
+                <label class="toggle-switch disabled">
+                  <input
+                    type="checkbox"
+                    v-model="settingsStore.getLastfmSettings.scrobble"
+                    @change="saveLastfmSettings"
+                    disabled
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-option">
+                <span class="setting-label">Manage favourites:</span>
+                <label class="toggle-switch disabled">
+                  <input
+                    type="checkbox"
+                    v-model="settingsStore.getLastfmSettings.manageFavourites"
+                    @change="saveLastfmSettings"
+                    disabled
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -74,6 +112,10 @@ import {
   completeLastFMAuth,
   disconnectLastFM
 } from '@/api/lastfm'
+import { useSettingsStore } from '@/stores/settings'
+
+// Store
+const settingsStore = useSettingsStore()
 
 // State
 const isConnected = ref(false)
@@ -84,6 +126,9 @@ const isAuthInProgress = ref(false)
 const errorMessage = ref('')
 const statusMessage = ref('Checking Last.fm connection status...')
 const authProgressStep = ref('Waiting for redirection...')
+
+// Settings state
+const isSettingsExpanded = ref(false)
 
 // Polling
 let authPollInterval: number | null = null
@@ -287,6 +332,23 @@ const abortAuth = () => {
   authProgressStep.value = 'Waiting for redirection...'
 }
 
+// Settings methods
+const toggleSettingsExpanded = () => {
+  isSettingsExpanded.value = !isSettingsExpanded.value
+}
+
+const saveLastfmSettings = async () => {
+  try {
+    await settingsStore.updateLastfmSettings({
+      scrobble: settingsStore.getLastfmSettings.scrobble,
+      manageFavourites: settingsStore.getLastfmSettings.manageFavourites
+    })
+    console.log('Last.fm settings saved successfully')
+  } catch (error) {
+    console.error('Failed to save Last.fm settings:', error)
+  }
+}
+
 const checkStatus = async () => {
   updateStatus('Checking Last.fm connection status...')
   console.log('Checking Last.fm status...')
@@ -324,8 +386,13 @@ const checkStatus = async () => {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   console.log('Last.fm component mounted')
+
+  // Initialize settings store
+  if (!settingsStore.loaded) {
+    await settingsStore.loadSettings()
+  }
 
   // Check if there's an ongoing authorization that should be aborted due to page refresh
   const storedToken = localStorage.getItem(LASTFM_TOKEN_KEY)
@@ -438,6 +505,72 @@ onUnmounted(() => {
 
     .error-content {
       @include service-error-box;
+    }
+  }
+
+  // Settings section styles
+  .settings-expand {
+    display: flex;
+    align-items: center;
+    margin-left: 8px;
+
+    .expand-caret {
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: rgba(var(--color-surface-rgb), 0.5);
+      }
+    }
+
+    .settings-caret {
+      width: 16px;
+      height: 16px;
+      color: var(--color-text-secondary);
+      transition: transform 0.2s ease;
+
+      &.expanded {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  .settings-section {
+    @include service-content-section;
+    border-top: 1px solid var(--color-border);
+
+    .settings-content {
+      padding: 20px;
+
+      h4 {
+        margin: 0 0 16px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-head);
+      }
+    }
+
+    .settings-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .setting-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+
+        .setting-label {
+          font-size: 14px;
+          color: var(--color-text);
+          font-weight: 500;
+        }
+      }
+
+      @include service-toggle-switch;
     }
   }
 }

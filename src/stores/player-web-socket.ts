@@ -296,8 +296,6 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     // Subscribe to volume events (these are system-wide, not player-specific)
     wsController.value.subscribe('*', [
       'volume_changed',
-      'volume_state_changed',
-      'volume_available_changed',
     ])
   }
 
@@ -328,17 +326,10 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     }
 
     // Handle volume events (system-wide events)
-    if (eventType === 'volume_changed' || eventType === 'volume_state_changed') {
+    if (eventType === 'volume_changed') {
       console.log('Volume event received:', eventType, data)
       // Refresh volume state when volume changes
       playerStore.fetchVolumeState()
-      return
-    }
-
-    if (eventType === 'volume_available_changed') {
-      console.log('Volume availability changed:', data)
-      // Re-initialize volume control when availability changes
-      playerStore.initializeVolumeControl()
       return
     }
 

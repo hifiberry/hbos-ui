@@ -53,6 +53,7 @@
  
 # Phase 5
 
+* log, loglog, lin volume control settings
 * Support for additional meta data in "Now playing" (format, sample rate, ...)
 * volume limit, mono/stereo, ... (using Pipewire and ALSA)
 * Show library loading progress

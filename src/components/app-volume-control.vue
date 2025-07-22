@@ -45,11 +45,9 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const playerStore = usePlayerStore()
-const { currentData } = storeToRefs(playerStore)
+const { currentVolume } = storeToRefs(playerStore)
 
 // Computed properties
-const currentVolume = computed(() => currentData.value?.volume ?? 50)
-
 const displayVolume = computed(() => {
   return currentVolume.value
 })

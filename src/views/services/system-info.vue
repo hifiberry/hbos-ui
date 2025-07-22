@@ -167,10 +167,7 @@
                       {{ getProviderStatusText(provider) }}
                     </span>
                     <span v-if="provider.favourite_count !== null" class="favourites-count">
-                      ({{ provider.favourite_count }} favourites)
-                    </span>
-                    <span v-else class="favourites-count">
-                      (count unavailable)
+                      ({{ provider.favourite_count }} favourite{{ provider.favourite_count !== 1 ? 's' : '' }})
                     </span>
                   </div>
                 </td>

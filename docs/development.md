@@ -47,7 +47,6 @@
 * Settings/Others
   * change system name **done**
   * System Information **done**
-  * reset system
  
 # Phase 5
 

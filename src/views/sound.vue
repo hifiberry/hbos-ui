@@ -5,13 +5,12 @@
     <!-- Frequency Graph Card -->
     <div class="card">
       <div class="graph">
-        <canvas ref="frequencyChart"></canvas>
+        <ApexChart type="line" height="300" :options="chartOptions" :series="chartSeries" />
       </div>
     </div>
 
     <div class="card mt-3">
       <div class="equaliser-panel">
-
         <!-- Channel Tabs -->
         <div class="tabs">
           <button :class="['tab', { active: activeChannel === 'left' }]" @click="setActiveChannel('left')">
@@ -22,19 +21,14 @@
           </button>
         </div>
 
+        <!-- Filters Panel -->
         <div class="filters">
           <div class="filter-header-wrapper">
             <h3 class="channel-title">{{ activeChannel === 'left' ? 'Left Channel' : 'Right Channel' }}</h3>
             <div class="more-option">
-              <div>
-                <AppIcon icon="link-unlinked" />
-              </div>
-              <div>
-                <AppIcon icon="ear" />
-              </div>
-              <div>
-                <AppIcon icon="more" />
-              </div>
+              <AppIcon icon="link-unlinked" />
+              <AppIcon icon="ear" />
+              <AppIcon icon="more" />
             </div>
           </div>
 
@@ -45,7 +39,6 @@
               <AppIcon :icon="filter.icon" :class="filter.icon === 'filter-peak' ? 'icon-stroke' : ''" />
               <div v-if="filter.text" class="filter-text">{{ filter.text }}</div>
             </button>
-
             <button class="filter active" @click="addNewFilter">
               <AppIcon icon="plus" />
             </button>
@@ -73,6 +66,7 @@
           </div>
         </div>
 
+        <!-- Controls -->
         <div class="filter-control">
           <div class="control-grid">
             <div class="control-item">
@@ -108,6 +102,7 @@
           </div>
         </div>
 
+        <!-- Presets -->
         <div class="filters">
           <div class="filter-header-wrapper">
             <h3 class="channel-title">Presets</h3>
@@ -126,27 +121,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { Chart, registerables } from 'chart.js';
+import { ref, watchEffect } from 'vue';
 import AppIcon from '@/components/app-icon.vue';
-
-Chart.register(...registerables);
+import ApexChart from 'vue3-apexcharts';
 
 const activeChannel = ref<'left' | 'right'>('left');
-function setActiveChannel(channel: 'left' | 'right') {
-  activeChannel.value = channel;
-}
-
 const filters = ref([
   { id: 1, icon: 'filter-peak-up', text: '164' },
   { id: 2, icon: 'filter-peak', text: '164' },
   { id: 3, icon: 'filter-peak-down', text: '164' },
   { id: 4, icon: 'filter-peak-down', text: '164' },
   { id: 5, icon: 'filter-peak-down', text: '164' },
-  { id: 6, icon: 'filter-peak', text: '164' },
+  { id: 6, icon: 'filter-peak', text: '164' }
 ]);
 
 const activeFilter = ref<number | null>(filters.value[0].id);
+const frequency = ref(1000);
+const gain = ref(10);
+const widthType = ref<'narrow' | 'wide'>('narrow');
+
+function setActiveChannel(channel: 'left' | 'right') {
+  activeChannel.value = channel;
+}
 function setActiveFilter(id: number) {
   activeFilter.value = id;
 }
@@ -155,9 +151,6 @@ function addNewFilter() {
   filters.value.push({ id: newId, icon: 'filter-peak', text: '164' });
   activeFilter.value = newId;
 }
-
-const frequency = ref(1000);
-const gain = ref(0);
 function incrementFrequency() {
   frequency.value += 1000;
 }
@@ -170,63 +163,96 @@ function incrementGain() {
 function decrementGain() {
   gain.value -= 1;
 }
+function toggleWidth() {
+  widthType.value = widthType.value === 'narrow' ? 'wide' : 'narrow';
+}
 
-const frequencyChart = ref(null);
-onMounted(() => {
-  if (frequencyChart.value) {
-    new Chart(frequencyChart.value, {
-      type: 'line',
-      data: {
-        labels: [10, 50, 100, 500, 1000, 5000, 10000, 20000],
-        datasets: [
-          {
-            label: 'Frequency Response',
-            data: [0, 3, 1, -1, -2, 0, 2, -1],
-            borderColor: '#666',
-            borderWidth: 1,
-            pointRadius: 0,
-            tension: 0.3,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: {
-          padding: 0,
-        },
-        scales: {
-          x: {
-            type: 'logarithmic',
-            ticks: {
-              callback: val => `${val}Hz`,
-              color: '#aaa',
-            },
-            grid: {
-              color: '#333',
-            },
-          },
-          y: {
-            min: -15,
-            max: 15,
-            ticks: {
-              stepSize: 5,
-              color: '#aaa',
-            },
-            grid: {
-              color: '#333',
-            },
-          },
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: { enabled: false },
-        },
-      },
-    });
+function formatHz(val: string | number) {
+  return `${val} Hz`;
+}
+
+function getEQCurve(icon: string, freq: number, gain: number) {
+  const base = [10, 50, 100, 500, 1000, 5000, 10000, 20000];
+  const widthFactor = widthType.value === 'narrow' ? 2 : 1;
+
+  return base.map((x) => {
+    const d = Math.log10(x / freq);
+    const response = icon === 'filter-peak-up'
+      ? gain * Math.exp(-Math.pow(d * widthFactor, 2))
+      : icon === 'filter-peak-down'
+      ? -Math.abs(gain) * Math.exp(-Math.pow(d * widthFactor, 2))
+      : gain * 0.5 * Math.exp(-Math.pow(d * widthFactor, 2));
+    return parseFloat(response.toFixed(1));
+  });
+}
+
+const chartSeries = ref([
+  {
+    name: 'EQ Curve',
+    type: 'area',
+    data: getEQCurve(filters.value[0].icon, frequency.value, gain.value)
+  },
+  {
+    name: 'Reference',
+    type: 'area',
+    data: [5, 10, 15, 10, 5, 0, -5, -10]
+  }
+]);
+
+const chartOptions = ref({
+  chart: {
+    type: 'area',
+    height: '100%',
+    toolbar: { show: false },
+    zoom: { enabled: false }
+  },
+  stroke: {
+    curve: 'smooth',
+    width: [2, 2],
+    colors: ['#00b8ff', '#ff69b4']
+  },
+  fill: {
+    type: ['gradient', 'gradient'],
+    gradient: {
+      shadeIntensity: 1,
+      opacityFrom: 0.4,
+      opacityTo: 0.05,
+      stops: [0, 90, 100]
+    },
+    opacity: [0.4, 0.2],
+    colors: ['#00b8ff', '#ff69b4']
+  },
+  colors: ['#00b8ff', '#ff69b4'],
+  xaxis: {
+    type: 'category',
+    categories: [10, 50, 100, 500, 1000, 5000, 10000, 20000],
+    labels: {
+      formatter: formatHz,
+      style: { colors: '#aaa' }
+    }
+  },
+  yaxis: {
+    min: -60,
+    max: 60,
+    tickAmount: 6,
+    labels: { style: { colors: '#aaa' } }
+  },
+  dataLabels: { enabled: false },
+  grid: { borderColor: '#333' },
+  tooltip: { shared: true, intersect: false },
+  legend: { show: true }
+});
+
+watchEffect(() => {
+  const filter = filters.value.find(f => f.id === activeFilter.value);
+  if (filter) {
+    chartSeries.value[0].data = getEQCurve(filter.icon, frequency.value, gain.value);
   }
 });
 </script>
+
+
+
 
 <style scoped lang="scss">
 .sound {

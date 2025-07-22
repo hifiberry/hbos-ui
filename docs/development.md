@@ -25,6 +25,10 @@
   - remove the icon on each song **done**
 * Scroll bar with letters on the right for album and artist view **done**
 * Sorting & filtering for albums & artists **done**
+* Volume control
+* Reset systen
+* Force sound card detection or select sound card
+* Auto detect volume control and sound card
 
 # Phase 4
 
@@ -50,7 +54,7 @@
 # Phase 5
 
 * Support for additional meta data in "Now playing" (format, sample rate, ...)
-* volume control, limit, mono/stereo, ... (using Pipewire and ALSA)
+* volume limit, mono/stereo, ... (using Pipewire and ALSA)
 * Show library loading progress
 * Lyrics support - display lyrics in "Now playing"
 * Enable user to upload artist/album art

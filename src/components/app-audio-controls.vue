@@ -59,7 +59,7 @@
         class="app-audio-controls__secondary heart-button"
         :class="{ 'heart-button--active': currentSongIsFavourite }"
         :icon="currentSongIsFavourite ? 'lucide/heart-filled' : 'lucide/heart-outline'"
-        :title="currentSongIsFavourite ? 'Remove from favorites' : 'Add to favorites'"
+        :title="heartButtonTitle"
         :disabled="isSendingCommand || checkingFavourite"
         @click="toggleCurrentSongFavourite"
       />
@@ -70,6 +70,7 @@
 <script setup lang="ts">
 import AppIconButton from '@/components/app-icon-button.vue'
 import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
@@ -81,13 +82,33 @@ interface AppAudioControlsProps {
 const { isSeparate = false, isOnSticky = false } = defineProps<AppAudioControlsProps>()
 
 const playerStore = usePlayerStore()
-const { isSendingCommand, playerCapabilities: caps, currentSongIsFavourite, checkingFavourite } = storeToRefs(playerStore)
+const {
+  isSendingCommand,
+  playerCapabilities: caps,
+  currentSongIsFavourite,
+  currentSongFavouriteProviders,
+  checkingFavourite
+} = storeToRefs(playerStore)
 
 const audioControls = useAudioControls()
 
 const toggleCurrentSongFavourite = () => {
   playerStore.toggleCurrentSongFavourite()
 }
+
+// Computed property for heart button title with providers info
+const heartButtonTitle = computed(() => {
+  if (currentSongIsFavourite.value) {
+    const providers = currentSongFavouriteProviders.value
+    if (providers.length > 0) {
+      const serviceList = providers.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')
+      return `Remove from favorites (${serviceList})`
+    }
+    return 'Remove from favorites'
+  } else {
+    return 'Add to favorites'
+  }
+})
 </script>
 
 <style lang="scss">

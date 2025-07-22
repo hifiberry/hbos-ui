@@ -26,9 +26,7 @@
 * Scroll bar with letters on the right for album and artist view **done**
 * Sorting & filtering for albums & artists **done**
 * Volume control **done**
-* Reset systen
-* Force sound card detection or select sound card
-* Auto detect volume control and sound card
+* Auto detect volume control and sound card **done**
 
 # Phase 4
 
@@ -53,6 +51,8 @@
  
 # Phase 5
 
+* Reset systen
+* Force sound card detection or select sound card
 * log, loglog, lin volume control settings
 * Support for additional meta data in "Now playing" (format, sample rate, ...)
 * volume limit, mono/stereo, ... (using Pipewire and ALSA)

@@ -2,7 +2,7 @@
   <div :class="['song-control-info', { card: isOnSticky, 'is-on-header': isOnHeader }]">
     <div v-if="song" class="song-control-info__box" @click="goToNowPlaying">
       <div class="song-control-info__cover">
-        <AppCover :src="rewrite_audiocontrol_api_url(song.cover_art_url || '')" :alt="song.artist || 'Artist'" />
+        <AppCover :src="rewriteAudiocontrolApiUrl(song.cover_art_url || '')" :alt="song.artist || 'Artist'" />
       </div>
       <div class="song-control-info__attr">
         <div class="h3">
@@ -31,7 +31,7 @@ import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppCover from '@/components/app-cover.vue'
 import AppMarquee from '@/components/app-marquee.vue'
-import { rewrite_audiocontrol_api_url } from '@/api/player'
+import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'

@@ -85,6 +85,21 @@ export interface SetDtoverlayResponse {
   valid_overlays?: string[]
 }
 
+// Types for System Reboot
+export interface RebootRequest {
+  delay?: number
+}
+
+export interface RebootResponse {
+  status: 'success' | 'error'
+  message: string
+  data?: {
+    delay: number
+    scheduled: boolean
+  }
+  error?: string
+}
+
 /**
  * Get system information including Pi model, HAT details, and system UUID
  */
@@ -166,7 +181,31 @@ export const setSoundCardDtoverlay = async (request: SetDtoverlayRequest): Promi
   })
 
   const data = await response.json()
-  
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
+/**
+ * Reboot the system after an optional delay
+ */
+export const rebootSystem = async (request?: RebootRequest): Promise<RebootResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/system/reboot`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request || {}),
+  })
+
+  const data = await response.json()
+
   if (!response.ok) {
     throw new Error(data.message || `HTTP error! status: ${response.status}`)
   }

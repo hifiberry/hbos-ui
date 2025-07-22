@@ -115,7 +115,51 @@
             <tbody>
               <tr>
                 <td class="label">Name</td>
-                <td class="value">{{ systemInfo.soundcard.name }}</td>
+                <td class="value">
+                  <div v-if="!isEditingSoundCard" class="soundcard-display">
+                    <span>{{ transformSoundCardName(systemInfo.soundcard.name) }}</span>
+                    <button
+                      @click="startEditingSoundCard"
+                      class="edit-button"
+                      :disabled="loading"
+                    >
+                      <AppIcon icon="edit" :width="16" :height="16" />
+                    </button>
+                  </div>
+                  <div v-else class="soundcard-edit">
+                    <select
+                      v-model="selectedSoundCard"
+                      class="soundcard-select"
+                      :disabled="savingSoundCard"
+                    >
+                      <option
+                        v-for="card in availableSoundCards"
+                        :key="card.dtoverlay"
+                        :value="card.dtoverlay"
+                      >
+                        {{ transformSoundCardName(card.name) }}
+                      </option>
+                    </select>
+                    <div class="editable-actions">
+                      <button
+                        @click="saveSoundCard"
+                        class="save-button"
+                        :disabled="savingSoundCard || !selectedSoundCard"
+                        :title="savingSoundCard ? 'Saving...' : 'Save'"
+                      >
+                        <AppIcon icon="checkmark" :width="16" :height="16" />
+                      </button>
+                      <button
+                        @click="cancelEditingSoundCard"
+                        class="cancel-button"
+                        :disabled="savingSoundCard"
+                        title="Cancel"
+                      >
+                        <AppIcon icon="close" :width="16" :height="16" />
+                      </button>
+                    </div>
+                  </div>
+                </td>
               </tr>
               <tr>
                 <td class="label">Volume Control</td>
@@ -177,13 +221,86 @@
         </div>
       </div>
     </div>
+
+    <!-- Sound Card Warning Dialog -->
+    <div v-if="showSoundCardWarning" class="warning-overlay">
+      <div class="warning-dialog">
+        <div class="warning-header">
+          <AppIcon icon="bell" class="warning-icon" />
+          <h3>Warning: Sound Card Change</h3>
+        </div>
+        <div class="warning-content">
+          <p>
+            Selecting an incorrect sound card can make the system unusable and may require manual recovery.
+          </p>
+          <p>
+            Are you sure you want to proceed?
+          </p>
+        </div>
+        <div class="warning-actions">
+          <button
+            @click="showSoundCardWarning = false"
+            class="warning-btn warning-btn--cancel"
+          >
+            Cancel
+          </button>
+          <button
+            @click="loadSoundCards"
+            class="warning-btn warning-btn--confirm"
+          >
+            Proceed
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reboot Required Dialog -->
+    <div v-if="showRebootDialog" class="warning-overlay">
+      <div class="warning-dialog">
+        <div class="warning-header">
+          <AppIcon icon="checkmark" class="success-icon" />
+          <h3>Sound Card Updated</h3>
+        </div>
+        <div class="warning-content">
+          <p>
+            Sound card configuration updated successfully.
+          </p>
+          <p>
+            A reboot is required to activate the new settings.
+          </p>
+        </div>
+        <div class="warning-actions">
+          <button
+            @click="showRebootDialog = false"
+            class="warning-btn warning-btn--cancel"
+          >
+            Later
+          </button>
+          <button
+            @click="rebootSystemHandler"
+            class="warning-btn warning-btn--confirm"
+            :disabled="rebooting"
+          >
+            {{ rebooting ? 'Rebooting...' : 'Reboot Now' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
-import { getSystemInfo, updateHostname, type SystemInfo } from '@/api/system'
+import {
+  getSystemInfo,
+  updateHostname,
+  getSoundCards,
+  setSoundCardDtoverlay,
+  rebootSystem,
+  type SystemInfo,
+  type SoundCard
+} from '@/api/system'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 
@@ -191,6 +308,15 @@ import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 const loading = ref(true)
 const error = ref('')
 const systemInfo = ref<SystemInfo | null>(null)
+
+// Soundcard editing state
+const isEditingSoundCard = ref(false)
+const savingSoundCard = ref(false)
+const availableSoundCards = ref<SoundCard[]>([])
+const selectedSoundCard = ref('')
+const showSoundCardWarning = ref(false)
+const showRebootDialog = ref(false)
+const rebooting = ref(false)
 
 // Favourites composable
 const {
@@ -204,6 +330,18 @@ const {
 
 // Computed ref for hostname
 const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
+
+// Sound card name transformation
+const transformSoundCardName = (name: string): string => {
+  // Transform long names to shorter versions for display
+  const transformations: Record<string, string> = {
+    'Beocreate 4-Channel Amplifier': 'Beocreate',
+    'DAC+ Zero/Light/MiniAmp': 'DAC+ Zero'
+    // Add more transformations here as needed
+  }
+
+  return transformations[name] || name
+}
 
 // Hostname editing using composable
 const hostnameEditing = useEditableText(
@@ -245,6 +383,91 @@ const {
   cancelEditing: cancelEditingHostname,
   saveEdit: saveHostname
 } = hostnameEditing
+
+// Soundcard editing methods
+const startEditingSoundCard = async () => {
+  // Show warning first before loading sound cards
+  showSoundCardWarning.value = true
+}
+
+const loadSoundCards = async () => {
+  try {
+    const response = await getSoundCards()
+    if (response.status === 'success') {
+      availableSoundCards.value = response.data.soundcards
+      // Find current soundcard's dtoverlay
+      const currentCard = availableSoundCards.value.find(card =>
+        card.name === systemInfo.value?.soundcard.name
+      )
+      selectedSoundCard.value = currentCard?.dtoverlay || ''
+      isEditingSoundCard.value = true
+      showSoundCardWarning.value = false
+    }
+  } catch (err) {
+    console.error('Error loading sound cards:', err)
+    error.value = 'Failed to load available sound cards'
+    showSoundCardWarning.value = false
+  }
+}
+
+const cancelEditingSoundCard = () => {
+  isEditingSoundCard.value = false
+  selectedSoundCard.value = ''
+  showSoundCardWarning.value = false
+}
+
+const saveSoundCard = async () => {
+  if (!selectedSoundCard.value) return
+
+  savingSoundCard.value = true
+  try {
+    const response = await setSoundCardDtoverlay({
+      dtoverlay: selectedSoundCard.value,
+      remove_existing: true
+    })
+
+    if (response.status === 'success') {
+      if (response.data?.reboot_required) {
+        // Show reboot required modal
+        showRebootDialog.value = true
+      }
+
+      // Refresh system info
+      await fetchSystemInfo()
+      isEditingSoundCard.value = false
+      selectedSoundCard.value = ''
+    } else {
+      throw new Error(response.message || 'Failed to update sound card')
+    }
+  } catch (err) {
+    console.error('Error updating sound card:', err)
+    error.value = err instanceof Error ? err.message : 'Failed to update sound card'
+  } finally {
+    savingSoundCard.value = false
+  }
+}
+
+// Reboot system method
+const rebootSystemHandler = async () => {
+  rebooting.value = true
+  try {
+    const response = await rebootSystem({ delay: 5 })
+    
+    if (response.status === 'success') {
+      // Show success message and hide dialog after a short delay
+      setTimeout(() => {
+        showRebootDialog.value = false
+        // Optionally show a toast or notification that system is rebooting
+      }, 2000)
+    } else {
+      throw new Error(response.message || 'Failed to reboot system')
+    }
+  } catch (err) {
+    console.error('Error rebooting system:', err)
+    error.value = err instanceof Error ? err.message : 'Failed to reboot system'
+    rebooting.value = false
+  }
+}
 
 // Methods
 const fetchSystemInfo = async () => {
@@ -363,18 +586,20 @@ onMounted(() => {
 
               td {
                 padding: 12px 0;
-                vertical-align: top;
+                vertical-align: middle;
 
                 &.label {
                   font-weight: 500;
                   color: var(--color-body-secondary);
                   width: 40%;
                   padding-right: 16px;
+                  vertical-align: middle;
                 }
 
                 &.value {
                   color: var(--color-body);
                   font-family: 'Metropolis', sans-serif;
+                  vertical-align: middle;
 
                   &.uuid {
                     font-size: 0.9em;
@@ -394,14 +619,17 @@ onMounted(() => {
 .hostname-display {
   display: flex;
   align-items: center;
+  min-height: 28px; // Ensure consistent height
 
   span {
     margin-right: 8px;
+    line-height: 1.4;
   }
 
   .edit-button {
     @include button-icon(28px);
     color: var(--color-body-secondary);
+    flex-shrink: 0;
 
     &:hover:not(:disabled) {
       color: var(--color-primary);
@@ -411,6 +639,153 @@ onMounted(() => {
 
 .hostname-edit {
   @include editable-field;
+}
+
+// Soundcard editing styles
+.soundcard-display {
+  display: flex;
+  align-items: center;
+  min-height: 28px; // Ensure consistent height
+
+  span {
+    margin-right: 8px;
+    line-height: 1.4;
+  }
+
+  .edit-button {
+    @include button-icon(28px);
+    color: var(--color-body-secondary);
+    flex-shrink: 0;
+
+    &:hover:not(:disabled) {
+      color: var(--color-primary);
+    }
+  }
+}
+
+.soundcard-edit {
+  @include editable-field;
+
+  .soundcard-select {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--background-card);
+    color: var(--color-body);
+    font-family: 'Metropolis', sans-serif;
+    font-size: inherit;
+    min-width: 200px;
+    margin-right: 8px;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Warning dialog styles
+.warning-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .warning-dialog {
+    background: var(--background-card, #ffffff);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+    .warning-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+
+      .warning-icon {
+        width: 24px;
+        height: 24px;
+        color: var(--color-warning, #f59e0b);
+      }
+
+      .success-icon {
+        width: 24px;
+        height: 24px;
+        color: var(--color-success, #10b981);
+      }
+
+      h3 {
+        margin: 0;
+        color: var(--color-head, #111827);
+        font-size: 18px;
+      }
+    }
+
+    .warning-content {
+      margin-bottom: 20px;
+      line-height: 1.5;
+      color: var(--color-text, #374151);
+
+      p {
+        margin: 0 0 12px 0;
+      }
+    }
+
+    .warning-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+
+      .warning-btn {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        min-width: 80px;
+
+        &--cancel {
+          background: var(--color-body-secondary, #6b7280);
+          color: white;
+
+          &:hover {
+            background: var(--color-text, #374151);
+          }
+        }
+
+        &--confirm {
+          background: var(--color-warning, #f59e0b);
+          color: white;
+
+          &:hover:not(:disabled) {
+            background: var(--color-warning-dark, #d97706);
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+        }
+      }
+    }
+  }
 }
 
 // Favourites styles

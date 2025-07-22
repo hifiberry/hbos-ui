@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 import { usePlayerStore, PLAYER_CONFIG } from '@/stores/player'
 import { useDebounceFn } from '@vueuse/core'
 
-import { WS_DEVICE_IP, WS_PORT } from '@/constants/api.ts'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 import type {
   WsController,
@@ -14,6 +14,7 @@ import type {
 } from '@/types/web-socket'
 
 export const usePlayerWebSocket = defineStore('player-web-socket', () => {
+  const configStore = useAppConfigStore()
   const playerStore = usePlayerStore()
 
   // State
@@ -31,11 +32,17 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     }
 
     // Create a new WebSocket controller
-    wsController.value = createPlayerWebSocket({
-      // hostname: window.location.hostname,
-      hostname: WS_DEVICE_IP,
-      // port: window.location.port || 1080, // TODO uncomment when prod is ready
-      port: WS_PORT,
+    const wsUrl = configStore.getWsBaseUrl()
+    console.log('WebSocket URL from config:', wsUrl)
+
+    try {
+      const url = new URL(wsUrl)
+      console.log('Parsed WebSocket URL - hostname:', url.hostname, 'port:', url.port, 'pathname:', url.pathname)
+
+      wsController.value = createPlayerWebSocket({
+        hostname: url.hostname,
+        port: parseInt(url.port) || configStore.config.audiocontrol_api.devicePort,
+        apiPrefix: url.pathname,
       onConnect: () => {
         console.log('WebSocket connected')
         // Use async/await with the subscribe function
@@ -58,13 +65,18 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
 
     // Connect to the WebSocket
     wsController.value.connect()
+    } catch (error) {
+      console.error('Failed to parse WebSocket URL:', wsUrl, error)
+      // Don't create WebSocket controller if URL parsing fails
+      wsController.value = null
+    }
   }
 
   function createPlayerWebSocket(options: createPlayerWebSocketOptions) {
     let socket: WebSocket | null = null
     let reconnectTimer: number | undefined = undefined
 
-    const wsUrl = `ws://${options.hostname}:${options.port}/api/events`
+    const wsUrl = `ws://${options.hostname}:${options.port}${options.apiPrefix || '/api'}/events`
 
     // Connect to WebSocket
     const connect = () => {
@@ -195,14 +207,13 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     console.log('subscribeToPlayerEvents')
 
     if (!wsController.value) {
-      console.warn('Cannot subscribe to player events: No wsController')
-
+      console.warn('Cannot subscribe to player events: No wsController - will retry when connected')
       return
     }
 
     const socket = wsController.value.getSocket()
     if (!socket || socket.readyState !== WebSocket.OPEN) {
-      console.warn('Cannot subscribe to player events: WebSocket not open')
+      console.warn('Cannot subscribe to player events: WebSocket not open - will retry when connected')
       return
     }
 
@@ -260,6 +271,32 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
       'metadata_changed',
       'song_information_update',
     ])
+
+    // Also subscribe to volume events (system-wide events)
+    await subscribeToVolumeEvents()
+  }
+
+  // Subscribe to volume control events
+  async function subscribeToVolumeEvents() {
+    console.log('subscribeToVolumeEvents')
+
+    if (!wsController.value) {
+      console.warn('Cannot subscribe to volume events: No wsController')
+      return
+    }
+
+    const socket = wsController.value.getSocket()
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      console.warn('Cannot subscribe to volume events: WebSocket not open')
+      return
+    }
+
+    console.log('Subscribing to volume events')
+
+    // Subscribe to volume events (these are system-wide, not player-specific)
+    wsController.value.subscribe('*', [
+      'volume_changed',
+    ])
   }
 
   // ! using debounceHandlePlayerEvent
@@ -285,6 +322,14 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
       isActivePlayer = data.is_active_player
     } else {
       console.log('Unknown event format:', data)
+      return
+    }
+
+    // Handle volume events (system-wide events)
+    if (eventType === 'volume_changed') {
+      console.log('Volume event received:', eventType, data)
+      // Refresh volume state when volume changes
+      playerStore.fetchVolumeState()
       return
     }
 
@@ -542,6 +587,7 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     setupWebSocket,
     createPlayerWebSocket,
     subscribeToPlayerEvents,
+    subscribeToVolumeEvents,
     handlePlayerEvent,
     debounceHandlePlayerEvent,
   }

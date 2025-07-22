@@ -6,9 +6,10 @@ import { useToastStore } from '@/stores/toast'
 
 import type { LibraryPlayer, LibraryPlayerResponse } from '@/types/library'
 
-import { API_BASE_URL } from '@/constants/api.ts'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 export const useLibraryStore = defineStore('library', () => {
+  const configStore = useAppConfigStore()
   const toastStore = useToastStore()
 
   // State
@@ -17,12 +18,17 @@ export const useLibraryStore = defineStore('library', () => {
 
   // Getters
   const isAvailableLibrary = computed(() => Boolean(activeLibrary.value))
+  const isLibraryUpdating = computed(() => !isLibraryLoaded.value && Boolean(activeLibrary.value))
+
+  // State for library loading status
+  const isLibraryLoaded = ref<boolean>(false)
 
   // Actions
   const getAvailableLibrary = async () => {
     loading.value = true
 
-    const { error, data } = await useFetch<LibraryPlayerResponse>(`${API_BASE_URL}/library`).json()
+    const apiBase = configStore.getApiBaseUrl()
+    const { error, data } = await useFetch<LibraryPlayerResponse>(`${apiBase}/library`).json()
 
     if (error.value) {
       toastStore.showErrorToast(`Get Available Library Error: ${error.value}`)
@@ -46,28 +52,53 @@ export const useLibraryStore = defineStore('library', () => {
     if (availableLibrary) {
       console.log('Selected library player:', availableLibrary.player_name)
       activeLibrary.value = availableLibrary.player_name
+      isLibraryLoaded.value = availableLibrary.is_loaded
     } else {
       console.warn('No suitable library player found')
       activeLibrary.value = null
+      isLibraryLoaded.value = false
     }
 
     loading.value = false
     return Promise.resolve(activeLibrary.value)
   }
 
-  const getAlbumCover = (id: string) =>
-    `${API_BASE_URL}/library/${activeLibrary.value}/image/album:${id}`
+  // Method to refresh library status (useful for checking if library update has completed)
+  const refreshLibraryStatus = async () => {
+    if (!activeLibrary.value) {
+      return
+    }
+
+    const apiBase = configStore.getApiBaseUrl()
+    const { error, data } = await useFetch<LibraryPlayerResponse>(`${apiBase}/library`).json()
+
+    if (!error.value && data.value?.players) {
+      const currentPlayer = data.value.players.find((p: LibraryPlayer) => p.player_name === activeLibrary.value)
+      if (currentPlayer) {
+        isLibraryLoaded.value = currentPlayer.is_loaded
+        console.log(`Library ${activeLibrary.value} loaded status: ${isLibraryLoaded.value}`)
+      }
+    }
+  }
+
+  const getAlbumCover = (id: string) => {
+    const apiBase = configStore.getApiBaseUrl()
+    return `${apiBase}/library/${activeLibrary.value}/image/album:${id}`
+  }
 
   return {
     // Store
     loading,
     activeLibrary,
+    isLibraryLoaded,
 
     // Getters
     isAvailableLibrary,
+    isLibraryUpdating,
 
     // Actions
     getAvailableLibrary,
+    refreshLibraryStatus,
     getAlbumCover,
   }
 })

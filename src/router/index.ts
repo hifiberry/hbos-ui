@@ -76,6 +76,11 @@ const router = createRouter({
               name: 'music-files',
               component: () => import('@/views/services/music-files.vue'),
             },
+            {
+              path: 'system-info',
+              name: 'system-info',
+              component: () => import('@/views/services/system-info.vue'),
+            },
           ],
         },
         {
@@ -114,6 +119,11 @@ const router = createRouter({
           return { path: '/' }
         }
       },
+    },
+    {
+      path: '/now-playing-minimal',
+      name: 'now-playing-minimal',
+      component: () => import('@/views/now-playing-minimal.vue'),
     },
     {
       path: '/:pathMatch(.*)*',

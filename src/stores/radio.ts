@@ -1,5 +1,9 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { usePlayerStore } from '@/stores/player'
+import { useAppConfigStore } from '@/stores/appconfig'
+import { sendPlayerCommand, addTrackToPlayer } from '@/api/player'
+import { getConfigValue, setConfigValue } from '@/api/config'
 
 export interface RadioStation {
   id: string
@@ -133,8 +137,8 @@ export const useRadioStore = defineStore('radio', () => {
       searchResults.value[stationIndex].isFavorite = true
     }
 
-    // Save to localStorage
-    saveFavorites()
+    // Save to Config API
+    saveFavoritesToConfig()
   }
 
   const removeFromFavorites = (stationId: string) => {
@@ -146,8 +150,8 @@ export const useRadioStore = defineStore('radio', () => {
       searchResults.value[stationIndex].isFavorite = false
     }
 
-    // Save to localStorage
-    saveFavorites()
+    // Save to Config API
+    saveFavoritesToConfig()
   }
 
   const toggleFavorite = (station: RadioStation) => {
@@ -161,37 +165,70 @@ export const useRadioStore = defineStore('radio', () => {
   const editFavorite = (editedStation: RadioFavorite) => {
     if (favorites.value[editedStation.id]) {
       favorites.value[editedStation.id] = editedStation
-      saveFavorites()
+      saveFavoritesToConfig()
     }
   }
 
   const playStation = async (station: RadioStation | RadioFavorite) => {
     try {
-      // In a real implementation, this would communicate with your audio player
-      console.log('Playing radio station:', 'name' in station ? station.name : station.title, station.url)
+      const playerStore = usePlayerStore()
+      const configStore = useAppConfigStore()
 
-      // Here you would integrate with your existing player store
-      // For example:
-      // await playerStore.playUrl(station.url, station.name || station.title)
+      // Get the configured radio player (default: "mpd")
+      const radioPlayerName = configStore.radioPlayer()
+      const stationName = 'name' in station ? station.name : station.title
+
+      console.log('Playing radio station:', stationName, 'on player:', radioPlayerName)
+      console.log('Station URL:', station.url)
+
+      // Step 1: Pause the current player
+      console.log('Step 1: Pausing current player...')
+      await playerStore.sendCommand('pause')
+      console.log('Step 1: Current player paused')
+
+      // Step 2: Clear the queue of the radioPlayer
+      console.log('Step 2: Clearing radio player queue...')
+      await sendPlayerCommand(radioPlayerName, 'clear_queue')
+      console.log('Step 2: Radio player queue cleared')
+
+      // Step 3: Add the URL of the radio station to the queue of the radioPlayer
+      console.log('Step 3: Adding station URL to radio player queue...')
+      // Use the new addTrackToPlayer function with JSON payload
+      await addTrackToPlayer(radioPlayerName, station.url)
+      console.log('Step 3: Station URL added to radio player queue')
+
+      // Step 4: Send a "play" command to the radioPlayer
+      console.log('Step 4: Starting radio player playback...')
+      await sendPlayerCommand(radioPlayerName, 'play')
+      console.log('Step 4: Radio player playback started')
+
+      console.log('Successfully started radio playback')
 
     } catch (error) {
       console.error('Failed to play radio station:', error)
+      throw error
     }
   }
 
-  const saveFavorites = () => {
+  const saveFavoritesToConfig = async () => {
     try {
-      localStorage.setItem('radioFavorites', JSON.stringify(favorites.value))
+      const serializedFavorites = JSON.stringify(favorites.value)
+      const response = await setConfigValue('ui.radiostations', serializedFavorites)
+      if (response.status === 'success') {
+        console.log('Radio favorites saved to Config API')
+      } else {
+        console.error('Failed to save radio favorites to Config API:', response.message)
+      }
     } catch (error) {
-      console.error('Failed to save radio favorites:', error)
+      console.error('Failed to save radio favorites to Config API:', error)
     }
   }
 
-  const loadFavorites = () => {
+  const loadFavoritesFromConfig = async () => {
     try {
-      const saved = localStorage.getItem('radioFavorites')
-      if (saved) {
-        const loadedFavorites = JSON.parse(saved)
+      const response = await getConfigValue('ui.radiostations')
+      if (response.status === 'success' && response.data) {
+        const loadedFavorites = JSON.parse(response.data.value)
 
         // Migrate old favorites that might not have country and tags
         for (const favorite of Object.values(loadedFavorites)) {
@@ -205,9 +242,13 @@ export const useRadioStore = defineStore('radio', () => {
         }
 
         favorites.value = loadedFavorites
+        console.log('Radio favorites loaded from Config API')
+      } else {
+        console.log('No radio favorites found in Config API')
+        favorites.value = {}
       }
     } catch (error) {
-      console.error('Failed to load radio favorites:', error)
+      console.error('Failed to load radio favorites from Config API:', error)
       favorites.value = {}
     }
   }
@@ -219,7 +260,12 @@ export const useRadioStore = defineStore('radio', () => {
 
   // Initialize
   const initialize = async () => {
-    loadFavorites()
+    // Initialize configuration store
+    const configStore = useAppConfigStore()
+    await configStore.getConfig()
+
+    // Load favorites from Config API (with localStorage fallback)
+    await loadFavoritesFromConfig()
     await setRadioBrowserBaseUrl()
   }
 
@@ -244,6 +290,8 @@ export const useRadioStore = defineStore('radio', () => {
     toggleFavorite,
     playStation,
     clearSearchResults,
-    initialize
+    initialize,
+    saveFavoritesToConfig,
+    loadFavoritesFromConfig
   }
 })

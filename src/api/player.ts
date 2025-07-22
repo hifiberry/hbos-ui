@@ -1,58 +1,8 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { rewriteAudiocontrolApiUrl } from './utils'
 
-/**
- * Rewrite URLs that start with /api/ to use the full audiocontrol API prefix
- * This function helps to deal with reverse proxies that rewrite the API url without the API
- * server knowing the full path.
- * @param url - The URL to rewrite
- * @returns The rewritten URL with full API prefix
- */
-export const rewrite_audiocontrol_api_url = (url: string): string => {
-  if (!url || !url.startsWith('/api/')) {
-    return url
-  }
-
-  const configStore = useAppConfigStore()
-  const { useProxy } = configStore.apiConfig()
-
-  if (useProxy) {
-    // In development with proxy, just return the original URL
-    return url
-  }
-
-  // In production, use the full API base URL
-  const apiBaseUrl = configStore.getApiBaseUrl()
-
-  // Split the URL into parts to handle encoding properly
-  const urlParts = url.split('/')
-
-  // Encode each part of the path after /api/
-  const encodedParts = urlParts.map((part, index) => {
-    if (index <= 2) {
-      // Don't encode /api/ part
-      return part
-    }
-    // Encode the path segments properly
-    return encodeURIComponent(part)
-  })
-
-  // Reconstruct the URL with proper encoding
-  const encodedUrl = encodedParts.join('/')
-
-  // Replace /api/ with the full API base URL + /
-  const rewrittenUrl = encodedUrl.replace('/api/', `${apiBaseUrl}/`)
-
-  // Debug logging to understand what's happening in production
-  console.log('URL rewriting:', {
-    original: url,
-    encoded: encodedUrl,
-    rewritten: rewrittenUrl,
-    apiBaseUrl,
-    config: configStore.apiConfig()
-  })
-
-  return rewrittenUrl
-}
+// Re-export for backward compatibility
+export const rewrite_audiocontrol_api_url = rewriteAudiocontrolApiUrl
 
 /**
  * Add a track to a player's queue using JSON payload

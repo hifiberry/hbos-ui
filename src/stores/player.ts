@@ -8,6 +8,16 @@ import { usePlayerWebSocket } from '@/stores/player-web-socket'
 import { usePlayerChangesStore } from '@/stores/player-changes'
 import { addTrackToPlayer } from '@/api/player'
 import { useFavourites } from '@/composables/useFavourites'
+import {
+  getVolumeInfo,
+  getVolumeState,
+  setVolumeLevel,
+  increaseVolume,
+  decreaseVolume,
+  toggleMute,
+  type VolumeInfo,
+  type VolumeState
+} from '@/api/volume'
 
 import {
   DEFAULT_CAPABILITIES,
@@ -43,6 +53,11 @@ export const usePlayerStore = defineStore('player', () => {
 
   const playerCapabilities = ref<Capabilities>(DEFAULT_CAPABILITIES)
 
+  // Volume state
+  const volumeInfo = ref<VolumeInfo | null>(null)
+  const volumeState = ref<VolumeState | null>(null)
+  const volumeAvailable = ref<boolean>(false)
+
   // Favourites state
   const currentSongIsFavourite = ref<boolean>(false)
   const checkingFavourite = ref<boolean>(false)
@@ -50,6 +65,21 @@ export const usePlayerStore = defineStore('player', () => {
   // Getters
   const currentPlayerName = computed<string | null>(() => currentData.value?.player?.name || null)
   const currentSong = computed<Song | null>(() => currentData.value?.song || null)
+
+  // Volume getters
+  const currentVolume = computed<number>(() => {
+    // First try to get volume from volumeState (hardware volume)
+    if (volumeState.value?.percentage !== undefined) {
+      return volumeState.value.percentage
+    }
+    // Fall back to player volume if available
+    return currentData.value?.volume ?? 50
+  })
+
+  const isVolumeAvailable = computed<boolean>(() => volumeAvailable.value)
+  const hasVolumeControl = computed<boolean>(() => {
+    return volumeInfo.value?.available ?? false
+  })
 
   // Action
   const addTrackToQueue = async (track: Track) => {
@@ -247,6 +277,9 @@ export const usePlayerStore = defineStore('player', () => {
 
     // await fetchPlayersAndUpdatePlayerDropdown() // for now we have only mpd player
 
+    // Initialize volume control
+    await initializeVolumeControl()
+
     // Set up WebSocket connection first, before fetching current player
     playerWebSocket.setupWebSocket()
 
@@ -306,14 +339,94 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
-  // Set volume for the current player
+  // Volume control functions using the Volume Control API
+  const initializeVolumeControl = async (): Promise<void> => {
+    try {
+      const info = await getVolumeInfo()
+      if (info) {
+        volumeInfo.value = info
+        volumeAvailable.value = info.available
+
+        if (info.available && info.current_state) {
+          volumeState.value = info.current_state
+        }
+      }
+    } catch (error) {
+      console.error('Failed to initialize volume control:', error)
+      volumeAvailable.value = false
+    }
+  }
+
+  const fetchVolumeState = async (): Promise<void> => {
+    try {
+      const state = await getVolumeState()
+      if (state) {
+        volumeState.value = state
+      }
+    } catch (error) {
+      console.error('Failed to fetch volume state:', error)
+    }
+  }
+
   const setVolume = async (volume: number): Promise<boolean> => {
     if (volume < 0 || volume > 100) {
       console.error('Volume must be between 0 and 100')
       return false
     }
 
-    return await sendCommand(`set_volume:${Math.round(volume)}`)
+    try {
+      const result = await setVolumeLevel(volume)
+      if (result?.success && result.new_state) {
+        volumeState.value = result.new_state
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to set volume:', error)
+      return false
+    }
+  }
+
+  const increaseVolumeBy = async (amount: number = 5): Promise<boolean> => {
+    try {
+      const result = await increaseVolume(amount)
+      if (result?.success && result.new_state) {
+        volumeState.value = result.new_state
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to increase volume:', error)
+      return false
+    }
+  }
+
+  const decreaseVolumeBy = async (amount: number = 5): Promise<boolean> => {
+    try {
+      const result = await decreaseVolume(amount)
+      if (result?.success && result.new_state) {
+        volumeState.value = result.new_state
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to decrease volume:', error)
+      return false
+    }
+  }
+
+  const muteToggle = async (): Promise<boolean> => {
+    try {
+      const result = await toggleMute()
+      if (result?.success && result.new_state) {
+        volumeState.value = result.new_state
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to toggle mute:', error)
+      return false
+    }
   }
 
   // Send a command to the library player (not the active player)
@@ -375,9 +488,15 @@ export const usePlayerStore = defineStore('player', () => {
     playerCapabilities,
     currentSongIsFavourite,
     checkingFavourite,
+    volumeInfo,
+    volumeState,
+    volumeAvailable,
     // Getters
     currentPlayerName,
     currentSong,
+    currentVolume,
+    isVolumeAvailable,
+    hasVolumeControl,
     // Action
     clearPollingInterval,
     addTrackToQueue,
@@ -388,7 +507,13 @@ export const usePlayerStore = defineStore('player', () => {
     retrieveActivePlayer,
     sendCommand,
     sendLibraryCommand,
+    // Volume control
+    initializeVolumeControl,
+    fetchVolumeState,
     setVolume,
+    increaseVolumeBy,
+    decreaseVolumeBy,
+    muteToggle,
     // Favourites
     checkCurrentSongFavouriteStatus,
     toggleCurrentSongFavourite,

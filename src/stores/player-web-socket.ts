@@ -271,6 +271,34 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
       'metadata_changed',
       'song_information_update',
     ])
+
+    // Also subscribe to volume events (system-wide events)
+    await subscribeToVolumeEvents()
+  }
+
+  // Subscribe to volume control events
+  async function subscribeToVolumeEvents() {
+    console.log('subscribeToVolumeEvents')
+
+    if (!wsController.value) {
+      console.warn('Cannot subscribe to volume events: No wsController')
+      return
+    }
+
+    const socket = wsController.value.getSocket()
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      console.warn('Cannot subscribe to volume events: WebSocket not open')
+      return
+    }
+
+    console.log('Subscribing to volume events')
+
+    // Subscribe to volume events (these are system-wide, not player-specific)
+    wsController.value.subscribe('*', [
+      'volume_changed',
+      'volume_state_changed',
+      'volume_available_changed',
+    ])
   }
 
   // ! using debounceHandlePlayerEvent
@@ -296,6 +324,21 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
       isActivePlayer = data.is_active_player
     } else {
       console.log('Unknown event format:', data)
+      return
+    }
+
+    // Handle volume events (system-wide events)
+    if (eventType === 'volume_changed' || eventType === 'volume_state_changed') {
+      console.log('Volume event received:', eventType, data)
+      // Refresh volume state when volume changes
+      playerStore.fetchVolumeState()
+      return
+    }
+
+    if (eventType === 'volume_available_changed') {
+      console.log('Volume availability changed:', data)
+      // Re-initialize volume control when availability changes
+      playerStore.initializeVolumeControl()
       return
     }
 
@@ -553,6 +596,7 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
     setupWebSocket,
     createPlayerWebSocket,
     subscribeToPlayerEvents,
+    subscribeToVolumeEvents,
     handlePlayerEvent,
     debounceHandlePlayerEvent,
   }

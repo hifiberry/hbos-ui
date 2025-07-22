@@ -25,7 +25,7 @@
   - remove the icon on each song **done**
 * Scroll bar with letters on the right for album and artist view **done**
 * Sorting & filtering for albums & artists **done**
-* Volume control
+* Volume control **done**
 * Reset systen
 * Force sound card detection or select sound card
 * Auto detect volume control and sound card

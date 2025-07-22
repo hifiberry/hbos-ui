@@ -9,28 +9,28 @@
         v-if="!isOnSticky"
         class="app-audio-controls__secondary"
         :class="{ active: audioControls.isShuffle }"
-        icon="shuffle"
+        icon="lucide/shuffle"
         title="Shuffle"
         :disabled="isSendingCommand || !caps.canShuffle"
         @click="audioControls.toggleShuffle"
       />
 
       <AppIconButton
-        icon="prev"
+        icon="lucide/skip-back"
         title="Previous"
         :disabled="isSendingCommand || !caps.canPrevious"
         @click="audioControls.playNextOrPrev('previous')"
       />
 
       <AppIconButton
-        :icon="audioControls.isPlaying ? 'pause' : 'play'"
+        :icon="audioControls.isPlaying ? 'lucide/pause' : 'lucide/play'"
         title="Play/Pause"
         :disabled="isSendingCommand || !(caps.canPlay || caps.canPause)"
         @click="audioControls.togglePlayPause"
       />
 
       <AppIconButton
-        icon="next"
+        icon="lucide/skip-forward"
         title="Next"
         :disabled="isSendingCommand || !caps.canNext"
         @click="audioControls.playNextOrPrev('next')"
@@ -40,7 +40,7 @@
         v-if="!isOnSticky"
         class="app-audio-controls__secondary"
         :class="{ active: !audioControls.iscurrentLoopModeNone }"
-        :icon="audioControls.iscurrentLoopModeTrack ? 'loop-one' : 'loop'"
+        :icon="audioControls.iscurrentLoopModeTrack ? 'lucide/repeat-1' : 'lucide/repeat'"
         :title="
           audioControls.iscurrentLoopModeTrack
             ? 'Loop Track'
@@ -57,10 +57,11 @@
       <AppIconButton
         v-if="!isOnSticky"
         class="app-audio-controls__secondary heart-button"
-        icon="heart"
-        title="Add to favorites"
-        :disabled="true"
-        @click="toggleFavorite"
+        :class="{ 'heart-button--active': currentSongIsFavourite }"
+        :icon="currentSongIsFavourite ? 'lucide/heart-filled' : 'lucide/heart-outline'"
+        :title="currentSongIsFavourite ? 'Remove from favorites' : 'Add to favorites'"
+        :disabled="isSendingCommand || checkingFavourite"
+        @click="toggleCurrentSongFavourite"
       />
     </div>
   </div>
@@ -79,13 +80,13 @@ interface AppAudioControlsProps {
 
 const { isSeparate = false, isOnSticky = false } = defineProps<AppAudioControlsProps>()
 
-const { isSendingCommand, playerCapabilities: caps } = storeToRefs(usePlayerStore())
+const playerStore = usePlayerStore()
+const { isSendingCommand, playerCapabilities: caps, currentSongIsFavourite, checkingFavourite } = storeToRefs(playerStore)
 
 const audioControls = useAudioControls()
 
-const toggleFavorite = () => {
-  // TODO: Implement favorite functionality
-  console.log('Toggle favorite clicked')
+const toggleCurrentSongFavourite = () => {
+  playerStore.toggleCurrentSongFavourite()
 }
 </script>
 
@@ -131,6 +132,7 @@ const toggleFavorite = () => {
     width: 32px;
     height: 32px;
     color: var(--secondary-audio-controls);
+    @include audio-control-stroke; /* Use mixin for consistent stroke width */
 
     @include media-down(md) {
       width: 24px;
@@ -156,6 +158,7 @@ const toggleFavorite = () => {
       width: 48px;
       height: 48px;
       color: var(--main-audio-controls);
+      @include audio-control-stroke; /* Use mixin for consistent stroke width */
 
       @include media-down(md) {
         width: 32px;
@@ -164,15 +167,21 @@ const toggleFavorite = () => {
     }
   }
 
-  svg.active#{$root}__secondary {
-    color: var(--primary);
-  }
-
   .heart-button {
     opacity: 0.4;
 
     &:disabled {
       cursor: not-allowed;
+    }
+
+    /* Default styling for both heart states */
+    svg {
+      @include audio-control-stroke; /* Use mixin for consistent stroke width */
+    }
+
+    &--active {
+      opacity: 1;
+      color: var(--color-icon-primary) !important; /* Use primary icon color for consistency */
     }
   }
 }
@@ -191,6 +200,7 @@ const toggleFavorite = () => {
     width: 24px;
     height: 24px;
     color: var(--secondary-audio-controls);
+    @include audio-control-stroke; /* Use mixin for consistent stroke width */
 
     @include media-down(md) {
       width: 20px;
@@ -205,6 +215,7 @@ const toggleFavorite = () => {
       width: 24px;
       height: 24px;
       color: var(--main-audio-controls-separate);
+      @include audio-control-stroke; /* Use mixin for consistent stroke width */
     }
   }
 }

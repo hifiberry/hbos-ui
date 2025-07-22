@@ -1,22 +1,32 @@
 <template>
   <div class="now-playing">
-    <h1 class="now-playing__title">Now Playing</h1>
+    <h1 class="now-playing__title">
+      <router-link to="/now-playing-minimal" class="title-link">
+        Now Playing
+        <span class="minimal-hint">Switch to minimal view</span>
+      </router-link>
+    </h1>
 
     <div class="now-playing__player">
       <AppCover
         class="now-playing__cover"
-        :src="song?.cover_art_url"
-        :alt="song?.artist || 'Artist'"
+        :src="rewrite_audiocontrol_api_url(song?.cover_art_url || '')"
+        :alt="song?.artist || song?.title || 'Now Playing'"
       />
 
       <div class="now-playing__info">
-        <h2>{{ song?.title || 'Song Name' }}</h2>
-        <p>{{ song?.artist || 'Artist' }}</p>
+        <h2 v-if="song?.title">{{ song.title }}</h2>
+        <p v-if="song?.artist">{{ song.artist }}</p>
       </div>
+
+      <AppAudioControls class="now-playing__audio-controls" />
 
       <AppProgressControl class="now-playing__progress-control" isDraggable />
 
-      <AppAudioControls class="now-playing__audio-controls" />
+      <!-- Volume control -->
+      <div class="now-playing__volume">
+        <AppVolumeControl size="wide" />
+      </div>
     </div>
   </div>
 </template>
@@ -25,6 +35,8 @@
 import AppCover from '@/components/app-cover.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
+import AppVolumeControl from '@/components/app-volume-control.vue'
+import { rewrite_audiocontrol_api_url } from '@/api/player'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
@@ -42,6 +54,54 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
   &__title {
     @include media-down(sm) {
       display: none;
+    }
+
+    .title-link {
+      color: var(--color-text);
+      text-decoration: none;
+      position: relative;
+      display: inline-block;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: var(--color-accent);
+        cursor: pointer;
+
+        .minimal-hint {
+          opacity: 1;
+          visibility: visible;
+        }
+      }
+    }
+
+    .minimal-hint {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--background-secondary);
+      color: var(--color-text-secondary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 400;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 4px solid transparent;
+        border-bottom-color: var(--background-secondary);
+      }
     }
   }
 
@@ -79,6 +139,25 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
     margin-top: auto;
     text-align: center;
     font-size: 18px;
+    margin-bottom: 20px; /* Add space between track info and controls */
+
+    // Larger font sizes for ultra-wide screens (>2000px)
+    @media (min-width: 2000px) {
+      font-size: 20px; /* Slightly increased from 18px */
+      margin-bottom: 24px; /* Slightly more space */
+
+      h2 {
+        font-size: 2rem; /* More moderate increase */
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      p {
+        font-size: 1.25rem; /* More moderate increase */
+        font-weight: 400;
+        opacity: 0.8;
+      }
+    }
   }
 
   &__progress-control {
@@ -96,6 +175,22 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
 
   &__audio-controls {
     margin-bottom: 20px;
+  }
+
+  &__volume {
+    width: 66%; /* Increased from 60% - now 10% wider */
+    max-width: 440px; /* Increased from 400px proportionally */
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px; /* 40px space at bottom */
+
+    @include media-down(lg) {
+      width: 88%; /* Increased from 80% proportionally */
+    }
+
+    @include media-down(md) {
+      width: 100%; /* Keep at 100% on mobile */
+    }
   }
 }
 </style>

@@ -1,3 +1,5 @@
+@use "variables" as *;
+@use "mixins" as *;
 @use "reset";
 @use "fonts";
 @use "grid";
@@ -27,4 +29,94 @@ a {
 }
 .breadcrumbs {
   margin-bottom: 25px;
+}
+
+// Global Button Reset - Apply to ALL buttons by default
+button {
+  @include button-reset;
+}
+
+// Styled Button Classes - Only apply when explicitly used
+.btn {
+  @include button-base;
+  @include button-md;
+
+  // Variants
+  &-primary {
+    @include button-primary;
+
+    &.btn-sm { @include button-sm; }
+    &.btn-lg { @include button-lg; }
+  }
+
+  &-secondary {
+    @include button-secondary;
+
+    &.btn-sm { @include button-sm; }
+    &.btn-lg { @include button-lg; }
+  }
+
+  &-success {
+    @include button-success;
+
+    &.btn-sm { @include button-sm; }
+    &.btn-lg { @include button-lg; }
+  }
+
+  &-danger {
+    @include button-danger;
+
+    &.btn-sm { @include button-sm; }
+    &.btn-lg { @include button-lg; }
+  }
+
+  &-ghost {
+    @include button-ghost;
+
+    &.btn-sm { @include button-sm; }
+    &.btn-lg { @include button-lg; }
+  }
+
+  &-link {
+    @include button-link;
+  }
+
+  // Sizes (can be combined with variants)
+  &-sm {
+    @include button-sm;
+  }
+
+  &-lg {
+    @include button-lg;
+  }
+}
+
+// Icon Button Classes
+.btn-icon {
+  @include button-icon;
+
+  &-sm {
+    @include button-icon(24px);
+  }
+
+  &-lg {
+    @include button-icon(40px);
+  }
+}
+
+// Audio controls secondary buttons styling (shuffle, repeat)
+.app-audio-controls__secondary:not(.active) {
+  color: rgba(225, 30, 74, 0.4) !important; /* Lighter reddish tone (40% opacity of primary red) */
+
+  svg {
+    stroke-width: 1px !important; /* Thinner stroke for inactive state */
+  }
+}
+
+.app-audio-controls__secondary.active {
+  color: var(--primary) !important;
+
+  svg {
+    stroke-width: 1.25px !important; /* Normal stroke for active state */
+  }
 }

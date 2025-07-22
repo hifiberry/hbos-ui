@@ -1,7 +1,7 @@
 <template>
   <div class="album">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'albums' }" :loading="loading">{{ artistName }}</AppBackRouter>
+      <AppBackRouter :to="backRoute" :loading="loading">{{ backText }}</AppBackRouter>
     </div>
 
     <div class="grid">
@@ -32,11 +32,22 @@ const { album, loading } = storeToRefs(albumsStore)
 const { getAlbumByAlbumId } = albumsStore
 
 const id = computed(() => route.params.albumId as string)
-const artistName = computed(() => {
-  if (album.value && album.value.artists.length > 0) {
-    return album.value.artists.join(', ')
+
+// Determine back route and text based on source
+const backRoute = computed(() => {
+  const from = route.query.from as string
+  if (from === 'artist' && route.query.artistId) {
+    return { name: 'artist-album', params: { artistId: route.query.artistId } }
   }
-  return ''
+  return { name: 'albums' }
+})
+
+const backText = computed(() => {
+  const from = route.query.from as string
+  if (from === 'artist' && route.query.artistName) {
+    return route.query.artistName as string
+  }
+  return 'Albums'
 })
 
 onMounted(() => {

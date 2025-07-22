@@ -113,3 +113,484 @@
   margin-bottom: 3px;
   transition: all 0.2s linear;
 }
+
+// Mixin for delete/remove buttons with destructive styling
+// Usage: @include delete-button;
+// For smaller buttons: @include delete-button-small;
+// For larger buttons: @include delete-button-large;
+// For warning buttons: @include warning-button;
+@mixin delete-button {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0; // Hide any text content
+
+  &:hover:not(:disabled) {
+    background-color: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    background-color: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  // Icon styling
+  .app-icon {
+    width: 16px;
+    height: 16px;
+    color: inherit;
+  }
+}
+
+// Variations of the delete button
+@mixin delete-button-small {
+  @include delete-button;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+
+  .app-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@mixin delete-button-large {
+  @include delete-button;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+
+  .app-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// Alternative delete button with different colors (e.g., orange for warning)
+@mixin warning-button {
+  @include delete-button;
+  background-color: rgba(251, 146, 60, 0.1);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.2);
+
+  &:hover:not(:disabled) {
+    background-color: rgba(251, 146, 60, 0.2);
+    border-color: rgba(251, 146, 60, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    background-color: rgba(251, 146, 60, 0.3);
+    border-color: rgba(251, 146, 60, 0.4);
+  }
+}
+
+// Button Reset Mixin - Removes all default browser button styling
+@mixin button-reset {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
+
+  &::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+  }
+}
+
+// Base Button Mixin - Common button styling foundation
+@mixin button-base {
+  @include button-reset;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Metropolis", sans-serif;
+  font-weight: 500;
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+  border-radius: 6px;
+  transition: all 0.15s ease-in-out;
+  line-height: 1;
+  text-decoration: none;
+
+  &:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+}
+
+// Button Size Mixins
+@mixin button-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  min-height: 28px;
+}
+
+@mixin button-md {
+  padding: 8px 16px;
+  font-size: 14px;
+  min-height: 36px;
+}
+
+@mixin button-lg {
+  padding: 12px 24px;
+  font-size: 16px;
+  min-height: 44px;
+}
+
+// Button Variant Mixins
+@mixin button-primary {
+  background-color: var(--primary, #E11E4A);
+  border: 1px solid var(--primary, #E11E4A);
+  color: white;
+
+  &:hover:not(:disabled) {
+    background-color: var(--primary-dark, #c01a40);
+    border-color: var(--primary-dark, #c01a40);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(225, 30, 74, 0.2);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(225, 30, 74, 0.2);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(225, 30, 74, 0.3);
+  }
+}
+
+@mixin button-secondary {
+  background-color: var(--color-background, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  color: var(--color-body, #707070);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-background-secondary, #f9fafb);
+    border-color: var(--color-border-hover, #d1d5db);
+    color: var(--color-body, #374151);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+}
+
+@mixin button-success {
+  background-color: #10b981;
+  border: 1px solid #10b981;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background-color: #059669;
+    border-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+  }
+}
+
+@mixin button-danger {
+  background-color: #ef4444;
+  border: 1px solid #ef4444;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  }
+}
+
+@mixin button-ghost {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: var(--color-body, #707070);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-background-secondary, #f3f4f6);
+    color: var(--color-body, #374151);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-background-secondary, #e5e7eb);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+}
+
+@mixin button-link {
+  @include button-reset;
+
+  color: var(--primary, #E11E4A);
+  text-decoration: underline;
+  padding: 0;
+
+  &:hover:not(:disabled) {
+    color: var(--primary-dark, #c01a40);
+    text-decoration: none;
+  }
+
+  &:focus {
+    outline: 2px solid var(--primary, #E11E4A);
+    outline-offset: 2px;
+  }
+}
+
+// Icon Button Mixin
+@mixin button-icon($size: 32px) {
+  @include button-reset;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $size;
+  height: $size;
+  border-radius: 50%;
+  transition: all 0.15s ease-in-out;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-background-secondary, #f3f4f6);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-background-secondary, #e5e7eb);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+}
+
+// Complete Button Classes - Use these for quick styling
+@mixin button-primary-sm {
+  @include button-base;
+  @include button-primary;
+  @include button-sm;
+}
+
+@mixin button-primary-md {
+  @include button-base;
+  @include button-primary;
+  @include button-md;
+}
+
+@mixin button-primary-lg {
+  @include button-base;
+  @include button-primary;
+  @include button-lg;
+}
+
+@mixin button-secondary-sm {
+  @include button-base;
+  @include button-secondary;
+  @include button-sm;
+}
+
+@mixin button-secondary-md {
+  @include button-base;
+  @include button-secondary;
+  @include button-md;
+}
+
+@mixin button-secondary-lg {
+  @include button-base;
+  @include button-secondary;
+  @include button-lg;
+}
+
+@mixin button-success-sm {
+  @include button-base;
+  @include button-success;
+  @include button-sm;
+}
+
+@mixin button-success-md {
+  @include button-base;
+  @include button-success;
+  @include button-md;
+}
+
+@mixin button-danger-sm {
+  @include button-base;
+  @include button-danger;
+  @include button-sm;
+}
+
+@mixin button-danger-md {
+  @include button-base;
+  @include button-danger;
+  @include button-md;
+}
+
+// Editable Field Mixins
+// ======================
+
+// Base input field for editable content
+@mixin editable-input {
+  flex: 1;
+  max-width: 250px;
+  padding: 8px 12px;
+  border: 2px solid var(--color-accent);
+  border-radius: 6px;
+  background: var(--color-background);
+  color: var(--color-body);
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb, 59, 130, 246), 0.1);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb, 59, 130, 246), 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--color-background-secondary);
+    border-color: var(--color-border);
+    box-shadow: none;
+  }
+}
+
+// Save button for editable fields
+@mixin editable-save-button {
+  @include button-icon(32px);
+  color: var(--color-success);
+
+  &:hover:not(:disabled) {
+    background: rgba(var(--color-success-rgb, 34, 197, 94), 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Cancel button for editable fields
+@mixin editable-cancel-button {
+  @include button-icon(32px);
+  color: var(--color-body-secondary);
+
+  &:hover:not(:disabled) {
+    color: var(--color-danger);
+    background: rgba(var(--color-danger-rgb, 239, 68, 68), 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Container for edit action buttons
+@mixin editable-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+// Complete editable field layout
+@mixin editable-field {
+  display: flex;
+  align-items: center;
+
+  .editable-input {
+    @include editable-input;
+  }
+
+  .editable-actions {
+    @include editable-actions;
+
+    .save-button {
+      @include editable-save-button;
+    }
+
+    .cancel-button {
+      @include editable-cancel-button;
+    }
+  }
+}
+
+// Icon stroke width mixins
+@mixin icon-stroke-thin {
+  stroke-width: 1;
+}
+
+@mixin icon-stroke-normal {
+  stroke-width: 1.25;
+}
+
+@mixin icon-stroke-medium {
+  stroke-width: 1.5;
+}
+
+@mixin icon-stroke-bold {
+  stroke-width: 2;
+}
+
+// Default thin stroke for audio controls
+@mixin audio-control-stroke {
+  @include icon-stroke-normal;
+}

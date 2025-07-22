@@ -93,6 +93,38 @@ export function useFavourites() {
     }
   }
 
+  // Get favourite details including providers
+  const getFavouriteDetails = async (song: Song): Promise<{ is_favourite: boolean; providers: string[] } | null> => {
+    if (!song.artist || !song.title) {
+      return null
+    }
+
+    try {
+      const params = new URLSearchParams({
+        artist: song.artist,
+        title: song.title
+      })
+
+      const { error: fetchError, data } = await libraryFetch(`/favourites/is_favourite?${params}`).json<FavouriteCheck>()
+
+      if (fetchError.value || !data.value) {
+        return null
+      }
+
+      if (data.value.Ok) {
+        return {
+          is_favourite: data.value.Ok.is_favourite,
+          providers: data.value.Ok.providers
+        }
+      }
+
+      return null
+    } catch (err) {
+      console.error('Error getting favourite details:', err)
+      return null
+    }
+  }
+
   // Add song to favourites
   const addToFavourites = async (song: Song): Promise<boolean> => {
     if (!song.artist || !song.title) {
@@ -193,6 +225,7 @@ export function useFavourites() {
     hasProviders,
     getProviders,
     isFavourite,
+    getFavouriteDetails,
     addToFavourites,
     removeFromFavourites,
     toggleFavourite

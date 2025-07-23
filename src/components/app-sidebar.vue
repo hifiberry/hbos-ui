@@ -124,6 +124,11 @@ const routes = computed(() => {
           title: 'System Info',
           icon: 'computer',
         },
+        {
+          name: 'system-tools',
+          title: 'System Tools',
+          icon: 'tool',
+        },
       ],
     },
     // {

@@ -36,7 +36,7 @@
   * connect LastFM **done**
 * Settings/Music library
   * mount SMB share **done**
-  * update library 
+  * update library  **done**
 * Settings/Players **done**
   * enable/disable players **done**
   * service existence detection **done**
@@ -49,20 +49,22 @@
  
 # Phase 5
 
-* Reset systen
-* Force sound card detection or select sound card
+* Reset systen **started**
+* Force sound card detection or select sound card **done**
 * log, loglog, lin volume control settings
 * Support for additional meta data in "Now playing" (format, sample rate, ...)
 * volume limit, mono/stereo, ... (using Pipewire and ALSA)
 * Show library loading progress
 * Lyrics support - display lyrics in "Now playing"
 * Enable user to upload artist/album art
-* Add (optional) password verification to use the UI, also add some kind of authorisation to API calls
 * Improve icons
 * Bluetooth
   * Pair device
   * remove paired device
 
+# Phase 6
+
+* Add (optional) password verification to use the UI, also add some kind of authorisation to API calls
  
 # Later
 

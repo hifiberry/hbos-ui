@@ -23,6 +23,29 @@
           </div>
         </div>
 
+        <!-- Music Files Service Information -->
+        <div class="service-info-section">
+          <div class="info-card">
+            <div class="info-header">
+              <AppIcon icon="info" class="info-icon" />
+              <h3>Music Files Service</h3>
+            </div>
+            <div class="info-content">
+              <p>
+                SMB/CIFS mounts are automatically linked to <code>/var/lib/mpd/music</code> for music library access.
+                All configured shares will be available at:
+              </p>
+              <div class="service-url">
+                <code>http://192.168.1.12/services/music-files</code>
+              </div>
+              <p>
+                <strong>Note:</strong> If you want to store music locally on the device, make sure to also link it to 
+                <code>/var/lib/mpd/music</code> to make it accessible to the music library.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div v-if="loading" class="loading-section">
           <p>Loading SMB mounts...</p>
         </div>
@@ -260,6 +283,73 @@ onMounted(() => {
 
           .refresh-button {
             @include service-button-small;
+          }
+        }
+      }
+
+      .service-info-section {
+        margin-bottom: 24px;
+
+        .info-card {
+          background: var(--background-card);
+          border: 1px solid var(--color-border);
+          border-radius: 8px;
+          padding: 20px;
+
+          .info-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+
+            .info-icon {
+              width: 20px;
+              height: 20px;
+              color: var(--primary);
+            }
+
+            h3 {
+              margin: 0;
+              color: var(--color-head);
+              font-size: 1.1rem;
+              font-weight: 600;
+            }
+          }
+
+          .info-content {
+            p {
+              margin: 0 0 12px 0;
+              color: var(--color-body);
+              line-height: 1.5;
+
+              &:last-child {
+                margin-bottom: 0;
+              }
+
+              code {
+                background: var(--color-bg-secondary);
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-family: 'Metropolis', monospace;
+                font-size: 0.9em;
+                color: var(--color-body);
+              }
+            }
+
+            .service-url {
+              margin: 12px 0;
+              padding: 12px;
+              background: var(--color-bg-secondary);
+              border-radius: 6px;
+              border-left: 3px solid var(--primary);
+
+              code {
+                background: none;
+                padding: 0;
+                color: var(--primary);
+                font-weight: 500;
+              }
+            }
           }
         }
       }

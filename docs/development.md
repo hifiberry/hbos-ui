@@ -36,7 +36,6 @@
   * connect LastFM **done**
 * Settings/Music library
   * mount SMB share **done**
-  * use local music files 
   * update library 
 * Settings/Players **done**
   * enable/disable players **done**

@@ -463,7 +463,7 @@ onMounted(() => {
                 gap: 8px;
 
                 .delete-button {
-                  @include delete-button;
+                  @include delete-button(24px, 14px);
                 }
 
                 .expand-caret {

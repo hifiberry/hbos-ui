@@ -452,7 +452,7 @@ const rebootSystemHandler = async () => {
   rebooting.value = true
   try {
     const response = await rebootSystem({ delay: 5 })
-    
+
     if (response.status === 'success') {
       // Show success message and hide dialog after a short delay
       setTimeout(() => {

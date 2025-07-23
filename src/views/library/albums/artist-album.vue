@@ -82,10 +82,12 @@
             <!-- Genres table for artists without MusicBrainz data -->
             <div v-if="uniqueGenres.length" class="mb-info">
               <table class="mb-table">
-                <tr>
-                  <td class="mb-label">Genres:</td>
-                  <td class="mb-value">{{ uniqueGenres.join(', ') }}</td>
-                </tr>
+                <tbody>
+                  <tr>
+                    <td class="mb-label">Genres:</td>
+                    <td class="mb-value">{{ uniqueGenres.join(', ') }}</td>
+                  </tr>
+                </tbody>
               </table>
             </div>
 

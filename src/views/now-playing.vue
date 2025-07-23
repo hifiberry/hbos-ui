@@ -10,7 +10,7 @@
     <div class="now-playing__player">
       <AppCover
         class="now-playing__cover"
-        :src="rewrite_audiocontrol_api_url(song?.cover_art_url || '')"
+        :src="rewriteAudiocontrolApiUrl(song?.cover_art_url || '')"
         :alt="song?.artist || song?.title || 'Now Playing'"
       />
 
@@ -36,7 +36,7 @@ import AppCover from '@/components/app-cover.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppVolumeControl from '@/components/app-volume-control.vue'
-import { rewrite_audiocontrol_api_url } from '@/api/player'
+import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'

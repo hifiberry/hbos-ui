@@ -1,0 +1,55 @@
+import { fileURLToPath, URL } from 'node:url'
+
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
+
+// A vite plugin that remove all the specified console types in the production environment
+// https://www.npmjs.com/package/vite-plugin-remove-console
+import removeConsole from 'vite-plugin-remove-console'
+
+// Development server configuration for connecting to API at 192.168.1.66
+// https://vite.dev/config/
+export default defineConfig(() => {
+  // Get device IP and port - hardcoded for dev server
+  const deviceIP = '192.168.1.1'
+  const devicePort = '80'  // Use nginx proxy
+
+  return {
+    plugins: [vue(), vueDevTools(), removeConsole()],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData:
+            '@use "@/assets/scss/variables.scss" as *; @use "@/assets/scss/mixins.scss" as *; @use "@/assets/scss/variables/colors.scss" as *; @use "@/assets/scss/themes.scss" as *;',
+        },
+      },
+    },
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    },
+    define: {
+      // For development, API calls go through Vite proxy, WebSockets go through nginx
+      'import.meta.env.VITE_APP_DEVICE_IP': `"${deviceIP}"`,
+      'import.meta.env.VITE_APP_DEVICE_PORT': `"${devicePort}"`,
+      'import.meta.env.VITE_APP_API_PREFIX': `"/api/audiocontrol"`,
+      'import.meta.env.VITE_APP_CONFIG_API_PREFIX': `"/api/config/v1"`,
+    },
+    server: {
+      proxy: {
+        '/api/audiocontrol': {
+          target: `http://${deviceIP}:${devicePort}`,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/api/config': {
+          target: `http://${deviceIP}:${devicePort}`,
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
+  }
+})

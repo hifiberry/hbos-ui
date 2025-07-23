@@ -81,6 +81,11 @@ const router = createRouter({
               name: 'system-info',
               component: () => import('@/views/services/system-info.vue'),
             },
+            {
+              path: 'system-tools',
+              name: 'system-tools',
+              component: () => import('@/views/services/system-tools.vue'),
+            },
           ],
         },
         {

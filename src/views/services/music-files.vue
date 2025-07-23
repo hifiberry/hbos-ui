@@ -213,7 +213,7 @@ const rescanLibrary = async () => {
     const configStore = useAppConfigStore()
     const apiBaseUrl = configStore.getApiBaseUrl()
     const url = `${apiBaseUrl}/library/mpd/update`
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {

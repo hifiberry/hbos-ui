@@ -130,6 +130,10 @@ const isCurrentLineByIndex = (lineIndex: number): boolean => {
   // Don't highlight anything if lyrics are untimed
   if (!areTimedLyrics()) return false
 
+  // Don't highlight empty lines
+  const line = lyrics.value.lyrics[lineIndex]
+  if (!line || !line.text || line.text.trim() === '') return false
+
   const currentIndex = currentLineIndex.value // Use computed property for reactivity
   const isActive = currentIndex === lineIndex
 
@@ -143,7 +147,7 @@ const scrollToCurrentLine = () => {
   }
 
   const currentIndex = getCurrentLineIndex()
-  
+
   if (currentIndex === -1) {
     return
   }
@@ -207,7 +211,7 @@ const scrollToCurrentLine = () => {
     // Ensure scroll target is within bounds
     const maxScroll = lyricsContainer.value.scrollHeight - containerHeight
     scrollTarget = Math.max(0, Math.min(scrollTarget, maxScroll))
-    
+
     lyricsContainer.value.scrollTo({
       top: scrollTarget,
       behavior: 'smooth'
@@ -378,10 +382,11 @@ onUnmounted(() => {
 
   &__lyrics {
     .lyrics-line {
-      padding: 8px 0;
+      padding: 12px 0;
       line-height: 1.6;
       color: var(--color-text);
-      font-size: 16px;
+      font-size: 24px;
+      text-align: center;
       transition: all 0.3s ease;
       border-radius: 4px;
       padding-left: 12px;
@@ -418,7 +423,7 @@ onUnmounted(() => {
     }
 
     &__lyrics .lyrics-line {
-      font-size: 15px;
+      font-size: 22px;
       padding: 6px 8px;
     }
   }

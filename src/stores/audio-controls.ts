@@ -19,7 +19,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const { currentData, currentSong } = storeToRefs(playerStore)
 
   // Use the shared player position composable
-  const { position: currentPosition, updatePosition } = usePlayerPosition()
+  const { position: currentPosition } = usePlayerPosition()
 
   // State
   const progressIntervalID = ref<number | undefined>(undefined)
@@ -165,15 +165,13 @@ export const useAudioControls = defineStore('audio-controls', () => {
 
     if (isPlaying.value && currentSong.value?.duration) {
       progressIntervalID.value = setInterval(() => {
-        updatePosition()
-
-        // Check if we've reached the end
+        // Check if we've reached the end (composable handles position updates automatically)
         if (seekPosition.value >= 100) {
           stopAutoProgress()
           console.log('Track reached the end, fetching current player state from server')
           fetchCurrentPlayer()
         }
-      }, 100) // 100ms interval
+      }, 500) // 500ms interval to check for track end
     } else {
       stopAutoProgress()
     }

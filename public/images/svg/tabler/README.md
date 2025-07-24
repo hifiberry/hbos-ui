@@ -35,6 +35,7 @@ Tabler Icons is a set of 4,000+ free SVG icons designed specifically for web int
 - `edit.svg` - **Tabler ID**: `edit` - Edit button
 - `search.svg` - **Tabler ID**: `search` - Search icon
 - `moon.svg` - **Tabler ID**: `moon` - Dark mode toggle
+- `lyrics.svg` - **Custom** - Lyrics availability indicator (not from Tabler)
 
 ### Service & System Icons
 - `server.svg` - **Tabler ID**: `server` - NAS/server icon

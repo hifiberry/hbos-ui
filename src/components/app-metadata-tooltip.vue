@@ -46,7 +46,7 @@
         <span class="metadata-label">Stream URL:</span>
         <span class="metadata-value path">{{ song.stream_url }}</span>
       </div>
-      
+
       <!-- Show a message if no metadata is available -->
       <div v-if="!hasAnyMetadata" class="metadata-item metadata-item--empty">
         <span class="metadata-value">No metadata available for this track</span>
@@ -69,7 +69,7 @@ const props = defineProps<Props>()
 // Check if any meaningful metadata is available
 const hasAnyMetadata = computed(() => {
   if (!props.song) return false
-  
+
   return !!(
     props.song.title ||
     props.song.artist ||

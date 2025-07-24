@@ -8,7 +8,7 @@
     </h1>
 
     <div class="now-playing__player">
-      <div 
+      <div
         class="now-playing__cover-container"
         @mouseenter="showTooltip = true"
         @mouseleave="showTooltip = false"
@@ -19,7 +19,7 @@
           :src="rewriteAudiocontrolApiUrl(song?.cover_art_url || '')"
           :alt="song?.artist || song?.title || 'Now Playing'"
         />
-        
+
         <!-- Metadata Tooltip -->
         <AppMetadataTooltip
           v-if="showTooltip && song"
@@ -76,30 +76,30 @@ const tooltipStyles = computed(() => {
   const tooltipWidth = 350 // Approximate tooltip width
   const tooltipHeight = 200 // Approximate tooltip height
   const offset = 10
-  
+
   let left = tooltipX.value + offset
   let top = tooltipY.value - offset
-  
+
   // Adjust if tooltip would go off the right edge
   if (left + tooltipWidth > window.innerWidth) {
     left = tooltipX.value - tooltipWidth - offset
   }
-  
+
   // Adjust if tooltip would go off the bottom edge
   if (top + tooltipHeight > window.innerHeight) {
     top = tooltipY.value - tooltipHeight - offset
   }
-  
+
   // Ensure tooltip doesn't go off the left edge
   if (left < offset) {
     left = offset
   }
-  
+
   // Ensure tooltip doesn't go off the top edge
   if (top < offset) {
     top = offset
   }
-  
+
   return {
     left: `${left}px`,
     top: `${top}px`,
@@ -179,6 +179,7 @@ const tooltipStyles = computed(() => {
     padding-top: 32px;
     background-color: var(--background-main-content);
     box-shadow: $box-shadow-main-content;
+    position: relative;
 
     @include media-down(sm) {
       padding-top: 24px;

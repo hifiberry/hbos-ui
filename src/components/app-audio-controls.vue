@@ -1,7 +1,14 @@
 <template>
   <div class="app-audio-controls" :class="{ 'is-separate': isSeparate }">
     <div class="app-audio-controls__left">
-      <!-- Empty left column for balance -->
+      <AppIconButton
+        v-if="!isOnSticky"
+        class="app-audio-controls__secondary lyrics-button"
+        :class="{ 'lyrics-button--active': song?.metadata?.lyrics_available }"
+        icon="tabler/lyrics"
+        :title="song?.metadata?.lyrics_available ? 'Lyrics Available' : 'No Lyrics Available'"
+        :disabled="true"
+      />
     </div>
 
     <div class="app-audio-controls--main">
@@ -87,7 +94,8 @@ const {
   playerCapabilities: caps,
   currentSongIsFavourite,
   currentSongFavouriteProviders,
-  checkingFavourite
+  checkingFavourite,
+  currentSong: song
 } = storeToRefs(playerStore)
 
 const audioControls = useAudioControls()
@@ -203,6 +211,23 @@ const heartButtonTitle = computed(() => {
     &--active {
       opacity: 1;
       color: var(--color-icon-primary) !important; /* Use primary icon color for consistency */
+    }
+  }
+
+  .lyrics-button {
+    opacity: 0.4; /* Default inactive state */
+
+    &:disabled {
+      cursor: default;
+    }
+
+    svg {
+      @include audio-control-stroke; /* Use mixin for consistent stroke width */
+    }
+
+    &--active {
+      opacity: 1;
+      color: var(--color-accent);
     }
   }
 }

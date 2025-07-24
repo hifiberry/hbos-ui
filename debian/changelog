@@ -1,3 +1,17 @@
+hifiberry-webui (0.7) stable; urgency=medium
+
+  * Enhanced lyrics display with synchronized highlighting and auto-scrolling
+  * Implemented smart scrolling with comfort zones for optimal lyrics positioning
+  * Added shared usePlayerPosition composable for consistent time tracking
+  * Updated audio controls to use shared position calculation logic
+  * Improved lyrics overlay with larger, centered text and better spacing
+  * Added support for timed vs untimed lyrics detection
+  * Enhanced UI consistency with shared SCSS button mixins
+  * Prevented highlighting of empty lyrics lines
+  * Removed debug output for cleaner console logs
+
+ -- HiFiBerry <info@hifiberry.com>  Thu, 24 Jul 2025 12:00:00 +0000
+
 hifiberry-webui (0.6) stable; urgency=medium
 
   * Added lyrics display functionality

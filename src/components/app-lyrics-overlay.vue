@@ -123,6 +123,13 @@ const close = () => {
   emit('close')
 }
 
+// Handle escape key to close overlay
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.isVisible) {
+    close()
+  }
+}
+
 // Watch for song changes
 watch(() => props.song?.metadata?.lyrics_url, (newLyricsUrl) => {
   if (newLyricsUrl && props.isVisible) {
@@ -145,12 +152,16 @@ let timeInterval: number | null = null
 
 onMounted(() => {
   timeInterval = window.setInterval(updateCurrentTime, 100)
+  // Add escape key listener
+  document.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
   if (timeInterval) {
     clearInterval(timeInterval)
   }
+  // Remove escape key listener
+  document.removeEventListener('keydown', handleKeydown)
 })
 </script>
 

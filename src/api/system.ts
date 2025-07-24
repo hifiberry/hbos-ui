@@ -100,6 +100,22 @@ export interface RebootResponse {
   error?: string
 }
 
+// Types for Script Execution
+export interface ScriptExecutionRequest {
+  script: string
+}
+
+export interface ScriptExecutionResponse {
+  status: 'success' | 'error'
+  message: string
+  data?: {
+    script: string
+    exit_code: number
+    output?: string
+    error?: string
+  }
+}
+
 /**
  * Get system information including Pi model, HAT details, and system UUID
  */
@@ -202,6 +218,30 @@ export const rebootSystem = async (request?: RebootRequest): Promise<RebootRespo
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(request || {}),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
+/**
+ * Execute a system script
+ */
+export const executeScript = async (request: ScriptExecutionRequest): Promise<ScriptExecutionResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/system/scripts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
   })
 
   const data = await response.json()

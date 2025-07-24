@@ -12,7 +12,7 @@
 
       <!-- Reset System Tool -->
       <div class="tool-section">
-        <div class="tool-card">
+        <div class="tool-card reset-tool">
           <div class="tool-info">
             <AppIcon icon="reset" class="tool-icon" />
             <div class="tool-details">
@@ -29,6 +29,26 @@
           </div>
         </div>
       </div>
+
+      <!-- Auto-detect Sound Card Tool -->
+      <div class="tool-section">
+        <div class="tool-card detect-tool">
+          <div class="tool-info">
+            <AppIcon icon="search" class="tool-icon" />
+            <div class="tool-details">
+              <h3>Auto-detect Sound Card</h3>
+              <p class="tool-description">
+                Apply default configuration and automatically detect the sound card overlay. Requires a system reboot to take effect.
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions">
+            <button @click="confirmDetectSoundCard" :disabled="detectingSoundCard" class="detect-button">
+              {{ detectingSoundCard ? 'Detecting...' : 'Detect card' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -38,9 +58,11 @@ import { ref } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 import { useToastStore } from '@/stores/toast'
+import { executeScript, rebootSystem } from '@/api/system'
 
 // State
 const resetting = ref(false)
+const detectingSoundCard = ref(false)
 
 // Stores
 const toastStore = useToastStore()
@@ -85,6 +107,53 @@ const resetSystem = async () => {
     resetting.value = false
   }
 }
+
+const confirmDetectSoundCard = async () => {
+  const confirmMessage = `Are you sure you want to auto-detect the sound card?
+
+This will:
+- Apply default configuration
+- Auto-detect sound card overlay
+- Require a system reboot to take effect
+
+Continue with sound card detection?`
+
+  if (confirm(confirmMessage)) {
+    await detectSoundCard()
+  }
+}
+
+const detectSoundCard = async () => {
+  detectingSoundCard.value = true
+
+  try {
+    const response = await executeScript({ script: 'detectsoundcard' })
+
+    if (response.status === 'success') {
+      toastStore.showSuccessToast('Sound card detection completed successfully!')
+
+      // Ask user to reboot
+      const rebootMessage = `Sound card detection completed. The system needs to be rebooted for changes to take effect.
+
+Would you like to reboot now?`
+
+      if (confirm(rebootMessage)) {
+        toastStore.showInfoToast('Rebooting system...')
+        await rebootSystem()
+      } else {
+        toastStore.showInfoToast('Please reboot the system manually for changes to take effect.')
+      }
+    } else {
+      toastStore.showErrorToast(response.message || 'Failed to detect sound card')
+    }
+
+  } catch (err) {
+    console.error('Error detecting sound card:', err)
+    toastStore.showErrorToast('Failed to detect sound card')
+  } finally {
+    detectingSoundCard.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -108,6 +177,12 @@ const resetSystem = async () => {
   }
 
   .tool-section {
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
     .tool-card {
       background: var(--background-card);
       border: 1px solid var(--color-border);
@@ -127,7 +202,6 @@ const resetSystem = async () => {
         .tool-icon {
           width: 32px;
           height: 32px;
-          color: var(--color-error, #ef4444);
           flex-shrink: 0;
         }
 
@@ -150,15 +224,22 @@ const resetSystem = async () => {
         }
       }
 
+      &.reset-tool .tool-info .tool-icon {
+        color: var(--color-error);
+      }
+
+      &.detect-tool .tool-info .tool-icon {
+        color: var(--color-primary);
+      }
+
       .tool-actions {
         flex-shrink: 0;
 
-        .reset-button {
+        button {
           display: flex;
           align-items: center;
           gap: 8px;
           padding: 10px 20px;
-          background: var(--color-error, #ef4444);
           color: white;
           border: none;
           border-radius: 4px;
@@ -166,10 +247,6 @@ const resetSystem = async () => {
           font-weight: 500;
           font-size: 0.9rem;
           transition: background-color 0.2s ease;
-
-          &:hover:not(:disabled) {
-            background: var(--color-error-dark, #dc2626);
-          }
 
           &:disabled {
             opacity: 0.6;
@@ -179,6 +256,22 @@ const resetSystem = async () => {
           svg {
             width: 16px;
             height: 16px;
+          }
+        }
+
+        .reset-button {
+          background: var(--color-error, #ef4444);
+
+          &:hover:not(:disabled) {
+            background: var(--color-error-dark, #dc2626);
+          }
+        }
+
+        .detect-button {
+          background: var(--color-error, #ef4444);
+
+          &:hover:not(:disabled) {
+            background: var(--color-error-dark, #dc2626);
           }
         }
       }
@@ -197,7 +290,7 @@ const resetSystem = async () => {
         .tool-actions {
           width: 100%;
 
-          .reset-button {
+          button {
             width: 100%;
             justify-content: center;
           }

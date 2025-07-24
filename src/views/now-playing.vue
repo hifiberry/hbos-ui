@@ -8,11 +8,26 @@
     </h1>
 
     <div class="now-playing__player">
-      <AppCover
-        class="now-playing__cover"
-        :src="rewriteAudiocontrolApiUrl(song?.cover_art_url || '')"
-        :alt="song?.artist || song?.title || 'Now Playing'"
-      />
+      <div 
+        class="now-playing__cover-container"
+        @mouseenter="showTooltip = true"
+        @mouseleave="showTooltip = false"
+        @mousemove="updateTooltipPosition"
+      >
+        <AppCover
+          class="now-playing__cover"
+          :src="rewriteAudiocontrolApiUrl(song?.cover_art_url || '')"
+          :alt="song?.artist || song?.title || 'Now Playing'"
+        />
+        
+        <!-- Metadata Tooltip -->
+        <AppMetadataTooltip
+          v-if="showTooltip && song"
+          :song="song"
+          class="now-playing__metadata-tooltip"
+          :style="tooltipStyles"
+        />
+      </div>
 
       <div class="now-playing__info">
         <h2 v-if="song?.title">{{ song.title }}</h2>
@@ -32,16 +47,36 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import AppCover from '@/components/app-cover.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppVolumeControl from '@/components/app-volume-control.vue'
+import AppMetadataTooltip from '@/components/app-metadata-tooltip.vue'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
 
 const { currentSong: song } = storeToRefs(usePlayerStore())
+
+// Tooltip state
+const showTooltip = ref(false)
+const tooltipX = ref(0)
+const tooltipY = ref(0)
+
+// Update tooltip position based on mouse movement
+const updateTooltipPosition = (event: MouseEvent) => {
+  tooltipX.value = event.clientX
+  tooltipY.value = event.clientY
+}
+
+// Computed styles for tooltip positioning
+const tooltipStyles = computed(() => ({
+  left: `${tooltipX.value + 10}px`,
+  top: `${tooltipY.value - 10}px`,
+  position: 'fixed' as const
+}))
 </script>
 
 <style lang="scss">
@@ -133,6 +168,32 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
     @include media-down(sm) {
       margin-bottom: 24px;
     }
+  }
+
+  &__cover-container {
+    height: calc(100vh - 500px);
+    min-height: 120px;
+    overflow: hidden;
+    position: relative;
+    cursor: help;
+
+    flex: 1 1 auto;
+    margin-top: auto;
+    margin-bottom: 32px;
+
+    @include media-down(sm) {
+      margin-bottom: 24px;
+    }
+
+    .now-playing__cover {
+      height: 100%;
+      margin: 0;
+    }
+  }
+
+  &__metadata-tooltip {
+    pointer-events: none;
+    z-index: 1000;
   }
 
   &__info {

@@ -20,13 +20,18 @@
           {{ error }}
         </div>
 
-        <div v-else-if="lyrics" class="lyrics-overlay__lyrics">
+        <div v-else-if="lyrics" class="lyrics-overlay__lyrics" ref="lyricsContainer">
           <div
             v-for="(line, index) in lyrics.lyrics"
             :key="index"
+            :ref="(el) => { if (el) lyricsRefs[index] = el as HTMLElement }"
             class="lyrics-line"
-            :class="{ 'lyrics-line--current': isCurrentLine(line.timestamp) }"
+            :class="{ 'lyrics-line--current': isCurrentLineByIndex(index) }"
           >
+            <div class="lyrics-debug">
+              From: {{ line.timestamp }}s 
+              To: {{ getNextTimestamp(index) }}s
+            </div>
             {{ line.text }}
           </div>
         </div>
@@ -40,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { usePlayerStore } from '@/stores/player'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { usePlayerPosition } from '@/composables/usePlayerPosition'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 import type { Song } from '@/types/player'
 
@@ -69,27 +74,121 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const playerStore = usePlayerStore()
+const { position: currentTime, updatePosition } = usePlayerPosition()
 const lyrics = ref<LyricsData | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
-const currentTime = ref(0)
+const lyricsContainer = ref<HTMLElement | null>(null)
+const lyricsRefs = ref<Record<number, HTMLElement>>({})
 
-// Update current time from player
+// Update position and trigger scroll if needed
 const updateCurrentTime = () => {
-  currentTime.value = playerStore.currentData?.position || 0
+  const previousTime = currentTime.value
+  updatePosition()
+  
+  // Debug logging for time updates (less frequent)
+  if (Math.abs(previousTime - currentTime.value) > 0.1) { // Only log if change > 0.1s
+    console.log(`⏰ Time updated: ${previousTime.toFixed(2)}s → ${currentTime.value.toFixed(2)}s (Current line: ${currentLineIndex.value})`)
+  }
+  
+  // Only trigger scroll if the time actually changed and lyrics are timed
+  if (Math.abs(previousTime - currentTime.value) > 0.01 && areTimedLyrics()) {
+    scrollToCurrentLine()
+  }
 }
 
-// Check if a lyrics line is currently being sung
-const isCurrentLine = (timestamp: number): boolean => {
+// Get the current line index (computed for reactivity)
+const currentLineIndex = computed((): number => {
+  if (!lyrics.value?.lyrics) return -1
+
+  // Find the latest line whose timestamp is less than or equal to current time
+  let currentIndex = -1
+  
+  for (let i = 0; i < lyrics.value.lyrics.length; i++) {
+    const line = lyrics.value.lyrics[i]
+    if (line.timestamp <= currentTime.value) {
+      currentIndex = i
+    } else {
+      break // Stop at the first line that's beyond current time
+    }
+  }
+
+  return currentIndex
+})
+
+// Get the current line index (legacy function, now uses computed)
+const getCurrentLineIndex = (): number => {
+  return currentLineIndex.value
+}
+
+// Check if lyrics are timed (have varying timestamps) or untimed (all timestamps are 0)
+const areTimedLyrics = (): boolean => {
+  if (!lyrics.value?.lyrics || lyrics.value.lyrics.length === 0) return false
+  
+  // Check if any line has a timestamp different from 0
+  return lyrics.value.lyrics.some(line => line.timestamp !== 0)
+}
+
+// Check if a lyrics line is currently being sung (by index - more reliable)
+const isCurrentLineByIndex = (lineIndex: number): boolean => {
   if (!lyrics.value?.lyrics) return false
+  
+  // Don't highlight anything if lyrics are untimed
+  if (!areTimedLyrics()) return false
 
-  const currentIndex = lyrics.value.lyrics.findIndex((line, index) => {
-    const nextLine = lyrics.value!.lyrics[index + 1]
-    return timestamp <= currentTime.value && (!nextLine || currentTime.value < nextLine.timestamp)
-  })
+  const currentIndex = currentLineIndex.value // Use computed property for reactivity
+  const isActive = currentIndex === lineIndex
+  
+  // Debug logging for highlighting
+  if (isActive) {
+    console.log(`🎤 Highlighting line at index ${lineIndex}: "${lyrics.value.lyrics[lineIndex]?.text}"`)
+  }
 
-  return lyrics.value.lyrics.findIndex(line => line.timestamp === timestamp) === currentIndex
+  return isActive
+}
+
+// Get the timestamp of the next line (for debugging "to" timestamp)
+const getNextTimestamp = (currentIndex: number): string => {
+  if (!lyrics.value?.lyrics) return 'N/A'
+  
+  const nextLine = lyrics.value.lyrics[currentIndex + 1]
+  if (nextLine) {
+    return nextLine.timestamp.toString()
+  } else {
+    return 'End'
+  }
+}
+
+// Scroll to current line if it exists and is not visible
+const scrollToCurrentLine = () => {
+  if (!lyricsContainer.value || !lyrics.value?.lyrics) return
+
+  const currentIndex = getCurrentLineIndex()
+  if (currentIndex === -1) return
+
+  const currentLineElement = lyricsRefs.value[currentIndex]
+  if (!currentLineElement) return
+
+  const containerRect = lyricsContainer.value.getBoundingClientRect()
+  const lineRect = currentLineElement.getBoundingClientRect()
+
+  // Check if the current line is outside the visible area
+  const isAboveView = lineRect.top < containerRect.top
+  const isBelowView = lineRect.bottom > containerRect.bottom
+
+  if (isAboveView || isBelowView) {
+    // Scroll to center the current line in the container
+    const lineOffsetTop = currentLineElement.offsetTop
+    const containerHeight = lyricsContainer.value.clientHeight
+    const lineHeight = currentLineElement.clientHeight
+
+    const scrollPosition = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2)
+
+    lyricsContainer.value.scrollTo({
+      top: scrollPosition,
+      behavior: 'smooth'
+    })
+  }
 }
 
 // Fetch lyrics from API
@@ -144,13 +243,20 @@ watch(() => props.isVisible, (isVisible) => {
   } else {
     lyrics.value = null
     error.value = null
+    lyricsRefs.value = {} // Clear refs when overlay closes
   }
+})
+
+// Watch for lyrics changes to reset refs
+watch(() => lyrics.value, () => {
+  lyricsRefs.value = {} // Reset refs when new lyrics load
 })
 
 // Set up interval to update current time
 let timeInterval: number | null = null
 
 onMounted(() => {
+  console.log('🚀 Lyrics overlay mounted, starting time calculation')
   timeInterval = window.setInterval(updateCurrentTime, 100)
   // Add escape key listener
   document.addEventListener('keydown', handleKeydown)
@@ -258,11 +364,25 @@ onUnmounted(() => {
       padding-left: 12px;
       padding-right: 12px;
 
+      .lyrics-debug {
+        font-size: 12px;
+        color: var(--color-body-secondary);
+        font-family: monospace;
+        opacity: 0.7;
+        margin-bottom: 4px;
+        font-weight: normal;
+      }
+
       &--current {
         background-color: var(--cover-placeholder-bg);
         color: var(--primary);
         font-weight: 600;
         transform: scale(1.02);
+
+        .lyrics-debug {
+          color: var(--primary);
+          opacity: 0.8;
+        }
       }
 
       &:empty {

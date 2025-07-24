@@ -236,12 +236,11 @@ export const executeScript = async (request: ScriptExecutionRequest): Promise<Sc
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/system/scripts`, {
+  const response = await fetch(`${baseUrl}/scripts/${request.script}/execute`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(request),
   })
 
   const data = await response.json()

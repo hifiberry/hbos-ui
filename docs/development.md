@@ -50,6 +50,7 @@
 # Phase 5
 
 * Reset systen **started**
+* Auto-detect sound card **started**
 * Force sound card detection or select sound card **done**
 * log, loglog, lin volume control settings
 * Support for additional meta data in "Now playing" (format, sample rate, ...)

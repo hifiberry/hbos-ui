@@ -70,26 +70,23 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const { position: currentTime, updatePosition } = usePlayerPosition()
+const { position: currentTime } = usePlayerPosition()
 const lyrics = ref<LyricsData | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const lyricsContainer = ref<HTMLElement | null>(null)
 const lyricsRefs = ref<Record<number, HTMLElement>>({})
 
-// Update position and trigger scroll if needed
-const updateCurrentTime = () => {
-  const previousTime = currentTime.value
-  updatePosition()
-
+// Watch for current time changes to trigger scroll when needed
+watch(currentTime, (newTime, oldTime) => {
   // Only trigger scroll if the time actually changed and lyrics are timed
-  const timeChanged = Math.abs(previousTime - currentTime.value) > 0.01
+  const timeChanged = Math.abs(newTime - (oldTime || 0)) > 0.01
   const lyricsAreTimed = areTimedLyrics()
 
   if (timeChanged && lyricsAreTimed) {
     scrollToCurrentLine()
   }
-}
+})
 
 // Get the current line index (computed for reactivity)
 const currentLineIndex = computed((): number => {
@@ -280,19 +277,13 @@ watch(() => lyrics.value, () => {
   lyricsRefs.value = {} // Reset refs when new lyrics load
 })
 
-// Set up interval to update current time
-let timeInterval: number | null = null
-
+// Set up event listeners
 onMounted(() => {
-  timeInterval = window.setInterval(updateCurrentTime, 100)
   // Add escape key listener
   document.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
-  if (timeInterval) {
-    clearInterval(timeInterval)
-  }
   // Remove escape key listener
   document.removeEventListener('keydown', handleKeydown)
 })

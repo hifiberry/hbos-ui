@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { usePlayerStore } from '@/stores/player'
 
 /**
@@ -13,13 +13,14 @@ import { usePlayerStore } from '@/stores/player'
  * - Automatic sync with player state changes
  * - Efficient performance with minimal API calls
  * - Consistent behavior across components
+ * - Built-in 500ms update interval when playing
  *
  * Usage:
  * ```ts
  * const { position, isPlaying, duration, updatePosition } = usePlayerPosition()
  *
- * // Start an interval to update position
- * setInterval(updatePosition, 100)
+ * // Position automatically updates every 500ms when playing
+ * // You can also manually trigger updates with updatePosition()
  *
  * // Use reactive position value
  * watch(position, (newPos) => {
@@ -37,6 +38,9 @@ export function usePlayerPosition() {
 
   // Current calculated position
   const currentPosition = ref(0)
+
+  // Automatic update interval
+  const intervalId = ref<number | null>(null)
 
   // Calculate current position based on player state and elapsed time
   const calculateCurrentPosition = (): number => {
@@ -69,10 +73,40 @@ export function usePlayerPosition() {
     return newPosition
   }
 
+  // Start automatic position updates
+  const startAutoUpdate = () => {
+    if (intervalId.value) {
+      clearInterval(intervalId.value)
+    }
+    intervalId.value = window.setInterval(updatePosition, 500)
+  }
+
+  // Stop automatic position updates
+  const stopAutoUpdate = () => {
+    if (intervalId.value) {
+      clearInterval(intervalId.value)
+      intervalId.value = null
+    }
+  }
+
   // Watch for player state/position changes to sync our calculation
   watch(() => [playerStore.currentData?.state, playerStore.currentData?.position], () => {
     updatePosition()
   }, { immediate: true })
+
+  // Watch for play state changes to manage auto-update interval
+  watch(() => playerStore.currentData?.state, (newState) => {
+    if (newState === 'playing') {
+      startAutoUpdate()
+    } else {
+      stopAutoUpdate()
+    }
+  }, { immediate: true })
+
+  // Cleanup interval when composable is destroyed
+  onUnmounted(() => {
+    stopAutoUpdate()
+  })
 
   // Computed property for reactive access
   const position = computed(() => currentPosition.value)
@@ -95,6 +129,10 @@ export function usePlayerPosition() {
     // Position tracking
     position,
     updatePosition,
+
+    // Interval management
+    startAutoUpdate,
+    stopAutoUpdate,
 
     // Player state
     isPlaying,

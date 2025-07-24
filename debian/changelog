@@ -1,3 +1,10 @@
+hifiberry-webui (0.5) stable; urgency=medium
+
+  * Implemented more system tools
+  * Styling updates
+
+ -- HiFiBerry <support@hifiberry.com>  Wed, 24 Jul 2025 10:00:00 +0000
+
 hifiberry-webui (0.4) stable; urgency=medium
 
   * Integrated debian packaging

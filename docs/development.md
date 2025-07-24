@@ -52,7 +52,8 @@
 * Reset systen **started**
 * Auto-detect sound card **done**
 * Force sound card detection or select sound card **done**
-* Lyrics support - display lyrics in "Now playing"
+* Lyrics support - display lyrics in "Now playing" **done**
+  * Interactive lyrics overlay with real-time synchronization
 * Enable user to upload artist/album art
 
 # Phase 6

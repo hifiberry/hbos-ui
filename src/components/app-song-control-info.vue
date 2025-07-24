@@ -1,14 +1,14 @@
 <template>
   <div :class="['song-control-info', { card: isOnSticky, 'is-on-header': isOnHeader }]">
     <div v-if="song" class="song-control-info__box" @click="goToNowPlaying">
-      <div 
+      <div
         class="song-control-info__cover"
         @mouseenter="showTooltip = true"
         @mouseleave="showTooltip = false"
         @mousemove="updateTooltipPosition"
       >
         <AppCover :src="rewriteAudiocontrolApiUrl(song.cover_art_url || '')" :alt="song.artist || 'Artist'" />
-        
+
         <!-- Metadata Tooltip -->
         <AppMetadataTooltip
           v-if="showTooltip && song"
@@ -81,30 +81,30 @@ const tooltipStyles = computed(() => {
   const tooltipWidth = 350 // Approximate tooltip width
   const tooltipHeight = 200 // Approximate tooltip height
   const offset = 10
-  
+
   let left = tooltipX.value + offset
   let top = tooltipY.value - offset
-  
+
   // Adjust if tooltip would go off the right edge
   if (left + tooltipWidth > window.innerWidth) {
     left = tooltipX.value - tooltipWidth - offset
   }
-  
+
   // Adjust if tooltip would go off the bottom edge
   if (top + tooltipHeight > window.innerHeight) {
     top = tooltipY.value - tooltipHeight - offset
   }
-  
+
   // Ensure tooltip doesn't go off the left edge
   if (left < offset) {
     left = offset
   }
-  
+
   // Ensure tooltip doesn't go off the top edge
   if (top < offset) {
     top = offset
   }
-  
+
   return {
     left: `${left}px`,
     top: `${top}px`,
@@ -127,7 +127,7 @@ const tooltipStyles = computed(() => {
     overflow: hidden;
     position: relative;
     cursor: help;
-    
+
     &:deep(.app-cover) {
       width: 100%;
       height: 100%;

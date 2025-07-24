@@ -11,7 +11,7 @@
         </button>
       </div>
 
-      <div class="lyrics-overlay__body">
+      <div class="lyrics-overlay__body" ref="lyricsContainer">
         <div v-if="loading" class="lyrics-overlay__loading">
           Loading lyrics...
         </div>
@@ -20,7 +20,7 @@
           {{ error }}
         </div>
 
-        <div v-else-if="lyrics" class="lyrics-overlay__lyrics" ref="lyricsContainer">
+        <div v-else-if="lyrics" class="lyrics-overlay__lyrics">
           <div
             v-for="(line, index) in lyrics.lyrics"
             :key="index"
@@ -28,10 +28,6 @@
             class="lyrics-line"
             :class="{ 'lyrics-line--current': isCurrentLineByIndex(index) }"
           >
-            <div class="lyrics-debug">
-              From: {{ line.timestamp }}s 
-              To: {{ getNextTimestamp(index) }}s
-            </div>
             {{ line.text }}
           </div>
         </div>
@@ -85,14 +81,12 @@ const lyricsRefs = ref<Record<number, HTMLElement>>({})
 const updateCurrentTime = () => {
   const previousTime = currentTime.value
   updatePosition()
-  
-  // Debug logging for time updates (less frequent)
-  if (Math.abs(previousTime - currentTime.value) > 0.1) { // Only log if change > 0.1s
-    console.log(`⏰ Time updated: ${previousTime.toFixed(2)}s → ${currentTime.value.toFixed(2)}s (Current line: ${currentLineIndex.value})`)
-  }
-  
+
   // Only trigger scroll if the time actually changed and lyrics are timed
-  if (Math.abs(previousTime - currentTime.value) > 0.01 && areTimedLyrics()) {
+  const timeChanged = Math.abs(previousTime - currentTime.value) > 0.01
+  const lyricsAreTimed = areTimedLyrics()
+
+  if (timeChanged && lyricsAreTimed) {
     scrollToCurrentLine()
   }
 }
@@ -103,7 +97,7 @@ const currentLineIndex = computed((): number => {
 
   // Find the latest line whose timestamp is less than or equal to current time
   let currentIndex = -1
-  
+
   for (let i = 0; i < lyrics.value.lyrics.length; i++) {
     const line = lyrics.value.lyrics[i]
     if (line.timestamp <= currentTime.value) {
@@ -124,7 +118,7 @@ const getCurrentLineIndex = (): number => {
 // Check if lyrics are timed (have varying timestamps) or untimed (all timestamps are 0)
 const areTimedLyrics = (): boolean => {
   if (!lyrics.value?.lyrics || lyrics.value.lyrics.length === 0) return false
-  
+
   // Check if any line has a timestamp different from 0
   return lyrics.value.lyrics.some(line => line.timestamp !== 0)
 }
@@ -132,60 +126,90 @@ const areTimedLyrics = (): boolean => {
 // Check if a lyrics line is currently being sung (by index - more reliable)
 const isCurrentLineByIndex = (lineIndex: number): boolean => {
   if (!lyrics.value?.lyrics) return false
-  
+
   // Don't highlight anything if lyrics are untimed
   if (!areTimedLyrics()) return false
 
   const currentIndex = currentLineIndex.value // Use computed property for reactivity
   const isActive = currentIndex === lineIndex
-  
-  // Debug logging for highlighting
-  if (isActive) {
-    console.log(`🎤 Highlighting line at index ${lineIndex}: "${lyrics.value.lyrics[lineIndex]?.text}"`)
-  }
 
   return isActive
 }
 
-// Get the timestamp of the next line (for debugging "to" timestamp)
-const getNextTimestamp = (currentIndex: number): string => {
-  if (!lyrics.value?.lyrics) return 'N/A'
-  
-  const nextLine = lyrics.value.lyrics[currentIndex + 1]
-  if (nextLine) {
-    return nextLine.timestamp.toString()
-  } else {
-    return 'End'
-  }
-}
-
-// Scroll to current line if it exists and is not visible
+// Scroll to current line with smart positioning
 const scrollToCurrentLine = () => {
-  if (!lyricsContainer.value || !lyrics.value?.lyrics) return
+  if (!lyricsContainer.value || !lyrics.value?.lyrics) {
+    return
+  }
 
   const currentIndex = getCurrentLineIndex()
-  if (currentIndex === -1) return
+  
+  if (currentIndex === -1) {
+    return
+  }
 
   const currentLineElement = lyricsRefs.value[currentIndex]
-  if (!currentLineElement) return
+  if (!currentLineElement) {
+    return
+  }
+
+  // Get the main popup content element for better comfort zone calculation
+  const contentElement = lyricsContainer.value.closest('.lyrics-overlay__content')
+  if (!contentElement) {
+    return
+  }
 
   const containerRect = lyricsContainer.value.getBoundingClientRect()
+  const contentRect = contentElement.getBoundingClientRect()
   const lineRect = currentLineElement.getBoundingClientRect()
 
-  // Check if the current line is outside the visible area
-  const isAboveView = lineRect.top < containerRect.top
-  const isBelowView = lineRect.bottom > containerRect.bottom
+  // Use the content element height for comfort zone calculation
+  const contentHeight = contentElement.clientHeight
+  const containerHeight = lyricsContainer.value.clientHeight
+  const lineHeight = currentLineElement.clientHeight
 
-  if (isAboveView || isBelowView) {
-    // Scroll to center the current line in the container
-    const lineOffsetTop = currentLineElement.offsetTop
-    const containerHeight = lyricsContainer.value.clientHeight
-    const lineHeight = currentLineElement.clientHeight
+  // Define comfort zones based on the entire popup content height
+  // This positions the line in the upper portion of the popup window
+  const topComfortZone = contentHeight * 0.1 // Top 10% of entire popup
+  const bottomComfortZone = contentHeight * 0.4 // Bottom 40% of entire popup
 
-    const scrollPosition = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2)
+  // Calculate line position relative to the scrollable container
+  const relativeTop = lineRect.top - containerRect.top
+  const relativeBottom = lineRect.bottom - containerRect.top
 
+  // Calculate line position relative to the entire popup content
+  const lineTopRelativeToContent = lineRect.top - contentRect.top
+  const lineBottomRelativeToContent = lineRect.bottom - contentRect.top
+
+  let shouldScroll = false
+  let scrollTarget = 0
+
+  // Check if line is outside visible area or not optimally positioned relative to entire popup
+  if (relativeTop < 0) {
+    // Line is above visible area
+    shouldScroll = true
+    scrollTarget = currentLineElement.offsetTop - topComfortZone
+  } else if (relativeBottom > containerHeight) {
+    // Line is below visible area
+    shouldScroll = true
+    scrollTarget = currentLineElement.offsetTop - bottomComfortZone + lineHeight
+  } else if (lineTopRelativeToContent < topComfortZone) {
+    // Line is too high in the popup - scroll up to center it better
+    shouldScroll = true
+    scrollTarget = currentLineElement.offsetTop - topComfortZone
+  } else if (lineBottomRelativeToContent > bottomComfortZone) {
+    // Line is too low in the popup - scroll down to center it better
+    shouldScroll = true
+    scrollTarget = currentLineElement.offsetTop - bottomComfortZone + lineHeight
+  }
+
+  if (shouldScroll) {
+    // Ensure scroll target is within bounds
+    const maxScroll = lyricsContainer.value.scrollHeight - containerHeight
+    scrollTarget = Math.max(0, Math.min(scrollTarget, maxScroll))
+    
     lyricsContainer.value.scrollTo({
-      top: scrollPosition,
+      top: scrollTarget,
       behavior: 'smooth'
     })
   }
@@ -256,7 +280,6 @@ watch(() => lyrics.value, () => {
 let timeInterval: number | null = null
 
 onMounted(() => {
-  console.log('🚀 Lyrics overlay mounted, starting time calculation')
   timeInterval = window.setInterval(updateCurrentTime, 100)
   // Add escape key listener
   document.addEventListener('keydown', handleKeydown)
@@ -364,25 +387,11 @@ onUnmounted(() => {
       padding-left: 12px;
       padding-right: 12px;
 
-      .lyrics-debug {
-        font-size: 12px;
-        color: var(--color-body-secondary);
-        font-family: monospace;
-        opacity: 0.7;
-        margin-bottom: 4px;
-        font-weight: normal;
-      }
-
       &--current {
         background-color: var(--cover-placeholder-bg);
         color: var(--primary);
         font-weight: 600;
         transform: scale(1.02);
-
-        .lyrics-debug {
-          color: var(--primary);
-          opacity: 0.8;
-        }
       }
 
       &:empty {

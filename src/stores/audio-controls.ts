@@ -17,7 +17,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const playerStore = usePlayerStore()
   const { fetchCurrentPlayer, sendCommand } = playerStore
   const { currentData, currentSong } = storeToRefs(playerStore)
-  
+
   // Use the shared player position composable
   const { position: currentPosition, updatePosition } = usePlayerPosition()
 
@@ -166,7 +166,7 @@ export const useAudioControls = defineStore('audio-controls', () => {
     if (isPlaying.value && currentSong.value?.duration) {
       progressIntervalID.value = setInterval(() => {
         updatePosition()
-        
+
         // Check if we've reached the end
         if (seekPosition.value >= 100) {
           stopAutoProgress()

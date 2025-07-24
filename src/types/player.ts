@@ -13,6 +13,7 @@ export interface Player {
 
 export interface SongMetadata {
   lyrics_available?: boolean
+  lyrics_url?: string
   lyrics_metadata?: {
     album?: string
     artist?: string

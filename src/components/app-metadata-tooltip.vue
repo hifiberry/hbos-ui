@@ -16,6 +16,10 @@
         <span class="metadata-label">Album:</span>
         <span class="metadata-value">{{ song.album }}</span>
       </div>
+      <div v-if="song?.album_artist" class="metadata-item">
+        <span class="metadata-label">Album Artist:</span>
+        <span class="metadata-value">{{ song.album_artist }}</span>
+      </div>
       <div v-if="song?.track_number !== undefined && song?.track_number !== null && song?.track_number > 0" class="metadata-item">
         <span class="metadata-label">Track #:</span>
         <span class="metadata-value">{{ song.track_number }}</span>
@@ -27,6 +31,12 @@
       <div v-if="song?.source" class="metadata-item">
         <span class="metadata-label">Source:</span>
         <span class="metadata-value capitalize">{{ song.source }}</span>
+      </div>
+      <div v-if="song?.metadata?.lyrics_available !== undefined" class="metadata-item">
+        <span class="metadata-label">Lyrics:</span>
+        <span class="metadata-value" :class="{ 'status-available': song.metadata.lyrics_available, 'status-unavailable': !song.metadata.lyrics_available }">
+          {{ song.metadata.lyrics_available ? 'Available' : 'Not Available' }}
+        </span>
       </div>
       <div v-if="song?.uri" class="metadata-item">
         <span class="metadata-label">URI:</span>
@@ -64,11 +74,13 @@ const hasAnyMetadata = computed(() => {
     props.song.title ||
     props.song.artist ||
     props.song.album ||
+    props.song.album_artist ||
     (props.song.track_number !== undefined && props.song.track_number !== null && props.song.track_number > 0) ||
     props.song.duration ||
     props.song.source ||
     props.song.uri ||
-    props.song.stream_url
+    props.song.stream_url ||
+    props.song.metadata?.lyrics_available !== undefined
   )
 })
 </script>
@@ -134,6 +146,16 @@ const hasAnyMetadata = computed(() => {
       text-transform: capitalize;
     }
 
+    &.status-available {
+      color: var(--color-success, #22c55e);
+      font-weight: 500;
+    }
+
+    &.status-unavailable {
+      color: var(--color-body-secondary);
+      opacity: 0.7;
+    }
+
     &.uri {
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: 0.8rem;
@@ -148,6 +170,16 @@ const hasAnyMetadata = computed(() => {
       font-size: 0.8rem;
       opacity: 0.8;
       word-break: break-all;
+    }
+
+    &.status-available {
+      color: #22c55e;
+      font-weight: 500;
+    }
+
+    &.status-unavailable {
+      color: #6b7280;
+      font-weight: 500;
     }
   }
 }

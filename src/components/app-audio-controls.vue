@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="app-audio-controls" :class="[{ 'is-separate': isSeparate }, $attrs.class]">
+    <div class="app-audio-controls" :class="[{ 'is-separate': isSeparate, 'is-on-header': isOnHeader }, $attrs.class]">
       <div class="app-audio-controls__left">
               <button
           class="app-audio-controls__secondary lyrics-button"
@@ -62,15 +62,19 @@
     </div>
 
     <div class="app-audio-controls__right">
-      <AppIconButton
+      <button
         v-if="!isOnSticky"
         class="app-audio-controls__secondary heart-button"
         :class="{ 'heart-button--active': currentSongIsFavourite }"
-        :icon="currentSongIsFavourite ? 'lucide/heart-filled' : 'lucide/heart-outline'"
         :title="heartButtonTitle"
         :disabled="isSendingCommand || checkingFavourite"
         @click="toggleCurrentSongFavourite"
-      />
+      >
+        <img 
+          :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'" 
+          alt="Favorite" 
+        />
+      </button>
     </div>
     </div>
 
@@ -99,9 +103,10 @@ defineOptions({
 interface AppAudioControlsProps {
   isSeparate?: boolean
   isOnSticky?: boolean
+  isOnHeader?: boolean
 }
 
-const { isSeparate = false, isOnSticky = false } = defineProps<AppAudioControlsProps>()
+const { isSeparate = false, isOnSticky = false, isOnHeader = false } = defineProps<AppAudioControlsProps>()
 
 const playerStore = usePlayerStore()
 const {
@@ -261,14 +266,23 @@ const heartButtonTitle = computed(() => {
       cursor: not-allowed;
     }
 
-    /* Default styling for both heart states */
-    svg {
-      @include audio-control-stroke; /* Use mixin for consistent stroke width */
+    img {
+      width: 32px;
+      height: 32px;
+      filter: invert(17%) sepia(89%) saturate(6472%) hue-rotate(342deg) brightness(92%) contrast(89%) opacity(0.4); /* Light red color for inactive state */
+
+      @include media-down(md) {
+        width: 24px;
+        height: 24px;
+      }
     }
 
     &--active {
       opacity: 1;
-      color: var(--color-icon-primary) !important; /* Use primary icon color for consistency */
+
+      img {
+        filter: invert(17%) sepia(89%) saturate(6472%) hue-rotate(342deg) brightness(92%) contrast(89%) !important; /* Full red color for active state */
+      }
     }
   }
 
@@ -327,6 +341,56 @@ const heartButtonTitle = computed(() => {
       height: 24px;
       color: var(--main-audio-controls-separate);
       @include audio-control-stroke; /* Use mixin for consistent stroke width */
+    }
+  }
+}
+
+/* Header-specific styling - reduced spacing and smaller icons */
+.app-audio-controls.is-on-header {
+  // Remove fixed max-width to respect grid layout
+  
+  &__left {
+    margin-right: 30px; /* 30% of 100px = 30px */
+
+    @include media-down(md) {
+      margin-right: 24px; /* 30% of 80px = 24px */
+    }
+
+    @include media-down(sm) {
+      margin-right: 18px; /* 30% of 60px = 18px */
+    }
+  }
+
+  &__right {
+    margin-left: 30px; /* 30% of 100px = 30px */
+
+    @include media-down(md) {
+      margin-left: 24px; /* 30% of 80px = 24px */
+    }
+
+    @include media-down(sm) {
+      margin-left: 18px; /* 30% of 60px = 18px */
+    }
+  }
+
+  /* Make lyrics and heart button icons smaller in header (70% of current size) */
+  .lyrics-button img {
+    width: 22px; /* 70% of 32px = 22.4px, rounded to 22px */
+    height: 22px;
+
+    @include media-down(md) {
+      width: 17px; /* 70% of 24px = 16.8px, rounded to 17px */
+      height: 17px;
+    }
+  }
+
+  .heart-button img {
+    width: 22px; /* 70% of 32px = 22.4px, rounded to 22px */
+    height: 22px;
+
+    @include media-down(md) {
+      width: 17px; /* 70% of 24px = 16.8px, rounded to 17px */
+      height: 17px;
     }
   }
 }

@@ -71,12 +71,41 @@ const updateTooltipPosition = (event: MouseEvent) => {
   tooltipY.value = event.clientY
 }
 
-// Computed styles for tooltip positioning
-const tooltipStyles = computed(() => ({
-  left: `${tooltipX.value + 10}px`,
-  top: `${tooltipY.value - 10}px`,
-  position: 'fixed' as const
-}))
+// Computed styles for tooltip positioning with boundary detection
+const tooltipStyles = computed(() => {
+  const tooltipWidth = 350 // Approximate tooltip width
+  const tooltipHeight = 200 // Approximate tooltip height
+  const offset = 10
+  
+  let left = tooltipX.value + offset
+  let top = tooltipY.value - offset
+  
+  // Adjust if tooltip would go off the right edge
+  if (left + tooltipWidth > window.innerWidth) {
+    left = tooltipX.value - tooltipWidth - offset
+  }
+  
+  // Adjust if tooltip would go off the bottom edge
+  if (top + tooltipHeight > window.innerHeight) {
+    top = tooltipY.value - tooltipHeight - offset
+  }
+  
+  // Ensure tooltip doesn't go off the left edge
+  if (left < offset) {
+    left = offset
+  }
+  
+  // Ensure tooltip doesn't go off the top edge
+  if (top < offset) {
+    top = offset
+  }
+  
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    position: 'fixed' as const
+  }
+})
 </script>
 
 <style lang="scss">

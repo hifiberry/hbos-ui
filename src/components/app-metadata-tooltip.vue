@@ -16,8 +16,8 @@
         <span class="metadata-label">Album:</span>
         <span class="metadata-value">{{ song.album }}</span>
       </div>
-      <div v-if="song?.track_number !== undefined && song?.track_number !== null" class="metadata-item">
-        <span class="metadata-label">Track Number:</span>
+      <div v-if="song?.track_number !== undefined && song?.track_number !== null && song?.track_number > 0" class="metadata-item">
+        <span class="metadata-label">Track #:</span>
         <span class="metadata-value">{{ song.track_number }}</span>
       </div>
       <div v-if="song?.duration" class="metadata-item">
@@ -26,21 +26,27 @@
       </div>
       <div v-if="song?.source" class="metadata-item">
         <span class="metadata-label">Source:</span>
-        <span class="metadata-value">{{ song.source }}</span>
+        <span class="metadata-value capitalize">{{ song.source }}</span>
       </div>
       <div v-if="song?.uri" class="metadata-item">
         <span class="metadata-label">URI:</span>
-        <span class="metadata-value">{{ song.uri }}</span>
+        <span class="metadata-value uri">{{ song.uri }}</span>
       </div>
       <div v-if="song?.stream_url" class="metadata-item">
         <span class="metadata-label">Stream URL:</span>
-        <span class="metadata-value">{{ song.stream_url }}</span>
+        <span class="metadata-value path">{{ song.stream_url }}</span>
+      </div>
+      
+      <!-- Show a message if no metadata is available -->
+      <div v-if="!hasAnyMetadata" class="metadata-item metadata-item--empty">
+        <span class="metadata-value">No metadata available for this track</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Song } from '@/types/player'
 import { formatTime } from '@/helpers/formatTime'
 
@@ -48,7 +54,23 @@ interface Props {
   song: Song | null
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
+// Check if any meaningful metadata is available
+const hasAnyMetadata = computed(() => {
+  if (!props.song) return false
+  
+  return !!(
+    props.song.title ||
+    props.song.artist ||
+    props.song.album ||
+    (props.song.track_number !== undefined && props.song.track_number !== null && props.song.track_number > 0) ||
+    props.song.duration ||
+    props.song.source ||
+    props.song.uri ||
+    props.song.stream_url
+  )
+})
 </script>
 
 <style scoped lang="scss">
@@ -89,6 +111,12 @@ defineProps<Props>()
   align-items: flex-start;
   gap: 8px;
 
+  &--empty {
+    justify-content: center;
+    font-style: italic;
+    opacity: 0.7;
+  }
+
   .metadata-label {
     font-weight: 500;
     color: var(--color-body-secondary);
@@ -101,6 +129,26 @@ defineProps<Props>()
     font-size: 0.875rem;
     word-break: break-word;
     flex: 1;
+
+    &.capitalize {
+      text-transform: capitalize;
+    }
+
+    &.uri {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.8rem;
+      background: rgba(var(--color-surface-rgb, 128, 128, 128), 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+
+    &.path {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.8rem;
+      opacity: 0.8;
+      word-break: break-all;
+    }
   }
 }
 </style>

@@ -1,3 +1,15 @@
+hifiberry-webui (0.6) stable; urgency=medium
+
+  * Added lyrics display functionality
+  * Implemented metadata tooltip showing song information on cover art hover
+  * Added lyrics availability indicator in audio controls
+  * Created interactive lyrics overlay with real-time synchronization
+  * Added escape key support for closing lyrics overlay
+  * Extended reverse proxy URL handling for lyrics API endpoints
+  * Enhanced song metadata types to support lyrics data
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 24 Jul 2025 16:00:00 +0000
+
 hifiberry-webui (0.5) stable; urgency=medium
 
   * Implemented more system tools

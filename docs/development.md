@@ -50,22 +50,22 @@
 # Phase 5
 
 * Reset systen **started**
-* Auto-detect sound card **started**
+* Auto-detect sound card **done**
 * Force sound card detection or select sound card **done**
-* log, loglog, lin volume control settings
-* Support for additional meta data in "Now playing" (format, sample rate, ...)
-* volume limit, mono/stereo, ... (using Pipewire and ALSA)
-* Show library loading progress
 * Lyrics support - display lyrics in "Now playing"
 * Enable user to upload artist/album art
-* Improve icons
-* Bluetooth
-  * Pair device
-  * remove paired device
 
 # Phase 6
 
 * Add (optional) password verification to use the UI, also add some kind of authorisation to API calls
+* log, loglog, lin volume control settings
+* Support for additional meta data in "Now playing" (format, sample rate, ...)
+* volume limit, mono/stereo, ... (using Pipewire and ALSA)
+* Show library loading progress
+* Improve icons
+* Bluetooth
+  * Pair device
+  * remove paired device
  
 # Later
 

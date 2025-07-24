@@ -1,15 +1,16 @@
 <template>
-  <div class="app-audio-controls" :class="{ 'is-separate': isSeparate }">
-    <div class="app-audio-controls__left">
-            <button
-        class="app-audio-controls__secondary lyrics-button"
-        :class="{ 'lyrics-button--active': song?.metadata?.lyrics_available }"
-        :disabled="!song?.metadata?.lyrics_available"
-        @click="openLyrics"
-      >
-        <img src="/images/svg/tabler/lyrics.svg" alt="Lyrics" />
-      </button>
-    </div>
+  <div>
+    <div class="app-audio-controls" :class="[{ 'is-separate': isSeparate }, $attrs.class]">
+      <div class="app-audio-controls__left">
+              <button
+          class="app-audio-controls__secondary lyrics-button"
+          :class="{ 'lyrics-button--active': song?.metadata?.lyrics_available }"
+          :disabled="!song?.metadata?.lyrics_available"
+          @click="openLyrics"
+        >
+          <img src="/images/svg/tabler/lyrics.svg" alt="Lyrics" />
+        </button>
+      </div>
 
     <div class="app-audio-controls--main">
       <AppIconButton
@@ -71,14 +72,15 @@
         @click="toggleCurrentSongFavourite"
       />
     </div>
-  </div>
+    </div>
 
-  <!-- Lyrics Overlay -->
-  <AppLyricsOverlay
-    :is-visible="showLyricsOverlay"
-    :song="song"
-    @close="closeLyrics"
-  />
+    <!-- Lyrics Overlay -->
+    <AppLyricsOverlay
+      :is-visible="showLyricsOverlay"
+      :song="song"
+      @close="closeLyrics"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -88,6 +90,11 @@ import AppLyricsOverlay from '@/components/app-lyrics-overlay.vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
+
+// Disable automatic attribute inheritance since we handle it manually
+defineOptions({
+  inheritAttrs: false
+})
 
 interface AppAudioControlsProps {
   isSeparate?: boolean
@@ -160,22 +167,51 @@ const heartButtonTitle = computed(() => {
     max-width: 100%;
   }
 
+  /* On small screens, switch to single column layout when side buttons are hidden */
+  @media (max-width: 500px) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   &__left {
     display: flex;
     justify-content: flex-start;
+    margin-right: 100px; /* Large spacing between left section and center controls */
+
+    @include media-down(md) {
+      margin-right: 80px;
+    }
+
+    @include media-down(sm) {
+      margin-right: 60px;
+    }
+
+    /* Hide on small screens to save space */
+    @media (max-width: 500px) {
+      display: none;
+    }
   }
 
   &__right {
     display: flex;
     justify-content: flex-end;
     gap: 24px;
+    margin-left: 100px; /* Large spacing between center controls and right section */
 
     @include media-down(md) {
       gap: 16px;
+      margin-left: 80px;
     }
 
     @include media-down(sm) {
       gap: 12px;
+      margin-left: 60px;
+    }
+
+    /* Hide on small screens to save space */
+    @media (max-width: 500px) {
+      display: none;
     }
   }
 

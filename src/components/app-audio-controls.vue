@@ -1,14 +1,14 @@
 <template>
   <div class="app-audio-controls" :class="{ 'is-separate': isSeparate }">
     <div class="app-audio-controls__left">
-      <AppIconButton
-        v-if="!isOnSticky"
+            <button
         class="app-audio-controls__secondary lyrics-button"
         :class="{ 'lyrics-button--active': song?.metadata?.lyrics_available }"
-        icon="tabler/lyrics"
-        :title="song?.metadata?.lyrics_available ? 'Lyrics Available' : 'No Lyrics Available'"
-        :disabled="true"
-      />
+        :disabled="!song?.metadata?.lyrics_available"
+        @click="openLyrics"
+      >
+        <img src="/images/svg/tabler/lyrics.svg" alt="Lyrics" />
+      </button>
     </div>
 
     <div class="app-audio-controls--main">
@@ -72,12 +72,20 @@
       />
     </div>
   </div>
+
+  <!-- Lyrics Overlay -->
+  <AppLyricsOverlay
+    :is-visible="showLyricsOverlay"
+    :song="song"
+    @close="closeLyrics"
+  />
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import AppIconButton from '@/components/app-icon-button.vue'
+import AppLyricsOverlay from '@/components/app-lyrics-overlay.vue'
 import { storeToRefs } from 'pinia'
-import { computed } from 'vue'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
@@ -100,8 +108,22 @@ const {
 
 const audioControls = useAudioControls()
 
+// Lyrics overlay state
+const showLyricsOverlay = ref(false)
+
 const toggleCurrentSongFavourite = () => {
   playerStore.toggleCurrentSongFavourite()
+}
+
+// Lyrics functions
+const openLyrics = () => {
+  if (song.value?.metadata?.lyrics_available) {
+    showLyricsOverlay.value = true
+  }
+}
+
+const closeLyrics = () => {
+  showLyricsOverlay.value = false
 }
 
 // Computed property for heart button title with providers info
@@ -215,19 +237,26 @@ const heartButtonTitle = computed(() => {
   }
 
   .lyrics-button {
-    opacity: 0.4; /* Default inactive state */
+    opacity: 0.4; /* Default inactive state, same as heart button */
 
-    &:disabled {
-      cursor: default;
-    }
+    img {
+      width: 32px;
+      height: 32px;
+      filter: invert(17%) sepia(89%) saturate(6472%) hue-rotate(342deg) brightness(92%) contrast(89%) opacity(0.4); /* Light red color for inactive state */
 
-    svg {
-      @include audio-control-stroke; /* Use mixin for consistent stroke width */
+      @include media-down(md) {
+        width: 24px;
+        height: 24px;
+      }
     }
 
     &--active {
-      opacity: 1;
-      color: var(--color-accent);
+      opacity: 1 !important; /* Override disabled button opacity */
+      cursor: pointer; /* Make it clear it's clickable */
+
+      img {
+        filter: invert(17%) sepia(89%) saturate(6472%) hue-rotate(342deg) brightness(92%) contrast(89%) !important; /* Full red color for active state */
+      }
     }
   }
 }

@@ -16,12 +16,16 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
   const { useProxy } = configStore.apiConfig()
 
   // Fix URLs that start with /api/library/ to /api/audiocontrol/library/
-  // This is needed because the API server sometimes returns /api/library/ paths
-  // but they should be /api/audiocontrol/library/ to match our API structure
+  // and /api/lyrics/ to /api/audiocontrol/lyrics/
+  // This is needed because the API server sometimes returns shortened paths
+  // but they should include /audiocontrol/ to match our API structure
   let correctedUrl = url
   if (url.startsWith('/api/library/')) {
     correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
     console.log('Fixed library URL path:', { original: url, corrected: correctedUrl })
+  } else if (url.startsWith('/api/lyrics/')) {
+    correctedUrl = url.replace('/api/lyrics/', '/api/audiocontrol/lyrics/')
+    console.log('Fixed lyrics URL path:', { original: url, corrected: correctedUrl })
   }
 
   if (useProxy) {

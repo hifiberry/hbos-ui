@@ -9,7 +9,7 @@
     </h1>
 
     <div class="now-playing__player">
-      <div 
+      <div
         class="now-playing__cover-container"
         @mouseenter="showTooltip = true"
         @mouseleave="showTooltip = false"
@@ -20,7 +20,7 @@
           :src="rewriteAudiocontrolApiUrl(song?.cover_art_url || '')"
           :alt="song?.artist || song?.title || 'Now Playing'"
         />
-        
+
         <!-- Metadata Tooltip -->
         <AppMetadataTooltip
           v-if="showTooltip && song"

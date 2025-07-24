@@ -46,6 +46,10 @@
         <span class="metadata-label">Stream URL:</span>
         <span class="metadata-value path">{{ song.stream_url }}</span>
       </div>
+      <div v-if="song?.metadata?.lyrics_url" class="metadata-item">
+        <span class="metadata-label">Lyrics URL:</span>
+        <span class="metadata-value path">{{ song.metadata.lyrics_url }}</span>
+      </div>
 
       <!-- Show a message if no metadata is available -->
       <div v-if="!hasAnyMetadata" class="metadata-item metadata-item--empty">

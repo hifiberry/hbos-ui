@@ -85,6 +85,19 @@ export interface SetDtoverlayResponse {
   valid_overlays?: string[]
 }
 
+// Types for Soundcard Detection
+export interface SoundCardDetectionResponse {
+  status: 'success' | 'error'
+  message: string
+  data?: {
+    card_name: string | null
+    dtoverlay: string | null
+    card_detected: boolean
+    definition_found: boolean
+  }
+  error?: string
+}
+
 // Types for System Reboot
 export interface RebootRequest {
   delay?: number
@@ -194,6 +207,29 @@ export const setSoundCardDtoverlay = async (request: SetDtoverlayRequest): Promi
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(request),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
+/**
+ * Detect the currently connected soundcard
+ */
+export const detectSoundCard = async (): Promise<SoundCardDetectionResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/soundcard/detect`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
   })
 
   const data = await response.json()

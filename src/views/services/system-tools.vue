@@ -23,7 +23,7 @@
             </div>
           </div>
           <div class="tool-actions">
-            <button @click="confirmReset" :disabled="resetting" class="reset-button">
+            <button @click="showResetConfirmation = true" :disabled="resetting" class="reset-button">
               {{ resetting ? 'Resetting...' : 'Reset System' }}
             </button>
           </div>
@@ -43,13 +43,61 @@
             </div>
           </div>
           <div class="tool-actions">
-            <button @click="confirmDetectSoundCard" :disabled="detectingSoundCard" class="detect-button">
+            <button @click="detectSoundCard" :disabled="detectingSoundCard" class="detect-button">
               {{ detectingSoundCard ? 'Detecting...' : 'Detect card' }}
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Reset System Confirmation Dialog -->
+    <AppConfirmationDialog
+      :is-open="showResetConfirmation"
+      title="Reset System"
+      message="Are you sure you want to reset the system to factory defaults?
+
+This will:
+- Remove all settings and configurations
+- Delete all user data
+- Restore the system to its original state
+
+This action CANNOT BE UNDONE!"
+      confirm-button-text="Reset System"
+      :is-dangerous="true"
+      icon="reset"
+      :requires-text-confirmation="true"
+      confirmation-text="RESET"
+      @close="showResetConfirmation = false"
+      @confirm="executeReset"
+    />
+
+    <!-- Auto-detect Sound Card Confirmation Dialog -->
+    <AppConfirmationDialog
+      :is-open="showDetectConfirmation"
+      title="Auto-detect Sound Card"
+      :message="getDetectConfirmationMessage()"
+      :confirm-button-text="detectedCardName ? 'Configure Sound Card' : 'Continue'"
+      :is-dangerous="true"
+      icon="search"
+      @close="showDetectConfirmation = false"
+      @confirm="handleDetectConfirmation"
+    />
+
+    <!-- Reboot Confirmation Dialog -->
+    <AppConfirmationDialog
+      :is-open="showRebootConfirmation"
+      title="Reboot Required"
+      message="Sound card configuration completed. The system needs to be rebooted for changes to take effect.
+
+Would you like to reboot now?"
+      confirm-button-text="Reboot Now"
+      cancel-button-text="Reboot Later"
+      :is-dangerous="true"
+      icon="refresh"
+      @close="handleRebootLater"
+      @confirm="executeReboot"
+    />
   </div>
 </template>
 
@@ -57,36 +105,26 @@
 import { ref } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
+import AppConfirmationDialog from '@/components/app-confirmation-dialog.vue'
 import { useToastStore } from '@/stores/toast'
-import { executeScript, rebootSystem } from '@/api/system'
+import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay } from '@/api/system'
 
 // State
 const resetting = ref(false)
 const detectingSoundCard = ref(false)
+const showResetConfirmation = ref(false)
+const showDetectConfirmation = ref(false)
+const showRebootConfirmation = ref(false)
+const detectedCardName = ref<string | null>(null)
+const detectedDtoverlay = ref<string | null>(null)
 
 // Stores
 const toastStore = useToastStore()
 
 // Methods
-const confirmReset = async () => {
-  const confirmMessage = `Are you sure you want to reset the system to factory defaults?
-
-This will:
-- Remove all settings and configurations
-- Delete all user data
-- Restore the system to its original state
-
-This action CANNOT BE UNDONE!
-
-Type "RESET" to confirm:`
-
-  const userInput = prompt(confirmMessage)
-
-  if (userInput === 'RESET') {
-    await resetSystem()
-  } else if (userInput !== null) {
-    toastStore.showErrorToast('Reset cancelled. You must type "RESET" exactly to confirm.')
-  }
+const executeReset = async () => {
+  showResetConfirmation.value = false
+  await resetSystem()
 }
 
 const resetSystem = async () => {
@@ -108,41 +146,19 @@ const resetSystem = async () => {
   }
 }
 
-const confirmDetectSoundCard = async () => {
-  const confirmMessage = `Are you sure you want to auto-detect the sound card?
-
-This will:
-- Apply default configuration
-- Auto-detect sound card overlay
-- Require a system reboot to take effect
-
-Continue with sound card detection?`
-
-  if (confirm(confirmMessage)) {
-    await detectSoundCard()
-  }
-}
-
 const detectSoundCard = async () => {
   detectingSoundCard.value = true
 
   try {
-    const response = await executeScript({ script: 'detectsoundcard' })
+    // Step 1: Use the soundcard/detect API to detect the sound card
+    const response = await detectSoundCardAPI()
 
-    if (response.status === 'success') {
-      toastStore.showSuccessToast('Sound card detection completed successfully!')
+    if (response.status === 'success' && response.data) {
+      detectedCardName.value = response.data.card_name
+      detectedDtoverlay.value = response.data.dtoverlay
 
-      // Ask user to reboot
-      const rebootMessage = `Sound card detection completed. The system needs to be rebooted for changes to take effect.
-
-Would you like to reboot now?`
-
-      if (confirm(rebootMessage)) {
-        toastStore.showInfoToast('Rebooting system...')
-        await rebootSystem()
-      } else {
-        toastStore.showInfoToast('Please reboot the system manually for changes to take effect.')
-      }
+      // Step 2: Show the user the detected sound card result and ask if they want to proceed
+      showDetectConfirmation.value = true
     } else {
       toastStore.showErrorToast(response.message || 'Failed to detect sound card')
     }
@@ -153,6 +169,76 @@ Would you like to reboot now?`
   } finally {
     detectingSoundCard.value = false
   }
+}
+
+const getDetectConfirmationMessage = (): string => {
+  if (detectedCardName.value) {
+    return `Sound card detected: ${detectedCardName.value}
+
+Do you want to configure this sound card?
+
+This will:
+- Configure the device tree overlay: ${detectedDtoverlay.value}
+- Require a system reboot to take effect`
+  } else {
+    return `No sound card detected.
+
+Assuming DAC+ Zero/DAC+ Light/Miniamp
+
+Do you want to proceed with the default configuration?
+
+This will:
+- Configure the default device tree overlay for DAC+ Zero/DAC+ Light/Miniamp
+- Require a system reboot to take effect`
+  }
+}
+
+const handleDetectConfirmation = async () => {
+  showDetectConfirmation.value = false
+
+  try {
+    // Step 3: Configure the sound card using the soundcard/dtoverlay API endpoint
+    const dtoverlay = detectedDtoverlay.value || 'hifiberry-dac' // Default for DAC+ Zero/DAC+ Light/Miniamp
+
+    const configResponse = await setSoundCardDtoverlay({
+      dtoverlay: dtoverlay,
+      remove_existing: true
+    })
+
+    if (configResponse.status === 'success') {
+      const cardName = detectedCardName.value || 'DAC+ Zero/DAC+ Light/Miniamp'
+      toastStore.showSuccessToast(`Sound card ${cardName} configured successfully!`)
+
+      // Step 4: Show reboot confirmation dialog
+      showRebootConfirmation.value = true
+    } else {
+      toastStore.showErrorToast(configResponse.message || 'Failed to configure sound card')
+    }
+
+  } catch (err) {
+    console.error('Error configuring sound card:', err)
+    toastStore.showErrorToast('Failed to configure sound card')
+  }
+}
+
+const executeReboot = async () => {
+  showRebootConfirmation.value = false
+
+  try {
+    toastStore.showInfoToast('Initiating system reboot...')
+    await rebootSystem()
+    // If we get here, the reboot was initiated successfully
+    toastStore.showSuccessToast('System reboot initiated. The system will restart shortly.')
+  } catch (err) {
+    console.error('Error rebooting system:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+    toastStore.showErrorToast(`Failed to reboot system: ${errorMessage}. Please reboot manually using the system controls.`)
+  }
+}
+
+const handleRebootLater = () => {
+  showRebootConfirmation.value = false
+  toastStore.showInfoToast('Please reboot the system manually for changes to take effect.')
 }
 </script>
 

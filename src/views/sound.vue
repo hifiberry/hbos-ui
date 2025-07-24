@@ -24,7 +24,9 @@
         <!-- Filters Panel -->
         <div class="filters">
           <div class="filter-header-wrapper">
-            <h3 class="channel-title">{{ activeChannel === 'left' ? 'Left Channel' : 'Right Channel' }}</h3>
+            <h3 class="channel-title">
+              {{ activeChannel === 'left' ? 'Left Channel' : 'Right Channel' }}
+            </h3>
             <div class="more-option">
               <AppIcon icon="link-unlinked" />
               <AppIcon icon="ear" />
@@ -39,7 +41,7 @@
               <AppIcon :icon="filter.icon" :class="filter.icon === 'filter-peak' ? 'icon-stroke' : ''" />
               <div v-if="filter.text" class="filter-text">{{ filter.text }}</div>
             </button>
-            <button class="filter active" @click="addNewFilter">
+            <button class="filter active" @click="showAddFilterModal = true">
               <AppIcon icon="plus" />
             </button>
           </div>
@@ -109,7 +111,9 @@
             <div class="remove-filter-text">View Saved Presets</div>
           </div>
           <div class="filter-header-wrapper">
-            <h3 class="channel-text">Current sound design can be saved to a listening mode preset.</h3>
+            <h3 class="channel-text">
+              Current sound design can be saved to a listening mode preset.
+            </h3>
           </div>
           <div class="filter-header-wrapper">
             <button class="save-listen-mode">Save Listening Mode</button>
@@ -118,98 +122,217 @@
       </div>
     </div>
   </div>
+  <!-- Add Filter Modal -->
+  <teleport to="body">
+    <div v-if="showAddFilterModal" class="modal-backdrop" @click.self="showAddFilterModal = false">
+      <div class="modal-content">
+        <h2>Add New Filter</h2>
+        <p>Select filter type before adding:</p>
+
+        <div class="filter-type-selector">
+          <button v-for="type in ['filter-peak', 'filter-low-shelf', 'filter-high-shelf']" :key="type"
+            :class="['filter-type-option', { selected: selectedFilterType === type }]"
+            @click="selectedFilterType = type">
+            <AppIcon :icon="type" />
+            <span>{{ type.replace('filter-', '').replace('-', ' ') }}</span>
+          </button>
+        </div>
+
+        <div class="modal-actions">
+          <button :disabled="!selectedFilterType" @click="confirmAddFilter">Confirm</button>
+          <button @click="showAddFilterModal = false">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
-import AppIcon from '@/components/app-icon.vue';
-import ApexChart from 'vue3-apexcharts';
+import { ref, watchEffect } from 'vue'
+import AppIcon from '@/components/app-icon.vue'
+import ApexChart from 'vue3-apexcharts'
 
-const activeChannel = ref<'left' | 'right'>('left');
-const filters = ref([
-  { id: 1, icon: 'filter-peak-up', text: '164' },
-  { id: 2, icon: 'filter-peak', text: '164' },
-  { id: 3, icon: 'filter-peak-down', text: '164' },
-  { id: 4, icon: 'filter-peak-down', text: '164' },
-  { id: 5, icon: 'filter-peak-down', text: '164' },
-  { id: 6, icon: 'filter-peak', text: '164' }
-]);
+// Types
+type Channel = 'left' | 'right'
 
-const activeFilter = ref<number | null>(filters.value[0].id);
-const frequency = ref(1000);
-const gain = ref(10);
-const widthType = ref<'narrow' | 'wide'>('narrow');
-
-function setActiveChannel(channel: 'left' | 'right') {
-  activeChannel.value = channel;
+interface Filter {
+  id: number
+  icon: string
+  text: string
+  frequency: number
+  gain: number
 }
+
+interface SeriesData {
+  name: string
+  type: 'area' | 'line'
+  data: number[]
+}
+
+// State
+const activeChannel = ref<Channel>('left')
+const selectedFilterType = ref<string | null>(null)
+const filters = ref<Filter[]>([
+  { id: 1, icon: 'filter-peak-up', text: '1000', frequency: 1000, gain: 0 }
+])
+const showAddFilterModal = ref(false)
+
+const activeFilter = ref<number | null>(filters.value[0].id)
+const frequency = ref(filters.value[0].frequency)
+const gain = ref(filters.value[0].gain)
+const widthType = ref<'narrow' | 'wide'>('narrow')
+const isDragging = ref(false)
+
+// Methods
+function setActiveChannel(channel: Channel) {
+  activeChannel.value = channel
+}
+
 function setActiveFilter(id: number) {
-  activeFilter.value = id;
+  activeFilter.value = id
+  const filter = filters.value.find(f => f.id === id)
+  if (filter) {
+    frequency.value = filter.frequency
+    gain.value = filter.gain
+  }
 }
-function addNewFilter() {
-  const newId = filters.value.length + 1;
-  filters.value.push({ id: newId, icon: 'filter-peak', text: '164' });
+const confirmAddFilter = () => {
+  if (!selectedFilterType.value) return;
+
+  const newId = Date.now(); // simple unique ID
+  filters.value.push({
+    id: newId,
+    icon: selectedFilterType.value,
+    text: '',
+    frequency: 1000,
+    gain: 0,
+  });
   activeFilter.value = newId;
+
+  selectedFilterType.value = null;
+  showAddFilterModal.value = false;
+};
+
+function addNewFilter() {
+  const newId = filters.value.length + 1
+  const newFilter: Filter = {
+    id: newId,
+    icon: 'filter-peak',
+    text: '1000',
+    frequency: 1000,
+    gain: 0,
+  }
+  filters.value.push(newFilter)
+  setActiveFilter(newFilter.id)
 }
+
 function incrementFrequency() {
-  frequency.value += 1000;
+  const filter = filters.value.find(f => f.id === activeFilter.value)
+  if (filter) {
+    filter.frequency = Math.min(10000, filter.frequency + 1000)
+    frequency.value = filter.frequency
+  }
 }
+
 function decrementFrequency() {
-  frequency.value = Math.max(20, frequency.value - 1000);
+  const filter = filters.value.find(f => f.id === activeFilter.value)
+  if (filter) {
+    filter.frequency = Math.max(20, filter.frequency - 1000)
+    frequency.value = filter.frequency
+  }
 }
+
 function incrementGain() {
-  gain.value += 1;
+  const filter = filters.value.find(f => f.id === activeFilter.value)
+  if (filter) {
+    filter.gain = Math.min(25, filter.gain + 1)
+    gain.value = filter.gain
+  }
 }
+
 function decrementGain() {
-  gain.value -= 1;
+  const filter = filters.value.find(f => f.id === activeFilter.value)
+  if (filter) {
+    filter.gain = Math.max(-25, filter.gain - 1)
+    gain.value = filter.gain
+  }
 }
+
 function toggleWidth() {
-  widthType.value = widthType.value === 'narrow' ? 'wide' : 'narrow';
+  widthType.value = widthType.value === 'narrow' ? 'wide' : 'narrow'
 }
 
 function formatHz(val: string | number) {
-  return `${val} Hz`;
+  return `${val} Hz`
 }
 
-function getEQCurve(icon: string, freq: number, gain: number) {
-  const base = [10, 50, 100, 500, 1000, 5000, 10000, 20000];
-  const widthFactor = widthType.value === 'narrow' ? 2 : 1;
+const baseFreqs = [
+  20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600,
+  2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000,
+]
 
-  return base.map((x) => {
-    const d = Math.log10(x / freq);
-    const response = icon === 'filter-peak-up'
-      ? gain * Math.exp(-Math.pow(d * widthFactor, 2))
-      : icon === 'filter-peak-down'
-      ? -Math.abs(gain) * Math.exp(-Math.pow(d * widthFactor, 2))
-      : gain * 0.5 * Math.exp(-Math.pow(d * widthFactor, 2));
-    return parseFloat(response.toFixed(1));
-  });
+function getEQCurve(icon: string, freq: number, gain: number): number[] {
+  const widthFactor = widthType.value === 'narrow' ? 2 : 1
+  return baseFreqs.map((x) => {
+    const d = Math.log10(x / freq)
+    const response =
+      icon === 'filter-peak-up'
+        ? gain * Math.exp(-Math.pow(d * widthFactor, 2))
+        : icon === 'filter-peak-down'
+          ? -Math.abs(gain) * Math.exp(-Math.pow(d * widthFactor, 2))
+          : gain * 0.5 * Math.exp(-Math.pow(d * widthFactor, 2))
+    return parseFloat(response.toFixed(1))
+  })
 }
 
-const chartSeries = ref([
-  {
-    name: 'EQ Curve',
-    type: 'area',
-    data: getEQCurve(filters.value[0].icon, frequency.value, gain.value)
-  },
-  {
-    name: 'Reference',
-    type: 'area',
-    data: [5, 10, 15, 10, 5, 0, -5, -10]
-  }
-]);
+// FIXED: Add type to avoid 'never[]' error
+const chartSeries = ref<SeriesData[]>([
+  { name: 'EQ Curve', type: 'area', data: [] },
+  { name: 'Reference', type: 'area', data: [] },
+])
 
 const chartOptions = ref({
   chart: {
     type: 'area',
     height: '100%',
     toolbar: { show: false },
-    zoom: { enabled: false }
+    zoom: { enabled: false },
+    events: {
+      mouseDown: () => {
+        isDragging.value = true
+      },
+      mouseUp: () => {
+        isDragging.value = false
+      },
+      mouseMove: (event: MouseEvent, chartContext: any) => {
+        if (!isDragging.value) return
+        const chartEl = chartContext?.chart?.el
+        const rect = chartEl?.getBoundingClientRect()
+        if (!event || !rect) return
+
+        const x = event.clientX - rect.left
+        const y = event.clientY - rect.top
+        const chartWidth = rect.width
+        const chartHeight = rect.height
+
+        const logFreq = Math.log10(20) + (x / chartWidth) * (Math.log10(10000) - Math.log10(20))
+        const newFreq = Math.pow(10, logFreq)
+        const newGain = 25 - (y / chartHeight) * 50
+
+        const filter = filters.value.find((f) => f.id === activeFilter.value)
+        if (filter) {
+          filter.frequency = Math.round(Math.max(20, Math.min(10000, newFreq)))
+          filter.gain = Math.round(Math.max(-25, Math.min(25, newGain)))
+          frequency.value = filter.frequency
+          gain.value = filter.gain
+        }
+      },
+    },
   },
   stroke: {
     curve: 'smooth',
     width: [2, 2],
-    colors: ['#00b8ff', '#ff69b4']
+    colors: ['#00b8ff', '#ff69b4'],
   },
   fill: {
     type: ['gradient', 'gradient'],
@@ -217,40 +340,66 @@ const chartOptions = ref({
       shadeIntensity: 1,
       opacityFrom: 0.4,
       opacityTo: 0.05,
-      stops: [0, 90, 100]
+      stops: [0, 90, 100],
     },
     opacity: [0.4, 0.2],
-    colors: ['#00b8ff', '#ff69b4']
+    colors: ['#00b8ff', '#ff69b4'],
   },
   colors: ['#00b8ff', '#ff69b4'],
   xaxis: {
     type: 'category',
-    categories: [10, 50, 100, 500, 1000, 5000, 10000, 20000],
+    categories: baseFreqs,
     labels: {
       formatter: formatHz,
-      style: { colors: '#aaa' }
-    }
+      style: { colors: '#aaa' },
+    },
   },
   yaxis: {
-    min: -60,
-    max: 60,
-    tickAmount: 6,
-    labels: { style: { colors: '#aaa' } }
+    min: -25,
+    max: 25,
+    tickAmount: 5,
+    labels: { style: { colors: '#aaa' } },
+  },
+  markers: {
+    size: 6,
+    colors: ['#00b8ff'],
+    strokeColor: '#fff',
+    strokeWidth: 2,
+    hover: { size: 9 },
   },
   dataLabels: { enabled: false },
   grid: { borderColor: '#333' },
   tooltip: { shared: true, intersect: false },
-  legend: { show: true }
-});
+  legend: { show: true },
+})
 
+// 👉 Show only active filter curve
 watchEffect(() => {
-  const filter = filters.value.find(f => f.id === activeFilter.value);
-  if (filter) {
-    chartSeries.value[0].data = getEQCurve(filter.icon, frequency.value, gain.value);
-  }
-});
-</script>
+  const active = filters.value.find((f) => f.id === activeFilter.value)
+  if (!active) return
+  const eqCurve = getEQCurve(active.icon, active.frequency, active.gain)
+  chartSeries.value = [
+    { name: 'EQ Curve', type: 'area', data: eqCurve },
+    { name: 'Reference', type: 'area', data: eqCurve },
+  ]
+})
 
+// 👉 Sync frequency/gain from active filter
+watchEffect(() => {
+  const filter = filters.value.find((f) => f.id === activeFilter.value)
+  if (filter) {
+    frequency.value = filter.frequency
+    gain.value = filter.gain
+  }
+})
+
+// 👉 Update text for each filter button (only frequency shown)
+watchEffect(() => {
+  filters.value.forEach((f) => {
+    f.text = `${f.frequency}` // only frequency, no dB
+  })
+})
+</script>
 
 
 
@@ -278,7 +427,7 @@ watchEffect(() => {
   .equaliser-panel {
     .tabs {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap; // keep left/right tabs on the same line
 
       .tab {
         flex: 1 1 50%;
@@ -315,7 +464,6 @@ watchEffect(() => {
       .filter {
         padding: 15px 30px;
         border: 1px solid rgba(112, 112, 112, 1);
-        background: white;
         cursor: pointer;
         border-radius: 5px;
         margin: 5px;
@@ -378,7 +526,7 @@ watchEffect(() => {
             display: flex;
             justify-content: center;
             margin-top: 10px;
-            gap: 20px; // Adjust this value as needed for the gap
+            gap: 20px;
           }
         }
 
@@ -392,8 +540,6 @@ watchEffect(() => {
         }
       }
     }
-
-
 
     .filter-header-wrapper {
       display: flex;
@@ -475,7 +621,7 @@ watchEffect(() => {
 
         &:before {
           position: absolute;
-          content: "";
+          content: '';
           height: 18px;
           width: 18px;
           left: 3px;
@@ -497,19 +643,19 @@ watchEffect(() => {
   }
 }
 
+// ✅ Responsive fixes: tabs always inline, no forced stacking of filters
 @media (max-width: 768px) {
   .sound {
     padding: 10px;
 
     .equaliser-panel {
+      .tabs {
+        flex-wrap: nowrap;
+      }
+
       .tabs .tab {
         font-size: 16px;
         padding: 10px;
-      }
-
-      .filter-buttons .filter {
-        flex: 1 1 48%;
-        padding: 12px;
       }
 
       .filter-control .control-row {
@@ -524,15 +670,88 @@ watchEffect(() => {
 @media (max-width: 480px) {
   .sound {
     .equaliser-panel {
-      .tabs .tab {
-        flex: 1 1 100%;
+      .tabs {
+        flex-wrap: nowrap;
       }
 
-      .filter-buttons .filter {
-        flex: 1 1 100%;
-        padding: 12px;
+      .tabs .tab {
+        flex: 1 1 50%;
       }
     }
   }
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
+  font-family: 'Metropolis', sans-serif;
+
+  h2 {
+    font-size: 22px;
+    margin-bottom: 15px;
+  }
+
+  p {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+
+      &:first-child {
+        background-color: #e11e4a;
+        color: #fff;
+      }
+
+      &:last-child {
+        background-color: #ccc;
+        color: #333;
+      }
+    }
+  }
+}
+
+.filter-type-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.filter-type-option.selected {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
 }
 </style>

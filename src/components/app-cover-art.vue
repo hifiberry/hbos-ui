@@ -157,7 +157,7 @@ onMounted(() => {
   overflow: hidden;
   background: #f5f5f5;
   transition: all 0.3s ease;
-  
+
   /* Ensure square aspect ratio is maintained */
   aspect-ratio: 1 / 1;
 }

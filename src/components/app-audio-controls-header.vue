@@ -71,9 +71,9 @@
           :disabled="isSendingCommand || checkingFavourite"
           @click="toggleCurrentSongFavourite"
         >
-          <img 
-            :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'" 
-            alt="Favorite" 
+          <img
+            :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'"
+            alt="Favorite"
           />
         </button>
       </div>

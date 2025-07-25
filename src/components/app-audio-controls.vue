@@ -79,9 +79,9 @@
           :disabled="isSendingCommand || checkingFavourite"
           @click="toggleCurrentSongFavourite"
         >
-          <img 
-            :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'" 
-            alt="Favorite" 
+          <img
+            :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'"
+            alt="Favorite"
           />
         </button>
       </div>
@@ -361,7 +361,7 @@ const heartButtonTitle = computed(() => {
   display: grid;
   grid-template-columns: auto 40px auto 40px auto; /* Fixed 40px spacers for precise control */
   align-items: center;
-  
+
   &__left {
     justify-self: start;
     margin-right: 0; /* Remove margins - using grid structure instead */

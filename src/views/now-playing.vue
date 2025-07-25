@@ -14,10 +14,12 @@
         @mouseleave="showTooltip = false"
         @mousemove="updateTooltipPosition"
       >
-        <AppCover
+        <AppCoverArt
           class="now-playing__cover"
-          :src="rewriteAudiocontrolApiUrl(song?.cover_art_url || '')"
-          :alt="song?.artist || song?.title || 'Now Playing'"
+          :song="song"
+          size="large"
+          @loaded="onCoverArtLoaded"
+          @error="onCoverArtError"
         />
 
         <!-- Metadata Tooltip -->
@@ -48,17 +50,25 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AppCover from '@/components/app-cover.vue'
+import AppCoverArt from '@/components/app-cover-art.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppVolumeControl from '@/components/app-volume-control.vue'
 import AppMetadataTooltip from '@/components/app-metadata-tooltip.vue'
-import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
 
 const { currentSong: song } = storeToRefs(usePlayerStore())
+
+// Cover art event handlers
+const onCoverArtLoaded = (result: { success: boolean; urls: string[]; source: string }) => {
+  console.log('Cover art loaded for now-playing:', result)
+}
+
+const onCoverArtError = (error: string) => {
+  console.warn('Cover art error in now-playing:', error)
+}
 
 // Tooltip state
 const showTooltip = ref(false)

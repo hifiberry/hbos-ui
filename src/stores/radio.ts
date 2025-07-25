@@ -42,6 +42,38 @@ export const useRadioStore = defineStore('radio', () => {
   const loaded = ref(false)
   const radioBrowserBaseUrl = ref('https://de1.api.radio-browser.info')
 
+  // Helper function to parse M3U playlists and extract the actual stream URL
+  const parseM3U = async (m3uUrl: string): Promise<string> => {
+    try {
+      console.log('Parsing M3U playlist:', m3uUrl)
+      const response = await fetch(m3uUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch M3U: ${response.status}`)
+      }
+
+      const m3uContent = await response.text()
+      console.log('M3U content:', m3uContent)
+
+      // Split into lines and filter out comments, empty lines, and non-HTTP URLs
+      const lines = m3uContent.split('\n')
+        .map(line => line.trim())
+        .filter(line => line && !line.startsWith('#') && line.startsWith('http'))
+
+      if (lines.length === 0) {
+        throw new Error('No valid stream URLs found in M3U playlist')
+      }
+
+      // Return the first valid HTTP URL found
+      const streamUrl = lines[0]
+      console.log('Extracted stream URL from M3U:', streamUrl)
+      return streamUrl
+    } catch (error) {
+      console.error('Failed to parse M3U playlist:', error)
+      // If parsing fails, return the original URL as fallback
+      return m3uUrl
+    }
+  }
+
   // Computed
   const favoritesList = computed(() => Object.values(favorites.value))
   const hasFavorites = computed(() => favoritesList.value.length > 0)
@@ -179,7 +211,16 @@ export const useRadioStore = defineStore('radio', () => {
       const stationName = 'name' in station ? station.name : station.title
 
       console.log('Playing radio station:', stationName, 'on player:', radioPlayerName)
-      console.log('Station URL:', station.url)
+      console.log('Original station URL:', station.url)
+
+      // Check if the URL is an M3U playlist and parse it if needed
+      let finalUrl = station.url
+      if (station.url.toLowerCase().endsWith('.m3u')) {
+        console.log('Detected M3U playlist, parsing to extract stream URL...')
+        finalUrl = await parseM3U(station.url)
+      }
+
+      console.log('Final stream URL:', finalUrl)
 
       // Step 1: Pause the current player
       console.log('Step 1: Pausing current player...')
@@ -193,8 +234,8 @@ export const useRadioStore = defineStore('radio', () => {
 
       // Step 3: Add the URL of the radio station to the queue of the radioPlayer
       console.log('Step 3: Adding station URL to radio player queue...')
-      // Use the new addTrackToPlayer function with JSON payload
-      await addTrackToPlayer(radioPlayerName, station.url)
+      // Use the final URL (parsed from M3U if necessary)
+      await addTrackToPlayer(radioPlayerName, finalUrl)
       console.log('Step 3: Station URL added to radio player queue')
 
       // Step 4: Send a "play" command to the radioPlayer
@@ -292,6 +333,7 @@ export const useRadioStore = defineStore('radio', () => {
     clearSearchResults,
     initialize,
     saveFavoritesToConfig,
-    loadFavoritesFromConfig
+    loadFavoritesFromConfig,
+    parseM3U
   }
 })

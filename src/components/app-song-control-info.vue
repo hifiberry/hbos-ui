@@ -31,7 +31,7 @@
     </div>
 
     <div class="song-control-info__controls">
-      <AppAudioControls isSeparate :isOnSticky="isOnSticky" :isOnHeader="isOnHeader" />
+      <AppAudioControls :isSeparate="!isOnHeader" :isOnSticky="isOnSticky" :isOnHeader="isOnHeader" />
 
       <AppProgressControl v-if="!isOnSticky" isOnHeader isDraggable />
     </div>

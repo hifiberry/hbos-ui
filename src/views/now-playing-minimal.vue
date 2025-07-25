@@ -19,6 +19,7 @@
           class="now-playing__cover"
           :song="song"
           size="large"
+          :adaptToContainer="true"
           @loaded="onCoverArtLoaded"
           @error="onCoverArtError"
         />

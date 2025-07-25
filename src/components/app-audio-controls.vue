@@ -1,8 +1,9 @@
 <template>
   <div>
     <div class="app-audio-controls" :class="[{ 'is-separate': isSeparate, 'is-on-header': isOnHeader }, $attrs.class]">
+      <!-- Left section: Lyrics button -->
       <div class="app-audio-controls__left">
-              <button
+        <button
           class="app-audio-controls__secondary lyrics-button"
           :class="{ 'lyrics-button--active': song?.metadata?.lyrics_available }"
           :disabled="!song?.metadata?.lyrics_available"
@@ -12,70 +13,78 @@
         </button>
       </div>
 
-    <div class="app-audio-controls--main">
-      <AppIconButton
-        v-if="!isOnSticky"
-        class="app-audio-controls__secondary"
-        :class="{ active: audioControls.isShuffle }"
-        icon="lucide/shuffle"
-        title="Shuffle"
-        :disabled="isSendingCommand || !caps.canShuffle"
-        @click="audioControls.toggleShuffle"
-      />
+      <!-- Empty spacer block 1 -->
+      <div class="app-audio-controls__spacer"></div>
 
-      <AppIconButton
-        icon="lucide/skip-back"
-        title="Previous"
-        :disabled="isSendingCommand || !caps.canPrevious"
-        @click="audioControls.playNextOrPrev('previous')"
-      />
-
-      <AppIconButton
-        :icon="audioControls.isPlaying ? 'lucide/pause' : 'lucide/play'"
-        title="Play/Pause"
-        :disabled="isSendingCommand || !(caps.canPlay || caps.canPause)"
-        @click="audioControls.togglePlayPause"
-      />
-
-      <AppIconButton
-        icon="lucide/skip-forward"
-        title="Next"
-        :disabled="isSendingCommand || !caps.canNext"
-        @click="audioControls.playNextOrPrev('next')"
-      />
-
-      <AppIconButton
-        v-if="!isOnSticky"
-        class="app-audio-controls__secondary"
-        :class="{ active: !audioControls.iscurrentLoopModeNone }"
-        :icon="audioControls.iscurrentLoopModeTrack ? 'lucide/repeat-1' : 'lucide/repeat'"
-        :title="
-          audioControls.iscurrentLoopModeTrack
-            ? 'Loop Track'
-            : audioControls.iscurrentLoopModePlaylist
-              ? 'Loop Playlist'
-              : 'Loop'
-        "
-        :disabled="isSendingCommand || !caps.canLoop"
-        @click="audioControls.cycleLoopMode"
-      />
-    </div>
-
-    <div class="app-audio-controls__right">
-      <button
-        v-if="!isOnSticky"
-        class="app-audio-controls__secondary heart-button"
-        :class="{ 'heart-button--active': currentSongIsFavourite }"
-        :title="heartButtonTitle"
-        :disabled="isSendingCommand || checkingFavourite"
-        @click="toggleCurrentSongFavourite"
-      >
-        <img 
-          :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'" 
-          alt="Favorite" 
+      <!-- Center section: Main controls -->
+      <div class="app-audio-controls--main">
+        <AppIconButton
+          v-if="!isOnSticky"
+          class="app-audio-controls__secondary"
+          :class="{ active: audioControls.isShuffle }"
+          icon="lucide/shuffle"
+          title="Shuffle"
+          :disabled="isSendingCommand || !caps.canShuffle"
+          @click="audioControls.toggleShuffle"
         />
-      </button>
-    </div>
+
+        <AppIconButton
+          icon="lucide/skip-back"
+          title="Previous"
+          :disabled="isSendingCommand || !caps.canPrevious"
+          @click="audioControls.playNextOrPrev('previous')"
+        />
+
+        <AppIconButton
+          :icon="audioControls.isPlaying ? 'lucide/pause' : 'lucide/play'"
+          title="Play/Pause"
+          :disabled="isSendingCommand || !(caps.canPlay || caps.canPause)"
+          @click="audioControls.togglePlayPause"
+        />
+
+        <AppIconButton
+          icon="lucide/skip-forward"
+          title="Next"
+          :disabled="isSendingCommand || !caps.canNext"
+          @click="audioControls.playNextOrPrev('next')"
+        />
+
+        <AppIconButton
+          v-if="!isOnSticky"
+          class="app-audio-controls__secondary"
+          :class="{ active: !audioControls.iscurrentLoopModeNone }"
+          :icon="audioControls.iscurrentLoopModeTrack ? 'lucide/repeat-1' : 'lucide/repeat'"
+          :title="
+            audioControls.iscurrentLoopModeTrack
+              ? 'Loop Track'
+              : audioControls.iscurrentLoopModePlaylist
+                ? 'Loop Playlist'
+                : 'Loop'
+          "
+          :disabled="isSendingCommand || !caps.canLoop"
+          @click="audioControls.cycleLoopMode"
+        />
+      </div>
+
+      <!-- Empty spacer block 2 -->
+      <div class="app-audio-controls__spacer"></div>
+
+      <!-- Right section: Heart button -->
+      <div class="app-audio-controls__right">
+        <button
+          v-if="!isOnSticky"
+          class="app-audio-controls__secondary heart-button"
+          :class="{ 'heart-button--active': currentSongIsFavourite }"
+          :title="heartButtonTitle"
+          :disabled="isSendingCommand || checkingFavourite"
+          @click="toggleCurrentSongFavourite"
+        >
+          <img 
+            :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'" 
+            alt="Favorite" 
+          />
+        </button>
+      </div>
     </div>
 
     <!-- Lyrics Overlay -->
@@ -161,7 +170,7 @@ const heartButtonTitle = computed(() => {
   max-width: 600px; /* Match typical progress bar width */
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr auto 1fr auto; /* 5 columns: left, spacer, center, spacer, right */
   align-items: center;
 
   @include media-down(md) {
@@ -196,6 +205,11 @@ const heartButtonTitle = computed(() => {
     @media (max-width: 500px) {
       display: none;
     }
+  }
+
+  &__spacer {
+    /* Empty spacer elements for flexible spacing */
+    min-width: 0;
   }
 
   &__right {
@@ -347,37 +361,30 @@ const heartButtonTitle = computed(() => {
 
 /* Header-specific styling - reduced spacing and smaller icons */
 .app-audio-controls.is-on-header {
-  // Remove fixed max-width to respect grid layout
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 40px auto 40px auto; /* Fixed 40px spacers for precise control */
   align-items: center;
-  gap: 32px; /* Icon-sized gap between sections */
   
   &__left {
     justify-self: start;
-    margin-right: 0; /* Remove margins - using grid gap instead */
+    margin-right: 0; /* Remove margins - using grid structure instead */
     margin-left: 0;
+  }
+
+  &__spacer {
+    /* Spacers in header have fixed width for precise control */
+    width: 40px;
   }
 
   &__right {
     justify-self: end;
-    margin-left: 0; /* Remove margins - using grid gap instead */
+    margin-left: 0; /* Remove margins - using grid structure instead */
     margin-right: 0;
   }
 
   /* Main controls centered */
   &--main {
     justify-self: center;
-  }
-
-  /* Add left spacing to lyrics button in header */
-  .lyrics-button {
-    margin-left: 40px;
-  }
-
-  /* Add right spacing to heart button in header */
-  .heart-button {
-    margin-right: 40px;
   }
 
   /* Make lyrics and heart button icons smaller in header (70% of current size) */
@@ -405,7 +412,6 @@ const heartButtonTitle = computed(() => {
 /* Override is-separate styles when both is-separate and is-on-header are present */
 .app-audio-controls.is-separate.is-on-header {
   display: grid !important; /* Override the flex from is-separate */
-  grid-template-columns: auto 1fr auto !important;
-  gap: 32px !important; /* Override the 48px gap from is-separate */
+  grid-template-columns: auto 40px auto 40px auto !important; /* Use the flexible 5-column structure */
 }
 </style>

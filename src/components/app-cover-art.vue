@@ -66,7 +66,8 @@ const {
   coverArtSource,
   loadCoverArt,
   loadCoverArtFromAPI,
-  clearCoverArt
+  clearCoverArt,
+  clearCache
 } = useCoverArt()
 
 // Computed properties
@@ -124,21 +125,35 @@ const onImageLoad = () => {
   // Image loaded successfully
 }
 
-// Watch for song changes
+// Watch for song changes using deep comparison of content, not object reference
 watch(
-  () => props.song,
   () => {
-    if (props.autoLoad) {
+    if (!props.song) return null
+    return {
+      title: props.song.title || '',
+      artist: props.song.artist || '', 
+      album: props.song.album || ''
+    }
+  },
+  (newSongData, oldSongData) => {
+    // Only load if song data actually changed or this is the first time
+    const hasChanged = !oldSongData || 
+      newSongData?.title !== oldSongData.title ||
+      newSongData?.artist !== oldSongData.artist ||
+      newSongData?.album !== oldSongData.album
+
+    if (props.autoLoad && hasChanged) {
       loadCoverArtForSong()
     }
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
 
 // Expose methods for manual control
 defineExpose({
   loadCoverArt: loadCoverArtForSong,
-  clearCoverArt
+  clearCoverArt,
+  clearCache
 })
 
 // Auto-load on mount if enabled

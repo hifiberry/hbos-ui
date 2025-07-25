@@ -70,9 +70,9 @@
         :disabled="isSendingCommand || checkingFavourite"
         @click="toggleCurrentSongFavourite"
       >
-        <img 
-          :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'" 
-          alt="Favorite" 
+        <img
+          :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'"
+          alt="Favorite"
         />
       </button>
     </div>
@@ -347,50 +347,101 @@ const heartButtonTitle = computed(() => {
 
 /* Header-specific styling - reduced spacing and smaller icons */
 .app-audio-controls.is-on-header {
-  // Remove fixed max-width to respect grid layout
-  
-  &__left {
-    margin-right: 30px; /* 30% of 100px = 30px */
+  max-width: 300px; /* Default for <1000px */
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 32px; /* Icon-sized gap between sections */
+
+  /* Responsive breakpoints for max-width */
+  @media (min-width: 1000px) {
+    max-width: 400px;
+    gap: 32px;
+  }
+
+  @media (min-width: 1500px) {
+    max-width: 600px;
+    gap: 32px;
+  }
+
+  .app-audio-controls__left {
+    justify-self: start;
+    margin-right: 0 !important; /* Remove margins - using grid gap instead */
+    margin-left: 0 !important;
+  }
+
+  .app-audio-controls__right {
+    justify-self: end;
+    margin-left: 0 !important; /* Remove margins - using grid gap instead */
+    margin-right: 0 !important;
+  }
+
+  /* Main controls centered */
+  .app-audio-controls--main {
+    justify-self: center;
+    gap: 8px; /* Tighter spacing between main control buttons */
 
     @include media-down(md) {
-      margin-right: 24px; /* 30% of 80px = 24px */
-    }
-
-    @include media-down(sm) {
-      margin-right: 18px; /* 30% of 60px = 18px */
+      gap: 6px;
     }
   }
 
-  &__right {
-    margin-left: 30px; /* 30% of 100px = 30px */
+  /* Force all SVG icons to be smaller in header */
+  svg,
+  .app-icon {
+    width: 21px !important; /* 35% smaller than 32px for secondary controls */
+    height: 21px !important;
+    color: var(--secondary-audio-controls) !important;
 
     @include media-down(md) {
-      margin-left: 24px; /* 30% of 80px = 24px */
-    }
-
-    @include media-down(sm) {
-      margin-left: 18px; /* 30% of 60px = 18px */
+      width: 16px !important; /* 35% smaller than 24px for secondary controls */
+      height: 16px !important;
     }
   }
 
-  /* Make lyrics and heart button icons smaller in header (70% of current size) */
-  .lyrics-button img {
-    width: 22px; /* 70% of 32px = 22.4px, rounded to 22px */
-    height: 22px;
-
-    @include media-down(md) {
-      width: 17px; /* 70% of 24px = 16.8px, rounded to 17px */
-      height: 17px;
+  /* Secondary controls (shuffle/loop) - default inactive appearance */
+  .app-audio-controls__secondary {
+    opacity: 0.4; /* Default lighter appearance for secondary controls */
+    
+    &.active {
+      opacity: 1 !important; /* Full opacity when active */
     }
   }
 
+  /* Main control specific styling - player controls 25% smaller */
+  .app-audio-controls--main {
+    svg,
+    .app-icon {
+      width: 24px !important; /* 25% smaller than 32px for main controls */
+      height: 24px !important;
+      color: var(--main-audio-controls-separate) !important;
+      opacity: 1 !important; /* Ensure main controls are always fully visible */
+
+      @include media-down(md) {
+        width: 18px !important; /* 25% smaller than 24px for main controls */
+        height: 18px !important;
+      }
+    }
+  }
+
+  /* Override for secondary controls within main controls (shuffle/loop) - higher specificity */
+  .app-audio-controls--main button.app-audio-controls__secondary {
+    opacity: 0.4; /* Default inactive state for shuffle/loop */
+
+    &.active {
+      opacity: 1 !important; /* Full opacity when active */
+    }
+  }
+
+  /* Image buttons (lyrics and heart) - 35% smaller */
+  .lyrics-button img,
   .heart-button img {
-    width: 22px; /* 70% of 32px = 22.4px, rounded to 22px */
-    height: 22px;
+    width: 21px !important; /* 35% smaller than 32px */
+    height: 21px !important;
 
     @include media-down(md) {
-      width: 17px; /* 70% of 24px = 16.8px, rounded to 17px */
-      height: 17px;
+      width: 16px !important; /* 35% smaller than 24px */
+      height: 16px !important;
     }
   }
 }

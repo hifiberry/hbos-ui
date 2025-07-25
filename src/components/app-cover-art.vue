@@ -89,6 +89,16 @@ const loadCoverArtForSong = async () => {
     return
   }
 
+  // Only try to load cover art if both artist and title are defined
+  if (!props.song.artist || !props.song.title) {
+    console.log('Skipping cover art loading - missing artist or title:', {
+      title: props.song.title,
+      artist: props.song.artist
+    })
+    clearCoverArt()
+    return
+  }
+
   try {
     const result = await loadCoverArt(props.song)
     emit('loaded', result)
@@ -131,13 +141,13 @@ watch(
     if (!props.song) return null
     return {
       title: props.song.title || '',
-      artist: props.song.artist || '', 
+      artist: props.song.artist || '',
       album: props.song.album || ''
     }
   },
   (newSongData, oldSongData) => {
     // Only load if song data actually changed or this is the first time
-    const hasChanged = !oldSongData || 
+    const hasChanged = !oldSongData ||
       newSongData?.title !== oldSongData.title ||
       newSongData?.artist !== oldSongData.artist ||
       newSongData?.album !== oldSongData.album

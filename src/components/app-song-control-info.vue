@@ -31,7 +31,8 @@
     </div>
 
     <div class="song-control-info__controls">
-      <AppAudioControls isSeparate :isOnSticky="isOnSticky" :isOnHeader="isOnHeader" />
+      <AppAudioControlsHeader v-if="isOnHeader" />
+      <AppAudioControls v-else isSeparate :isOnSticky="isOnSticky" />
 
       <AppProgressControl v-if="!isOnSticky" isOnHeader isDraggable />
     </div>
@@ -42,6 +43,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppAudioControls from '@/components/app-audio-controls.vue'
+import AppAudioControlsHeader from '@/components/app-audio-controls-header.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppCover from '@/components/app-cover.vue'
 import AppMarquee from '@/components/app-marquee.vue'
@@ -175,6 +177,10 @@ const tooltipStyles = computed(() => {
       width: auto; // Don't take full width
       max-width: 280px; // Limit to reasonable size
       min-width: 200px; // Ensure minimum readable width
+    }
+
+    .song-control-info__controls {
+      max-width: 500px; // Make controls section 100px smaller (600px - 100px)
     }
   }
   &__attr {

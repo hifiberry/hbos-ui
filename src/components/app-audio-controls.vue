@@ -348,29 +348,36 @@ const heartButtonTitle = computed(() => {
 /* Header-specific styling - reduced spacing and smaller icons */
 .app-audio-controls.is-on-header {
   // Remove fixed max-width to respect grid layout
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 32px; /* Icon-sized gap between sections */
   
   &__left {
-    margin-right: 30px; /* 30% of 100px = 30px */
-
-    @include media-down(md) {
-      margin-right: 24px; /* 30% of 80px = 24px */
-    }
-
-    @include media-down(sm) {
-      margin-right: 18px; /* 30% of 60px = 18px */
-    }
+    justify-self: start;
+    margin-right: 0; /* Remove margins - using grid gap instead */
+    margin-left: 0;
   }
 
   &__right {
-    margin-left: 30px; /* 30% of 100px = 30px */
+    justify-self: end;
+    margin-left: 0; /* Remove margins - using grid gap instead */
+    margin-right: 0;
+  }
 
-    @include media-down(md) {
-      margin-left: 24px; /* 30% of 80px = 24px */
-    }
+  /* Main controls centered */
+  &--main {
+    justify-self: center;
+  }
 
-    @include media-down(sm) {
-      margin-left: 18px; /* 30% of 60px = 18px */
-    }
+  /* Add left spacing to lyrics button in header */
+  .lyrics-button {
+    margin-left: 40px;
+  }
+
+  /* Add right spacing to heart button in header */
+  .heart-button {
+    margin-right: 40px;
   }
 
   /* Make lyrics and heart button icons smaller in header (70% of current size) */
@@ -393,5 +400,12 @@ const heartButtonTitle = computed(() => {
       height: 17px;
     }
   }
+}
+
+/* Override is-separate styles when both is-separate and is-on-header are present */
+.app-audio-controls.is-separate.is-on-header {
+  display: grid !important; /* Override the flex from is-separate */
+  grid-template-columns: auto 1fr auto !important;
+  gap: 32px !important; /* Override the 48px gap from is-separate */
 }
 </style>

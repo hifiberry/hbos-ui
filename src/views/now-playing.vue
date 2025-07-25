@@ -18,6 +18,7 @@
           class="now-playing__cover"
           :song="song"
           size="large"
+          :adaptToContainer="true"
           @loaded="onCoverArtLoaded"
           @error="onCoverArtError"
         />
@@ -197,7 +198,7 @@ const tooltipStyles = computed(() => {
   }
 
   &__cover {
-    height: calc(100vh - 500px);
+    max-height: calc(100vh - 500px);
     min-height: 120px;
     overflow: hidden;
 
@@ -205,13 +206,18 @@ const tooltipStyles = computed(() => {
     margin-top: auto;
     margin-bottom: 32px;
 
+    // Maintain square aspect ratio
+    aspect-ratio: 1 / 1;
+    width: auto;
+    max-width: 100%;
+
     @include media-down(sm) {
       margin-bottom: 24px;
     }
   }
 
   &__cover-container {
-    height: calc(100vh - 500px);
+    max-height: calc(100vh - 500px);
     min-height: 120px;
     overflow: hidden;
     position: relative;
@@ -221,12 +227,18 @@ const tooltipStyles = computed(() => {
     margin-top: auto;
     margin-bottom: 32px;
 
+    // Maintain square aspect ratio
+    aspect-ratio: 1 / 1;
+    width: auto;
+    max-width: 100%;
+
     @include media-down(sm) {
       margin-bottom: 24px;
     }
 
     .now-playing__cover {
       height: 100%;
+      width: 100%;
       margin: 0;
     }
   }

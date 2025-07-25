@@ -3,7 +3,11 @@
   Shows cover art with automatic fallback from song to artist images
 -->
 <template>
-  <div class="cover-art" :class="{ loading: isLoading, 'has-cover': hasCoverArt }">
+  <div class="cover-art" :class="[
+    { loading: isLoading, 'has-cover': hasCoverArt },
+    size,
+    { 'container-sized': adaptToContainer }
+  ]">
     <div v-if="isLoading" class="cover-placeholder loading-state">
       <div class="loading-spinner"></div>
     </div>
@@ -39,12 +43,14 @@ interface Props {
   size?: 'small' | 'medium' | 'large'
   autoLoad?: boolean
   showSource?: boolean
+  adaptToContainer?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   size: 'medium',
   autoLoad: true,
-  showSource: false
+  showSource: false,
+  adaptToContainer: false
 })
 
 const emit = defineEmits<{
@@ -151,6 +157,9 @@ onMounted(() => {
   overflow: hidden;
   background: #f5f5f5;
   transition: all 0.3s ease;
+  
+  /* Ensure square aspect ratio is maintained */
+  aspect-ratio: 1 / 1;
 }
 
 /* Size variants */
@@ -172,6 +181,12 @@ onMounted(() => {
 .cover-art.large {
   width: 300px;
   height: 300px;
+}
+
+/* When used in containers that control the size, adapt to container */
+.cover-art.container-sized {
+  width: 100%;
+  height: 100%;
 }
 
 .cover-image {

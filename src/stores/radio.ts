@@ -46,30 +46,48 @@ export const useRadioStore = defineStore('radio', () => {
   const parseM3U = async (m3uUrl: string): Promise<string> => {
     try {
       console.log('Parsing M3U playlist:', m3uUrl)
-      const response = await fetch(m3uUrl)
+
+      // Use the new backend M3U parsing API
+      const configStore = useAppConfigStore()
+      const backendUrl = configStore.getApiBaseUrl()
+
+      console.log('Using backend M3U parsing API...')
+      const response = await fetch(`${backendUrl}/m3u/parse`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          url: m3uUrl,
+          timeout: 30
+        })
+      })
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch M3U: ${response.status}`)
+        throw new Error(`Backend M3U API failed: ${response.status}`)
       }
 
-      const m3uContent = await response.text()
-      console.log('M3U content:', m3uContent)
+      const data = await response.json()
+      console.log('M3U parsing response:', data)
 
-      // Split into lines and filter out comments, empty lines, and non-HTTP URLs
-      const lines = m3uContent.split('\n')
-        .map(line => line.trim())
-        .filter(line => line && !line.startsWith('#') && line.startsWith('http'))
+      if (!data.success) {
+        throw new Error(`M3U parsing failed: ${data.error}`)
+      }
 
-      if (lines.length === 0) {
+      // Extract the first URL from the parsed playlist
+      if (data.playlist && data.playlist.entries && data.playlist.entries.length > 0) {
+        const firstEntry = data.playlist.entries[0]
+        const streamUrl = firstEntry.url
+        console.log('Extracted stream URL from M3U:', streamUrl)
+        return streamUrl
+      } else {
         throw new Error('No valid stream URLs found in M3U playlist')
       }
 
-      // Return the first valid HTTP URL found
-      const streamUrl = lines[0]
-      console.log('Extracted stream URL from M3U:', streamUrl)
-      return streamUrl
     } catch (error) {
       console.error('Failed to parse M3U playlist:', error)
       // If parsing fails, return the original URL as fallback
+      console.log('Falling back to original M3U URL for direct playback attempt')
       return m3uUrl
     }
   }

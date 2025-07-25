@@ -198,6 +198,8 @@ const heartButtonTitle = computed(() => {
   /* Heart button styling */
   .heart-button {
     opacity: 0.4;
+    margin-left: 15px;
+    margin-right: 15px;
 
     &:disabled {
       cursor: not-allowed;
@@ -226,6 +228,8 @@ const heartButtonTitle = computed(() => {
   /* Lyrics button styling */
   .lyrics-button {
     opacity: 0.4;
+    margin-left: 15px;
+    margin-right: 15px;
 
     img {
       width: 20px;

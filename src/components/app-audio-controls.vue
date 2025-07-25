@@ -167,19 +167,9 @@ const heartButtonTitle = computed(() => {
   $root: &;
 
   width: 100%;
-  max-width: 600px; /* Match typical progress bar width */
-  margin: 0 auto;
   display: grid;
   grid-template-columns: auto 1fr auto 1fr auto; /* 5 columns: left, spacer, center, spacer, right */
   align-items: center;
-
-  @include media-down(md) {
-    max-width: 500px;
-  }
-
-  @include media-down(sm) {
-    max-width: 100%;
-  }
 
   /* On small screens, switch to single column layout when side buttons are hidden */
   @media (max-width: 500px) {
@@ -191,14 +181,10 @@ const heartButtonTitle = computed(() => {
   &__left {
     display: flex;
     justify-content: flex-start;
-    margin-right: 100px; /* Large spacing between left section and center controls */
+    margin-right: 30px;
 
     @include media-down(md) {
-      margin-right: 80px;
-    }
-
-    @include media-down(sm) {
-      margin-right: 60px;
+      margin-right: 15px;
     }
 
     /* Hide on small screens to save space */
@@ -216,16 +202,15 @@ const heartButtonTitle = computed(() => {
     display: flex;
     justify-content: flex-end;
     gap: 24px;
-    margin-left: 100px; /* Large spacing between center controls and right section */
+    margin-left: 30px;
 
     @include media-down(md) {
       gap: 16px;
-      margin-left: 80px;
+      margin-left: 15px;
     }
 
     @include media-down(sm) {
       gap: 12px;
-      margin-left: 60px;
     }
 
     /* Hide on small screens to save space */
@@ -275,6 +260,13 @@ const heartButtonTitle = computed(() => {
 
   .heart-button {
     opacity: 0.4;
+    margin-left: 30px;
+    margin-right: 30px;
+
+    @include media-down(md) {
+      margin-left: 15px;
+      margin-right: 15px;
+    }
 
     &:disabled {
       cursor: not-allowed;
@@ -302,6 +294,11 @@ const heartButtonTitle = computed(() => {
 
   .lyrics-button {
     opacity: 0.4; /* Default inactive state, same as heart button */
+    margin-right: 30px;
+
+    @include media-down(md) {
+      margin-right: 15px;
+    }
 
     img {
       width: 32px;

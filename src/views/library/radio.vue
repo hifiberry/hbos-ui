@@ -35,8 +35,10 @@
           >
             <div class="station-poster-img">
               <img
-                v-if="favorite.metadata?.coverart_url || favorite.img"
-                :src="favorite.metadata?.coverart_url || favorite.img"
+                v-if="(typeof favorite.metadata?.logo_url === 'string' && favorite.metadata.logo_url) ||
+                      favorite.img"
+                :src="(typeof favorite.metadata?.logo_url === 'string' ? favorite.metadata.logo_url : '') ||
+                      favorite.img || ''"
                 :alt="favorite.title"
                 loading="lazy"
                 @error="onImageError"

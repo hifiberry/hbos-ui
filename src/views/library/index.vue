@@ -93,8 +93,10 @@ const favoriteStationsForDisplay = computed(() => {
     $title: station.title,
     $subtitle: station.metadata?.country || station.country || 'Radio Station',
     $note: (station.metadata?.tags || station.tags) ?
-           (station.metadata?.tags || station.tags).split(',').map(tag => tag.trim()).slice(0, 3).join(', ') : '',
-    $cover_src: station.metadata?.coverart_url || station.img || ''
+           String(station.metadata?.tags || station.tags).split(',').map(tag => tag.trim()).slice(0, 3).join(', ') : '',
+    $cover_src: (typeof station.metadata?.logo_url === 'string' ? station.metadata.logo_url : '') ||
+                (typeof station.metadata?.coverart_url === 'string' ? station.metadata.coverart_url : '') ||
+                station.img || ''
   }))
 })
 

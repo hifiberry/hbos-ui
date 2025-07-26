@@ -132,7 +132,9 @@ watch(() => props.station, (newStation) => {
       country: newStation.metadata?.country || newStation.country || '',
       tags: newStation.metadata?.tags || newStation.tags || '',
       url: newStation.url || '',
-      img: newStation.metadata?.coverart_url || newStation.img || ''
+      img: (typeof newStation.metadata?.logo_url === 'string' ? newStation.metadata.logo_url : '') ||
+           (typeof newStation.metadata?.coverart_url === 'string' ? newStation.metadata.coverart_url : '') ||
+           newStation.img || ''
     }
   }
 }, { immediate: true })

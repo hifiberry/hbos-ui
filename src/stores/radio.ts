@@ -26,7 +26,8 @@ export interface RadioFavorite {
   url: string
   metadata?: {
     title?: string
-    coverart_url?: string
+    logo_url?: string
+    coverart_url?: string // Keep for backward compatibility
     country?: string
     tags?: string
     genre?: string
@@ -191,7 +192,7 @@ export const useRadioStore = defineStore('radio', () => {
       url: station.url,
       metadata: {
         title: station.name,
-        coverart_url: station.image,
+        logo_url: station.image,
         country: station.country,
         tags: station.tags,
         genre: station.tags, // Use tags as genre

@@ -8,25 +8,35 @@ export const rewrite_audiocontrol_api_url = rewriteAudiocontrolApiUrl
  * Add a track to a player's queue using JSON payload
  * @param playerName - The name of the player to add the track to
  * @param trackUri - The URI/URL of the track to add
- * @param title - Optional title for the track (future use)
- * @param coverartUrl - Optional cover art URL (future use)
+ * @param metadata - Optional metadata object for the track
  * @returns Promise<boolean> - Success or failure
  */
 export const addTrackToPlayer = async (
   playerName: string,
   trackUri: string,
-  title?: string,
-  coverartUrl?: string
+  metadata?: {
+    title?: string
+    artist?: string
+    album?: string
+    coverart_url?: string
+    duration?: number
+    genre?: string
+    year?: number
+    [key: string]: string | number | boolean | null | undefined
+  }
 ): Promise<boolean> => {
   try {
     const configStore = useAppConfigStore()
     const apiBaseUrl = configStore.getApiBaseUrl()
 
     const url = `${apiBaseUrl}/player/${playerName}/command/add_track`
-    const payload = {
-      uri: trackUri,
-      ...(title && { title }),
-      ...(coverartUrl && { coverart_url: coverartUrl })
+    const payload: { uri: string; metadata?: typeof metadata } = {
+      uri: trackUri
+    }
+
+    // Add metadata if provided
+    if (metadata && Object.keys(metadata).length > 0) {
+      payload.metadata = metadata
     }
 
     console.log('Adding track to player:', { playerName, url, payload })

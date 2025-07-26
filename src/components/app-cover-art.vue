@@ -89,45 +89,91 @@ const loadCoverArtForSong = async () => {
     return
   }
 
-  // Only try to load cover art if both artist and title are defined
-  if (!props.song.artist || !props.song.title) {
-    console.log('Skipping cover art loading - missing artist or title:', {
-      title: props.song.title,
-      artist: props.song.artist
-    })
-    clearCoverArt()
-    return
-  }
+  console.log('🎵 Loading cover art for song:', props.song.title, 'by', props.song.artist)
+  console.log('🎵 Song has cover_art_url:', props.song.cover_art_url)
+  console.log('🎵 Song has artwork_url:', props.song.artwork_url)
+  console.log('🎵 Song metadata:', props.song.metadata)
 
+  // Always try to load cover art - let the service decide if it can find anything
   try {
     const result = await loadCoverArt(props.song)
+    console.log('✅ Cover art loaded successfully:', result)
     emit('loaded', result)
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to load cover art'
+    console.log('❌ Cover art loading failed:', errorMessage)
     emit('error', errorMessage)
   }
 }
 
 const onImageError = async (event: Event) => {
   const img = event.target as HTMLImageElement
-  console.warn('Failed to load cover art image:', img.src)
+  console.warn('🚨 Cover art image failed to load:', img.src)
+  console.log('🔍 Current song:', props.song?.title, 'by', props.song?.artist)
+  console.log('🔍 Cover art source:', coverArtSource.value)
 
   // If we failed to load an existing cover art URL, try to find alternatives via API
   if (props.song && coverArtSource.value === 'song') {
-    console.log('Existing cover art failed to load, trying API fallback...')
+    console.log('📡 Existing cover art failed to load, trying API fallback...')
 
     try {
       const result = await loadCoverArtFromAPI(props.song)
       if (result.success && result.urls.length > 0) {
-        console.log('Found fallback cover art via API:', result)
+        console.log('✅ Found fallback cover art via API:', result)
         emit('loaded', result)
         return
+      } else {
+        console.log('❌ No results from API fallback')
       }
     } catch (err) {
-      console.warn('Fallback cover art loading failed:', err)
+      console.warn('❌ Fallback cover art loading failed:', err)
+    }
+
+    // Last resort: check for coverart_url or logo_url in the metadata field
+    console.log('🔍 Checking metadata for coverart_url or logo_url fallback...')
+    if (props.song.metadata && typeof props.song.metadata === 'object') {
+      const metadata = props.song.metadata as Record<string, unknown>
+
+      // Check for coverart_url first, then logo_url
+      const metadataCoverUrl = metadata.coverart_url || metadata.logo_url
+      const sourceType = metadata.coverart_url ? 'coverart_url' : 'logo_url'
+
+      console.log('🔍 Found metadata.' + sourceType + ':', metadataCoverUrl)
+      if (metadataCoverUrl && typeof metadataCoverUrl === 'string') {
+        console.log('🎯 Using metadata.' + sourceType + ' as last resort:', metadataCoverUrl)
+
+        // Create a Song object for the metadata cover art and load it through the composable
+        // This ensures the composable state is properly updated
+        const metadataSong: Song = {
+          ...props.song,
+          cover_art_url: metadataCoverUrl, // Override the cover art URL with metadata URL
+          artwork_url: undefined // Clear any existing artwork URL to force use of cover_art_url
+        }
+
+        try {
+          const result = await loadCoverArt(metadataSong)
+          console.log('✅ Loaded metadata fallback cover art through composable:', result)
+          emit('loaded', result)
+          return
+        } catch (err) {
+          console.warn('Failed to load metadata fallback through composable:', err)
+          // Fall back to manual result
+          const fallbackResult = {
+            success: true,
+            urls: [metadataCoverUrl],
+            source: 'song' as const,
+            providers: [{ name: 'metadata_fallback', display_name: 'Metadata Fallback (' + sourceType + ')' }]
+          }
+          emit('loaded', fallbackResult)
+          return
+        }
+      }
+    } else {
+      console.log('❌ No metadata.coverart_url or metadata.logo_url found in song metadata')
     }
   }
 
+  console.log('💀 All fallback options exhausted for:', img.src)
   emit('error', `Failed to load image: ${img.src}`)
 }
 

@@ -172,20 +172,24 @@ export class CoverArtLoader {
    * 2. Try to find song-specific cover art
    * 3. Try to find album cover art
    * 4. Fall back to artist cover art
+   * 5. Check metadata.coverart_url as last resort
    *
    * @param song - Song object with metadata
    * @returns CoverArtResult with URLs and source information
    */
   async findCoverArt(song: Song): Promise<CoverArtResult> {
-    console.log('Looking for cover art for song:', song.title, 'by', song.artist)
+    console.log('🔍 Looking for cover art for song:', song.title, 'by', song.artist)
 
     // First, check if song already has cover art URLs
     const existingUrls = []
     if (song.artwork_url) existingUrls.push(song.artwork_url)
     if (song.cover_art_url) existingUrls.push(song.cover_art_url)
 
+    console.log('🔍 Existing URLs found:', existingUrls)
+    console.log('🔍 Song metadata:', song.metadata)
+
     if (existingUrls.length > 0) {
-      console.log('Using existing cover art URLs from song metadata:', existingUrls)
+      console.log('✅ Using existing cover art URLs from song metadata:', existingUrls)
       return {
         success: true,
         urls: existingUrls,
@@ -194,7 +198,35 @@ export class CoverArtLoader {
       }
     }
 
-    return this.findCoverArtFromAPI(song)
+    // Try to find cover art from API
+    const apiResult = await this.findCoverArtFromAPI(song)
+
+    // If API found results, return them
+    if (apiResult.success && apiResult.urls.length > 0) {
+      return apiResult
+    }
+
+    // Last resort: check for coverart_url or logo_url in the metadata field
+    if (song.metadata && typeof song.metadata === 'object') {
+      const metadata = song.metadata as Record<string, unknown>
+
+      // Check for coverart_url first, then logo_url
+      const metadataCoverUrl = metadata.coverart_url || metadata.logo_url
+      const sourceType = metadata.coverart_url ? 'coverart_url' : 'logo_url'
+
+      if (metadataCoverUrl && typeof metadataCoverUrl === 'string') {
+        console.log('🎯 Using metadata.' + sourceType + ' as last resort:', metadataCoverUrl)
+        return {
+          success: true,
+          urls: [metadataCoverUrl],
+          source: 'song',
+          providers: [{ name: 'metadata_fallback', display_name: 'Metadata Fallback (' + sourceType + ')' }]
+        }
+      }
+    }
+
+    // No cover art found anywhere
+    return apiResult
   }
 
   /**

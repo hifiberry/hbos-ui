@@ -35,8 +35,8 @@
           >
             <div class="station-poster-img">
               <img
-                v-if="favorite.img"
-                :src="favorite.img"
+                v-if="favorite.metadata?.coverart_url || favorite.img"
+                :src="favorite.metadata?.coverart_url || favorite.img"
                 :alt="favorite.title"
                 loading="lazy"
                 @error="onImageError"
@@ -48,10 +48,10 @@
                 <AppMarquee>{{ favorite.title }}</AppMarquee>
               </div>
               <div class="station-subtitle">
-                <AppMarquee>{{ favorite.country || 'Unknown' }}</AppMarquee>
+                <AppMarquee>{{ favorite.metadata?.country || favorite.country || 'Unknown' }}</AppMarquee>
               </div>
-              <div v-if="favorite.tags" class="station-tags">
-                <span v-for="tag in getStationTags(favorite.tags)" :key="tag" class="tag">
+              <div v-if="favorite.metadata?.tags || favorite.tags" class="station-tags">
+                <span v-for="tag in getStationTags(favorite.metadata?.tags || favorite.tags)" :key="tag" class="tag">
                   {{ tag }}
                 </span>
               </div>

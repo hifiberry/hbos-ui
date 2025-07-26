@@ -128,10 +128,11 @@ watch(() => props.station, (newStation) => {
     editData.value = {
       id: newStation.id,
       title: newStation.title || '',
-      country: newStation.country || '',
-      tags: newStation.tags || '',
+      // Try to get values from metadata first, then fall back to legacy fields
+      country: newStation.metadata?.country || newStation.country || '',
+      tags: newStation.metadata?.tags || newStation.tags || '',
       url: newStation.url || '',
-      img: newStation.img || ''
+      img: newStation.metadata?.coverart_url || newStation.img || ''
     }
   }
 }, { immediate: true })
@@ -144,10 +145,17 @@ const saveChanges = () => {
   const editedStation: RadioFavorite = {
     id: editData.value.id,
     title: editData.value.title.trim(),
-    country: editData.value.country.trim() || undefined,
-    tags: editData.value.tags.trim() || undefined,
     url: editData.value.url.trim(),
-    img: editData.value.img
+    metadata: {
+      title: editData.value.title.trim(),
+      coverart_url: editData.value.img || undefined,
+      country: editData.value.country.trim() || undefined,
+      tags: editData.value.tags.trim() || undefined
+    },
+    // Legacy fields for backward compatibility
+    img: editData.value.img || undefined,
+    country: editData.value.country.trim() || undefined,
+    tags: editData.value.tags.trim() || undefined
   }
 
   emit('save', editedStation)

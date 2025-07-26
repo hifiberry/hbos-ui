@@ -9,12 +9,12 @@ import type { Song } from '@/types/player'
 function createSongKey(song: Song): string | null {
   const title = song.title?.trim() || ''
   const artist = song.artist?.trim() || ''
-  
+
   // Require both title and artist for a valid key
   if (!title || !artist) {
     return null
   }
-  
+
   const album = song.album?.trim() || ''
   return `${title}|${artist}|${album}`.toLowerCase()
 }
@@ -55,79 +55,53 @@ export function useCoverArt() {
       return emptyResult
     }
 
-    // Require both artist and title to be defined
-    if (!song.artist || !song.title) {
-      console.log('Cannot load cover art - missing required fields:', {
-        title: song.title,
-        artist: song.artist
-      })
+    // Create a unique key for this song (only if both artist and title are available)
+    const songKey = createSongKey(song)
+
+    // If we have a valid key, check cache first
+    if (songKey) {
+      // Check if we've already loaded cover art for this exact song
+      if (songKey === lastSongKey.value && lastResult.value) {
+        console.log('🎯 Using cached cover art result for song:', song.title, 'by', song.artist)
+        return lastResult.value
+      }
+
+      // Check the cache for this song
+      const cachedResult = coverArtCache.value.get(songKey)
+      if (cachedResult) {
+        console.log('🎯 Using cached cover art for song:', song.title, 'by', song.artist)
+        lastResult.value = cachedResult
+        lastSongKey.value = songKey
+        return cachedResult
+      }
+    }
+
+    // No cache hit, or no valid key - load fresh cover art
+    loading.value = true
+    error.value = null
+
+    try {
+      console.log('🔍 Loading fresh cover art for song:', song.title, 'by', song.artist)
+      const result = await coverArtLoader.findCoverArt(song)
+      lastResult.value = result
+      lastSongKey.value = songKey // might be null if no artist/title
+
+      // Only cache if we have a valid key
+      if (songKey) {
+        coverArtCache.value.set(songKey, result)
+        console.log('💾 Cached cover art result for song:', song.title, 'by', song.artist)
+      }
+
+      return result
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      error.value = errorMessage
+      console.error('Failed to load cover art:', errorMessage)
+
       const emptyResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
       lastResult.value = emptyResult
       lastSongKey.value = null
       return emptyResult
-    }
-
-    // Create a unique key for this song
-    const songKey = createSongKey(song)
-    
-    // If we can't create a valid key (missing title/artist), we can't cache or check cache
-    if (!songKey) {
-      loading.value = true
-      error.value = null
-
-      try {
-        const result = await coverArtLoader.findCoverArt(song)
-        lastResult.value = result
-        lastSongKey.value = null
-        return result
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load cover art'
-        error.value = errorMessage
-        console.error('Cover art loading error:', err)
-
-        const errorResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
-        lastResult.value = errorResult
-        lastSongKey.value = null
-        return errorResult
-      } finally {
-        loading.value = false
-      }
-    }
-    
-    // Check if we already have the result for this exact song
-    if (lastSongKey.value === songKey && lastResult.value) {
-      console.log(`Cover art already loaded for song: ${song.title} by ${song.artist}`)
-      return lastResult.value
-    }
-    
-    // Check cache first
-    const cachedResult = coverArtCache.value.get(songKey)
-    if (cachedResult) {
-      console.log(`Using cached cover art for song: ${song.title} by ${song.artist}`)
-      lastResult.value = cachedResult
-      lastSongKey.value = songKey
-      return cachedResult
-    }    loading.value = true
-    error.value = null
-
-    try {
-      const result = await coverArtLoader.findCoverArt(song)
-
-      // Cache the result
-      coverArtCache.value.set(songKey, result)
-      lastResult.value = result
-      lastSongKey.value = songKey
-
-      return result
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load cover art'
-      error.value = errorMessage
-      console.error('Cover art loading error:', err)
-
-      const errorResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
-      lastResult.value = errorResult
-      lastSongKey.value = songKey
-      return errorResult
     } finally {
       loading.value = false
     }
@@ -182,72 +156,13 @@ export function useCoverArt() {
       return emptyResult
     }
 
-    // Require both artist and title to be defined
-    if (!song.artist || !song.title) {
-      console.log('Cannot load cover art from API - missing required fields:', {
-        title: song.title,
-        artist: song.artist
-      })
-      const emptyResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
-      lastResult.value = emptyResult
-      lastSongKey.value = null
-      return emptyResult
-    }
-
-    // Create a unique key for this song with API suffix to distinguish from regular cache
-    const baseSongKey = createSongKey(song)
-    
-    // If we can't create a valid key (missing title/artist), we can't cache
-    if (!baseSongKey) {
-      loading.value = true
-      error.value = null
-
-      try {
-        const result = await coverArtLoader.findCoverArtFromAPI(song)
-        lastResult.value = result
-        lastSongKey.value = null
-        return result
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load cover art from API'
-        error.value = errorMessage
-        console.error('Cover art API loading error:', err)
-
-        const errorResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
-        lastResult.value = errorResult
-        lastSongKey.value = null
-        return errorResult
-      } finally {
-        loading.value = false
-      }
-    }
-    
-    const songKey = baseSongKey + '|api'
-
-    // Check cache first for API results
-    const cachedResult = coverArtCache.value.get(songKey)
-    if (cachedResult) {
-      console.log(`Using cached API cover art for song: ${song.title} by ${song.artist}`)
-      lastResult.value = cachedResult
-      lastSongKey.value = baseSongKey // Use regular key for lastSongKey
-      return cachedResult
-    }
-
     loading.value = true
     error.value = null
 
     try {
       const result = await coverArtLoader.findCoverArtFromAPI(song)
-
-      // Cache the API result
-      coverArtCache.value.set(songKey, result)
-
-      // Also update the regular cache with this result since API results are usually better
-      if (result.success) {
-        coverArtCache.value.set(baseSongKey, result)
-      }
-
       lastResult.value = result
-      lastSongKey.value = baseSongKey
+      lastSongKey.value = null
       return result
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load cover art from API'
@@ -256,7 +171,7 @@ export function useCoverArt() {
 
       const errorResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
       lastResult.value = errorResult
-      lastSongKey.value = baseSongKey
+      lastSongKey.value = null
       return errorResult
     } finally {
       loading.value = false

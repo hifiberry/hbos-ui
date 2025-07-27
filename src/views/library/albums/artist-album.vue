@@ -180,6 +180,8 @@ import AppPosterGrid from '@/components/app-poster-grid.vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppArtistImageSelector from '@/components/app-artist-image-selector.vue'
 
+import { updateArtistImage } from '@/api/coverart'
+
 import { useRoute } from 'vue-router'
 const route = useRoute()
 
@@ -196,6 +198,9 @@ const libraryFetch = useLibraryFetch()
 import { useArtistStore } from '@/stores/artist.ts'
 const artistStore = useArtistStore()
 const { getArtistByIdFromStore, getArtists } = artistStore
+
+import { useToastStore } from '@/stores/toast'
+const toastStore = useToastStore()
 const { allArtists, artistByName: fullArtistData } = storeToRefs(artistStore)
 
 import { useMusicBrainz } from '@/composables/useMusicBrainz'
@@ -243,10 +248,31 @@ const openImageSelector = () => {
   showImageSelector.value = true
 }
 
-const onArtistImageSelected = (imageUrl: string) => {
+const onArtistImageSelected = async (imageUrl: string) => {
   console.log('Selected artist image:', imageUrl)
-  // TODO: Implement saving the selected image URL to the artist data
-  // This would typically involve an API call to update the artist's thumb_url
+
+  const artistName = artistByName.value?.name
+  if (!artistName) {
+    console.error('No artist name available for image update')
+    toastStore.showErrorToast('Unable to update artist image: Artist name not found')
+    return
+  }
+
+  try {
+    toastStore.showInfoToast('Updating artist image...')
+    const result = await updateArtistImage(artistName, imageUrl)
+    if (result.success) {
+      console.log('Artist image updated successfully:', result.message)
+      toastStore.showSuccessToast(`Artist image updated successfully for "${artistName}"`)
+      // The cache should be invalidated automatically according to the API docs
+    } else {
+      console.error('Failed to update artist image:', result.message)
+      toastStore.showErrorToast(`Failed to update artist image: ${result.message}`)
+    }
+  } catch (error) {
+    console.error('Error updating artist image:', error)
+    toastStore.showErrorToast('An error occurred while updating the artist image')
+  }
 }
 
 // Computed property for displayed biography text

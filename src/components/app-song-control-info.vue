@@ -7,7 +7,10 @@
         @mouseleave="showTooltip = false"
         @mousemove="updateTooltipPosition"
       >
-        <AppCover :src="rewriteAudiocontrolApiUrl(song.cover_art_url || '')" :alt="song.artist || 'Artist'" />
+        <AppCover 
+          :src="getCoverImageUrl(song)" 
+          :alt="song.artist || 'Artist'" 
+        />
 
         <!-- Metadata Tooltip -->
         <AppMetadataTooltip
@@ -49,12 +52,39 @@ import AppCover from '@/components/app-cover.vue'
 import AppMarquee from '@/components/app-marquee.vue'
 import AppMetadataTooltip from '@/components/app-metadata-tooltip.vue'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'
+import type { Song } from '@/types/player'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
 
 const router = useRouter()
 const { currentSong: song } = storeToRefs(usePlayerStore())
+
+// Function to get the best available cover image URL
+const getCoverImageUrl = (song: Song): string => {
+  // For radio stations, prefer logo_url from metadata first
+  if (song.metadata && typeof song.metadata === 'object') {
+    const metadata = song.metadata as Record<string, unknown>
+    
+    // Check for logo_url first (preferred for radio stations)
+    if (metadata.logo_url && typeof metadata.logo_url === 'string') {
+      return metadata.logo_url
+    }
+    
+    // Then check for coverart_url in metadata
+    if (metadata.coverart_url && typeof metadata.coverart_url === 'string') {
+      return metadata.coverart_url
+    }
+  }
+  
+  // Fall back to song's cover art URL if no metadata image found
+  if (song.cover_art_url) {
+    return rewriteAudiocontrolApiUrl(song.cover_art_url)
+  }
+  
+  // Return empty string if no image found
+  return ''
+}
 
 interface AudioSongControlInfoProps {
   isOnSticky?: boolean

@@ -44,6 +44,12 @@
             />
             <div class="image-overlay">
               <div class="provider-badge">{{ image.provider }}</div>
+              <div v-if="image.width && image.height" class="resolution-badge">
+                {{ image.width }}×{{ image.height }}
+                <span v-if="image.size_bytes" class="size-info">
+                  ({{ formatFileSize(image.size_bytes) }})
+                </span>
+              </div>
               <div v-if="selectedImageUrl === image.url" class="selected-indicator">
                 <AppIcon icon="check" />
               </div>
@@ -87,6 +93,10 @@ interface Emits {
 interface ArtistImage {
   url: string
   provider: string
+  width?: number
+  height?: number
+  size_bytes?: number
+  format?: string
 }
 
 const props = defineProps<Props>()
@@ -119,10 +129,14 @@ const fetchArtistImages = async () => {
     // Extract all images from all providers
     const images: ArtistImage[] = []
     response.results.forEach(result => {
-      result.urls.forEach(url => {
+      result.images.forEach(image => {
         images.push({
-          url,
-          provider: result.provider.display_name || result.provider.name
+          url: image.url,
+          provider: result.provider.display_name || result.provider.name,
+          width: image.width,
+          height: image.height,
+          size_bytes: image.size_bytes,
+          format: image.format
         })
       })
     })
@@ -153,6 +167,13 @@ const selectImage = (imageUrl: string) => {
 const closeModal = () => {
   selectedImageUrl.value = null
   emit('close')
+}
+
+// Format file size for display
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 // Confirm selection
@@ -322,6 +343,24 @@ const onImageError = (event: Event) => {
     font-size: 0.75rem;
     font-weight: 500;
     align-self: flex-start;
+  }
+
+  .resolution-badge {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 400;
+    align-self: flex-start;
+    margin-top: 4px;
+    
+    .size-info {
+      display: block;
+      font-size: 0.65rem;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
   }
 
   .selected-indicator {

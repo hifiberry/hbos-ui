@@ -49,7 +49,7 @@ export function useCoverArt() {
    */
   const loadCoverArt = async (song: Song): Promise<CoverArtResult> => {
     if (!song) {
-      const emptyResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
+      const emptyResult: CoverArtResult = { success: false, urls: [], images: [], source: 'none', providers: [] }
       lastResult.value = emptyResult
       lastSongKey.value = null
       return emptyResult
@@ -98,7 +98,7 @@ export function useCoverArt() {
       error.value = errorMessage
       console.error('Failed to load cover art:', errorMessage)
 
-      const emptyResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
+      const emptyResult: CoverArtResult = { success: false, urls: [], images: [], source: 'none', providers: [] }
       lastResult.value = emptyResult
       lastSongKey.value = null
       return emptyResult
@@ -130,7 +130,7 @@ export function useCoverArt() {
         title,
         artist
       })
-      const emptyResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
+      const emptyResult: CoverArtResult = { success: false, urls: [], images: [], source: 'none', providers: [] }
       return emptyResult
     }
 
@@ -150,7 +150,7 @@ export function useCoverArt() {
    */
   const loadCoverArtFromAPI = async (song: Song): Promise<CoverArtResult> => {
     if (!song) {
-      const emptyResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
+      const emptyResult: CoverArtResult = { success: false, urls: [], images: [], source: 'none', providers: [] }
       lastResult.value = emptyResult
       lastSongKey.value = null
       return emptyResult
@@ -169,7 +169,7 @@ export function useCoverArt() {
       error.value = errorMessage
       console.error('Cover art API loading error:', err)
 
-      const errorResult: CoverArtResult = { success: false, urls: [], source: 'none', providers: [] }
+      const errorResult: CoverArtResult = { success: false, urls: [], images: [], source: 'none', providers: [] }
       lastResult.value = errorResult
       lastSongKey.value = null
       return errorResult

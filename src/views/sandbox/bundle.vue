@@ -45,7 +45,7 @@ const bundleRoutes = ref(
     }
 
     return bundleRoutes
-  }, new Array()),
+  }, []),
 )
 
 const router = useRouter()

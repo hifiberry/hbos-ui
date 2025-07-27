@@ -628,3 +628,8 @@
 @mixin audio-control-stroke {
   @include icon-stroke-normal;
 }
+
+// Edit overlay background with 20% opacity
+@mixin edit-overlay-background {
+  background-color: rgba(0, 0, 0, 0.2);
+}

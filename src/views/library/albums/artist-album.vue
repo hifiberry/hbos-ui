@@ -8,14 +8,29 @@
       <!-- Artist Info Section -->
       <div v-if="artistByName" class="artist-info">
         <div class="artist-image">
-          <img
-            v-if="artistByName.thumb_url?.[0]"
-            :src="artistByName.thumb_url[0]"
-            :alt="artistByName.name"
-            class="artist-img"
-          />
-          <div v-else class="artist-img-placeholder">
-            <span>{{ artistByName.name.charAt(0).toUpperCase() }}</span>
+          <div
+            class="artist-img-container"
+            @mouseenter="showEditIcon = true"
+            @mouseleave="showEditIcon = false"
+          >
+            <img
+              v-if="artistByName.thumb_url?.[0]"
+              :src="artistByName.thumb_url[0]"
+              :alt="artistByName.name"
+              class="artist-img"
+            />
+            <div v-else class="artist-img-placeholder">
+              <span>{{ artistByName.name.charAt(0).toUpperCase() }}</span>
+            </div>
+
+            <!-- Edit Icon Overlay -->
+            <div
+              v-show="showEditIcon"
+              class="artist-img-edit-overlay"
+              @click="openImageSelector"
+            >
+              <AppIcon icon="edit" />
+            </div>
           </div>
         </div>
         <div class="artist-details">
@@ -142,6 +157,14 @@
         />
       </div>
     </div>
+
+    <!-- Artist Image Selector Modal -->
+    <AppArtistImageSelector
+      :is-visible="showImageSelector"
+      :artist-name="artistByName?.name || ''"
+      @close="showImageSelector = false"
+      @select="onArtistImageSelected"
+    />
   </div>
 </template>
 
@@ -154,6 +177,8 @@ const router = useRouter()
 
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
+import AppIcon from '@/components/app-icon.vue'
+import AppArtistImageSelector from '@/components/app-artist-image-selector.vue'
 
 import { useRoute } from 'vue-router'
 const route = useRoute()
@@ -196,6 +221,10 @@ const toggleMobileInfo = () => {
 const showFullBiography = ref(false)
 const isBiographyLong = ref(false)
 
+// Artist image selector functionality
+const showEditIcon = ref(false)
+const showImageSelector = ref(false)
+
 const checkBiographyLength = () => {
   const biography = fullArtistData.value?.metadata?.biography
   if (biography) {
@@ -207,6 +236,17 @@ const checkBiographyLength = () => {
 
 const toggleBiography = () => {
   showFullBiography.value = !showFullBiography.value
+}
+
+// Artist image selector functionality
+const openImageSelector = () => {
+  showImageSelector.value = true
+}
+
+const onArtistImageSelected = (imageUrl: string) => {
+  console.log('Selected artist image:', imageUrl)
+  // TODO: Implement saving the selected image URL to the artist data
+  // This would typically involve an API call to update the artist's thumb_url
 }
 
 // Computed property for displayed biography text
@@ -332,6 +372,38 @@ watch(
     font-size: 120px;
     font-weight: 600;
     color: var(--color-text-secondary);
+  }
+}
+
+.artist-img-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.artist-img-edit-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  @include edit-overlay-background;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: white;
   }
 }
 

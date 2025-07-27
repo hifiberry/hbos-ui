@@ -7,9 +7,9 @@
         @mouseleave="showTooltip = false"
         @mousemove="updateTooltipPosition"
       >
-        <AppCover 
-          :src="getCoverImageUrl(song)" 
-          :alt="song.artist || 'Artist'" 
+        <AppCover
+          :src="getCoverImageUrl(song)"
+          :alt="song.artist || 'Artist'"
         />
 
         <!-- Metadata Tooltip -->
@@ -21,15 +21,26 @@
         />
       </div>
       <div class="song-control-info__attr">
-        <div class="h3">
-          <AppMarquee>
-            {{ song.title }}
-          </AppMarquee>
-        </div>
+        <!-- Two-line layout when both title and artist are available -->
+        <template v-if="song.title && song.artist">
+          <div class="h3">
+            <AppMarquee>
+              {{ song.title }}
+            </AppMarquee>
+          </div>
+          <p>
+            <AppMarquee>{{ song.artist }}</AppMarquee>
+          </p>
+        </template>
 
-        <p>
-          <AppMarquee>{{ song.artist }}</AppMarquee>
-        </p>
+        <!-- Single-line layout when only one or neither is available -->
+        <template v-else>
+          <div class="h3 single-line">
+            <AppMarquee>
+              {{ song.title || song.artist || 'Unknown' }}
+            </AppMarquee>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -65,23 +76,23 @@ const getCoverImageUrl = (song: Song): string => {
   // For radio stations, prefer logo_url from metadata first
   if (song.metadata && typeof song.metadata === 'object') {
     const metadata = song.metadata as Record<string, unknown>
-    
+
     // Check for logo_url first (preferred for radio stations)
     if (metadata.logo_url && typeof metadata.logo_url === 'string') {
       return metadata.logo_url
     }
-    
+
     // Then check for coverart_url in metadata
     if (metadata.coverart_url && typeof metadata.coverart_url === 'string') {
       return metadata.coverart_url
     }
   }
-  
+
   // Fall back to song's cover art URL if no metadata image found
   if (song.cover_art_url) {
     return rewriteAudiocontrolApiUrl(song.cover_art_url)
   }
-  
+
   // Return empty string if no image found
   return ''
 }
@@ -217,8 +228,16 @@ const tooltipStyles = computed(() => {
     color: var(--color-body-secondary);
     max-width: 260px;
     min-width: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
     .h3 {
       margin-bottom: 3px;
+
+      &.single-line {
+        margin-bottom: 0;
+      }
     }
   }
   &.card {

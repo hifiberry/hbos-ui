@@ -6,9 +6,17 @@ export interface CoverArtProvider {
   display_name: string
 }
 
+export interface CoverArtImage {
+  url: string
+  width?: number
+  height?: number
+  size_bytes?: number
+  format?: string
+}
+
 export interface CoverArtProviderResult {
   provider: CoverArtProvider
-  urls: string[]
+  images: CoverArtImage[]
 }
 
 export interface CoverArtApiResponse {
@@ -18,6 +26,7 @@ export interface CoverArtApiResponse {
 export interface CoverArtResult {
   success: boolean
   urls: string[]
+  images: CoverArtImage[]
   source: 'song' | 'album' | 'artist' | 'none'
   providers: CoverArtProvider[]
 }
@@ -47,7 +56,7 @@ export class CoverArtLoader {
   /**
    * Fetch cover art URLs from the backend API
    * @param endpoint - API endpoint to call
-   * @returns CoverArt API response with provider results
+   * @returns Processed CoverArt API response with filtered images
    */
   private async fetchCoverArt(endpoint: string): Promise<CoverArtApiResponse> {
     try {
@@ -60,9 +69,14 @@ export class CoverArtLoader {
         return { results: [] }
       }
 
-      const data = await response.json()
-      console.log(`Cover art API response for ${endpoint}:`, data)
-      return data
+      const rawData = await response.json()
+      console.log(`Raw cover art API response for ${endpoint}:`, rawData)
+      
+      // Process the response to filter for square images and optimal resolutions
+      const processedData = this.processApiResponse(rawData)
+      console.log(`Processed cover art API response for ${endpoint}:`, processedData)
+      
+      return processedData
     } catch (error) {
       console.warn('Failed to fetch cover art:', error)
       return { results: [] }
@@ -133,6 +147,87 @@ export class CoverArtLoader {
   }
 
   /**
+   * Filter images to only include (almost) square ones
+   * @param images - Array of cover art images
+   * @returns Filtered array with only square images (aspect ratio between 0.8 and 1.2)
+   */
+  private filterSquareImages(images: CoverArtImage[]): CoverArtImage[] {
+    return images.filter(image => {
+      if (!image.width || !image.height) return true // Keep images without dimensions
+      const aspectRatio = image.width / image.height
+      return aspectRatio >= 0.8 && aspectRatio <= 1.2
+    })
+  }
+
+  /**
+   * Filter images by provider to only keep the largest and those within 80% of largest resolution
+   * @param images - Array of cover art images from same provider
+   * @returns Filtered array with only high-resolution images
+   */
+  private filterByResolution(images: CoverArtImage[]): CoverArtImage[] {
+    if (images.length <= 1) return images
+
+    // Find the largest resolution (using area as metric)
+    let maxArea = 0
+    images.forEach(image => {
+      if (image.width && image.height) {
+        const area = image.width * image.height
+        if (area > maxArea) {
+          maxArea = area
+        }
+      }
+    })
+
+    // If no images have dimensions, return all
+    if (maxArea === 0) return images
+
+    // Keep images that are at least 80% of the largest area
+    const minArea = maxArea * 0.8
+    return images.filter(image => {
+      if (!image.width || !image.height) return true // Keep images without dimensions
+      const area = image.width * image.height
+      return area >= minArea
+    })
+  }
+
+  /**
+   * Process raw API response to filter and optimize images
+   * @param response - Raw cover art API response
+   * @returns Processed response with filtered images
+   */
+  private processApiResponse(response: CoverArtApiResponse): CoverArtApiResponse {
+    const processedResults = response.results.map(result => {
+      // First filter for square images
+      let filteredImages = this.filterSquareImages(result.images)
+      
+      // Then filter by resolution within each provider
+      filteredImages = this.filterByResolution(filteredImages)
+
+      return {
+        ...result,
+        images: filteredImages
+      }
+    }).filter(result => result.images.length > 0) // Remove providers with no images left
+
+    return {
+      results: processedResults
+    }
+  }
+
+  /**
+   * Extract all images from API response
+   * @param response - Cover art API response
+   * @returns Array of all images from all providers
+   */
+  private extractImages(response: CoverArtApiResponse): CoverArtImage[] {
+    const images: CoverArtImage[] = []
+    for (const result of response.results) {
+      images.push(...result.images)
+    }
+    return images
+  }
+
+  /**
    * Extract all URLs from API response
    * @param response - Cover art API response
    * @returns Array of all URLs from all providers
@@ -140,7 +235,7 @@ export class CoverArtLoader {
   private extractUrls(response: CoverArtApiResponse): string[] {
     const urls: string[] = []
     for (const result of response.results) {
-      urls.push(...result.urls)
+      urls.push(...result.images.map(img => img.url))
     }
     return urls
   }
@@ -152,17 +247,17 @@ export class CoverArtLoader {
    */
   private extractProviders(response: CoverArtApiResponse): CoverArtProvider[] {
     return response.results
-      .filter(result => result.urls.length > 0)
+      .filter(result => result.images.length > 0)
       .map(result => result.provider)
   }
 
   /**
    * Check if API response has any results
    * @param response - Cover art API response
-   * @returns True if any provider returned URLs
+   * @returns True if any provider returned images
    */
   private hasResults(response: CoverArtApiResponse): boolean {
-    return response.results.some(result => result.urls.length > 0)
+    return response.results.some(result => result.images.length > 0)
   }
 
   /**
@@ -193,6 +288,7 @@ export class CoverArtLoader {
       return {
         success: true,
         urls: existingUrls,
+        images: existingUrls.map(url => ({ url })),
         source: 'song',
         providers: [{ name: 'metadata', display_name: 'Song Metadata' }]
       }
@@ -219,6 +315,7 @@ export class CoverArtLoader {
         return {
           success: true,
           urls: [metadataCoverUrl],
+          images: [{ url: metadataCoverUrl }],
           source: 'song',
           providers: [{ name: 'metadata_fallback', display_name: 'Metadata Fallback (' + sourceType + ')' }]
         }
@@ -247,6 +344,7 @@ export class CoverArtLoader {
         return {
           success: true,
           urls: this.extractUrls(songResponse),
+          images: this.extractImages(songResponse),
           source: 'song',
           providers: this.extractProviders(songResponse)
         }
@@ -261,6 +359,7 @@ export class CoverArtLoader {
         return {
           success: true,
           urls: this.extractUrls(albumResponse),
+          images: this.extractImages(albumResponse),
           source: 'album',
           providers: this.extractProviders(albumResponse)
         }
@@ -275,6 +374,7 @@ export class CoverArtLoader {
         return {
           success: true,
           urls: this.extractUrls(artistResponse),
+          images: this.extractImages(artistResponse),
           source: 'artist',
           providers: this.extractProviders(artistResponse)
         }
@@ -286,6 +386,7 @@ export class CoverArtLoader {
     return {
       success: false,
       urls: [],
+      images: [],
       source: 'none',
       providers: []
     }

@@ -33,7 +33,6 @@
             v-for="(image, index) in artistImages"
             :key="index"
             class="image-item"
-            :class="{ selected: selectedImageUrl === image.url }"
             @click="selectImage(image.url)"
           >
             <img
@@ -50,32 +49,16 @@
                   ({{ formatFileSize(image.size_bytes) }})
                 </span>
               </div>
-              <div v-if="selectedImageUrl === image.url" class="selected-indicator">
-                <AppIcon icon="check" />
-              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn-cancel" @click="closeModal">
-          Cancel
-        </button>
-        <button
-          class="btn-select"
-          :disabled="!selectedImageUrl"
-          @click="confirmSelection"
-        >
-          Select Image
-        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import { coverArtLoader } from '@/services/coverartloader'
 import type { CoverArtApiResponse } from '@/services/coverartloader'
@@ -107,7 +90,6 @@ const emit = defineEmits<Emits>()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const artistImages = ref<ArtistImage[]>([])
-const selectedImageUrl = ref<string | null>(null)
 
 // Fetch artist images from the cover art API
 const fetchArtistImages = async () => {
@@ -116,7 +98,6 @@ const fetchArtistImages = async () => {
   loading.value = true
   error.value = null
   artistImages.value = []
-  selectedImageUrl.value = null
 
   try {
     console.log(`Fetching artist images for: ${props.artistName}`)
@@ -177,14 +158,30 @@ watch(() => props.isVisible, (newVisible) => {
   }
 }, { immediate: true })
 
-// Select an image
+// Handle keyboard events
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.isVisible) {
+    closeModal()
+  }
+}
+
+// Add/remove keyboard event listeners
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
+})
+
+// Select an image and immediately confirm
 const selectImage = (imageUrl: string) => {
-  selectedImageUrl.value = imageUrl
+  emit('select', imageUrl)
+  closeModal()
 }
 
 // Close modal
 const closeModal = () => {
-  selectedImageUrl.value = null
   emit('close')
 }
 
@@ -193,14 +190,6 @@ const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-// Confirm selection
-const confirmSelection = () => {
-  if (selectedImageUrl.value) {
-    emit('select', selectedImageUrl.value)
-    closeModal()
-  }
 }
 
 // Handle image load errors
@@ -322,11 +311,6 @@ const onImageError = (event: Event) => {
     }
   }
 
-  &.selected {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 1px var(--color-primary);
-  }
-
   img {
     width: 100%;
     height: 100%;
@@ -380,37 +364,6 @@ const onImageError = (event: Event) => {
       opacity: 0.8;
       margin-top: 2px;
     }
-  }
-
-  .selected-indicator {
-    background: var(--color-primary);
-    color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: flex-end;
-
-    svg {
-      width: 14px;
-      height: 14px;
-    }
-  }
-}
-
-.modal-actions {
-  @include popup-actions;
-  padding: 0 24px 24px;
-  margin-top: 0;
-
-  .btn-cancel {
-    @include popup-button-cancel;
-  }
-
-  .btn-select {
-    @include popup-button-primary;
   }
 }
 

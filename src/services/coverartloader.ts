@@ -71,11 +71,11 @@ export class CoverArtLoader {
 
       const rawData = await response.json()
       console.log(`Raw cover art API response for ${endpoint}:`, rawData)
-      
+
       // Process the response to filter for square images and optimal resolutions
       const processedData = this.processApiResponse(rawData)
       console.log(`Processed cover art API response for ${endpoint}:`, processedData)
-      
+
       return processedData
     } catch (error) {
       console.warn('Failed to fetch cover art:', error)
@@ -199,7 +199,7 @@ export class CoverArtLoader {
     const processedResults = response.results.map(result => {
       // First filter for square images
       let filteredImages = this.filterSquareImages(result.images)
-      
+
       // Then filter by resolution within each provider
       filteredImages = this.filterByResolution(filteredImages)
 

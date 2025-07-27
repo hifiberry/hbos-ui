@@ -354,7 +354,7 @@ const onImageError = (event: Event) => {
     font-weight: 400;
     align-self: flex-start;
     margin-top: 4px;
-    
+
     .size-info {
       display: block;
       font-size: 0.65rem;

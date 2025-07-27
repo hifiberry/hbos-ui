@@ -407,7 +407,7 @@ onMounted(async () => {
         transition: opacity 0.2s ease;
 
         .favorite-btn {
-          background: rgba(0, 0, 0, 0.7);
+          @include edit-overlay-background;
           border: none;
           padding: 6px;
           cursor: pointer;
@@ -419,7 +419,7 @@ onMounted(async () => {
           justify-content: center;
 
           &:hover {
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.3);
             transform: scale(1.1);
           }
 

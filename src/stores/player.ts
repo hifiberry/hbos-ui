@@ -31,7 +31,7 @@ import { useAppConfigStore } from '@/stores/appconfig'
 
 // Configuration
 export const PLAYER_CONFIG = {
-  pollingInterval: 30000, // Time in milliseconds between updates (30 seconds)
+  pollingInterval: 5000, // Time in milliseconds between updates (5 seconds)
   fastUpdateAfterCommand: 300, // Time to wait for quick update after sending a command
   wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
 }

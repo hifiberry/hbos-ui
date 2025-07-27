@@ -97,6 +97,7 @@ interface ArtistImage {
   height?: number
   size_bytes?: number
   format?: string
+  grade?: number
 }
 
 const props = defineProps<Props>()
@@ -136,9 +137,27 @@ const fetchArtistImages = async () => {
           width: image.width,
           height: image.height,
           size_bytes: image.size_bytes,
-          format: image.format
+          format: image.format,
+          grade: image.grade
         })
       })
+    })
+
+    // Sort images by grade (highest first), fallback to provider name for consistent ordering
+    images.sort((a, b) => {
+      // Primary sort: by grade (highest first)
+      if (a.grade !== undefined && b.grade !== undefined) {
+        if (a.grade !== b.grade) {
+          return b.grade - a.grade // Descending order
+        }
+      } else if (a.grade !== undefined) {
+        return -1 // a has grade, b doesn't - a comes first
+      } else if (b.grade !== undefined) {
+        return 1 // b has grade, a doesn't - b comes first
+      }
+
+      // Secondary sort: by provider name for consistent ordering
+      return a.provider.localeCompare(b.provider)
     })
 
     artistImages.value = images

@@ -12,6 +12,7 @@ export interface CoverArtImage {
   height?: number
   size_bytes?: number
   format?: string
+  grade?: number
 }
 
 export interface CoverArtProviderResult {

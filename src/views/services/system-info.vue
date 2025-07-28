@@ -219,6 +219,32 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Cover Art Providers -->
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="database_star" class="card-icon" />
+            <h2>Cover Art Providers</h2>
+          </div>
+          <div v-if="coverArtLoading" class="loading-message">
+            Loading cover art providers...
+          </div>
+          <div v-else-if="coverArtError" class="error-message">
+            {{ coverArtError }}
+          </div>
+          <table v-else-if="coverArtMethods" class="info-table">
+            <tbody>
+              <tr v-for="method in coverArtMethods.methods.filter(m => m.method !== 'Url')" :key="method.method">
+                <td class="label">{{ method.method }}</td>
+                <td class="value">
+                  <span class="providers-list">
+                    {{ method.providers.map(p => p.display_name).join(', ') }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -303,6 +329,7 @@ import {
 } from '@/api/system'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
+import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
 
 // State
 const loading = ref(true)
@@ -327,6 +354,11 @@ const {
   getProviderStatusText,
   getProviderStatusClass
 } = useFavouritesInfo()
+
+// Cover art providers state
+const coverArtLoading = ref(true)
+const coverArtError = ref('')
+const coverArtMethods = ref<CoverArtMethodsResponse | null>(null)
 
 // Computed ref for hostname
 const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
@@ -490,10 +522,26 @@ const fetchSystemInfo = async () => {
   }
 }
 
+const fetchCoverArtMethods = async () => {
+  coverArtLoading.value = true
+  coverArtError.value = ''
+
+  try {
+    const data = await getCoverArtMethods()
+    coverArtMethods.value = data
+  } catch (err) {
+    console.error('Error fetching cover art methods:', err)
+    coverArtError.value = err instanceof Error ? err.message : 'Failed to retrieve cover art providers'
+  } finally {
+    coverArtLoading.value = false
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   fetchSystemInfo()
   getFavouritesInfo()
+  fetchCoverArtMethods()
 })
 </script>
 
@@ -585,21 +633,23 @@ onMounted(() => {
               }
 
               td {
-                padding: 12px 0;
-                vertical-align: middle;
+                padding: 10px 0;
+                vertical-align: top;
 
                 &.label {
                   font-weight: 500;
                   color: var(--color-body-secondary);
                   width: 40%;
                   padding-right: 16px;
-                  vertical-align: middle;
+                  vertical-align: top;
+                  line-height: 1.5;
                 }
 
                 &.value {
                   color: var(--color-body);
                   font-family: 'Metropolis', sans-serif;
-                  vertical-align: middle;
+                  vertical-align: top;
+                  line-height: 1.5;
 
                   &.uuid {
                     font-size: 0.9em;

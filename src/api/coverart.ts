@@ -9,6 +9,20 @@ export interface CoverArtUpdateResponse {
   message: string
 }
 
+export interface CoverArtProvider {
+  name: string
+  display_name: string
+}
+
+export interface CoverArtMethod {
+  method: string
+  providers: CoverArtProvider[]
+}
+
+export interface CoverArtMethodsResponse {
+  methods: CoverArtMethod[]
+}
+
 /**
  * Update the custom image URL for a specific artist
  * @param artistName - The artist name (will be base64 encoded)
@@ -70,6 +84,51 @@ export async function updateArtistImage(artistName: string, imageUrl: string): P
     return data
   } catch (error) {
     console.error('Error updating artist image:', error)
+    throw error
+  }
+}
+
+/**
+ * Get available cover art methods and providers
+ * @returns Promise<CoverArtMethodsResponse>
+ */
+export async function getCoverArtMethods(): Promise<CoverArtMethodsResponse> {
+  const configStore = useAppConfigStore()
+  const apiBaseUrl = configStore.getApiBaseUrl()
+
+  const url = `${apiBaseUrl}/coverart/methods`
+
+  console.log('Fetching cover art methods:', { url })
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+
+    console.log('Cover art methods response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Cover art methods fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      })
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data: CoverArtMethodsResponse = await response.json()
+    console.log('Cover art methods success:', data)
+    return data
+  } catch (error) {
+    console.error('Error fetching cover art methods:', error)
     throw error
   }
 }

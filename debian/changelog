@@ -1,3 +1,18 @@
+hifiberry-webui (0.8) stable; urgency=medium
+
+  * Enhanced artist management with custom image selection and upload
+  * Added comprehensive cover art provider management and system visibility
+  * Implemented web services integration (MusicBrainz, TheAudioDB, FanArt.TV)
+  * Added artist image selector with quality filtering and grade sorting
+  * Enhanced system information page with cover art providers section
+  * Improved cover art handling with advanced caching and fallback mechanisms
+  * Added extensive logging for cover art operations and debugging
+  * Integrated database icon system for service representation
+  * Enhanced UI consistency with service-item mixins and responsive layouts
+  * Added missing icons documentation for future service branding
+
+ -- HiFiBerry <info@hifiberry.com>  Mon, 28 Jul 2025 12:00:00 +0000
+
 hifiberry-webui (0.7) stable; urgency=medium
 
   * Enhanced lyrics display with synchronized highlighting and auto-scrolling

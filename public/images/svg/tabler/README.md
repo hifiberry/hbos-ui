@@ -53,6 +53,7 @@ Tabler Icons is a set of 4,000+ free SVG icons designed specifically for web int
 - `brand-spotify.svg` - **Tabler ID**: `brand-spotify` - Spotify
 - `brand-lastfm.svg` - **Tabler ID**: `brand-lastfm` - Last.fm
 - `hifiberry.svg` - **Custom** - HiFiBerry logo (not from Tabler)
+- `musicbrainz.svg` - **Custom** - MusicBrainz logo with half-filled design (not from Tabler)
 
 ### User & Content Icons
 - `users.svg` - **Tabler ID**: `users` - Users/people

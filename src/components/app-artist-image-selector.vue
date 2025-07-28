@@ -112,6 +112,12 @@ const fetchArtistImages = async () => {
     const images: ArtistImage[] = []
     response.results.forEach(result => {
       result.images.forEach(image => {
+        // Filter out images with grade < -10
+        if (image.grade !== undefined && image.grade < -10) {
+          console.log(`Skipping image with low grade (${image.grade}):`, image.url)
+          return
+        }
+
         images.push({
           url: image.url,
           provider: result.provider.display_name || result.provider.name,

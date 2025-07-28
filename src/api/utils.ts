@@ -17,6 +17,7 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
 
   // Fix URLs that start with /api/library/ to /api/audiocontrol/library/
   // and /api/lyrics/ to /api/audiocontrol/lyrics/
+  // and /api/coverart/ to /api/audiocontrol/coverart/
   // This is needed because the API server sometimes returns shortened paths
   // but they should include /audiocontrol/ to match our API structure
   let correctedUrl = url
@@ -26,6 +27,9 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
   } else if (url.startsWith('/api/lyrics/')) {
     correctedUrl = url.replace('/api/lyrics/', '/api/audiocontrol/lyrics/')
     console.log('Fixed lyrics URL path:', { original: url, corrected: correctedUrl })
+  } else if (url.startsWith('/api/coverart/')) {
+    correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
+    console.log('Fixed coverart URL path:', { original: url, corrected: correctedUrl })
   }
 
   if (useProxy) {

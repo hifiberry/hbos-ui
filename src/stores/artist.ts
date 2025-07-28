@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 import { useToastStore } from '@/stores/toast'
 import { useLibraryStore } from '@/stores/library'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
+import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 
 export const useArtistStore = defineStore('artist', () => {
   const libraryFetch = useLibraryFetch()
@@ -61,12 +62,22 @@ export const useArtistStore = defineStore('artist', () => {
 
     if (data.value?.artists && data.value.artists.length > 0) {
       const mappedArtists = data.value.artists.map((artist: Artist) => {
+        // Debug: Log what the backend is returning for thumb_url
+        console.log('Artist:', artist.name, 'thumb_url:', artist.thumb_url)
+
+        // Process the cover art URL through the rewrite function
+        let coverSrc = null
+        if (artist.thumb_url && artist.thumb_url.length > 0) {
+          coverSrc = rewriteAudiocontrolApiUrl(artist.thumb_url[0])
+          console.log('Rewritten cover URL:', { original: artist.thumb_url[0], rewritten: coverSrc })
+        }
+
         return {
           ...artist,
           $id: artist.id,
           $title: artist.name,
           $subtitle: `${artist.album_count} album${artist.album_count !== 1 ? 's' : ''}`,
-          $cover_src: artist.thumb_url[0],
+          $cover_src: coverSrc,
         }
       })
 

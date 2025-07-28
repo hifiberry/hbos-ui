@@ -14,8 +14,8 @@
             @mouseleave="showEditIcon = false"
           >
             <img
-              v-if="artistByName.thumb_url?.[0]"
-              :src="artistByName.thumb_url[0]"
+              v-if="artistImageUrl"
+              :src="artistImageUrl"
               :alt="artistByName.name"
               class="artist-img"
             />
@@ -181,6 +181,7 @@ import AppIcon from '@/components/app-icon.vue'
 import AppArtistImageSelector from '@/components/app-artist-image-selector.vue'
 
 import { updateArtistImage } from '@/api/coverart'
+import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 
 import { useRoute } from 'vue-router'
 const route = useRoute()
@@ -215,6 +216,14 @@ const {
 
 // Get basic artist from store
 const artistByName = computed(() => getArtistByIdFromStore(id.value))
+
+// Process artist image URL through rewrite function
+const artistImageUrl = computed(() => {
+  if (artistByName.value?.thumb_url?.[0]) {
+    return rewriteAudiocontrolApiUrl(artistByName.value.thumb_url[0])
+  }
+  return null
+})
 
 // Mobile toggle for additional info
 const showMobileInfo = ref(false)

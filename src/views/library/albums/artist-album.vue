@@ -18,9 +18,10 @@
               :src="artistImageUrl"
               :alt="artistByName.name"
               class="artist-img"
+              @error="onArtistImageError"
             />
             <div v-else class="artist-img-placeholder">
-              <span>{{ artistByName.name.charAt(0).toUpperCase() }}</span>
+              <AppIcon icon="users-thin" class="artist-placeholder-icon" />
             </div>
 
             <!-- Edit Icon Overlay -->
@@ -219,10 +220,27 @@ const artistByName = computed(() => getArtistByIdFromStore(id.value))
 
 // Process artist image URL through rewrite function
 const artistImageUrl = computed(() => {
+  if (artistImageError.value) {
+    return null // Don't show image if there was an error loading it
+  }
   if (artistByName.value?.thumb_url?.[0]) {
     return rewriteAudiocontrolApiUrl(artistByName.value.thumb_url[0])
   }
   return null
+})
+
+// Track artist image loading errors
+const artistImageError = ref(false)
+
+// Handle artist image loading errors
+const onArtistImageError = () => {
+  console.log('Artist image failed to load, falling back to generic icon')
+  artistImageError.value = true
+}
+
+// Reset error state when artist changes
+watch(() => artistByName.value?.id, () => {
+  artistImageError.value = false
 })
 
 // Mobile toggle for additional info
@@ -273,6 +291,8 @@ const onArtistImageSelected = async (imageUrl: string) => {
     if (result.success) {
       console.log('Artist image updated successfully:', result.message)
       toastStore.showSuccessToast(`Artist image updated successfully for "${artistName}"`)
+      // Reset error state since we now have a new image
+      artistImageError.value = false
       // The cache should be invalidated automatically according to the API docs
     } else {
       console.error('Failed to update artist image:', result.message)
@@ -397,16 +417,16 @@ watch(
   width: 280px;
   height: 280px;
   border-radius: 50%;
-  background: var(--color-surface-variant);
+  background: var(--cover-placeholder-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid rgba(var(--color-border-rgb), 0.2);
 
-  span {
-    font-size: 120px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+  .artist-placeholder-icon {
+    width: 120px;
+    height: 120px;
+    color: var(--color-icon-primary);
   }
 }
 
@@ -675,8 +695,9 @@ watch(
     height: 200px;
   }
 
-  .artist-img-placeholder span {
-    font-size: 80px;
+  .artist-img-placeholder .artist-placeholder-icon {
+    width: 80px;
+    height: 80px;
   }
 
   .artist-name {

@@ -1,1 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg width="100%" height="100%" viewBox="-1 -1 23 23" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;"><path d="M0.5,10.5c0,0 4.511,-6 10,-6c5.489,0 10,6 10,6c0,0 -4.473,6 -10,6c-5.527,0 -10,-6 -10,-6Z" style="fill:none;stroke:#000;stroke-width:1px;"/><circle cx="10.5" cy="10.5" r="4" style="fill:none;stroke:#000;stroke-width:1px;"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-0.5 -0.5 24 24" fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" id="Eye--Streamline-Tabler" height="24" width="24">
+  <desc>
+    Eye Streamline Icon: https://streamlinehq.com
+  </desc>
+  <path d="M9.583333333333334 11.5a1.9166666666666667 1.9166666666666667 0 1 0 3.8333333333333335 0 1.9166666666666667 1.9166666666666667 0 0 0 -3.8333333333333335 0" stroke-width="1"></path>
+  <path d="M20.125 11.5c-2.3 3.8333333333333335 -5.175000000000001 5.75 -8.625 5.75 -3.45 0 -6.325 -1.9166666666666667 -8.625 -5.75 2.3 -3.8333333333333335 5.175000000000001 -5.75 8.625 -5.75 3.45 0 6.325 1.9166666666666667 8.625 5.75" stroke-width="1"></path>
+</svg>

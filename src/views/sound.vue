@@ -121,16 +121,6 @@
             </div>
             <div class="control-item">
               <div class="control-value">
-                <div>Q {{ activeFilterQDisplay }}</div>
-                <div class="chevron">
-                  <AppIcon icon="resize-wider" @click="decrementQ" />
-                  <AppIcon icon="resize-narrower" @click="incrementQ" />
-                </div>
-              </div>
-              <div class="control-label">Width</div>
-            </div>
-            <div class="control-item">
-              <div class="control-value">
                 <div>{{ currentFilter.gain }} dB</div>
                 <div class="chevron">
                   <AppIcon icon="minus-small" @click="decrementGain" />
@@ -138,6 +128,16 @@
                 </div>
               </div>
               <div class="control-label">Gain</div>
+            </div>
+            <div class="control-item">
+              <div class="control-value">
+                <div>Band Freqs</div>
+                <div class="chevron">
+                  <AppIcon icon="resize-wider" @click="widenBand" />
+                  <AppIcon icon="resize-narrower" @click="narrowBand" />
+                </div>
+              </div>
+              <div class="control-label">Width</div>
             </div>
           </div>
         </div>
@@ -425,7 +425,8 @@ const activeFilterGraphData = computed(() => {
 });
 
 const activeFilterQDisplay = computed(() => {
-  // Displays Q value, formatted to 2 decimal places
+  // This computed property is now less relevant if Q is not directly controlled by these buttons
+  // but we can keep it for existing filter display if needed elsewhere.
   return currentFilter.value.Q ? currentFilter.value.Q.toFixed(2) : 'N/A';
 });
 
@@ -498,7 +499,7 @@ const removeActiveFilter = () => {
   }
 };
 
-// --- Filter Control Adjustments ---
+// --- Filter Control Adjustments (Existing for active filter) ---
 
 function incrementFrequency() {
   const filter = currentFilter.value;
@@ -529,19 +530,95 @@ function decrementGain() {
   }
 }
 
-function incrementQ() {
-  const filter = currentFilter.value;
-  if (filter && typeof filter.Q === 'number') {
-    filter.Q = parseFloat((filter.Q + 0.1).toFixed(2));
-    if (filter.Q > 10) filter.Q = 10;
+// --- NEW METHODS FOR BAND WIDTH CONTROL ---
+const freqStep = 50; // How much to move the frequencies per click, adjust as needed
+
+function widenBand() {
+  const minOverallFreq = 20;
+  const maxOverallFreq = 10000;
+  const minBandwidth = freqStep * 2; // Keep a reasonable minimum distance
+
+  // Calculate potential new frequencies
+  let newNarrow = narrowBandStartFreq.value + freqStep;
+  let newWide = wideBandStartFreq.value - freqStep;
+
+  // Apply bounds
+  newNarrow = Math.min(maxOverallFreq, newNarrow);
+  newWide = Math.max(minOverallFreq, newWide);
+
+  // Ensure they don't cross and maintain minimum bandwidth
+  if (newNarrow - newWide >= minBandwidth) {
+    narrowBandStartFreq.value = newNarrow;
+    wideBandStartFreq.value = newWide;
+  } else {
+    // If they would cross or become too close, try to move them apart proportionally
+    // This is a simple strategy: if one hits a bound, try to move the other.
+    // If narrow can move further, move it.
+    if (narrowBandStartFreq.value < maxOverallFreq) {
+      narrowBandStartFreq.value = Math.min(maxOverallFreq, narrowBandStartFreq.value + freqStep);
+    }
+    // If wide can move further, move it.
+    if (wideBandStartFreq.value > minOverallFreq) {
+      wideBandStartFreq.value = Math.max(minOverallFreq, wideBandStartFreq.value - freqStep);
+    }
+    // Re-check the condition after individual adjustments
+    if (narrowBandStartFreq.value - wideBandStartFreq.value < minBandwidth) {
+      // If still too close after individual attempts, enforce min bandwidth
+      if (narrowBandStartFreq.value - minBandwidth >= minOverallFreq) {
+        wideBandStartFreq.value = narrowBandStartFreq.value - minBandwidth;
+      } else if (wideBandStartFreq.value + minBandwidth <= maxOverallFreq) {
+        narrowBandStartFreq.value = wideBandStartFreq.value + minBandwidth;
+      }
+    }
+  }
+  // Ensure correct order after any adjustments
+  if (wideBandStartFreq.value > narrowBandStartFreq.value) {
+    [wideBandStartFreq.value, narrowBandStartFreq.value] = [narrowBandStartFreq.value, wideBandStartFreq.value];
   }
 }
 
-function decrementQ() {
-  const filter = currentFilter.value;
-  if (filter && typeof filter.Q === 'number') {
-    filter.Q = parseFloat((filter.Q - 0.1).toFixed(2));
-    if (filter.Q < 0.1) filter.Q = 0.1;
+function narrowBand() {
+  const minOverallFreq = 20;
+  const maxOverallFreq = 10000;
+  const minBandwidth = freqStep * 2; // Keep a reasonable minimum distance
+
+  // Calculate potential new frequencies
+  let newNarrow = narrowBandStartFreq.value - freqStep;
+  let newWide = wideBandStartFreq.value + freqStep;
+
+  // Apply bounds
+  newNarrow = Math.max(minOverallFreq, newNarrow);
+  newWide = Math.min(maxOverallFreq, newWide);
+
+  // Ensure they don't cross and maintain minimum bandwidth
+  if (newNarrow - newWide >= minBandwidth) {
+    narrowBandStartFreq.value = newNarrow;
+    wideBandStartFreq.value = newWide;
+  } else {
+    // If they would cross or become too close, try to move them together proportionally
+    // If narrow can move down, move it.
+    if (narrowBandStartFreq.value > minOverallFreq + minBandwidth) { // Check if there's space to narrow
+      narrowBandStartFreq.value = Math.max(minOverallFreq + minBandwidth, narrowBandStartFreq.value - freqStep);
+    }
+    // If wide can move up, move it.
+    if (wideBandStartFreq.value < maxOverallFreq - minBandwidth) { // Check if there's space to narrow
+      wideBandStartFreq.value = Math.min(maxOverallFreq - minBandwidth, wideBandStartFreq.value + freqStep);
+    }
+    // Re-check the condition after individual adjustments
+    if (narrowBandStartFreq.value - wideBandStartFreq.value < minBandwidth) {
+      // If still too close, try to enforce min bandwidth from the narrow side
+      if (narrowBandStartFreq.value - minBandwidth >= minOverallFreq) {
+        wideBandStartFreq.value = narrowBandStartFreq.value - minBandwidth;
+      }
+      // No need for 'else if' here, as we want to adjust narrow if wide hit max as well
+      if (wideBandStartFreq.value + minBandwidth <= maxOverallFreq) {
+        narrowBandStartFreq.value = wideBandStartFreq.value + minBandwidth;
+      }
+    }
+  }
+  // Ensure correct order after any adjustments
+  if (wideBandStartFreq.value > narrowBandStartFreq.value) {
+    [wideBandStartFreq.value, narrowBandStartFreq.value] = [narrowBandStartFreq.value, wideBandStartFreq.value];
   }
 }
 

@@ -129,6 +129,40 @@ export interface ScriptExecutionResponse {
   }
 }
 
+// Types for Cache Statistics
+export interface CacheStats {
+  disk_entries: number
+  memory_entries: number
+  memory_bytes: number
+  memory_limit_bytes: number | null
+}
+
+export interface CacheStatsResponse {
+  success: boolean
+  stats: CacheStats
+  message: string | null
+}
+
+// Types for Background Jobs
+export interface BackgroundJob {
+  id: string
+  name: string
+  start_time: number
+  last_update: number
+  progress: string | null
+  total_items: number | null
+  completed_items: number | null
+  duration_seconds: number
+  time_since_last_update: number
+  completion_percentage: number | null
+}
+
+export interface BackgroundJobsResponse {
+  success: boolean
+  jobs: BackgroundJob[]
+  message: string | null
+}
+
 /**
  * Get system information including Pi model, HAT details, and system UUID
  */
@@ -286,4 +320,46 @@ export const executeScript = async (request: ScriptExecutionRequest): Promise<Sc
   }
 
   return data
+}
+
+/**
+ * Get cache statistics
+ */
+export const getCacheStats = async (): Promise<CacheStatsResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/cache/stats`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
+}
+
+/**
+ * Get background jobs list
+ */
+export const getBackgroundJobs = async (): Promise<BackgroundJobsResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/background/jobs`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
 }

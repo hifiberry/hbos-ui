@@ -167,7 +167,8 @@
 
         <div class="filter-type-selector">
           <button v-for="type in ['filter-peak', 'filter-low-shelf', 'filter-high-shelf']" :key="type"
-            :class="['filter-type-option', { selected: selectedFilterType === type }]" @click="selectedFilterType = type">
+            :class="['filter-type-option', { selected: selectedFilterType === type }]"
+            @click="selectedFilterType = type">
             <AppIcon :icon="type" />
           </button>
         </div>
@@ -215,9 +216,9 @@ interface Filter {
 const activeChannel = ref<Channel>('left');
 const selectedFilterType = ref<string | null>(null);
 const filters = ref<Filter[]>([
-  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true },
-  { id: 2, icon: 'filter-low-shelf', text: '50', frequency: 50, gain: -20, Q: 0.71, enabled: true },
-  { id: 3, icon: 'filter-high-shelf', text: '8000', frequency: 8000, gain: 10, Q: 0.71, enabled: true },
+  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 8.71, enabled: true },
+  { id: 2, icon: 'filter-low-shelf', text: '50', frequency: 50, gain: -20, Q: 8.71, enabled: true },
+  { id: 3, icon: 'filter-high-shelf', text: '8000', frequency: 8000, gain: 10, Q: 8.71, enabled: true },
 ]);
 const showAddFilterModal = ref(false);
 const showFilterOptionsModal = ref(false);
@@ -308,40 +309,16 @@ const calculateFilterGain = (freq: number, band: Filter): number => {
 
   const A = band.gain; // Max gain for the filter
   const Fc = band.frequency; // Center/cutoff frequency
-  const Q = band.Q || 0.71; // Q factor, default to 0.71 if not set
+  const Q = band.Q || 8.71; // Q factor, default to 0.71 if not set
 
   // Ensure Q is a positive number to prevent division by zero or invalid calculations
   const safeQ = Math.max(0.01, Q);
 
-  let gainVal = 0;
+  // Apply the same peak/bell filter calculation for all types for visualization
+  const normalizedLogFreq = Math.log10(freq / Fc);
+  const widthFactor = 1 / safeQ;
+  let gainVal = A * Math.exp(-Math.pow(normalizedLogFreq / widthFactor, 2));
 
-  if (band.icon.includes('filter-peak')) {
-    // Peak/Bell filter (Gaussian-like curve for visualization)
-    const normalizedLogFreq = Math.log10(freq / Fc);
-    const widthFactor = 1 / safeQ;
-    gainVal = A * Math.exp(-Math.pow(normalizedLogFreq / widthFactor, 2));
-
-  } else if (band.icon === 'filter-low-shelf') {
-    // Low-shelf filter - Simplified approximation for visualization
-    // A smoother transition based on the distance from Fc
-    if (freq <= Fc) {
-      gainVal = A; // Full gain below cutoff
-    } else {
-      // Attenuate gradually: uses a logistic-like function for smooth rolloff
-      const slopeFactor = 0.5; // Adjust this for steeper/gentler slopes
-      gainVal = A * (1 - Math.tanh((freq - Fc) / (Fc * safeQ * slopeFactor)));
-    }
-  } else if (band.icon === 'filter-high-shelf') {
-    // High-shelf filter - Simplified approximation for visualization
-    // A smoother transition based on the distance from Fc
-    if (freq >= Fc) {
-      gainVal = A; // Full gain above cutoff
-    } else {
-      // Attenuate gradually
-      const slopeFactor = 0.5; // Adjust this for steeper/gentler slopes
-      gainVal = A * (1 - Math.tanh((Fc - freq) / (Fc * safeQ * slopeFactor)));
-    }
-  }
   return gainVal;
 };
 
@@ -355,7 +332,7 @@ const currentFilter = computed(() => {
     text: '',
     frequency: 1000,
     gain: 0,
-    Q: 0.71,
+    Q: 8.71,
     enabled: true,
   };
 });
@@ -398,8 +375,8 @@ const freqGridLines = computed(() => {
 
   // Convert Set to Array, sort, and filter to ensure no exact duplicates
   return Array.from(lines)
-              .filter(f => f >= minOverallFreq && f <= maxOverallFreq) // Final check within bounds
-              .sort((a, b) => a - b);
+    .filter(f => f >= minOverallFreq && f <= maxOverallFreq) // Final check within bounds
+    .sort((a, b) => a - b);
 });
 
 
@@ -501,7 +478,7 @@ const confirmAddFilter = () => {
     text: 'New', // Default text
     frequency: 1000,
     gain: 0,
-    Q: 0.71,
+    Q: 8.71,
     enabled: true,
   };
   filters.value.push(newFilter);

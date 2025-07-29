@@ -315,17 +315,16 @@
                 <td class="label">{{ job.name }}</td>
                 <td class="value">
                   <div class="job-info">
-                    <div class="job-progress">
+                    <div v-if="job.progress" class="job-progress-text">
+                      {{ job.progress }}
+                    </div>
+                    <div class="job-status-line">
                       <span v-if="job.completion_percentage !== null" class="progress-percentage">
                         {{ Math.round(job.completion_percentage) }}%
                       </span>
-                      <span v-if="job.progress" class="progress-text">
-                        {{ job.progress }}
+                      <span class="job-duration">
+                        running for {{ formatDuration(job.duration_seconds) }}
                       </span>
-                    </div>
-                    <div class="job-timing">
-                      <span class="duration">{{ formatDuration(job.duration_seconds) }}</span>
-                      <span class="last-update">{{ formatRelativeTime(job.last_update) }}</span>
                     </div>
                   </div>
                 </td>
@@ -661,12 +660,12 @@ const fetchSystemInfo = async () => {
 
   try {
     console.log('fetchSystemInfo: Calling getSystemInfo API...')
-    
+
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000)
     )
-    
+
     const data = await Promise.race([getSystemInfo(), timeoutPromise])
     console.log('fetchSystemInfo: API call completed, data:', data)
 
@@ -708,12 +707,12 @@ const fetchCacheStats = async () => {
 
   try {
     console.log('fetchCacheStats: Calling getCacheStats API...')
-    
+
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Cache stats request timeout after 10 seconds')), 10000)
     )
-    
+
     const data = await Promise.race([getCacheStats(), timeoutPromise])
     console.log('fetchCacheStats: API call completed, data:', data)
     cacheStats.value = data
@@ -733,12 +732,12 @@ const fetchBackgroundJobs = async () => {
 
   try {
     console.log('fetchBackgroundJobs: Calling getBackgroundJobs API...')
-    
+
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Background jobs request timeout after 10 seconds')), 10000)
     )
-    
+
     const data = await Promise.race([getBackgroundJobs(), timeoutPromise])
     console.log('fetchBackgroundJobs: API call completed, data:', data)
     backgroundJobs.value = data
@@ -754,10 +753,10 @@ const fetchBackgroundJobs = async () => {
 // Lifecycle
 onMounted(async () => {
   console.log('System Info: Starting to load...')
-  
+
   // Load system info first
   await fetchSystemInfo()
-  
+
   // Load other data in parallel but don't block the page
   Promise.allSettled([
     getFavouritesInfo().then(result => {
@@ -1135,36 +1134,25 @@ onMounted(async () => {
   flex-direction: column;
   gap: 4px;
 
-  .job-progress {
+  .job-progress-text {
+    color: var(--color-body);
+    font-size: 0.875em;
+    line-height: 1.3;
+  }
+
+  .job-status-line {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 0.8em;
 
     .progress-percentage {
       font-weight: 600;
       color: var(--color-primary);
-      font-size: 0.9em;
     }
 
-    .progress-text {
-      color: var(--color-body);
-      font-size: 0.875em;
-    }
-  }
-
-  .job-timing {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.8em;
-    color: var(--color-body-secondary);
-
-    .duration {
-      font-weight: 500;
-    }
-
-    .last-update {
-      font-style: italic;
+    .job-duration {
+      color: var(--color-body-secondary);
     }
   }
 }@media (max-width: 768px) {

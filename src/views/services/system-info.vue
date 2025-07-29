@@ -349,7 +349,7 @@
                     </div>
                     <div v-else-if="getJobStatus(job) === 'finished' || getJobStatus(job) === 'completed'" class="job-status-line">
                       <span class="job-duration">
-                        completed in {{ formatDuration(job.duration_seconds) }}
+                        completed in {{ formatDuration(job.finish_time ? (job.finish_time - job.start_time) : job.duration_seconds) }}
                       </span>
                     </div>
                   </div>

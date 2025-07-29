@@ -245,6 +245,82 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Cache Statistics -->
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="database" class="card-icon" />
+            <h2>Cache Statistics</h2>
+          </div>
+          <div v-if="cacheLoading" class="loading-message">
+            Loading cache statistics...
+          </div>
+          <div v-else-if="cacheError" class="error-message">
+            {{ cacheError }}
+          </div>
+          <table v-else-if="cacheStats?.success" class="info-table">
+            <tbody>
+              <tr>
+                <td class="label">Disk Entries</td>
+                <td class="value">{{ cacheStats.stats.disk_entries.toLocaleString() }}</td>
+              </tr>
+              <tr>
+                <td class="label">Memory Entries</td>
+                <td class="value">{{ cacheStats.stats.memory_entries.toLocaleString() }}</td>
+              </tr>
+              <tr>
+                <td class="label">Memory Usage</td>
+                <td class="value">{{ formatBytes(cacheStats.stats.memory_bytes) }}</td>
+              </tr>
+              <tr>
+                <td class="label">Memory Limit</td>
+                <td class="value">
+                  {{ cacheStats.stats.memory_limit_bytes ? formatBytes(cacheStats.stats.memory_limit_bytes) : 'No limit' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Background Jobs -->
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="activity" class="card-icon" />
+            <h2>Background Jobs</h2>
+          </div>
+          <div v-if="jobsLoading" class="loading-message">
+            Loading background jobs...
+          </div>
+          <div v-else-if="jobsError" class="error-message">
+            {{ jobsError }}
+          </div>
+          <div v-else-if="backgroundJobs?.success && backgroundJobs.jobs.length === 0" class="loading-message">
+            No background jobs running
+          </div>
+          <table v-else-if="backgroundJobs?.success && backgroundJobs.jobs.length > 0" class="info-table">
+            <tbody>
+              <tr v-for="job in backgroundJobs.jobs" :key="job.id">
+                <td class="label">{{ job.name }}</td>
+                <td class="value">
+                  <div class="job-info">
+                    <div class="job-progress">
+                      <span v-if="job.completion_percentage !== null" class="progress-percentage">
+                        {{ Math.round(job.completion_percentage) }}%
+                      </span>
+                      <span v-if="job.progress" class="progress-text">
+                        {{ job.progress }}
+                      </span>
+                    </div>
+                    <div class="job-timing">
+                      <span class="duration">{{ formatDuration(job.duration_seconds) }}</span>
+                      <span class="last-update">{{ formatRelativeTime(job.last_update) }}</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -324,8 +400,12 @@ import {
   getSoundCards,
   setSoundCardDtoverlay,
   rebootSystem,
+  getCacheStats,
+  getBackgroundJobs,
   type SystemInfo,
-  type SoundCard
+  type SoundCard,
+  type CacheStatsResponse,
+  type BackgroundJobsResponse
 } from '@/api/system'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
@@ -360,6 +440,16 @@ const coverArtLoading = ref(true)
 const coverArtError = ref('')
 const coverArtMethods = ref<CoverArtMethodsResponse | null>(null)
 
+// Cache statistics state
+const cacheLoading = ref(true)
+const cacheError = ref('')
+const cacheStats = ref<CacheStatsResponse | null>(null)
+
+// Background jobs state
+const jobsLoading = ref(true)
+const jobsError = ref('')
+const backgroundJobs = ref<BackgroundJobsResponse | null>(null)
+
 // Computed ref for hostname
 const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
 
@@ -373,6 +463,46 @@ const transformSoundCardName = (name: string): string => {
   }
 
   return transformations[name] || name
+}
+
+// Format bytes for display
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+// Format duration for display
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const remainingSeconds = seconds % 60
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${remainingSeconds}s`
+  } else if (minutes > 0) {
+    return `${minutes}m ${remainingSeconds}s`
+  } else {
+    return `${remainingSeconds}s`
+  }
+}
+
+// Format timestamp to relative time
+const formatRelativeTime = (timestamp: number): string => {
+  const now = Math.floor(Date.now() / 1000)
+  const diff = now - timestamp
+
+  if (diff < 60) {
+    return `${diff}s ago`
+  } else if (diff < 3600) {
+    return `${Math.floor(diff / 60)}m ago`
+  } else if (diff < 86400) {
+    return `${Math.floor(diff / 3600)}h ago`
+  } else {
+    return `${Math.floor(diff / 86400)}d ago`
+  }
 }
 
 // Hostname editing using composable
@@ -537,11 +667,43 @@ const fetchCoverArtMethods = async () => {
   }
 }
 
+const fetchCacheStats = async () => {
+  cacheLoading.value = true
+  cacheError.value = ''
+
+  try {
+    const data = await getCacheStats()
+    cacheStats.value = data
+  } catch (err) {
+    console.error('Error fetching cache statistics:', err)
+    cacheError.value = err instanceof Error ? err.message : 'Failed to retrieve cache statistics'
+  } finally {
+    cacheLoading.value = false
+  }
+}
+
+const fetchBackgroundJobs = async () => {
+  jobsLoading.value = true
+  jobsError.value = ''
+
+  try {
+    const data = await getBackgroundJobs()
+    backgroundJobs.value = data
+  } catch (err) {
+    console.error('Error fetching background jobs:', err)
+    jobsError.value = err instanceof Error ? err.message : 'Failed to retrieve background jobs'
+  } finally {
+    jobsLoading.value = false
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   fetchSystemInfo()
   getFavouritesInfo()
   fetchCoverArtMethods()
+  fetchCacheStats()
+  fetchBackgroundJobs()
 })
 </script>
 
@@ -882,6 +1044,46 @@ onMounted(() => {
 
 .error-message {
   color: var(--color-error);
+}
+
+// Job info styles
+.job-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .job-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .progress-percentage {
+      font-weight: 600;
+      color: var(--color-primary);
+      font-size: 0.9em;
+    }
+
+    .progress-text {
+      color: var(--color-body);
+      font-size: 0.875em;
+    }
+  }
+
+  .job-timing {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.8em;
+    color: var(--color-body-secondary);
+
+    .duration {
+      font-weight: 500;
+    }
+
+    .last-update {
+      font-style: italic;
+    }
+  }
 }@media (max-width: 768px) {
   .system-info {
     .system-info-content {

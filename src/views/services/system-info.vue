@@ -2,9 +2,13 @@
   <div class="system-info">
     <div class="page-header">
       <h1>System Information</h1>
-      <div class="auto-update-indicator">
+      <div class="auto-update-indicator" :class="{
+        'countdown-low': countdownSeconds <= 10 && !isAutoUpdatePaused,
+        'paused': isAutoUpdatePaused
+      }">
         <AppIcon icon="activity" :width="16" :height="16" />
-        <span>Auto-updates every 60s</span>
+        <span v-if="isAutoUpdatePaused">Auto-update paused</span>
+        <span v-else>Auto-updates in {{ countdownSeconds }}s</span>
       </div>
     </div>
 
@@ -374,7 +378,7 @@
         </div>
         <div class="warning-actions">
           <button
-            @click="showSoundCardWarning = false"
+            @click="cancelSoundCardWarning"
             class="warning-btn warning-btn--cancel"
           >
             Cancel
@@ -499,12 +503,12 @@ const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname
 // Computed ref for sorted background jobs (newest first)
 const sortedBackgroundJobs = computed(() => {
   if (!backgroundJobs.value?.jobs) return []
-  
+
   return [...backgroundJobs.value.jobs].sort((a, b) => {
     // Get the latest timestamp for each job (finish_time if available, otherwise last_update)
     const aLatest = a.finish_time || a.last_update
     const bLatest = b.finish_time || b.last_update
-    
+
     // Sort by latest timestamp descending (newest first)
     return bLatest - aLatest
   })
@@ -513,7 +517,7 @@ const sortedBackgroundJobs = computed(() => {
 // Helper function to determine job status when not provided by API
 const getJobStatus = (job: BackgroundJob): string => {
   if (job.status) return job.status
-  
+
   // Fallback logic when status is not provided by API
   if (job.finish_time) {
     return job.completion_percentage === 100 ? 'completed' : 'finished'
@@ -591,7 +595,7 @@ const formatJobStatus = (status: string): string => {
 // Format job time display (relative time)
 const formatJobTime = (job: BackgroundJob): string => {
   const jobStatus = getJobStatus(job)
-  
+
   if (job.finish_time) {
     return `finished ${formatRelativeTime(job.finish_time)}`
   } else if (jobStatus === 'running') {
@@ -638,10 +642,27 @@ const {
   isEditing: isEditingHostname,
   editValue: editHostname,
   isSaving: savingHostname,
-  startEditing: startEditingHostname,
-  cancelEditing: cancelEditingHostname,
-  saveEdit: saveHostname
+  startEditing: _startEditingHostname,
+  cancelEditing: _cancelEditingHostname,
+  saveEdit: _saveHostname
 } = hostnameEditing
+
+// Wrapper functions that handle auto-update pausing
+const startEditingHostname = () => {
+  pauseAutoUpdate()
+  _startEditingHostname()
+}
+
+const cancelEditingHostname = () => {
+  resumeAutoUpdate()
+  _cancelEditingHostname()
+}
+
+const saveHostname = async () => {
+  const result = await _saveHostname()
+  resumeAutoUpdate()
+  return result
+}
 
 // Soundcard editing methods
 const startEditingSoundCard = async () => {
@@ -649,8 +670,17 @@ const startEditingSoundCard = async () => {
   showSoundCardWarning.value = true
 }
 
+const cancelSoundCardWarning = () => {
+  showSoundCardWarning.value = false
+  // Make sure auto-update is not left paused if user cancels the warning
+  if (isAutoUpdatePaused.value) {
+    resumeAutoUpdate()
+  }
+}
+
 const loadSoundCards = async () => {
   try {
+    pauseAutoUpdate() // Pause auto-update when starting to edit sound card
     const response = await getSoundCards()
     if (response.status === 'success') {
       availableSoundCards.value = response.data.soundcards
@@ -666,6 +696,7 @@ const loadSoundCards = async () => {
     console.error('Error loading sound cards:', err)
     error.value = 'Failed to load available sound cards'
     showSoundCardWarning.value = false
+    resumeAutoUpdate() // Resume auto-update if loading failed
   }
 }
 
@@ -673,6 +704,7 @@ const cancelEditingSoundCard = () => {
   isEditingSoundCard.value = false
   selectedSoundCard.value = ''
   showSoundCardWarning.value = false
+  resumeAutoUpdate() // Resume auto-update when canceling edit
 }
 
 const saveSoundCard = async () => {
@@ -695,12 +727,14 @@ const saveSoundCard = async () => {
       await fetchSystemInfo()
       isEditingSoundCard.value = false
       selectedSoundCard.value = ''
+      resumeAutoUpdate() // Resume auto-update after successful save
     } else {
       throw new Error(response.message || 'Failed to update sound card')
     }
   } catch (err) {
     console.error('Error updating sound card:', err)
     error.value = err instanceof Error ? err.message : 'Failed to update sound card'
+    // Don't resume auto-update on error, keep editing mode active
   } finally {
     savingSoundCard.value = false
   }
@@ -816,7 +850,7 @@ const fetchBackgroundJobs = async () => {
 
     const data = await Promise.race([getBackgroundJobs(), timeoutPromise])
     console.log('fetchBackgroundJobs: API call completed, data:', data)
-    
+
     // Validate response structure
     if (data && typeof data === 'object') {
       if (data.success === false) {
@@ -840,7 +874,7 @@ const fetchBackgroundJobs = async () => {
     } else {
       console.error('fetchBackgroundJobs: Invalid response structure:', typeof data, data)
     }
-    
+
     backgroundJobs.value = data
   } catch (err) {
     console.error('fetchBackgroundJobs: Error occurred:', err)
@@ -853,12 +887,24 @@ const fetchBackgroundJobs = async () => {
 
 // Auto-update state
 const autoUpdateInterval = ref<number | null>(null)
-const AUTO_UPDATE_INTERVAL = 60000 // 60 seconds in milliseconds
+const countdownInterval = ref<number | null>(null)
+const AUTO_UPDATE_INTERVAL = 30000 // 10 seconds in milliseconds
+const countdownSeconds = ref<number>(30)
+const isAutoUpdatePaused = ref<boolean>(false)
 
 // Auto-update function to refresh data
 const refreshData = async () => {
+  // Skip refresh if auto-update is paused (user is editing)
+  if (isAutoUpdatePaused.value) {
+    console.log('System Info: Auto-refresh skipped - user is editing')
+    return
+  }
+
   console.log('System Info: Auto-refreshing data...')
-  
+
+  // Reset countdown to 10 seconds after refresh
+  countdownSeconds.value = 10
+
   // Refresh all data sections in parallel
   Promise.allSettled([
     fetchSystemInfo(),
@@ -877,6 +923,19 @@ const refreshData = async () => {
     })
     console.log('System Info: Auto-refresh completed')
   })
+}
+
+// Functions to control auto-update behavior
+const pauseAutoUpdate = () => {
+  console.log('System Info: Pausing auto-update (user started editing)')
+  isAutoUpdatePaused.value = true
+}
+
+const resumeAutoUpdate = () => {
+  console.log('System Info: Resuming auto-update (user finished editing)')
+  isAutoUpdatePaused.value = false
+  // Reset countdown when resuming
+  countdownSeconds.value = 10
 }
 
 // Lifecycle
@@ -919,14 +978,41 @@ onMounted(async () => {
   // Set up auto-update interval
   console.log(`System Info: Setting up auto-update every ${AUTO_UPDATE_INTERVAL / 1000} seconds`)
   autoUpdateInterval.value = window.setInterval(refreshData, AUTO_UPDATE_INTERVAL)
+
+  // Set up countdown interval (updates every second)
+  countdownInterval.value = window.setInterval(() => {
+    // Don't count down if auto-update is paused
+    if (isAutoUpdatePaused.value) {
+      return
+    }
+
+    if (countdownSeconds.value > 0) {
+      countdownSeconds.value--
+    } else {
+      // Reset to 10 when it reaches 0 (will be reset again by refreshData)
+      countdownSeconds.value = 10
+    }
+  }, 1000)
 })
 
-// Clean up interval on component unmount
+// Clean up intervals on component unmount
 onUnmounted(() => {
   if (autoUpdateInterval.value) {
     console.log('System Info: Clearing auto-update interval')
     clearInterval(autoUpdateInterval.value)
     autoUpdateInterval.value = null
+  }
+
+  if (countdownInterval.value) {
+    console.log('System Info: Clearing countdown interval')
+    clearInterval(countdownInterval.value)
+    countdownInterval.value = null
+  }
+
+  // Reset paused state on unmount
+  if (isAutoUpdatePaused.value) {
+    console.log('System Info: Resetting auto-update paused state on unmount')
+    isAutoUpdatePaused.value = false
   }
 })
 </script>
@@ -957,10 +1043,39 @@ onUnmounted(() => {
       color: #16a34a;
       font-size: 0.85em;
       font-weight: 500;
+      transition: all 0.3s ease;
 
       svg {
         opacity: 0.8;
       }
+
+      &.countdown-low {
+        background: rgba(251, 146, 60, 0.1);
+        border-color: rgba(251, 146, 60, 0.3);
+        color: #ea580c;
+        animation: pulse-subtle 2s infinite;
+      }
+
+      &.paused {
+        background: rgba(156, 163, 175, 0.1);
+        border-color: rgba(156, 163, 175, 0.3);
+        color: #6b7280;
+
+        svg {
+          opacity: 0.5;
+        }
+      }
+    }
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.02);
+      opacity: 0.9;
     }
   }
 

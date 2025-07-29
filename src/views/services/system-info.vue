@@ -278,6 +278,18 @@
                   {{ cacheStats.stats.memory_limit_bytes ? formatBytes(cacheStats.stats.memory_limit_bytes) : 'No limit' }}
                 </td>
               </tr>
+              <tr>
+                <td class="label">Image Count</td>
+                <td class="value">{{ cacheStats.image_cache_stats.total_images.toLocaleString() }}</td>
+              </tr>
+              <tr>
+                <td class="label">Image Cache Size</td>
+                <td class="value">{{ formatBytes(cacheStats.image_cache_stats.total_size) }}</td>
+              </tr>
+              <tr>
+                <td class="label">Last Updated</td>
+                <td class="value">{{ formatRelativeTime(cacheStats.image_cache_stats.last_updated) }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -399,13 +411,23 @@ import {
   updateHostname,
   getSoundCards,
   setSoundCardDtoverlay,
+  detectSoundCard,
   rebootSystem,
+  executeScript,
   getCacheStats,
   getBackgroundJobs,
   type SystemInfo,
+  type HostnameUpdateRequest,
+  type SoundCardsResponse,
   type SoundCard,
+  type SetDtoverlayRequest,
+  type SoundCardDetectionResponse,
+  type RebootRequest,
+  type ScriptExecutionRequest,
   type CacheStatsResponse,
-  type BackgroundJobsResponse
+  type ImageCacheStats,
+  type BackgroundJobsResponse,
+  type BackgroundJob
 } from '@/api/system'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
@@ -633,22 +655,34 @@ const rebootSystemHandler = async () => {
 
 // Methods
 const fetchSystemInfo = async () => {
+  console.log('fetchSystemInfo: Starting...')
   loading.value = true
   error.value = ''
 
   try {
-    const data = await getSystemInfo()
+    console.log('fetchSystemInfo: Calling getSystemInfo API...')
+    
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000)
+    )
+    
+    const data = await Promise.race([getSystemInfo(), timeoutPromise])
+    console.log('fetchSystemInfo: API call completed, data:', data)
 
     if (data.status === 'success') {
       systemInfo.value = data
+      console.log('fetchSystemInfo: System info set successfully')
     } else {
       error.value = data.message || 'Failed to retrieve system information'
+      console.log('fetchSystemInfo: API returned error:', error.value)
     }
   } catch (err) {
-    console.error('Error fetching system info:', err)
+    console.error('fetchSystemInfo: Error occurred:', err)
     error.value = err instanceof Error ? err.message : 'Unknown error occurred'
   } finally {
     loading.value = false
+    console.log('fetchSystemInfo: Completed')
   }
 }
 
@@ -668,42 +702,91 @@ const fetchCoverArtMethods = async () => {
 }
 
 const fetchCacheStats = async () => {
+  console.log('fetchCacheStats: Starting...')
   cacheLoading.value = true
   cacheError.value = ''
 
   try {
-    const data = await getCacheStats()
+    console.log('fetchCacheStats: Calling getCacheStats API...')
+    
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Cache stats request timeout after 10 seconds')), 10000)
+    )
+    
+    const data = await Promise.race([getCacheStats(), timeoutPromise])
+    console.log('fetchCacheStats: API call completed, data:', data)
     cacheStats.value = data
   } catch (err) {
-    console.error('Error fetching cache statistics:', err)
+    console.error('fetchCacheStats: Error occurred:', err)
     cacheError.value = err instanceof Error ? err.message : 'Failed to retrieve cache statistics'
   } finally {
     cacheLoading.value = false
+    console.log('fetchCacheStats: Completed')
   }
 }
 
 const fetchBackgroundJobs = async () => {
+  console.log('fetchBackgroundJobs: Starting...')
   jobsLoading.value = true
   jobsError.value = ''
 
   try {
-    const data = await getBackgroundJobs()
+    console.log('fetchBackgroundJobs: Calling getBackgroundJobs API...')
+    
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Background jobs request timeout after 10 seconds')), 10000)
+    )
+    
+    const data = await Promise.race([getBackgroundJobs(), timeoutPromise])
+    console.log('fetchBackgroundJobs: API call completed, data:', data)
     backgroundJobs.value = data
   } catch (err) {
-    console.error('Error fetching background jobs:', err)
+    console.error('fetchBackgroundJobs: Error occurred:', err)
     jobsError.value = err instanceof Error ? err.message : 'Failed to retrieve background jobs'
   } finally {
     jobsLoading.value = false
+    console.log('fetchBackgroundJobs: Completed')
   }
 }
 
 // Lifecycle
-onMounted(() => {
-  fetchSystemInfo()
-  getFavouritesInfo()
-  fetchCoverArtMethods()
-  fetchCacheStats()
-  fetchBackgroundJobs()
+onMounted(async () => {
+  console.log('System Info: Starting to load...')
+  
+  // Load system info first
+  await fetchSystemInfo()
+  
+  // Load other data in parallel but don't block the page
+  Promise.allSettled([
+    getFavouritesInfo().then(result => {
+      console.log('getFavouritesInfo result:', result)
+      return result
+    }),
+    fetchCoverArtMethods().then(result => {
+      console.log('fetchCoverArtMethods result:', result)
+      return result
+    }),
+    fetchCacheStats().then(result => {
+      console.log('fetchCacheStats result:', result)
+      return result
+    }),
+    fetchBackgroundJobs().then(result => {
+      console.log('fetchBackgroundJobs result:', result)
+      return result
+    })
+  ]).then(results => {
+    results.forEach((result, index) => {
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs']
+      if (result.status === 'rejected') {
+        console.error(`Failed to load ${names[index]}:`, result.reason)
+      } else {
+        console.log(`Successfully loaded ${names[index]}`)
+      }
+    })
+    console.log('System Info: All loading completed')
+  })
 })
 </script>
 

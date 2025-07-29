@@ -137,9 +137,16 @@ export interface CacheStats {
   memory_limit_bytes: number | null
 }
 
+export interface ImageCacheStats {
+  total_images: number
+  total_size: number
+  last_updated: number
+}
+
 export interface CacheStatsResponse {
   success: boolean
   stats: CacheStats
+  image_cache_stats: ImageCacheStats
   message: string | null
 }
 

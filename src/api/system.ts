@@ -156,6 +156,8 @@ export interface BackgroundJob {
   name: string
   start_time: number
   last_update: number
+  finish_time?: number | null
+  status?: 'running' | 'finished' | 'completed' | 'failed'
   progress: string | null
   total_items: number | null
   completed_items: number | null

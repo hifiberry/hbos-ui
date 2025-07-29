@@ -1,6 +1,12 @@
 <template>
   <div class="system-info">
-    <h1>System Information</h1>
+    <div class="page-header">
+      <h1>System Information</h1>
+      <div class="auto-update-indicator">
+        <AppIcon icon="activity" :width="16" :height="16" />
+        <span>Auto-updates every 60s</span>
+      </div>
+    </div>
 
     <div class="system-info-content">
       <div v-if="loading" class="loading-section">
@@ -306,24 +312,40 @@
           <div v-else-if="jobsError" class="error-message">
             {{ jobsError }}
           </div>
-          <div v-else-if="backgroundJobs?.success && backgroundJobs.jobs.length === 0" class="loading-message">
-            No background jobs running
+          <div v-else-if="backgroundJobs?.success && sortedBackgroundJobs.length === 0" class="loading-message">
+            No background jobs found
           </div>
-          <table v-else-if="backgroundJobs?.success && backgroundJobs.jobs.length > 0" class="info-table">
+          <div v-else-if="backgroundJobs && !backgroundJobs.success" class="error-message">
+            Failed to load background jobs: {{ backgroundJobs.message || 'Unknown error' }}
+          </div>
+          <table v-else-if="backgroundJobs?.success && sortedBackgroundJobs.length > 0" class="info-table">
             <tbody>
-              <tr v-for="job in backgroundJobs.jobs" :key="job.id">
+              <tr v-for="job in sortedBackgroundJobs" :key="job.id">
                 <td class="label">{{ job.name }}</td>
                 <td class="value">
                   <div class="job-info">
-                    <div v-if="job.progress" class="job-progress-text">
+                    <div class="job-header">
+                      <span class="job-status" :class="`status-${getJobStatus(job)}`">
+                        {{ formatJobStatus(getJobStatus(job)) }}
+                      </span>
+                      <span class="job-time">
+                        {{ formatJobTime(job) }}
+                      </span>
+                    </div>
+                    <div v-if="job.progress && getJobStatus(job) === 'running'" class="job-progress-text">
                       {{ job.progress }}
                     </div>
-                    <div class="job-status-line">
+                    <div v-if="getJobStatus(job) === 'running'" class="job-status-line">
                       <span v-if="job.completion_percentage !== null" class="progress-percentage">
                         {{ Math.round(job.completion_percentage) }}%
                       </span>
                       <span class="job-duration">
                         running for {{ formatDuration(job.duration_seconds) }}
+                      </span>
+                    </div>
+                    <div v-else-if="getJobStatus(job) === 'finished' || getJobStatus(job) === 'completed'" class="job-status-line">
+                      <span class="job-duration">
+                        completed in {{ formatDuration(job.duration_seconds) }}
                       </span>
                     </div>
                   </div>
@@ -403,7 +425,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import {
   getSystemInfo,
@@ -474,6 +496,31 @@ const backgroundJobs = ref<BackgroundJobsResponse | null>(null)
 // Computed ref for hostname
 const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
 
+// Computed ref for sorted background jobs (newest first)
+const sortedBackgroundJobs = computed(() => {
+  if (!backgroundJobs.value?.jobs) return []
+  
+  return [...backgroundJobs.value.jobs].sort((a, b) => {
+    // Get the latest timestamp for each job (finish_time if available, otherwise last_update)
+    const aLatest = a.finish_time || a.last_update
+    const bLatest = b.finish_time || b.last_update
+    
+    // Sort by latest timestamp descending (newest first)
+    return bLatest - aLatest
+  })
+})
+
+// Helper function to determine job status when not provided by API
+const getJobStatus = (job: BackgroundJob): string => {
+  if (job.status) return job.status
+  
+  // Fallback logic when status is not provided by API
+  if (job.finish_time) {
+    return job.completion_percentage === 100 ? 'completed' : 'finished'
+  }
+  return 'running'
+}
+
 // Sound card name transformation
 const transformSoundCardName = (name: string): string => {
   // Transform long names to shorter versions for display
@@ -523,6 +570,35 @@ const formatRelativeTime = (timestamp: number): string => {
     return `${Math.floor(diff / 3600)}h ago`
   } else {
     return `${Math.floor(diff / 86400)}d ago`
+  }
+}
+
+// Format job status for display
+const formatJobStatus = (status: string): string => {
+  switch (status) {
+    case 'running':
+      return 'Running'
+    case 'finished':
+    case 'completed':
+      return 'Completed'
+    case 'failed':
+      return 'Failed'
+    default:
+      return status.charAt(0).toUpperCase() + status.slice(1)
+  }
+}
+
+// Format job time display (relative time)
+const formatJobTime = (job: BackgroundJob): string => {
+  const jobStatus = getJobStatus(job)
+  
+  if (job.finish_time) {
+    return `finished ${formatRelativeTime(job.finish_time)}`
+  } else if (jobStatus === 'running') {
+    return `started ${formatRelativeTime(job.start_time)}`
+  } else {
+    // For finished jobs without finish_time, use last_update
+    return `updated ${formatRelativeTime(job.last_update)}`
   }
 }
 
@@ -740,6 +816,31 @@ const fetchBackgroundJobs = async () => {
 
     const data = await Promise.race([getBackgroundJobs(), timeoutPromise])
     console.log('fetchBackgroundJobs: API call completed, data:', data)
+    
+    // Validate response structure
+    if (data && typeof data === 'object') {
+      if (data.success === false) {
+        console.warn('fetchBackgroundJobs: API returned success=false:', data.message)
+      }
+      if (data.jobs && Array.isArray(data.jobs)) {
+        console.log(`fetchBackgroundJobs: Found ${data.jobs.length} jobs`)
+        data.jobs.forEach((job, index) => {
+          console.log(`Job ${index}:`, {
+            id: job.id,
+            name: job.name,
+            status: job.status || 'no status field',
+            finish_time: job.finish_time || 'no finish_time',
+            start_time: job.start_time,
+            last_update: job.last_update
+          })
+        })
+      } else {
+        console.warn('fetchBackgroundJobs: jobs field is not an array:', typeof data.jobs, data.jobs)
+      }
+    } else {
+      console.error('fetchBackgroundJobs: Invalid response structure:', typeof data, data)
+    }
+    
     backgroundJobs.value = data
   } catch (err) {
     console.error('fetchBackgroundJobs: Error occurred:', err)
@@ -748,6 +849,34 @@ const fetchBackgroundJobs = async () => {
     jobsLoading.value = false
     console.log('fetchBackgroundJobs: Completed')
   }
+}
+
+// Auto-update state
+const autoUpdateInterval = ref<number | null>(null)
+const AUTO_UPDATE_INTERVAL = 60000 // 60 seconds in milliseconds
+
+// Auto-update function to refresh data
+const refreshData = async () => {
+  console.log('System Info: Auto-refreshing data...')
+  
+  // Refresh all data sections in parallel
+  Promise.allSettled([
+    fetchSystemInfo(),
+    getFavouritesInfo(),
+    fetchCoverArtMethods(),
+    fetchCacheStats(),
+    fetchBackgroundJobs()
+  ]).then(results => {
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs']
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
+      } else {
+        console.log(`Auto-refresh successful for ${names[index]}`)
+      }
+    })
+    console.log('System Info: Auto-refresh completed')
+  })
 }
 
 // Lifecycle
@@ -786,6 +915,19 @@ onMounted(async () => {
     })
     console.log('System Info: All loading completed')
   })
+
+  // Set up auto-update interval
+  console.log(`System Info: Setting up auto-update every ${AUTO_UPDATE_INTERVAL / 1000} seconds`)
+  autoUpdateInterval.value = window.setInterval(refreshData, AUTO_UPDATE_INTERVAL)
+})
+
+// Clean up interval on component unmount
+onUnmounted(() => {
+  if (autoUpdateInterval.value) {
+    console.log('System Info: Clearing auto-update interval')
+    clearInterval(autoUpdateInterval.value)
+    autoUpdateInterval.value = null
+  }
 })
 </script>
 
@@ -793,9 +935,33 @@ onMounted(async () => {
 @use '@/assets/scss/mixins' as *;
 
 .system-info {
-  h1 {
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 32px;
-    color: var(--color-head);
+
+    h1 {
+      margin: 0;
+      color: var(--color-head);
+    }
+
+    .auto-update-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      border-radius: 20px;
+      color: #16a34a;
+      font-size: 0.85em;
+      font-weight: 500;
+
+      svg {
+        opacity: 0.8;
+      }
+    }
   }
 
   .system-info-content {
@@ -1134,6 +1300,42 @@ onMounted(async () => {
   flex-direction: column;
   gap: 4px;
 
+  .job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+
+    .job-status {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+
+      &.status-running {
+        background-color: rgba(34, 197, 94, 0.1);
+        color: #16a34a;
+      }
+
+      &.status-finished,
+      &.status-completed {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+      }
+
+      &.status-failed {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+      }
+    }
+
+    .job-time {
+      font-size: 0.75em;
+      color: var(--color-body-secondary);
+    }
+  }
+
   .job-progress-text {
     color: var(--color-body);
     font-size: 0.875em;
@@ -1155,8 +1357,21 @@ onMounted(async () => {
       color: var(--color-body-secondary);
     }
   }
-}@media (max-width: 768px) {
+}
+
+@media (max-width: 768px) {
   .system-info {
+    .page-header {
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+
+      .auto-update-indicator {
+        font-size: 0.8em;
+        padding: 4px 10px;
+      }
+    }
+
     .system-info-content {
       .info-tables {
         grid-template-columns: 1fr;

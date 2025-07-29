@@ -888,8 +888,9 @@ const fetchBackgroundJobs = async () => {
 // Auto-update state
 const autoUpdateInterval = ref<number | null>(null)
 const countdownInterval = ref<number | null>(null)
-const AUTO_UPDATE_INTERVAL = 30000 // 10 seconds in milliseconds
-const countdownSeconds = ref<number>(30)
+const AUTO_UPDATE_INTERVAL = 30000 // 30 seconds in milliseconds
+const AUTO_UPDATE_SECONDS = AUTO_UPDATE_INTERVAL / 1000 // Convert to seconds for countdown
+const countdownSeconds = ref<number>(AUTO_UPDATE_SECONDS)
 const isAutoUpdatePaused = ref<boolean>(false)
 
 // Auto-update function to refresh data
@@ -902,8 +903,8 @@ const refreshData = async () => {
 
   console.log('System Info: Auto-refreshing data...')
 
-  // Reset countdown to 10 seconds after refresh
-  countdownSeconds.value = 10
+  // Reset countdown to configured interval after refresh
+  countdownSeconds.value = AUTO_UPDATE_SECONDS
 
   // Refresh all data sections in parallel
   Promise.allSettled([
@@ -935,7 +936,7 @@ const resumeAutoUpdate = () => {
   console.log('System Info: Resuming auto-update (user finished editing)')
   isAutoUpdatePaused.value = false
   // Reset countdown when resuming
-  countdownSeconds.value = 10
+  countdownSeconds.value = AUTO_UPDATE_SECONDS
 }
 
 // Lifecycle
@@ -989,8 +990,8 @@ onMounted(async () => {
     if (countdownSeconds.value > 0) {
       countdownSeconds.value--
     } else {
-      // Reset to 10 when it reaches 0 (will be reset again by refreshData)
-      countdownSeconds.value = 10
+      // Reset to configured interval when it reaches 0 (will be reset again by refreshData)
+      countdownSeconds.value = AUTO_UPDATE_SECONDS
     }
   }, 1000)
 })

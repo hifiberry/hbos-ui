@@ -3,8 +3,8 @@
  * Contains coordinate conversion, SVG generation, and graph rendering functions
  */
 
-import { 
-  type Filter, 
+import {
+  type Filter,
   type FrequencyResponsePoint,
   calculateFilterGain
 } from './filtercalc';
@@ -33,7 +33,7 @@ export interface VisualFrequencyResponsePoint extends FrequencyResponsePoint {
  */
 export const DEFAULT_FREQ_RANGE = {
   min: 20,
-  max: 10000
+  max: 20000
 } as const;
 
 export const DEFAULT_GAIN_RANGE = {
@@ -45,9 +45,9 @@ export const DEFAULT_GAIN_RANGE = {
  * Convert frequency to X coordinate using logarithmic scaling
  */
 export function frequencyToX(
-  freq: number, 
-  plotWidth: number, 
-  minFreq: number = DEFAULT_FREQ_RANGE.min, 
+  freq: number,
+  plotWidth: number,
+  minFreq: number = DEFAULT_FREQ_RANGE.min,
   maxFreq: number = DEFAULT_FREQ_RANGE.max
 ): number {
   const logMinFreq = Math.log10(minFreq);
@@ -60,9 +60,9 @@ export function frequencyToX(
  * Convert X coordinate to frequency using logarithmic scaling
  */
 export function xToFrequency(
-  x: number, 
-  plotWidth: number, 
-  minFreq: number = DEFAULT_FREQ_RANGE.min, 
+  x: number,
+  plotWidth: number,
+  minFreq: number = DEFAULT_FREQ_RANGE.min,
   maxFreq: number = DEFAULT_FREQ_RANGE.max
 ): number {
   const logMinFreq = Math.log10(minFreq);
@@ -75,9 +75,9 @@ export function xToFrequency(
  * Convert gain (dB) to Y coordinate
  */
 export function gainToY(
-  gain: number, 
-  plotHeight: number, 
-  minGain: number = DEFAULT_GAIN_RANGE.min, 
+  gain: number,
+  plotHeight: number,
+  minGain: number = DEFAULT_GAIN_RANGE.min,
   maxGain: number = DEFAULT_GAIN_RANGE.max
 ): number {
   return plotHeight - ((gain - minGain) / (maxGain - minGain)) * plotHeight;
@@ -87,9 +87,9 @@ export function gainToY(
  * Convert Y coordinate to gain (dB)
  */
 export function yToGain(
-  y: number, 
-  plotHeight: number, 
-  minGain: number = DEFAULT_GAIN_RANGE.min, 
+  y: number,
+  plotHeight: number,
+  minGain: number = DEFAULT_GAIN_RANGE.min,
   maxGain: number = DEFAULT_GAIN_RANGE.max
 ): number {
   return maxGain - (y / plotHeight) * (maxGain - minGain);
@@ -106,7 +106,7 @@ export function calculateFilterBandwidthStart(filter: Filter): number | null {
   let bandwidthHz;
 
   // Different interpretations of Q for different filter types
-  if (filter.icon === 'filter-peak') {
+  if (filter.icon === 'peaking') {
     bandwidthHz = filter.frequency / filter.Q; // Standard Q for peak filter
   } else {
     // For shelf filters, Q influences the slope. We'll use a scaled Fc/Q
@@ -128,7 +128,7 @@ export function calculateFilterBandwidthEnd(filter: Filter): number | null {
 
   let bandwidthHz;
 
-  if (filter.icon === 'filter-peak') {
+  if (filter.icon === 'peaking') {
     bandwidthHz = filter.frequency / filter.Q;
   } else {
     bandwidthHz = filter.frequency / (filter.Q * 2);
@@ -162,14 +162,15 @@ export function generateFilterResponse(
   dimensions: GraphDimensions,
   numPoints = 200,
   minFreq = DEFAULT_FREQ_RANGE.min,
-  maxFreq = DEFAULT_FREQ_RANGE.max
+  maxFreq = DEFAULT_FREQ_RANGE.max,
+  sampleRate = 48000
 ): VisualFrequencyResponsePoint[] {
   const points: VisualFrequencyResponsePoint[] = [];
 
   for (let i = 0; i <= numPoints; i++) {
     const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
     const frequency = Math.pow(10, logFreq);
-    const gain = calculateFilterGain(frequency, filter);
+    const gain = calculateFilterGain(frequency, filter, sampleRate);
     const x = frequencyToX(frequency, dimensions.plotWidth, minFreq, maxFreq);
     const y = gainToY(gain, dimensions.plotHeight, dimensions.minGain ?? DEFAULT_GAIN_RANGE.min, dimensions.maxGain ?? DEFAULT_GAIN_RANGE.max);
 
@@ -187,19 +188,20 @@ export function generateCombinedResponse(
   dimensions: GraphDimensions,
   numPoints = 200,
   minFreq = DEFAULT_FREQ_RANGE.min,
-  maxFreq = DEFAULT_FREQ_RANGE.max
+  maxFreq = DEFAULT_FREQ_RANGE.max,
+  sampleRate = 48000
 ): VisualFrequencyResponsePoint[] {
   const points: VisualFrequencyResponsePoint[] = [];
 
   for (let i = 0; i <= numPoints; i++) {
     const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
     const frequency = Math.pow(10, logFreq);
-    
+
     // Sum gains from all enabled filters
     let totalGain = 0;
     filters.forEach(filter => {
       if (filter.enabled) {
-        totalGain += calculateFilterGain(frequency, filter);
+        totalGain += calculateFilterGain(frequency, filter, sampleRate);
       }
     });
 
@@ -217,7 +219,7 @@ export function generateCombinedResponse(
  */
 export function pointsToSVGPath(points: VisualFrequencyResponsePoint[]): string {
   if (points.length === 0) return '';
-  
+
   const linePoints = points.map(p => `${p.x},${p.y}`);
   return `M ${linePoints.join(' L ')}`;
 }
@@ -226,31 +228,31 @@ export function pointsToSVGPath(points: VisualFrequencyResponsePoint[]): string 
  * Convert response points to SVG area path data (includes baseline)
  */
 export function pointsToSVGAreaPath(
-  points: VisualFrequencyResponsePoint[], 
+  points: VisualFrequencyResponsePoint[],
   dimensions: GraphDimensions,
   minFreq = DEFAULT_FREQ_RANGE.min,
   maxFreq = DEFAULT_FREQ_RANGE.max
 ): string {
   if (points.length === 0) return '';
-  
+
   const baselineY = gainToY(0, dimensions.plotHeight, dimensions.minGain ?? DEFAULT_GAIN_RANGE.min, dimensions.maxGain ?? DEFAULT_GAIN_RANGE.max);
   const startX = frequencyToX(minFreq, dimensions.plotWidth, minFreq, maxFreq);
   const endX = frequencyToX(maxFreq, dimensions.plotWidth, minFreq, maxFreq);
-  
+
   const areaPoints: string[] = [];
-  
+
   // Start at baseline
   areaPoints.push(`${startX},${baselineY}`);
-  
+
   // Add all response points
   points.forEach(p => {
     areaPoints.push(`${p.x},${p.y}`);
   });
-  
+
   // End at baseline
   areaPoints.push(`${endX},${baselineY}`);
   areaPoints.push(`${startX},${baselineY}`);
-  
+
   return `M ${areaPoints.join(' L ')}`;
 }
 
@@ -265,7 +267,7 @@ export function generateFilterGraphData(
   if (!filter.enabled) return null;
 
   const points = generateFilterResponse(filter, dimensions, numPoints);
-  
+
   return {
     linePath: pointsToSVGPath(points),
     areaPath: pointsToSVGAreaPath(points, dimensions)
@@ -284,7 +286,7 @@ export function generateCombinedGraphData(
   if (enabledFilters.length === 0) return null;
 
   const points = generateCombinedResponse(filters, dimensions, numPoints);
-  
+
   return {
     linePath: pointsToSVGPath(points)
   };

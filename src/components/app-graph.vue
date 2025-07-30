@@ -17,9 +17,10 @@
   </svg>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onBeforeUnmount } from 'vue';
 import * as d3 from 'd3';
+import { DEFAULT_FREQ_RANGE, DEFAULT_GAIN_RANGE } from '@/utils/filtergraph';
 
 const width = 800;
 const height = 300;
@@ -31,10 +32,10 @@ const points = ref([
   { freq: 8000, gain: 0 },
 ]);
 
-const xScale = d3.scaleLog().domain([10, 10000]).range([50, width - 50]);
-const yScale = d3.scaleLinear().domain([-25, 25]).range([height - 30, 30]);
+const xScale = d3.scaleLog().domain([DEFAULT_FREQ_RANGE.min, DEFAULT_FREQ_RANGE.max]).range([50, width - 50]);
+const yScale = d3.scaleLinear().domain([DEFAULT_GAIN_RANGE.min, DEFAULT_GAIN_RANGE.max]).range([height - 30, 30]);
 
-const yTicks = d3.range(-25, 30, 5);
+const yTicks = d3.range(DEFAULT_GAIN_RANGE.min, DEFAULT_GAIN_RANGE.max + 5, 5);
 
 const linePath = computed(() =>
   d3.line()
@@ -46,7 +47,7 @@ const linePath = computed(() =>
 const areaPath = computed(() =>
   d3.area()
     .x(d => xScale(d.freq))
-    .y0(height - 30)
+    .y0(yScale(0))
     .y1(d => yScale(d.gain))
     .curve(d3.curveMonotoneX)(points.value)
 );
@@ -68,8 +69,8 @@ function dragMove(event) {
   pt.y = event.clientY;
   const cursorpt = pt.matrixTransform(svg.getScreenCTM().inverse());
 
-  const newFreq = Math.min(Math.max(xScale.invert(cursorpt.x), 10), 10000);
-  const newGain = Math.min(Math.max(yScale.invert(cursorpt.y), -25), 25);
+  const newFreq = Math.min(Math.max(xScale.invert(cursorpt.x), DEFAULT_FREQ_RANGE.min), DEFAULT_FREQ_RANGE.max);
+  const newGain = Math.min(Math.max(yScale.invert(cursorpt.y), DEFAULT_GAIN_RANGE.min), DEFAULT_GAIN_RANGE.max);
 
   points.value[draggingPoint] = { freq: newFreq, gain: newGain };
 }

@@ -1,7 +1,14 @@
 <template>
   <div class="sound-page">
     <div class="sound">
-      <h1>Speaker Equaliser</h1>
+      <div class="page-header">
+        <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
+        <div class="header-actions">
+          <AppIcon :icon="channelMode === 'both' ? 'link' : 'link-unlinked'" @click="toggleChannelMode" />
+          <AppIcon icon="ear" />
+          <AppIcon icon="more" />
+        </div>
+      </div>
       <div class="card">
         <div class="graph" ref="graphContainer" @mousemove="handleMouseMove" @mouseup="handleMouseUp"
           @mouseleave="handleMouseUp">
@@ -58,91 +65,97 @@
       <div class="card mt-3">
         <div class="equaliser-panel">
           <div class="tabs">
-          <button :class="['tab', { active: activeChannel === 'left' }]" @click="setActiveChannel('left')">
-            Left Channel
+          <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'left' }]" @click="setActiveChannel('left')">
+            Left
           </button>
-          <button :class="['tab', { active: activeChannel === 'right' }]" @click="setActiveChannel('right')">
+          <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'right' }]" @click="setActiveChannel('right')">
             Right
           </button>
         </div>
 
         <div class="filters">
           <div class="filter-header-wrapper">
-            <h3 class="channel-title">
-              {{ activeChannel === 'left' ? 'Left Channel' : 'Right Channel' }}
-            </h3>
-            <div class="more-option">
-              <AppIcon icon="link-unlinked" />
-              <AppIcon icon="ear" />
-              <AppIcon icon="more" />
-            </div>
-          </div>
-
-          <div class="filter-buttons">
-            <button v-for="filter in filters" :key="filter.id"
-              :class="['filter', { active: activeFilterId === filter.id }]" @click="setActiveFilter(filter.id)">
-              <AppIcon :icon="getFilterIconName(filter.icon)" :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
-              <div v-if="filter.text" class="filter-text">{{ filter.text }}</div>
-            </button>
-            <button class="filter add-filter-button" @click="showAddFilterModal = true">
-              <AppIcon icon="plus" />
-            </button>
           </div>
         </div>
 
-        <div class="filters">
-          <div class="filter-header-wrapper">
-            <h3 class="channel-title">Filter Name</h3>
-            <div class="remove-filter-text" @click="removeActiveFilter">
-              - Remove Filter
-            </div>
-          </div>
-          <div class="filter-header-wrapper">
-            <h3 class="channel-title">On</h3>
-            <div class="remove-filter-text">
-              <div class="player-actions">
-                <div class="player-toggle">
-                  <label class="toggle-switch">
-                    <input type="checkbox" v-model="currentFilter.enabled" />
-                    <span class="toggle-slider"></span>
-                  </label>
+        <div class="filters-list">
+          <div v-for="filter in filters" :key="filter.id" class="card">
+            <div class="filter-item" :class="{ active: activeFilterId === filter.id }">
+              <div class="filter-main">
+                <div class="filter-info">
+                  <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon" 
+                    :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
+                  <div class="filter-details">
+                    <h3>{{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</h3>
+                  </div>
+                </div>
+                <div class="filter-actions">
+                  <div class="filter-toggle">
+                    <label class="toggle-switch">
+                      <input type="checkbox" v-model="filter.enabled" />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                  <div class="filter-remove" @click="removeFilter(filter.id)">
+                    <AppIcon icon="trash" />
+                  </div>
+                </div>
+              </div>
+              
+              <div class="filter-controls">
+                <div class="control-group">
+                  <label>Frequency</label>
+                  <div class="control-buttons">
+                    <button @click="decrementFilterFrequency(filter)" class="control-btn">
+                      <AppIcon icon="minus-small" />
+                    </button>
+                    <span class="control-value">{{ filter.frequency }} Hz</span>
+                    <button @click="incrementFilterFrequency(filter)" class="control-btn">
+                      <AppIcon icon="plus-small" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="control-group">
+                  <label>Gain</label>
+                  <div class="control-buttons">
+                    <button @click="decrementFilterGain(filter)" class="control-btn">
+                      <AppIcon icon="minus-small" />
+                    </button>
+                    <span class="control-value">{{ filter.gain }} dB</span>
+                    <button @click="incrementFilterGain(filter)" class="control-btn">
+                      <AppIcon icon="plus-small" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="control-group">
+                  <label>Q (width)</label>
+                  <div class="control-buttons">
+                    <button @click="widenFilterBand(filter)" class="control-btn">
+                      <AppIcon icon="minus-small" />
+                    </button>
+                    <span class="control-value">{{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</span>
+                    <button @click="narrowFilterBand(filter)" class="control-btn">
+                      <AppIcon icon="plus-small" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="filter-control">
-          <div class="control-grid">
-            <div class="control-item">
-              <div class="control-value">
-                <div>{{ currentFilter.frequency }} Hz</div>
-                <div class="chevron">
-                  <AppIcon icon="chevron-thin-small-left" @click="decrementFrequency" />
-                  <AppIcon icon="chevron-thin-small-right" @click="incrementFrequency" />
+          
+          <div class="card">
+            <div class="filter-item add-filter-item" @click="showAddFilterModal = true">
+              <div class="filter-main">
+                <div class="filter-info">
+                  <AppIcon icon="plus" class="filter-icon" />
+                  <div class="filter-details">
+                    <h3>Add New Filter</h3>
+                    <div class="filter-frequency">Click to add</div>
+                  </div>
                 </div>
               </div>
-              <div class="control-label">Frequency</div>
-            </div>
-            <div class="control-item">
-              <div class="control-value">
-                <div>{{ currentFilter.gain }} dB</div>
-                <div class="chevron">
-                  <AppIcon icon="minus-small" @click="decrementGain" />
-                  <AppIcon icon="plus-small" @click="incrementGain" />
-                </div>
-              </div>
-              <div class="control-label">Gain</div>
-            </div>
-            <div class="control-item">
-              <div class="control-value">
-                <div>{{ activeFilterQDisplay }}</div>
-                <div class="chevron">
-                  <AppIcon icon="resize-wider" @click="widenBand" />
-                  <AppIcon icon="resize-narrower" @click="narrowBand" />
-                </div>
-              </div>
-              <div class="control-label">Q (width)</div>
             </div>
           </div>
         </div>
@@ -212,16 +225,18 @@ const getFilterIconName = (type: BiquadFilterType): string => {
 
 const formatFilterTypeName = (type: BiquadFilterType): string => {
   switch (type) {
-    case 'lowshelf': return 'low shelf';
-    case 'peaking': return 'peak';
-    case 'highshelf': return 'high shelf';
+    case 'lowshelf': return 'Low Shelfing';
+    case 'peaking': return 'Peaking EQ';
+    case 'highshelf': return 'High Shelfing';
     default: return type;
   }
 };
 
 type Channel = 'left' | 'right';
+type ChannelMode = 'individual' | 'both';
 
 const activeChannel = ref<Channel>('left');
+const channelMode = ref<ChannelMode>('individual');
 const filters = ref<Filter[]>([
   { id: 1, icon: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true } // Initial filter with Q=0.71
 ]);
@@ -382,13 +397,16 @@ const allFiltersCombinedGraphData = computed(() => {
   };
 });
 
-
-const activeFilterQDisplay = computed(() => {
-  return currentFilter.value.Q ? currentFilter.value.Q.toFixed(2) : 'N/A';
-});
-
 function setActiveChannel(channel: Channel) {
+  if (channelMode.value === 'both') {
+    // In "both" mode, clicking a channel tab should switch back to individual mode
+    channelMode.value = 'individual';
+  }
   activeChannel.value = channel;
+}
+
+function toggleChannelMode() {
+  channelMode.value = channelMode.value === 'individual' ? 'both' : 'individual';
 }
 
 function setActiveFilter(id: number) {
@@ -412,67 +430,54 @@ const addFilterOfType = (type: BiquadFilterType) => {
   showAddFilterModal.value = false;
 };
 
-const removeActiveFilter = () => {
-  if (!activeFilterId.value) return;
-
-  const indexToRemove = filters.value.findIndex(f => f.id === activeFilterId.value);
+const removeFilter = (filterId: number) => {
+  const indexToRemove = filters.value.findIndex(f => f.id === filterId);
   if (indexToRemove !== -1) {
     filters.value.splice(indexToRemove, 1);
-    activeFilterId.value = filters.value[0]?.id || null; // Set active to first available filter or null
+    // If we removed the active filter, set active to first available filter or null
+    if (activeFilterId.value === filterId) {
+      activeFilterId.value = filters.value[0]?.id || null;
+    }
   }
 };
 
-function incrementFrequency() {
-  const filter = currentFilter.value;
-  if (filter) {
-    // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
-    const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
-    const currentLog = Math.log2(filter.frequency);
-    const newLog = currentLog + logStep;
-    const newFreq = Math.pow(2, newLog);
+function incrementFilterFrequency(filter: Filter) {
+  // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
+  const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
+  const currentLog = Math.log2(filter.frequency);
+  const newLog = currentLog + logStep;
+  const newFreq = Math.pow(2, newLog);
 
-    filter.frequency = Math.min(DEFAULT_FREQ_RANGE.max, Math.round(newFreq));
-  }
+  filter.frequency = Math.min(DEFAULT_FREQ_RANGE.max, Math.round(newFreq));
 }
 
-function decrementFrequency() {
-  const filter = currentFilter.value;
-  if (filter) {
-    // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
-    const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
-    const currentLog = Math.log2(filter.frequency);
-    const newLog = currentLog - logStep;
-    const newFreq = Math.pow(2, newLog);
+function decrementFilterFrequency(filter: Filter) {
+  // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
+  const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
+  const currentLog = Math.log2(filter.frequency);
+  const newLog = currentLog - logStep;
+  const newFreq = Math.pow(2, newLog);
 
-    filter.frequency = Math.max(DEFAULT_FREQ_RANGE.min, Math.round(newFreq));
-  }
+  filter.frequency = Math.max(DEFAULT_FREQ_RANGE.min, Math.round(newFreq));
 }
 
-function incrementGain() {
-  const filter = currentFilter.value;
-  if (filter) {
-    filter.gain = Math.min(25, filter.gain + 0.5);
-  }
+function incrementFilterGain(filter: Filter) {
+  filter.gain = Math.min(25, filter.gain + 0.5);
 }
 
-function decrementGain() {
-  const filter = currentFilter.value;
-  if (filter) {
-    filter.gain = Math.max(-25, filter.gain - 0.5);
-  }
+function decrementFilterGain(filter: Filter) {
+  filter.gain = Math.max(-25, filter.gain - 0.5);
 }
 
-function widenBand() {
-  const filter = currentFilter.value;
-  if (filter && typeof filter.Q === 'number') {
+function widenFilterBand(filter: Filter) {
+  if (typeof filter.Q === 'number') {
     // Widening the band means DECREASING the Q value using logarithmic scaling
     filter.Q = Math.max(0.1, filter.Q / CONFIG_Q_STEP_FACTOR);
   }
 }
 
-function narrowBand() {
-  const filter = currentFilter.value;
-  if (filter && typeof filter.Q === 'number') {
+function narrowFilterBand(filter: Filter) {
+  if (typeof filter.Q === 'number') {
     // Narrowing the band means INCREASING the Q value using logarithmic scaling
     filter.Q = Math.min(25.0, filter.Q * CONFIG_Q_STEP_FACTOR);
   }
@@ -562,6 +567,37 @@ watch(filters, () => {
 
 .sound {
   padding: 20px;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    h1 {
+      margin: 0;
+      font-family: 'Metropolis', sans-serif;
+      font-weight: 500;
+      font-size: 28px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 20px;
+
+      svg {
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        fill: #707070;
+        transition: fill 0.2s ease;
+
+        &:hover {
+          fill: #e11e4a;
+        }
+      }
+    }
+  }
 
   .card {
     padding: 10px;
@@ -813,6 +849,191 @@ watch(filters, () => {
       font-size: 20px;
       line-height: 1;
       margin: 15px 1px;
+    }
+
+    .filters-list {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+
+      .filter-item {
+        padding: 20px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(112, 112, 112, 0.3);
+        transition: all 0.2s ease-in-out;
+
+        &.active {
+          border-color: #e11e4a;
+          background: rgba(225, 30, 74, 0.05);
+        }
+
+        &.add-filter-item {
+          cursor: pointer;
+          border-style: dashed;
+          
+          &:hover {
+            border-color: #e11e4a;
+            background: rgba(225, 30, 74, 0.05);
+          }
+        }
+
+        .filter-main {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+
+          .filter-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            .filter-icon {
+              width: 32px;
+              height: 32px;
+              fill: #e11e4a;
+            }
+
+            .filter-details {
+              h3 {
+                font-size: 18px;
+                font-weight: 500;
+                margin: 0 0 5px 0;
+                color: #333;
+              }
+
+              .filter-frequency {
+                font-size: 14px;
+                color: #666;
+              }
+            }
+          }
+
+          .filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            .filter-toggle {
+              .toggle-switch {
+                position: relative;
+                display: inline-block;
+                width: 44px;
+                height: 24px;
+                cursor: pointer;
+
+                input {
+                  opacity: 0;
+                }
+
+                .toggle-slider {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  right: 0;
+                  bottom: 0;
+                  background-color: #555;
+                  transition: 0.3s;
+                  border-radius: 24px;
+
+                  &:before {
+                    position: absolute;
+                    content: '';
+                    height: 18px;
+                    width: 18px;
+                    left: 3px;
+                    bottom: 3px;
+                    background-color: white;
+                    transition: 0.3s;
+                    border-radius: 50%;
+                  }
+                }
+
+                input:checked + .toggle-slider {
+                  background-color: #e11e4a;
+                }
+
+                input:checked + .toggle-slider:before {
+                  transform: translateX(20px);
+                }
+              }
+            }
+
+            .filter-remove {
+              cursor: pointer;
+              padding: 8px;
+              border-radius: 4px;
+              transition: background-color 0.2s;
+
+              &:hover {
+                background-color: rgba(225, 30, 74, 0.1);
+              }
+
+              svg {
+                width: 16px;
+                height: 16px;
+                fill: #e11e4a;
+              }
+            }
+          }
+        }
+
+        .filter-controls {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+
+          .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            label {
+              font-size: 12px;
+              color: #666;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+
+            .control-buttons {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+
+              .control-btn {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(112, 112, 112, 0.5);
+                border-radius: 4px;
+                padding: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+
+                &:hover {
+                  background: rgba(225, 30, 74, 0.2);
+                  border-color: #e11e4a;
+                }
+
+                svg {
+                  width: 14px;
+                  height: 14px;
+                  fill: white;
+                }
+              }
+
+              .control-value {
+                font-size: 14px;
+                font-weight: 500;
+                min-width: 60px;
+                text-align: center;
+                color: #333;
+              }
+            }
+          }
+        }
+      }
     }
   }
 

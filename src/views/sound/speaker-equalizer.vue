@@ -34,12 +34,15 @@
               </g>
 
               <g clip-path="url(#plotClipPath)">
+                <!-- Bandwidth indicator lines (commented out) -->
+                <!--
                 <template v-if="activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
                   <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
                     :y1="0" :y2="plotHeight" stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
                   <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
                     :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
                 </template>
+                -->
 
                 <path v-if="allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
                   stroke="#e11e4a" fill="none" stroke-width="2.5" />
@@ -59,8 +62,8 @@
                 style="cursor: grab;" @mousedown.prevent="startDrag($event, band)" />
             </g>
 
-            <g class="x-axis-labels" :transform="`translate(${margin.left}, ${svgHeight - margin.bottom + 5})`">
-              <text v-for="f in freqGridLines" :key="'x-label-' + f" :x="frequencyToXLocal(f)" y="0" text-anchor="middle"
+            <g class="x-axis-labels" :transform="`translate(${margin.left}, ${svgHeight - margin.bottom + 20})`">
+              <text v-for="f in freqGridLabels" :key="'x-label-' + f" :x="frequencyToXLocal(f)" y="0" text-anchor="middle"
                 fill="#aaa" font-size="10">
                 {{ formatHzForSVG(f) }}
               </text>
@@ -69,7 +72,7 @@
             <g class="y-axis-labels" :transform="`translate(${margin.left - 5}, ${margin.top})`">
               <text v-for="g in gainGridLabels" :key="'y-label-' + g" x="0" :y="gainToYLocal(g)" text-anchor="end"
                 dominant-baseline="middle" fill="#aaa" font-size="10">
-                {{ g }}
+                {{ g }} dB
               </text>
             </g>
           </svg>
@@ -216,7 +219,10 @@ import {
   gainToY,
   yToGain,
   generateFrequencyGridLines,
-  DEFAULT_FREQ_RANGE
+  generateFrequencyLabels,
+  generateGainGridLines,
+  DEFAULT_FREQ_RANGE,
+  DEFAULT_GAIN_RANGE
 } from '@/utils/filtergraph';
 
 // Constants
@@ -276,8 +282,8 @@ const margin = { top: 10, right: 30, bottom: 30, left: 50 };
 const plotWidth = computed(() => svgWidth.value - margin.left - margin.right);
 const plotHeight = computed(() => svgHeight.value - margin.top - margin.bottom);
 
-const gainGridLines = [-25, -15, -5, 0, 5, 15, 25];
-const gainGridLabels = [-25, -15, -5, 0, 5, 15, 25];
+const gainGridLines = generateGainGridLines();
+const gainGridLabels = generateGainGridLines();
 
 // MODIFIED: Computed properties for dynamic bandwidth lines (now for all filter types)
 const activeFilterBandwidthStart = computed(() => {
@@ -341,6 +347,10 @@ const currentFilter = computed(() => {
 
 const freqGridLines = computed(() => {
   return generateFrequencyGridLines();
+});
+
+const freqGridLabels = computed(() => {
+  return generateFrequencyLabels();
 });
 
 const activeFilterGraphData = computed(() => {
@@ -510,11 +520,11 @@ function decrementFilterFrequency(filter: Filter) {
 }
 
 function incrementFilterGain(filter: Filter) {
-  filter.gain = Math.min(25, filter.gain + 0.5);
+  filter.gain = Math.min(DEFAULT_GAIN_RANGE.max, filter.gain + 0.5);
 }
 
 function decrementFilterGain(filter: Filter) {
-  filter.gain = Math.max(-25, filter.gain - 0.5);
+  filter.gain = Math.max(DEFAULT_GAIN_RANGE.min, filter.gain - 0.5);
 }
 
 function widenFilterBand(filter: Filter) {
@@ -551,7 +561,7 @@ const handleMouseMove = (e: MouseEvent) => {
   const clampedY = Math.max(0, Math.min(plotHeight.value, yInPlot));
 
   const newFreq = Math.round(xToFrequencyLocal(clampedX) / 10) * 10;
-  const newGain = Math.round(yToGainLocal(clampedY));
+  const newGain = Math.max(DEFAULT_GAIN_RANGE.min, Math.min(DEFAULT_GAIN_RANGE.max, Math.round(yToGainLocal(clampedY))));
 
   selectedBand.value.frequency = newFreq;
   selectedBand.value.gain = newGain;
@@ -567,9 +577,9 @@ const handleMouseUp = () => {
 
 const formatHzForSVG = (val: number) => {
   if (val >= 1000) {
-    return `${val / 1000}k`;
+    return `${val / 1000} kHz`;
   }
-  return `${val}`;
+  return `${val} Hz`;
 };
 
 // **MODIFICATION 2: Updated updateSvgDimensions to set a fixed height**

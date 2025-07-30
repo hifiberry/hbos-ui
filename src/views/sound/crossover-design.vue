@@ -4,7 +4,7 @@
       <div class="page-header">
         <h1>Crossover Design</h1>
       </div>
-      
+
       <div class="card">
         <div class="empty-state">
           <AppIcon icon="tabler/crossover" class="empty-icon" />

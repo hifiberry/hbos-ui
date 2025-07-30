@@ -37,8 +37,8 @@ export const DEFAULT_FREQ_RANGE = {
 } as const;
 
 export const DEFAULT_GAIN_RANGE = {
-  min: -25,
-  max: 25
+  min: -20,
+  max: 20
 } as const;
 
 /**
@@ -308,7 +308,39 @@ export function generateFrequencyGridLines(
     }
   }
 
-  // Minor grid lines (2x and 5x multipliers)
+  // Minor grid lines (2x, 3x, 4x, 5x, 6x, 7x, 8x, 9x multipliers)
+  const multipliers = [2, 3, 4, 5, 6, 7, 8, 9];
+  for (let i = 10; i < maxFreq * 2; i *= 10) {
+    for (const mult of multipliers) {
+      const freq = i * mult;
+      if (freq >= minFreq && freq <= maxFreq) {
+        lines.add(freq);
+      }
+    }
+  }
+
+  return Array.from(lines)
+    .filter(f => f >= minFreq && f <= maxFreq)
+    .sort((a, b) => a - b);
+}
+
+/**
+ * Generate frequency labels (excludes 40, 400, 4k to reduce clutter)
+ */
+export function generateFrequencyLabels(
+  minFreq = DEFAULT_FREQ_RANGE.min,
+  maxFreq = DEFAULT_FREQ_RANGE.max
+): number[] {
+  const lines: Set<number> = new Set();
+
+  // Major grid lines (powers of 10)
+  for (let i = 100; i <= maxFreq; i *= 10) {
+    if (i >= minFreq) {
+      lines.add(i);
+    }
+  }
+
+  // Minor grid lines (2x, and 5x multipliers - excluding 3x, 4x, 6x, 7x, 8x, 9x from labels)
   const multipliers = [2, 5];
   for (let i = 10; i < maxFreq * 2; i *= 10) {
     for (const mult of multipliers) {
@@ -322,4 +354,21 @@ export function generateFrequencyGridLines(
   return Array.from(lines)
     .filter(f => f >= minFreq && f <= maxFreq)
     .sort((a, b) => a - b);
+}
+
+/**
+ * Generate gain grid lines for linear dB display
+ */
+export function generateGainGridLines(
+  minGain = DEFAULT_GAIN_RANGE.min,
+  maxGain = DEFAULT_GAIN_RANGE.max,
+  step = 5
+): number[] {
+  const lines: number[] = [];
+
+  for (let gain = minGain; gain <= maxGain; gain += step) {
+    lines.push(gain);
+  }
+
+  return lines;
 }

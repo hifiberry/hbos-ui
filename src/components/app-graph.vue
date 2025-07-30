@@ -22,11 +22,16 @@ import { ref, computed, onBeforeUnmount } from 'vue';
 import * as d3 from 'd3';
 import { DEFAULT_FREQ_RANGE, DEFAULT_GAIN_RANGE } from '@/utils/filtergraph';
 
+interface Point {
+  freq: number;
+  gain: number;
+}
+
 const width = 800;
 const height = 300;
 
 // Points state
-const points = ref([
+const points = ref<Point[]>([
   { freq: 60, gain: 10 },
   { freq: 1000, gain: -5 },
   { freq: 8000, gain: 0 },
@@ -37,37 +42,44 @@ const yScale = d3.scaleLinear().domain([DEFAULT_GAIN_RANGE.min, DEFAULT_GAIN_RAN
 
 const yTicks = d3.range(DEFAULT_GAIN_RANGE.min, DEFAULT_GAIN_RANGE.max + 5, 5);
 
-const linePath = computed(() =>
-  d3.line()
+const linePath = computed(() => {
+  const path = d3.line<Point>()
     .x(d => xScale(d.freq))
     .y(d => yScale(d.gain))
-    .curve(d3.curveMonotoneX)(points.value)
-);
+    .curve(d3.curveMonotoneX)(points.value);
+  return path || '';
+});
 
-const areaPath = computed(() =>
-  d3.area()
+const areaPath = computed(() => {
+  const path = d3.area<Point>()
     .x(d => xScale(d.freq))
     .y0(yScale(0))
     .y1(d => yScale(d.gain))
-    .curve(d3.curveMonotoneX)(points.value)
-);
+    .curve(d3.curveMonotoneX)(points.value);
+  return path || '';
+});
 
-let draggingPoint = null;
+let draggingPoint: number | null = null;
 
-function dragStart(event, index) {
+function dragStart(event: MouseEvent, index: number) {
   draggingPoint = index;
   window.addEventListener('mousemove', dragMove);
   window.addEventListener('mouseup', dragEnd);
 }
 
-function dragMove(event) {
+function dragMove(event: MouseEvent) {
   if (draggingPoint === null) return;
 
   const svg = document.querySelector('svg');
+  if (!svg) return;
+  
   const pt = svg.createSVGPoint();
   pt.x = event.clientX;
   pt.y = event.clientY;
-  const cursorpt = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const screenCTM = svg.getScreenCTM();
+  if (!screenCTM) return;
+  
+  const cursorpt = pt.matrixTransform(screenCTM.inverse());
 
   const newFreq = Math.min(Math.max(xScale.invert(cursorpt.x), DEFAULT_FREQ_RANGE.min), DEFAULT_FREQ_RANGE.max);
   const newGain = Math.min(Math.max(yScale.invert(cursorpt.y), DEFAULT_GAIN_RANGE.min), DEFAULT_GAIN_RANGE.max);

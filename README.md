@@ -14,18 +14,23 @@ This project is a complete rewrite of the HiFiBerryOS web interface using modern
 ## Features
 
 ### Music Control & Playback
+
 - Browse music library with artist, album, and track views
 - Full playback controls (play, pause, skip, shuffle, repeat)
 - Real-time now-playing interface with album artwork
+- **Interactive lyrics display** with real-time synchronization
+- **Metadata tooltip** showing detailed song information on cover art hover
 - Queue management and playlist functionality
 
 ### System Configuration
+
 - Audio device and HAT configuration
 - Network and wireless setup
 - System information and diagnostics
 - Service management and status monitoring
 
 ### Modern UI/UX
+
 - Responsive design for desktop and mobile devices
 - Dark/light mode theming
 - Consistent component library with reusable mixins

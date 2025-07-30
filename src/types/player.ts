@@ -11,10 +11,23 @@ export interface Player {
   capabilities?: string[] // [play, pause, stop, previous, next, seek, queue, shuffle, random, loop]
 }
 
+export interface SongMetadata {
+  lyrics_available?: boolean
+  lyrics_url?: string
+  lyrics_metadata?: {
+    album?: string
+    artist?: string
+    duration?: number
+    title?: string
+  }
+  lyrics_metadata_url?: string
+}
+
 export interface Song {
   title: string // 'November'
   artist: string // 'Limujii'
   album?: string // 'Album Name'
+  album_artist?: string // 'Album Artist'
   track_number?: number // 0
   duration: number // 167
   uri?: string // 'spotify:track:1234567890'
@@ -22,6 +35,7 @@ export interface Song {
   cover_art_url?: string // '/api/library/mpd/image/Limujii%2FLimujii%20-%20November%20%28freetouse.com%29.mp3'
   stream_url?: string // 'Limujii/Limujii - November (freetouse.com).mp3'
   source?: string // 'mpd'
+  metadata?: SongMetadata
 }
 
 export type LoopModeLowercase = 'no' | 'none' | 'song' | 'track' | 'playlist'

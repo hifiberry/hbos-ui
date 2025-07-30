@@ -39,6 +39,44 @@
             >
               Cancel
             </button>
+            <!-- Settings caret -->
+            <div class="settings-expand">
+              <div class="expand-caret" @click="toggleSettingsExpanded">
+                <AppIcon icon="caret-down" class="settings-caret" :class="{ expanded: isSettingsExpanded }" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div v-if="isSettingsExpanded" class="settings-section">
+          <div class="settings-content">
+            <div class="settings-form">
+              <div class="setting-option">
+                <span class="setting-label">Control player:</span>
+                <label class="toggle-switch disabled">
+                  <input
+                    type="checkbox"
+                    v-model="settingsStore.getSpotifySettings.controlPlayer"
+                    @change="saveSpotifySettings"
+                    disabled
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-option">
+                <span class="setting-label">Manage favourites:</span>
+                <label class="toggle-switch disabled">
+                  <input
+                    type="checkbox"
+                    v-model="settingsStore.getSpotifySettings.manageFavourites"
+                    @change="saveSpotifySettings"
+                    disabled
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -75,6 +113,10 @@ import {
   storeSpotifyTokens,
   disconnectSpotify
 } from '@/api/spotify'
+import { useSettingsStore } from '@/stores/settings'
+
+// Store
+const settingsStore = useSettingsStore()
 
 // State
 const isConnected = ref(false)
@@ -85,6 +127,9 @@ const isAuthInProgress = ref(false)
 const errorMessage = ref('')
 const statusMessage = ref('Checking Spotify connection status...')
 const authProgressStep = ref('Waiting for redirection...')
+
+// Settings state
+const isSettingsExpanded = ref(false)
 
 // Polling
 let authPollInterval: number | null = null
@@ -297,6 +342,23 @@ const abortAuth = () => {
   authProgressStep.value = 'Waiting for redirection...'
 }
 
+// Settings methods
+const toggleSettingsExpanded = () => {
+  isSettingsExpanded.value = !isSettingsExpanded.value
+}
+
+const saveSpotifySettings = async () => {
+  try {
+    await settingsStore.updateSpotifySettings({
+      controlPlayer: settingsStore.getSpotifySettings.controlPlayer,
+      manageFavourites: settingsStore.getSpotifySettings.manageFavourites
+    })
+    console.log('Spotify settings saved successfully')
+  } catch (error) {
+    console.error('Failed to save Spotify settings:', error)
+  }
+}
+
 const checkStatus = async () => {
   updateStatus('Checking Spotify connection status...')
   console.log('Checking Spotify status...')
@@ -344,8 +406,13 @@ const handleOAuthCallback = () => {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   console.log('Spotify component mounted')
+
+  // Initialize settings store
+  if (!settingsStore.loaded) {
+    await settingsStore.loadSettings()
+  }
 
   // Handle OAuth callback
   handleOAuthCallback()
@@ -458,6 +525,72 @@ onUnmounted(() => {
 
     .error-content {
       @include service-error-box;
+    }
+  }
+
+  // Settings section styles
+  .settings-expand {
+    display: flex;
+    align-items: center;
+    margin-left: 8px;
+
+    .expand-caret {
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: rgba(var(--color-surface-rgb), 0.5);
+      }
+    }
+
+    .settings-caret {
+      width: 16px;
+      height: 16px;
+      color: var(--color-text-secondary);
+      transition: transform 0.2s ease;
+
+      &.expanded {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  .settings-section {
+    @include service-content-section;
+    border-top: 1px solid var(--color-border);
+
+    .settings-content {
+      padding: 20px;
+
+      h4 {
+        margin: 0 0 16px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-head);
+      }
+    }
+
+    .settings-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .setting-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+
+        .setting-label {
+          font-size: 14px;
+          color: var(--color-text);
+          font-weight: 500;
+        }
+      }
+
+      @include service-toggle-switch;
     }
   }
 }

@@ -26,9 +26,7 @@
 * Scroll bar with letters on the right for album and artist view **done**
 * Sorting & filtering for albums & artists **done**
 * Volume control **done**
-* Reset systen
-* Force sound card detection or select sound card
-* Auto detect volume control and sound card
+* Auto detect volume control and sound card **done**
 
 # Phase 4
 
@@ -38,8 +36,7 @@
   * connect LastFM **done**
 * Settings/Music library
   * mount SMB share **done**
-  * use local music files 
-  * update library 
+  * update library  **done**
 * Settings/Players **done**
   * enable/disable players **done**
   * service existence detection **done**
@@ -49,22 +46,27 @@
 * Settings/Others
   * change system name **done**
   * System Information **done**
-  * reset system
  
 # Phase 5
 
+* Reset systen **started**
+* Auto-detect sound card **done**
+* Force sound card detection or select sound card **done**
+* Lyrics support - display lyrics in "Now playing" **done**
+  * Interactive lyrics overlay with real-time synchronization
+* Enable user to upload artist/album art
+
+# Phase 6
+
+* Add (optional) password verification to use the UI, also add some kind of authorisation to API calls
 * log, loglog, lin volume control settings
 * Support for additional meta data in "Now playing" (format, sample rate, ...)
 * volume limit, mono/stereo, ... (using Pipewire and ALSA)
 * Show library loading progress
-* Lyrics support - display lyrics in "Now playing"
-* Enable user to upload artist/album art
-* Add (optional) password verification to use the UI, also add some kind of authorisation to API calls
 * Improve icons
 * Bluetooth
   * Pair device
   * remove paired device
-
  
 # Later
 

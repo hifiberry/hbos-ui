@@ -38,6 +38,17 @@
         </span>
       </router-link>
 
+      <router-link :to="{ name: 'dsp-programs' }" class="service-card">
+        <div class="service-header">
+          <AppIcon icon="download" class="service-icon" />
+          <h2>DSP Programs</h2>
+        </div>
+        <p class="service-description">Download and manage digital signal processing programs</p>
+        <span class="service-link">
+          View DSP Programs
+        </span>
+      </router-link>
+
       <router-link :to="{ name: 'system-info' }" class="service-card">
         <div class="service-header">
           <AppIcon icon="computer" class="service-icon" />
@@ -47,6 +58,16 @@
         <span class="service-link">
           View System Info
         </span>
+      </router-link>
+
+      <router-link :to="{ name: 'system-tools' }" class="service-card warning-card">
+        <div class="service-header">
+          <AppIcon icon="tool" class="service-icon" />
+          <h2>System Tools</h2>
+        </div>
+        <p class="service-description warning-text">
+          <strong>⚠️ Use with caution:</strong> These tools can leave the system in an unusable state if used incorrectly.
+        </p>
       </router-link>
     </div>
   </div>
@@ -123,6 +144,26 @@ import AppIcon from '@/components/app-icon.vue'
 
       &:hover .service-link {
         background: var(--color-primary-dark);
+      }
+
+      &.warning-card {
+        border-color: var(--color-warning, #f59e0b);
+
+        .warning-text {
+          color: var(--color-body-secondary);
+
+          strong {
+            color: var(--color-warning-dark, #d97706);
+          }
+        }
+
+        .service-link {
+          background: var(--color-warning, #f59e0b);
+        }
+
+        &:hover .service-link {
+          background: var(--color-warning-dark, #d97706);
+        }
       }
     }
   }

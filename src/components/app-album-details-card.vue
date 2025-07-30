@@ -167,7 +167,9 @@ const onListenNow = async () => {
       &__listen {
         margin-top: auto;
         @include media-down(md) {
-          display: none;
+          margin-top: 24px;
+          display: flex;
+          justify-content: center;
         }
         &.skeleton {
           height: 40px;

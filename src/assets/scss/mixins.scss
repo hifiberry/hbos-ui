@@ -420,6 +420,40 @@
   }
 }
 
+// Delete Button Mixin - Circular button with red hover state for delete actions
+@mixin delete-button($size: 24px, $icon-size: 14px) {
+  @include button-icon($size);
+  color: var(--color-body-secondary);
+  flex-shrink: 0;
+
+  .app-icon {
+    width: $icon-size;
+    height: $icon-size;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--color-danger);
+    background: rgba(var(--color-danger-rgb, 239, 68, 68), 0.1);
+  }
+}
+
+// OK/Confirm Button Mixin - Circular button with green hover state for confirm actions
+@mixin ok-button($size: 24px, $icon-size: 14px) {
+  @include button-icon($size);
+  color: var(--color-body-secondary);
+  flex-shrink: 0;
+
+  .app-icon {
+    width: $icon-size;
+    height: $icon-size;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--color-success);
+    background: rgba(var(--color-success-rgb, 34, 197, 94), 0.1);
+  }
+}
+
 // Complete Button Classes - Use these for quick styling
 @mixin button-primary-sm {
   @include button-base;
@@ -593,4 +627,9 @@
 // Default thin stroke for audio controls
 @mixin audio-control-stroke {
   @include icon-stroke-normal;
+}
+
+// Edit overlay background with 20% opacity
+@mixin edit-overlay-background {
+  background-color: rgba(0, 0, 0, 0.2);
 }

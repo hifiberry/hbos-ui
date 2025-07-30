@@ -21,7 +21,7 @@
                   :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
               </template>
 
-              <path v-if="eqEnabled && allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
+              <path v-if="allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
                 stroke="#e11e4a" fill="none" stroke-width="2.5" />
 
               <template v-if="activeFilterGraphData">
@@ -103,7 +103,7 @@
               <div class="player-actions">
                 <div class="player-toggle">
                   <label class="toggle-switch">
-                    <input type="checkbox" v-model="eqEnabled" />
+                    <input type="checkbox" v-model="currentFilter.enabled" />
                     <span class="toggle-slider"></span>
                   </label>
                 </div>
@@ -147,20 +147,6 @@
           </div>
         </div>
 
-        <div class="filters">
-          <div class="filter-header-wrapper">
-            <h3 class="channel-title">Presets</h3>
-            <div class="remove-filter-text">View Saved Presets</div>
-          </div>
-          <div class="filter-header-wrapper">
-            <h3 class="channel-text">
-              Current sound design can be saved to a listening mode preset.
-            </h3>
-          </div>
-          <div class="filter-header-wrapper">
-            <button class="save-listen-mode">Save Listening Mode</button>
-          </div>
-        </div>
         </div>
       </div>
     </div>
@@ -242,7 +228,6 @@ const filters = ref<Filter[]>([
 const showAddFilterModal = ref(false);
 
 const activeFilterId = ref<number | null>(filters.value[0]?.id || null);
-const eqEnabled = ref(true);
 
 const isDragging = ref(false);
 const svgElement = ref<SVGSVGElement | null>(null);
@@ -326,7 +311,7 @@ const freqGridLines = computed(() => {
 });
 
 const activeFilterGraphData = computed(() => {
-  if (!eqEnabled.value || !activeFilterId.value) {
+  if (!activeFilterId.value) {
     return null;
   }
 
@@ -367,7 +352,7 @@ const activeFilterGraphData = computed(() => {
 });
 
 const allFiltersCombinedGraphData = computed(() => {
-  if (!eqEnabled.value || filters.value.length === 0) {
+  if (filters.value.length === 0) {
     return null;
   }
 

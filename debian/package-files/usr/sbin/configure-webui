@@ -63,6 +63,7 @@ def setup_webui():
     webui_include = Path("/etc/nginx/hifiberry-webui.nginx")
     audiocontrol_include = Path("/etc/nginx/hifiberry-audiocontrol.nginx")
     config_include = Path("/etc/nginx/hifiberry-config.nginx")
+    sigmatcp_include = Path("/etc/nginx/hifiberry-sigmatcp.nginx")
     webui_dir = Path("/usr/share/hifiberry/webui")
     nginx_conf = Path("/etc/nginx/nginx.conf")
     
@@ -77,6 +78,10 @@ def setup_webui():
     if not config_include.exists():
         print(f"Error: Config nginx include file not found at {config_include}")
         return 1
+    
+    if not sigmatcp_include.exists():
+        print(f"Warning: DSP Toolkit nginx include file not found at {sigmatcp_include}")
+        print("DSP Toolkit API will not be available")
     
     if not webui_dir.exists():
         print(f"Error: Web UI files not found at {webui_dir}")
@@ -97,7 +102,7 @@ def setup_webui():
         
         # Create site configuration with all HiFiBerry includes
         with open(site_config, 'w') as f:
-            f.write(f'''# HiFiBerry Web UI and API nginx site
+            config_content = f'''# HiFiBerry Web UI and API nginx site
 server {{
     listen 80 default_server;
     listen [::]:80 default_server;
@@ -108,11 +113,21 @@ server {{
     
     # Include HiFiBerry Config API proxy configuration
     include {config_include};
-    
+'''
+            
+            # Add DSP Toolkit include if available
+            if sigmatcp_include.exists():
+                config_content += f'''    
+    # Include HiFiBerry DSP Toolkit API proxy configuration
+    include {sigmatcp_include};
+'''
+            
+            config_content += f'''    
     # Include HiFiBerry Web UI configuration
     include {webui_include};
 }}
-''')
+'''
+            f.write(config_content)
         
         # Enable the site
         if site_enabled.exists():

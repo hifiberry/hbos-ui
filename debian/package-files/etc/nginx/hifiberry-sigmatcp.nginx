@@ -2,8 +2,9 @@
 # This file should be included in the main nginx server block
 
 # Proxy DSP Toolkit API requests to the backend service
-location /api/config/ {
-    proxy_pass http://localhost:13141/api/;
+location /api/dsptoolkit/ {
+    rewrite ^/api/dsptoolkit/(.*) /$1 break;
+    proxy_pass http://localhost:13141;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

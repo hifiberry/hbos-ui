@@ -4,5 +4,5 @@ debian/package-files/etc/nginx/hifiberry-audiocontrol.nginx etc/nginx/
 debian/package-files/etc/nginx/hifiberry-config.nginx etc/nginx/
 debian/package-files/etc/nginx/hifiberry-sigmatcp.nginx etc/nginx/
 debian/package-files/etc/nginx/hifiberry-btaudio.nginx etc/nginx/
-debian/package-files/etc/nginx/nginx-webui.conf etc/nginx/
+debian/package-files/etc/nginx/sites-available/hifiberry-webui etc/nginx/sites-available/
 debian/package-files/etc/systemd/system/nginx-webui.service etc/systemd/system/

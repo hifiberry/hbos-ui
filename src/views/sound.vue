@@ -7,16 +7,16 @@
         <svg ref="svgElement" :width="svgWidth" :height="svgHeight">
           <g :transform="`translate(${margin.left},${margin.top})`">
             <g stroke="#444" stroke-dasharray="4">
-              <line v-for="y in gainGridLines" :key="'gain-grid-' + y" :y1="gainToY(y)" :y2="gainToY(y)" :x1="0"
+              <line v-for="y in gainGridLines" :key="'gain-grid-' + y" :y1="gainToYLocal(y)" :y2="gainToYLocal(y)" :x1="0"
                 :x2="plotWidth" />
-              <line v-for="f in freqGridLines" :key="'freq-grid-' + f" :x1="frequencyToX(f)" :x2="frequencyToX(f)"
+              <line v-for="f in freqGridLines" :key="'freq-grid-' + f" :x1="frequencyToXLocal(f)" :x2="frequencyToXLocal(f)"
                 :y1="0" :y2="plotHeight" />
             </g>
 
             <template v-if="activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
-              <line :x1="frequencyToX(activeFilterBandwidthStart)" :x2="frequencyToX(activeFilterBandwidthStart)"
+              <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
                 :y1="0" :y2="plotHeight" stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
-              <line :x1="frequencyToX(activeFilterBandwidthEnd)" :x2="frequencyToX(activeFilterBandwidthEnd)" :y1="0"
+              <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
                 :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
             </template>
 
@@ -28,24 +28,24 @@
               <path :d="activeFilterGraphData.linePath" stroke="#00b8ff" fill="none" stroke-width="2" />
             </template>
             <template v-else>
-              <line :x1="0" :y1="gainToY(0)" :x2="plotWidth" :y2="gainToY(0)" stroke="#999" stroke-width="1"
+              <line :x1="0" :y1="gainToYLocal(0)" :x2="plotWidth" :y2="gainToYLocal(0)" stroke="#999" stroke-width="1"
                 stroke-dasharray="2 2" />
             </template>
 
-            <circle v-for="band in filters" :key="'node-' + band.id" :cx="frequencyToX(band.frequency)"
-              :cy="gainToY(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'"
+            <circle v-for="band in filters" :key="'node-' + band.id" :cx="frequencyToXLocal(band.frequency)"
+              :cy="gainToYLocal(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'"
               style="cursor: grab;" @mousedown.prevent="startDrag($event, band)" />
           </g>
 
           <g class="x-axis-labels" :transform="`translate(${margin.left}, ${svgHeight - margin.bottom + 5})`">
-            <text v-for="f in freqGridLines" :key="'x-label-' + f" :x="frequencyToX(f)" y="0" text-anchor="middle"
+            <text v-for="f in freqGridLines" :key="'x-label-' + f" :x="frequencyToXLocal(f)" y="0" text-anchor="middle"
               fill="#aaa" font-size="10">
               {{ formatHzForSVG(f) }}
             </text>
           </g>
 
           <g class="y-axis-labels" :transform="`translate(${margin.left - 5}, ${margin.top})`">
-            <text v-for="g in gainGridLabels" :key="'y-label-' + g" x="0" :y="gainToY(g)" text-anchor="end"
+            <text v-for="g in gainGridLabels" :key="'y-label-' + g" x="0" :y="gainToYLocal(g)" text-anchor="end"
               dominant-baseline="middle" fill="#aaa" font-size="10">
               {{ g }}
             </text>
@@ -203,18 +203,20 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import AppIcon from '@/components/app-icon.vue';
+import {
+  type Filter,
+  calculateFilterGain
+} from '@/utils/filtercalc';
+
+import {
+  frequencyToX,
+  xToFrequency,
+  gainToY,
+  yToGain,
+  generateFrequencyGridLines
+} from '@/utils/filtergraph';
 
 type Channel = 'left' | 'right';
-
-interface Filter {
-  id: number;
-  icon: string; // e.g., 'filter-peak', 'filter-low-shelf', 'filter-high-shelf'
-  text: string;
-  frequency: number;
-  gain: number;
-  Q?: number; // Q factor, representing width/slope
-  enabled: boolean;
-}
 
 const activeChannel = ref<Channel>('left');
 const selectedFilterType = ref<string | null>(null);
@@ -285,79 +287,11 @@ const activeFilterBandwidthEnd = computed(() => {
   return null;
 });
 
-const frequencyToX = (freq: number) => {
-  const logMinFreq = Math.log10(20);
-  const logMaxFreq = Math.log10(10000);
-  const logFreq = Math.log10(freq);
-  return ((logFreq - logMinFreq) / (logMaxFreq - logMinFreq)) * plotWidth.value;
-};
-
-const xToFrequency = (x: number) => {
-  const logMinFreq = Math.log10(20);
-  const logMaxFreq = Math.log10(10000);
-  const logFreq = logMinFreq + (x / plotWidth.value) * (logMaxFreq - logMinFreq);
-  return Math.pow(10, logFreq);
-};
-
-const gainToY = (gain: number) => {
-  const minGain = -25;
-  const maxGain = 25;
-  return plotHeight.value - ((gain - minGain) / (maxGain - minGain)) * plotHeight.value;
-};
-
-const yToGain = (y: number) => {
-  const minGain = -25;
-  const maxGain = 25;
-  return maxGain - (y / plotHeight.value) * (maxGain - minGain);
-};
-
-const calculateFilterGain = (freq: number, band: Filter): number => {
-  if (!band.enabled) return 0;
-
-  const A_db = band.gain;
-  const Fc = band.frequency;
-  const Q = Math.max(0.01, band.Q || 1.0); // Ensure Q is at least 0.01 to avoid division by zero
-
-  let gainVal_db = 0;
-
-  switch (band.icon) {
-    case 'filter-peak':
-      // MODIFIED: Added explicit check for A_db === 0 to ensure flat line at 0 gain
-      if (A_db === 0) {
-        gainVal_db = 0;
-      } else {
-        const normalizedLogFreqPeak = Math.log10(freq / Fc);
-        const widthFactor = 1 / Q;
-        gainVal_db = A_db * Math.exp(-Math.pow(normalizedLogFreqPeak / widthFactor, 2));
-      }
-      break;
-
-    case 'filter-low-shelf':
-      // Ensure that as frequency approaches 0, the gain approaches A_db.
-      // And as frequency increases, it approaches 0 (or flat).
-      const p_ls = Math.pow(freq / Fc, 2);
-      const K_ls = Math.sqrt(Q); // A parameter often used with Q for shelf filters
-      const gainFactorLow = (1 + Math.sqrt(2 * K_ls) * p_ls + p_ls) / (1 + Math.sqrt(2 * K_ls) * p_ls + p_ls); // Placeholder, actual formula is more complex.
-      // A more common shelf filter approximation:
-      const ratioLow = freq / Fc;
-      const slopeFactorLow = 1 + Math.pow(ratioLow, 2 * Q); // Q controls steepness
-      gainVal_db = A_db / slopeFactorLow;
-      break;
-
-    case 'filter-high-shelf':
-      // Ensure that as frequency increases, the gain approaches A_db.
-      // And as frequency approaches 0, it approaches 0 (or flat).
-      const ratioHigh = Fc / freq;
-      const slopeFactorHigh = 1 + Math.pow(ratioHigh, 2 * Q); // Q controls steepness
-      gainVal_db = A_db / slopeFactorHigh;
-      break;
-
-    default:
-      return 0;
-  }
-
-  return gainVal_db;
-};
+// Wrapper functions to maintain compatibility with existing template code
+const frequencyToXLocal = (freq: number) => frequencyToX(freq, plotWidth.value);
+const xToFrequencyLocal = (x: number) => xToFrequency(x, plotWidth.value);
+const gainToYLocal = (gain: number) => gainToY(gain, plotHeight.value);
+const yToGainLocal = (y: number) => yToGain(y, plotHeight.value);
 
 const currentFilter = computed(() => {
   // Ensure that if no filter is active, it defaults to something that won't cause errors
@@ -374,30 +308,8 @@ const currentFilter = computed(() => {
 });
 
 const freqGridLines = computed(() => {
-  const minOverallFreq = 20;
-  const maxOverallFreq = 10000;
-  const lines: Set<number> = new Set();
-
-  for (let i = 100; i <= maxOverallFreq; i *= 10) {
-    if (i >= minOverallFreq) {
-      lines.add(i);
-    }
-  }
-
-  const multipliers = [2, 5];
-  for (let i = 10; i < maxOverallFreq * 2; i *= 10) {
-    for (const mult of multipliers) {
-      const freq = i * mult;
-      if (freq >= minOverallFreq && freq <= maxOverallFreq) {
-        lines.add(freq);
-      }
-    }
-  }
-  return Array.from(lines)
-    .filter(f => f >= minOverallFreq && f <= maxOverallFreq)
-    .sort((a, b) => a - b);
+  return generateFrequencyGridLines();
 });
-
 
 const activeFilterGraphData = computed(() => {
   if (!eqEnabled.value || !activeFilterId.value) {
@@ -411,9 +323,9 @@ const activeFilterGraphData = computed(() => {
 
   const linePoints: string[] = [];
   const areaPoints: string[] = [];
-  const baselineY = gainToY(0);
+  const baselineY = gainToYLocal(0);
 
-  areaPoints.push(`${frequencyToX(20)},${baselineY}`);
+  areaPoints.push(`${frequencyToXLocal(20)},${baselineY}`);
 
   const minFreq = 20;
   const maxFreq = 10000;
@@ -423,16 +335,16 @@ const activeFilterGraphData = computed(() => {
     const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
     const freq = Math.pow(10, logFreq);
 
-    const x = frequencyToX(freq);
+    const x = frequencyToXLocal(freq);
     const gainVal = calculateFilterGain(freq, band);
-    const y = gainToY(gainVal);
+    const y = gainToYLocal(gainVal);
 
     linePoints.push(`${x},${y}`);
     areaPoints.push(`${x},${y}`);
   }
 
-  areaPoints.push(`${frequencyToX(10000)},${baselineY}`);
-  areaPoints.push(`${frequencyToX(20)},${baselineY}`);
+  areaPoints.push(`${frequencyToXLocal(10000)},${baselineY}`);
+  areaPoints.push(`${frequencyToXLocal(20)},${baselineY}`);
 
   return {
     linePath: `M ${linePoints.join(' L ')}`,
@@ -461,8 +373,8 @@ const allFiltersCombinedGraphData = computed(() => {
       }
     });
 
-    const x = frequencyToX(freq);
-    const y = gainToY(totalCombinedGain_db);
+    const x = frequencyToXLocal(freq);
+    const y = gainToYLocal(totalCombinedGain_db);
     linePoints.push(`${x},${y}`);
   }
 
@@ -605,8 +517,8 @@ const handleMouseMove = (e: MouseEvent) => {
   const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot));
   const clampedY = Math.max(0, Math.min(plotHeight.value, yInPlot));
 
-  const newFreq = Math.round(xToFrequency(clampedX) / 10) * 10;
-  const newGain = Math.round(yToGain(clampedY));
+  const newFreq = Math.round(xToFrequencyLocal(clampedX) / 10) * 10;
+  const newGain = Math.round(yToGainLocal(clampedY));
 
   selectedBand.value.frequency = newFreq;
   selectedBand.value.gain = newGain;

@@ -34,6 +34,29 @@ This document tracks icons that need to be created or sourced for various servic
 - **Usage**: System info page, cover art providers section
 - **Notes**: Current icon is functional but could be more specific to album artwork/cover art
 
+## Hardware Icons
+
+### Beocreate 4CA
+
+- **Current Status**: Missing specific icon
+- **Needed**: Beocreate 4-Channel Amplifier icon
+- **Usage**: DSP programs page, hardware detection
+- **Notes**: Should represent 4-channel amplifier hardware
+
+### DAC+DSP
+
+- **Current Status**: Missing specific icon
+- **Needed**: DAC+DSP board icon
+- **Usage**: DSP programs page, hardware detection
+- **Notes**: Should represent DAC with integrated DSP chip
+
+### DSP add-on
+
+- **Current Status**: Missing specific icon
+- **Needed**: DSP add-on board icon
+- **Usage**: DSP programs page, hardware detection
+- **Notes**: Should represent DSP expansion board for existing sound cards
+
 ## Icon Requirements
 
 - **Format**: SVG preferred

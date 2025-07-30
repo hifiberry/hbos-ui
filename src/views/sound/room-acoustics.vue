@@ -4,7 +4,7 @@
       <div class="page-header">
         <h1>Room Acoustics Correction</h1>
       </div>
-      
+
       <div class="card">
         <div class="empty-state">
           <AppIcon icon="tabler/armchair" class="empty-icon" />

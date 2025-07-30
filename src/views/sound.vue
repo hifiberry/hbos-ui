@@ -5,7 +5,15 @@
         <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
         <div class="header-actions">
           <AppIcon :icon="channelMode === 'both' ? 'link' : 'link-unlinked'" @click="toggleChannelMode" />
-          <AppIcon icon="ear" />
+          <AppIcon
+            icon="ear"
+            @mousedown="startBypass"
+            @mouseup="endBypass"
+            @mouseleave="endBypass"
+            @touchstart="startBypass"
+            @touchend="endBypass"
+            :class="{ bypassed: isBypassed }"
+          />
           <AppIcon icon="more" />
         </div>
       </div>
@@ -83,7 +91,7 @@
             <div class="filter-item" :class="{ active: activeFilterId === filter.id }">
               <div class="filter-main">
                 <div class="filter-info">
-                  <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon" 
+                  <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon"
                     :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
                   <div class="filter-details">
                     <h3>{{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</h3>
@@ -97,11 +105,11 @@
                     </label>
                   </div>
                   <div class="filter-remove" @click="removeFilter(filter.id)">
-                    <AppIcon icon="trash" />
+                    <AppIcon icon="close" />
                   </div>
                 </div>
               </div>
-              
+
               <div class="filter-controls">
                 <div class="control-group">
                   <label>Frequency</label>
@@ -115,7 +123,7 @@
                     </button>
                   </div>
                 </div>
-                
+
                 <div class="control-group">
                   <label>Gain</label>
                   <div class="control-buttons">
@@ -128,7 +136,7 @@
                     </button>
                   </div>
                 </div>
-                
+
                 <div class="control-group">
                   <label>Q (width)</label>
                   <div class="control-buttons">
@@ -144,7 +152,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="card">
             <div class="filter-item add-filter-item" @click="showAddFilterModal = true">
               <div class="filter-main">
@@ -241,6 +249,10 @@ const filters = ref<Filter[]>([
   { id: 1, icon: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true } // Initial filter with Q=0.71
 ]);
 const showAddFilterModal = ref(false);
+
+// Bypass functionality state
+const isBypassed = ref(false);
+const previousFilterStates = ref<Map<number, boolean>>(new Map());
 
 const activeFilterId = ref<number | null>(filters.value[0]?.id || null);
 
@@ -409,6 +421,36 @@ function toggleChannelMode() {
   channelMode.value = channelMode.value === 'individual' ? 'both' : 'individual';
 }
 
+// Bypass functionality - temporarily disable all filters while pressed
+function startBypass() {
+  if (isBypassed.value || isDragging.value) return; // Already bypassed or dragging
+
+  isBypassed.value = true;
+
+  // Store current filter states
+  previousFilterStates.value.clear();
+  filters.value.forEach(filter => {
+    previousFilterStates.value.set(filter.id, filter.enabled);
+    filter.enabled = false; // Disable all filters
+  });
+}
+
+function endBypass() {
+  if (!isBypassed.value) return; // Not bypassed
+
+  isBypassed.value = false;
+
+  // Restore previous filter states
+  filters.value.forEach(filter => {
+    const previousState = previousFilterStates.value.get(filter.id);
+    if (previousState !== undefined) {
+      filter.enabled = previousState;
+    }
+  });
+
+  previousFilterStates.value.clear();
+}
+
 function setActiveFilter(id: number) {
   activeFilterId.value = id;
 }
@@ -538,17 +580,33 @@ const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape' && showAddFilterModal.value) {
     showAddFilterModal.value = false;
   }
+
+  // Spacebar for bypass (common in audio software)
+  if (e.code === 'Space' && !showAddFilterModal.value) {
+    e.preventDefault(); // Prevent page scroll
+    startBypass();
+  }
+};
+
+const handleKeyup = (e: KeyboardEvent) => {
+  // Release spacebar to end bypass
+  if (e.code === 'Space' && !showAddFilterModal.value) {
+    e.preventDefault();
+    endBypass();
+  }
 };
 
 onMounted(() => {
   updateSvgDimensions();
   window.addEventListener('resize', updateSvgDimensions);
   window.addEventListener('keydown', handleKeydown);
+  window.addEventListener('keyup', handleKeyup);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateSvgDimensions);
   window.removeEventListener('keydown', handleKeydown);
+  window.removeEventListener('keyup', handleKeyup);
 });
 
 watch(filters, () => {
@@ -559,6 +617,8 @@ watch(filters, () => {
 </script>
 
 <style scoped lang="scss">
+@import '@/assets/scss/mixins.scss';
+
 .sound-page {
   // Wrapper to ensure single root element for transitions
   width: 100%;
@@ -594,6 +654,11 @@ watch(filters, () => {
 
         &:hover {
           fill: #e11e4a;
+        }
+
+        &.bypassed {
+          fill: #00b8ff;
+          filter: drop-shadow(0 0 4px rgba(0, 184, 255, 0.5));
         }
       }
     }
@@ -872,7 +937,7 @@ watch(filters, () => {
         &.add-filter-item {
           cursor: pointer;
           border-style: dashed;
-          
+
           &:hover {
             border-color: #e11e4a;
             background: rgba(225, 30, 74, 0.05);
@@ -962,20 +1027,7 @@ watch(filters, () => {
             }
 
             .filter-remove {
-              cursor: pointer;
-              padding: 8px;
-              border-radius: 4px;
-              transition: background-color 0.2s;
-
-              &:hover {
-                background-color: rgba(225, 30, 74, 0.1);
-              }
-
-              svg {
-                width: 16px;
-                height: 16px;
-                fill: #e11e4a;
-              }
+              @include delete-button-small;
             }
           }
         }

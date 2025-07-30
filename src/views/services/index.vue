@@ -38,6 +38,17 @@
         </span>
       </router-link>
 
+      <router-link :to="{ name: 'dsp-programs' }" class="service-card">
+        <div class="service-header">
+          <AppIcon icon="download" class="service-icon" />
+          <h2>DSP Programs</h2>
+        </div>
+        <p class="service-description">Download and manage digital signal processing programs</p>
+        <span class="service-link">
+          View DSP Programs
+        </span>
+      </router-link>
+
       <router-link :to="{ name: 'system-info' }" class="service-card">
         <div class="service-header">
           <AppIcon icon="computer" class="service-icon" />

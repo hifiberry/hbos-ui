@@ -14,8 +14,9 @@
             <AppIcon :icon="icon" class="dialog-icon" />
           </div>
           <div class="confirmation-text">
-            <p v-for="line in messageLines" :key="line" class="message-line">
-              {{ line }}
+            <p v-for="line in messageLines" :key="line" class="message-line"
+               :class="{ 'critical-warning': line.includes('CRITICAL WARNINGS:') }"
+               v-html="line">
             </p>
           </div>
           <div v-if="requiresTextConfirmation" class="text-confirmation">
@@ -35,8 +36,8 @@
       </div>
 
       <div class="modal-footer">
-        <button @click="closeDialog" class="cancel-button">
-          Cancel
+        <button v-if="!hideCancelButton" @click="closeDialog" class="cancel-button">
+          {{ cancelButtonText }}
         </button>
         <button
           @click="handleConfirm"
@@ -66,6 +67,7 @@ interface Props {
   requiresTextConfirmation?: boolean
   confirmationText?: string
   disabled?: boolean
+  hideCancelButton?: boolean
 }
 
 interface Emits {
@@ -79,7 +81,8 @@ const props = withDefaults(defineProps<Props>(), {
   isDangerous: false,
   requiresTextConfirmation: false,
   confirmationText: 'CONFIRM',
-  disabled: false
+  disabled: false,
+  hideCancelButton: false
 })
 
 const emit = defineEmits<Emits>()
@@ -205,6 +208,11 @@ watch(() => props.isOpen, (newValue) => {
 
       &:last-child {
         margin-bottom: 0;
+      }
+
+      &.critical-warning {
+        font-weight: bold;
+        color: var(--color-head);
       }
     }
   }

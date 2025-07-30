@@ -80,7 +80,7 @@
 
           <div class="filter-buttons">
             <button v-for="filter in filters" :key="filter.id"
-              :class="['filter', { active: activeFilterId === filter.id }]" @click="openFilterOptionsModal(filter)">
+              :class="['filter', { active: activeFilterId === filter.id }]" @click="setActiveFilter(filter.id)">
               <AppIcon :icon="getFilterIconName(filter.icon)" :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
               <div v-if="filter.text" class="filter-text">{{ filter.text }}</div>
             </button>
@@ -186,19 +186,6 @@
           </div>
         </div>
       </div>
-
-      <div v-if="showFilterOptionsModal" class="modal-backdrop" @click.self="showFilterOptionsModal = false">
-        <div class="modal-content">
-          <h2>Filter Options</h2>
-          <p>What would you like to do with this filter?</p>
-
-          <div class="modal-actions">
-            <button @click="handleViewGraph">View Graph</button>
-            <button @click="handleDeleteFilter" class="delete-button">Delete Filter</button>
-            <button @click="showFilterOptionsModal = false; filterToOperateOn = null">Cancel</button>
-          </div>
-        </div>
-      </div>
     </teleport>
   </div>
 </template>
@@ -226,6 +213,7 @@ import {
 
 // Constants
 const SAMPLE_RATE = 48000; // Default sample rate for biquad calculations
+const CONFIG_STEPS_PER_OCTAVE = 10; // Number of frequency steps per octave for logarithmic scaling
 
 // Available filter types for the UI
 const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf'];
@@ -257,8 +245,6 @@ const filters = ref<Filter[]>([
   { id: 1, icon: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true } // Initial filter with Q=0.71
 ]);
 const showAddFilterModal = ref(false);
-const showFilterOptionsModal = ref(false);
-const filterToOperateOn = ref<Filter | null>(null);
 
 const activeFilterId = ref<number | null>(filters.value[0]?.id || null);
 const eqEnabled = ref(true);
@@ -429,33 +415,6 @@ function setActiveFilter(id: number) {
   activeFilterId.value = id;
 }
 
-function openFilterOptionsModal(filter: Filter) {
-  filterToOperateOn.value = filter;
-  showFilterOptionsModal.value = true;
-}
-
-function handleViewGraph() {
-  if (filterToOperateOn.value) {
-    setActiveFilter(filterToOperateOn.value.id);
-  }
-  showFilterOptionsModal.value = false;
-  filterToOperateOn.value = null;
-}
-
-function handleDeleteFilter() {
-  if (filterToOperateOn.value) {
-    const indexToRemove = filters.value.findIndex(f => f.id === filterToOperateOn.value!.id);
-    if (indexToRemove !== -1) {
-      filters.value.splice(indexToRemove, 1);
-      if (activeFilterId.value === filterToOperateOn.value.id) {
-        activeFilterId.value = filters.value[0]?.id || null; // Select first filter if deleted was active
-      }
-    }
-  }
-  showFilterOptionsModal.value = false;
-  filterToOperateOn.value = null;
-}
-
 const confirmAddFilter = () => {
   if (!selectedFilterType.value) return;
 
@@ -489,14 +448,26 @@ const removeActiveFilter = () => {
 function incrementFrequency() {
   const filter = currentFilter.value;
   if (filter) {
-    filter.frequency = Math.min(DEFAULT_FREQ_RANGE.max, Math.round((filter.frequency + 100) / 10) * 10);
+    // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
+    const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
+    const currentLog = Math.log2(filter.frequency);
+    const newLog = currentLog + logStep;
+    const newFreq = Math.pow(2, newLog);
+
+    filter.frequency = Math.min(DEFAULT_FREQ_RANGE.max, Math.round(newFreq));
   }
 }
 
 function decrementFrequency() {
   const filter = currentFilter.value;
   if (filter) {
-    filter.frequency = Math.max(DEFAULT_FREQ_RANGE.min, Math.round((filter.frequency - 100) / 10) * 10);
+    // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
+    const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
+    const currentLog = Math.log2(filter.frequency);
+    const newLog = currentLog - logStep;
+    const newFreq = Math.pow(2, newLog);
+
+    filter.frequency = Math.max(DEFAULT_FREQ_RANGE.min, Math.round(newFreq));
   }
 }
 

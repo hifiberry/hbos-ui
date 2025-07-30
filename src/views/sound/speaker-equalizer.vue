@@ -4,16 +4,20 @@
       <div class="page-header">
         <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
         <div class="header-actions">
-          <AppIcon :icon="channelMode === 'both' ? 'link' : 'link-unlinked'" @click="toggleChannelMode" />
-          <AppIcon
-            icon="ear"
+          <img src="/images/svg/link.svg" 
+            @click="toggleChannelMode" 
+            title="Channel Mode" 
+            :class="{ linked: channelMode === 'both' }"
+            class="icon-btn" />
+          <img src="/images/svg/ear.svg" 
             @mousedown="startBypass"
             @mouseup="endBypass"
             @mouseleave="endBypass"
             @touchstart="startBypass"
             @touchend="endBypass"
             :class="{ bypassed: isBypassed }"
-          />
+            class="icon-btn"
+            title="Bypass" />
           <img src="/images/svg/folder_open.svg" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
           <img src="/images/svg/save.svg" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
         </div>
@@ -743,6 +747,14 @@ watch(filters, () => {
         transition: filter 0.2s ease;
 
         &:hover {
+          filter: invert(23%) sepia(89%) saturate(1352%) hue-rotate(340deg) brightness(99%) contrast(80%);
+        }
+
+        &.bypassed {
+          filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(186deg) brightness(118%) contrast(119%) drop-shadow(0 0 4px rgba(0, 184, 255, 0.5));
+        }
+
+        &.linked {
           filter: invert(23%) sepia(89%) saturate(1352%) hue-rotate(340deg) brightness(99%) contrast(80%);
         }
       }

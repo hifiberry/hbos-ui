@@ -8,14 +8,30 @@
       <!-- Artist Info Section -->
       <div v-if="artistByName" class="artist-info">
         <div class="artist-image">
-          <img
-            v-if="artistByName.thumb_url?.[0]"
-            :src="artistByName.thumb_url[0]"
-            :alt="artistByName.name"
-            class="artist-img"
-          />
-          <div v-else class="artist-img-placeholder">
-            <span>{{ artistByName.name.charAt(0).toUpperCase() }}</span>
+          <div
+            class="artist-img-container"
+            @mouseenter="showEditIcon = true"
+            @mouseleave="showEditIcon = false"
+          >
+            <img
+              v-if="artistImageUrl"
+              :src="artistImageUrl"
+              :alt="artistByName.name"
+              class="artist-img"
+              @error="onArtistImageError"
+            />
+            <div v-else class="artist-img-placeholder">
+              <AppIcon icon="users-thin" class="artist-placeholder-icon" />
+            </div>
+
+            <!-- Edit Icon Overlay -->
+            <div
+              v-show="showEditIcon"
+              class="artist-img-edit-overlay"
+              @click="openImageSelector"
+            >
+              <AppIcon icon="edit" />
+            </div>
           </div>
         </div>
         <div class="artist-details">
@@ -82,10 +98,12 @@
             <!-- Genres table for artists without MusicBrainz data -->
             <div v-if="uniqueGenres.length" class="mb-info">
               <table class="mb-table">
-                <tr>
-                  <td class="mb-label">Genres:</td>
-                  <td class="mb-value">{{ uniqueGenres.join(', ') }}</td>
-                </tr>
+                <tbody>
+                  <tr>
+                    <td class="mb-label">Genres:</td>
+                    <td class="mb-value">{{ uniqueGenres.join(', ') }}</td>
+                  </tr>
+                </tbody>
               </table>
             </div>
 
@@ -140,6 +158,14 @@
         />
       </div>
     </div>
+
+    <!-- Artist Image Selector Modal -->
+    <AppArtistImageSelector
+      :is-visible="showImageSelector"
+      :artist-name="artistByName?.name || ''"
+      @close="showImageSelector = false"
+      @select="onArtistImageSelected"
+    />
   </div>
 </template>
 
@@ -152,6 +178,11 @@ const router = useRouter()
 
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
+import AppIcon from '@/components/app-icon.vue'
+import AppArtistImageSelector from '@/components/app-artist-image-selector.vue'
+
+import { updateArtistImage } from '@/api/coverart'
+import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 
 import { useRoute } from 'vue-router'
 const route = useRoute()
@@ -169,6 +200,9 @@ const libraryFetch = useLibraryFetch()
 import { useArtistStore } from '@/stores/artist.ts'
 const artistStore = useArtistStore()
 const { getArtistByIdFromStore, getArtists } = artistStore
+
+import { useToastStore } from '@/stores/toast'
+const toastStore = useToastStore()
 const { allArtists, artistByName: fullArtistData } = storeToRefs(artistStore)
 
 import { useMusicBrainz } from '@/composables/useMusicBrainz'
@@ -184,6 +218,31 @@ const {
 // Get basic artist from store
 const artistByName = computed(() => getArtistByIdFromStore(id.value))
 
+// Process artist image URL through rewrite function
+const artistImageUrl = computed(() => {
+  if (artistImageError.value) {
+    return null // Don't show image if there was an error loading it
+  }
+  if (artistByName.value?.thumb_url?.[0]) {
+    return rewriteAudiocontrolApiUrl(artistByName.value.thumb_url[0])
+  }
+  return null
+})
+
+// Track artist image loading errors
+const artistImageError = ref(false)
+
+// Handle artist image loading errors
+const onArtistImageError = () => {
+  console.log('Artist image failed to load, falling back to generic icon')
+  artistImageError.value = true
+}
+
+// Reset error state when artist changes
+watch(() => artistByName.value?.id, () => {
+  artistImageError.value = false
+})
+
 // Mobile toggle for additional info
 const showMobileInfo = ref(false)
 const toggleMobileInfo = () => {
@@ -193,6 +252,10 @@ const toggleMobileInfo = () => {
 // Biography expand/collapse functionality
 const showFullBiography = ref(false)
 const isBiographyLong = ref(false)
+
+// Artist image selector functionality
+const showEditIcon = ref(false)
+const showImageSelector = ref(false)
 
 const checkBiographyLength = () => {
   const biography = fullArtistData.value?.metadata?.biography
@@ -205,6 +268,40 @@ const checkBiographyLength = () => {
 
 const toggleBiography = () => {
   showFullBiography.value = !showFullBiography.value
+}
+
+// Artist image selector functionality
+const openImageSelector = () => {
+  showImageSelector.value = true
+}
+
+const onArtistImageSelected = async (imageUrl: string) => {
+  console.log('Selected artist image:', imageUrl)
+
+  const artistName = artistByName.value?.name
+  if (!artistName) {
+    console.error('No artist name available for image update')
+    toastStore.showErrorToast('Unable to update artist image: Artist name not found')
+    return
+  }
+
+  try {
+    toastStore.showInfoToast('Updating artist image...')
+    const result = await updateArtistImage(artistName, imageUrl)
+    if (result.success) {
+      console.log('Artist image updated successfully:', result.message)
+      toastStore.showSuccessToast(`Artist image updated successfully for "${artistName}"`)
+      // Reset error state since we now have a new image
+      artistImageError.value = false
+      // The cache should be invalidated automatically according to the API docs
+    } else {
+      console.error('Failed to update artist image:', result.message)
+      toastStore.showErrorToast(`Failed to update artist image: ${result.message}`)
+    }
+  } catch (error) {
+    console.error('Error updating artist image:', error)
+    toastStore.showErrorToast('An error occurred while updating the artist image')
+  }
 }
 
 // Computed property for displayed biography text
@@ -320,16 +417,48 @@ watch(
   width: 280px;
   height: 280px;
   border-radius: 50%;
-  background: var(--color-surface-variant);
+  background: var(--cover-placeholder-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid rgba(var(--color-border-rgb), 0.2);
 
-  span {
-    font-size: 120px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+  .artist-placeholder-icon {
+    width: 120px;
+    height: 120px;
+    color: var(--color-icon-primary);
+  }
+}
+
+.artist-img-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.artist-img-edit-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  @include edit-overlay-background;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: white;
   }
 }
 
@@ -566,8 +695,9 @@ watch(
     height: 200px;
   }
 
-  .artist-img-placeholder span {
-    font-size: 80px;
+  .artist-img-placeholder .artist-placeholder-icon {
+    width: 80px;
+    height: 80px;
   }
 
   .artist-name {

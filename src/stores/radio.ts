@@ -24,6 +24,20 @@ export interface RadioFavorite {
   id: string
   title: string
   url: string
+  metadata?: {
+    title?: string
+    logo_url?: string
+    coverart_url?: string // Keep for backward compatibility
+    country?: string
+    tags?: string
+    genre?: string
+    language?: string
+    bitrate?: number
+    codec?: string
+    homepage?: string
+    [key: string]: string | number | boolean | null | undefined // Allow additional custom metadata
+  }
+  // Legacy fields for backward compatibility
   img?: string
   country?: string
   tags?: string
@@ -41,6 +55,56 @@ export const useRadioStore = defineStore('radio', () => {
   const loading = ref(false)
   const loaded = ref(false)
   const radioBrowserBaseUrl = ref('https://de1.api.radio-browser.info')
+
+  // Helper function to parse M3U playlists and extract the actual stream URL
+  const parseM3U = async (m3uUrl: string): Promise<string> => {
+    try {
+      console.log('Parsing M3U playlist:', m3uUrl)
+
+      // Use the new backend M3U parsing API
+      const configStore = useAppConfigStore()
+      const backendUrl = configStore.getApiBaseUrl()
+
+      console.log('Using backend M3U parsing API...')
+      const response = await fetch(`${backendUrl}/m3u/parse`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          url: m3uUrl,
+          timeout: 30
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Backend M3U API failed: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('M3U parsing response:', data)
+
+      if (!data.success) {
+        throw new Error(`M3U parsing failed: ${data.error}`)
+      }
+
+      // Extract the first URL from the parsed playlist
+      if (data.playlist && data.playlist.entries && data.playlist.entries.length > 0) {
+        const firstEntry = data.playlist.entries[0]
+        const streamUrl = firstEntry.url
+        console.log('Extracted stream URL from M3U:', streamUrl)
+        return streamUrl
+      } else {
+        throw new Error('No valid stream URLs found in M3U playlist')
+      }
+
+    } catch (error) {
+      console.error('Failed to parse M3U playlist:', error)
+      // If parsing fails, return the original URL as fallback
+      console.log('Falling back to original M3U URL for direct playback attempt')
+      return m3uUrl
+    }
+  }
 
   // Computed
   const favoritesList = computed(() => Object.values(favorites.value))
@@ -126,6 +190,18 @@ export const useRadioStore = defineStore('radio', () => {
       id: station.id,
       title: station.name,
       url: station.url,
+      metadata: {
+        title: station.name,
+        logo_url: station.image,
+        country: station.country,
+        tags: station.tags,
+        genre: station.tags, // Use tags as genre
+        language: station.language,
+        bitrate: station.bitrate,
+        codec: station.codec,
+        homepage: station.homepage
+      },
+      // Legacy fields for backward compatibility
       img: station.image,
       country: station.country,
       tags: station.tags
@@ -179,7 +255,16 @@ export const useRadioStore = defineStore('radio', () => {
       const stationName = 'name' in station ? station.name : station.title
 
       console.log('Playing radio station:', stationName, 'on player:', radioPlayerName)
-      console.log('Station URL:', station.url)
+      console.log('Original station URL:', station.url)
+
+      // Check if the URL is an M3U playlist and parse it if needed
+      let finalUrl = station.url
+      if (station.url.toLowerCase().endsWith('.m3u')) {
+        console.log('Detected M3U playlist, parsing to extract stream URL...')
+        finalUrl = await parseM3U(station.url)
+      }
+
+      console.log('Final stream URL:', finalUrl)
 
       // Step 1: Pause the current player
       console.log('Step 1: Pausing current player...')
@@ -193,8 +278,29 @@ export const useRadioStore = defineStore('radio', () => {
 
       // Step 3: Add the URL of the radio station to the queue of the radioPlayer
       console.log('Step 3: Adding station URL to radio player queue...')
-      // Use the new addTrackToPlayer function with JSON payload
-      await addTrackToPlayer(radioPlayerName, station.url)
+
+      // Prepare metadata for the radio station
+      const metadata = {
+        title: stationName,
+        artist: 'name' in station ? (station.country || 'Radio Station') : (station.metadata?.country || station.country || 'Radio Station'),
+        album: 'Radio',
+        coverart_url: ('metadata' in station && station.metadata?.coverart_url) ||
+                     ('img' in station && station.img) ||
+                     ('image' in station && station.image) ||
+                     undefined,
+        genre: ('metadata' in station && station.metadata?.tags) ||
+               ('tags' in station && station.tags) ||
+               'Radio',
+        ...('metadata' in station && station.metadata ? {
+          bitrate: station.metadata.bitrate,
+          codec: station.metadata.codec,
+          language: station.metadata.language,
+          homepage: station.metadata.homepage
+        } : {})
+      }
+
+      // Use the final URL (parsed from M3U if necessary) with metadata
+      await addTrackToPlayer(radioPlayerName, finalUrl, metadata)
       console.log('Step 3: Station URL added to radio player queue')
 
       // Step 4: Send a "play" command to the radioPlayer
@@ -230,14 +336,40 @@ export const useRadioStore = defineStore('radio', () => {
       if (response.status === 'success' && response.data) {
         const loadedFavorites = JSON.parse(response.data.value)
 
-        // Migrate old favorites that might not have country and tags
+        // Migrate old favorites to new metadata structure while maintaining backward compatibility
         for (const favorite of Object.values(loadedFavorites)) {
           const fav = favorite as RadioFavorite
+
+          // Ensure legacy fields are defined for backward compatibility
           if (typeof fav.country === 'undefined') {
             fav.country = undefined
           }
           if (typeof fav.tags === 'undefined') {
             fav.tags = undefined
+          }
+
+          // Migrate to new metadata structure if not already present
+          if (!fav.metadata && (fav.img || fav.country || fav.tags)) {
+            fav.metadata = {
+              title: fav.title,
+              coverart_url: fav.img,
+              country: fav.country,
+              tags: fav.tags
+            }
+          }
+
+          // Ensure both metadata and legacy fields are in sync
+          if (fav.metadata) {
+            // Update legacy fields from metadata for backward compatibility
+            if (!fav.img && fav.metadata.coverart_url) {
+              fav.img = fav.metadata.coverart_url
+            }
+            if (!fav.country && fav.metadata.country) {
+              fav.country = fav.metadata.country
+            }
+            if (!fav.tags && fav.metadata.tags) {
+              fav.tags = fav.metadata.tags
+            }
           }
         }
 
@@ -292,6 +424,7 @@ export const useRadioStore = defineStore('radio', () => {
     clearSearchResults,
     initialize,
     saveFavoritesToConfig,
-    loadFavoritesFromConfig
+    loadFavoritesFromConfig,
+    parseM3U
   }
 })

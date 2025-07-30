@@ -77,9 +77,19 @@ const router = createRouter({
               component: () => import('@/views/services/music-files.vue'),
             },
             {
+              path: 'dsp-programs',
+              name: 'dsp-programs',
+              component: () => import('@/views/services/dsp-programs.vue'),
+            },
+            {
               path: 'system-info',
               name: 'system-info',
               component: () => import('@/views/services/system-info.vue'),
+            },
+            {
+              path: 'system-tools',
+              name: 'system-tools',
+              component: () => import('@/views/services/system-tools.vue'),
             },
           ],
         },

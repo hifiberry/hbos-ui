@@ -31,7 +31,7 @@ import { useAppConfigStore } from '@/stores/appconfig'
 
 // Configuration
 export const PLAYER_CONFIG = {
-  pollingInterval: 30000, // Time in milliseconds between updates (30 seconds)
+  pollingInterval: 5000, // Time in milliseconds between updates (5 seconds)
   fastUpdateAfterCommand: 300, // Time to wait for quick update after sending a command
   wsReconnectInterval: 5000, // Time to wait before attempting to reconnect WebSocket
 }
@@ -60,6 +60,7 @@ export const usePlayerStore = defineStore('player', () => {
 
   // Favourites state
   const currentSongIsFavourite = ref<boolean>(false)
+  const currentSongFavouriteProviders = ref<string[]>([])
   const checkingFavourite = ref<boolean>(false)
 
   // Getters
@@ -152,17 +153,28 @@ export const usePlayerStore = defineStore('player', () => {
     const song = currentSong.value
     if (!song || !song.artist || !song.title) {
       currentSongIsFavourite.value = false
+      currentSongFavouriteProviders.value = []
       return
     }
 
     try {
       checkingFavourite.value = true
-      currentSongIsFavourite.value = await favourites.isFavourite({
+      const favouriteDetails = await favourites.getFavouriteDetails({
         artist: song.artist,
         title: song.title
       })
+
+      if (favouriteDetails) {
+        currentSongIsFavourite.value = favouriteDetails.is_favourite
+        currentSongFavouriteProviders.value = favouriteDetails.providers
+      } else {
+        currentSongIsFavourite.value = false
+        currentSongFavouriteProviders.value = []
+      }
     } catch (error) {
       console.error('Error checking favourite status:', error)
+      currentSongIsFavourite.value = false
+      currentSongFavouriteProviders.value = []
     } finally {
       checkingFavourite.value = false
     }
@@ -487,6 +499,7 @@ export const usePlayerStore = defineStore('player', () => {
     loading,
     playerCapabilities,
     currentSongIsFavourite,
+    currentSongFavouriteProviders,
     checkingFavourite,
     volumeInfo,
     volumeState,

@@ -9,13 +9,29 @@
     </h1>
 
     <div class="now-playing__player">
-      <AppCover
-        class="now-playing__cover"
-        :src="rewrite_audiocontrol_api_url(song?.cover_art_url || '')"
-        :alt="song?.artist || song?.title || 'Now Playing'"
-      />
+      <div
+        class="now-playing__cover-container"
+        @mouseenter="showTooltip = true"
+        @mouseleave="showTooltip = false"
+        @mousemove="updateTooltipPosition"
+      >
+        <AppCoverArt
+          class="now-playing__cover"
+          :song="song"
+          size="large"
+          :adaptToContainer="true"
+          @loaded="onCoverArtLoaded"
+          @error="onCoverArtError"
+        />
 
-      <div class="now-playing__info">
+        <!-- Metadata Tooltip -->
+        <AppMetadataTooltip
+          v-if="showTooltip && song"
+          :song="song"
+          class="now-playing__metadata-tooltip"
+          :style="tooltipStyles"
+        />
+      </div>      <div class="now-playing__info">
         <h2 v-if="song?.title">{{ song.title }}</h2>
         <p v-if="song?.artist">{{ song.artist }}</p>
       </div>
@@ -38,16 +54,73 @@
 </template>
 
 <script setup lang="ts">
-import AppCover from '@/components/app-cover.vue'
+import { ref, computed } from 'vue'
+import AppCoverArt from '@/components/app-cover-art.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
 import AppVolumeControl from '@/components/app-volume-control.vue'
-import { rewrite_audiocontrol_api_url } from '@/api/player'
+import AppMetadataTooltip from '@/components/app-metadata-tooltip.vue'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
 
 const { currentSong: song } = storeToRefs(usePlayerStore())
+
+// Cover art event handlers
+const onCoverArtLoaded = (result: { success: boolean; urls: string[]; source: string }) => {
+  console.log('Cover art loaded for now-playing-minimal:', result)
+}
+
+const onCoverArtError = (error: string) => {
+  console.warn('Cover art error in now-playing-minimal:', error)
+}
+
+// Tooltip state
+const showTooltip = ref(false)
+const tooltipX = ref(0)
+const tooltipY = ref(0)
+
+// Update tooltip position based on mouse movement
+const updateTooltipPosition = (event: MouseEvent) => {
+  tooltipX.value = event.clientX
+  tooltipY.value = event.clientY
+}
+
+// Computed styles for tooltip positioning with boundary detection
+const tooltipStyles = computed(() => {
+  const tooltipWidth = 350 // Approximate tooltip width
+  const tooltipHeight = 200 // Approximate tooltip height
+  const offset = 10
+
+  let left = tooltipX.value + offset
+  let top = tooltipY.value - offset
+
+  // Adjust if tooltip would go off the right edge
+  if (left + tooltipWidth > window.innerWidth) {
+    left = tooltipX.value - tooltipWidth - offset
+  }
+
+  // Adjust if tooltip would go off the bottom edge
+  if (top + tooltipHeight > window.innerHeight) {
+    top = tooltipY.value - tooltipHeight - offset
+  }
+
+  // Ensure tooltip doesn't go off the left edge
+  if (left < offset) {
+    left = offset
+  }
+
+  // Ensure tooltip doesn't go off the top edge
+  if (top < offset) {
+    top = offset
+  }
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    position: 'fixed' as const
+  }
+})
 </script>
 
 <style lang="scss">
@@ -134,6 +207,7 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
     padding-top: 32px;
     background-color: var(--background-main-content);
     box-shadow: $box-shadow-main-content;
+    position: relative;
 
     // Minimal view adjustments
     .now-playing--minimal & {
@@ -161,6 +235,32 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
     @include media-down(sm) {
       margin-bottom: 24px;
     }
+  }
+
+  &__cover-container {
+    height: calc(100vh - 500px);
+    min-height: 120px;
+    overflow: hidden;
+    position: relative;
+    cursor: help;
+
+    flex: 1 1 auto;
+    margin-top: auto;
+    margin-bottom: 32px;
+
+    @include media-down(sm) {
+      margin-bottom: 24px;
+    }
+
+    .now-playing__cover {
+      height: 100%;
+      margin: 0;
+    }
+  }
+
+  &__metadata-tooltip {
+    pointer-events: none;
+    z-index: 1000;
   }
 
   &__info {

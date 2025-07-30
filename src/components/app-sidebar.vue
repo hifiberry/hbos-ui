@@ -116,9 +116,19 @@ const routes = computed(() => {
           icon: 'nas',
         },
         {
+          name: 'dsp-programs',
+          title: 'DSP Programs',
+          icon: 'download',
+        },
+        {
           name: 'system-info',
           title: 'System Info',
           icon: 'computer',
+        },
+        {
+          name: 'system-tools',
+          title: 'System Tools',
+          icon: 'tool',
         },
       ],
     },

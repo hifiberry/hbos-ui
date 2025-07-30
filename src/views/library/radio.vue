@@ -22,7 +22,15 @@
             @mouseleave="cancelLongPress" @touchstart="startLongPress(favorite)" @touchend="cancelLongPress"
             @touchcancel="cancelLongPress">
             <div class="station-poster-img">
-              <img v-if="favorite.img" :src="favorite.img" :alt="favorite.title" loading="lazy" @error="onImageError" />
+              <img
+                v-if="(typeof favorite.metadata?.logo_url === 'string' && favorite.metadata.logo_url) ||
+                      favorite.img"
+                :src="(typeof favorite.metadata?.logo_url === 'string' ? favorite.metadata.logo_url : '') ||
+                      favorite.img || ''"
+                :alt="favorite.title"
+                loading="lazy"
+                @error="onImageError"
+              />
               <AppIcon v-else icon="radio" class="station-poster-placeholder" />
             </div>
             <div class="station-poster-attr">
@@ -30,10 +38,10 @@
                 <AppMarquee>{{ favorite.title }}</AppMarquee>
               </div>
               <div class="station-subtitle">
-                <AppMarquee>{{ favorite.country || 'Unknown' }}</AppMarquee>
+                <AppMarquee>{{ favorite.metadata?.country || favorite.country || 'Unknown' }}</AppMarquee>
               </div>
-              <div v-if="favorite.tags" class="station-tags">
-                <span v-for="tag in getStationTags(favorite.tags)" :key="tag" class="tag">
+              <div v-if="favorite.metadata?.tags || favorite.tags" class="station-tags">
+                <span v-for="tag in getStationTags(favorite.metadata?.tags || favorite.tags)" :key="tag" class="tag">
                   {{ tag }}
                 </span>
               </div>
@@ -367,7 +375,7 @@ onMounted(async () => {
         transition: opacity 0.2s ease;
 
         .favorite-btn {
-          background: rgba(0, 0, 0, 0.7);
+          @include edit-overlay-background;
           border: none;
           padding: 6px;
           cursor: pointer;
@@ -379,7 +387,7 @@ onMounted(async () => {
           justify-content: center;
 
           &:hover {
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.3);
             transform: scale(1.1);
           }
 

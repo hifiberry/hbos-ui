@@ -15,6 +15,15 @@
 
       <!-- Spotify Integration -->
       <SpotifyIntegration />
+
+      <!-- MusicBrainz Integration -->
+      <MusicBrainzIntegration />
+
+      <!-- TheAudioDB Integration -->
+      <TheAudioDBIntegration />
+
+      <!-- Fanart.tv Integration -->
+      <FanartTvIntegration />
     </div>
   </div>
 </template>
@@ -23,6 +32,9 @@
 import AppBackRouter from '@/components/app-back-router.vue'
 import LastFMIntegration from '@/components/app-lastfm.vue'
 import SpotifyIntegration from '@/components/app-spotify.vue'
+import MusicBrainzIntegration from '@/components/app-musicbrainz.vue'
+import TheAudioDBIntegration from '@/components/app-theaudiodb.vue'
+import FanartTvIntegration from '@/components/app-fanarttv.vue'
 </script>
 
 <style scoped lang="scss">

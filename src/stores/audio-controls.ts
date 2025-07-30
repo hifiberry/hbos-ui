@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
+import { usePlayerPosition } from '@/composables/usePlayerPosition'
 
 import { formatTime } from '@/helpers/formatTime'
 
@@ -17,9 +18,17 @@ export const useAudioControls = defineStore('audio-controls', () => {
   const { fetchCurrentPlayer, sendCommand } = playerStore
   const { currentData, currentSong } = storeToRefs(playerStore)
 
+  // Use the shared player position composable
+  const { position: currentPosition } = usePlayerPosition()
+
   // State
-  const seekPosition = ref(0)
   const progressIntervalID = ref<number | undefined>(undefined)
+
+  // Computed seek position as percentage
+  const seekPosition = computed(() => {
+    if (!currentSong.value?.duration) return 0
+    return (currentPosition.value / currentSong.value.duration) * 100
+  })
 
   // Getters
   const isPlaying = computed(() => currentData.value?.state === 'playing')
@@ -48,25 +57,15 @@ export const useAudioControls = defineStore('audio-controls', () => {
     formatTime(((currentSong.value?.duration || 0) * (seekPosition.value || 0)) / 100),
   )
 
+  // Start/stop the position update interval based on play state
   watch(
-    () => currentData.value,
-    (newcurrentData) => {
-      console.log('newcurrentData', newcurrentData)
+    () => currentData.value?.state,
+    (newState) => {
+      console.log('Player state changed to:', newState)
 
-      if (currentSong.value?.duration) {
-        const percentage = ((newcurrentData?.position || 0) / currentSong.value.duration) * 100
-
-        seekPosition.value = percentage
-
-        if (isPlaying.value && !progressIntervalID.value) {
-          startAutoProgress()
-        }
-
-        if (!isPlaying.value && progressIntervalID.value) {
-          stopAutoProgress()
-        }
-      } else {
-        seekPosition.value = 0
+      if (newState === 'playing' && !progressIntervalID.value) {
+        startAutoProgress()
+      } else if (newState !== 'playing' && progressIntervalID.value) {
         stopAutoProgress()
       }
     },
@@ -159,38 +158,20 @@ export const useAudioControls = defineStore('audio-controls', () => {
     }
   }
 
-  const lastProgressUpdate = ref<number | null>(null)
-  const progressInterval = 100 // 100 ms
-
   function startAutoProgress() {
     console.log('startAutoProgress')
 
     stopAutoProgress()
 
     if (isPlaying.value && currentSong.value?.duration) {
-      // Reset the timestamp to now
-      lastProgressUpdate.value = Date.now()
-
-      const duration = currentSong.value.duration
-
       progressIntervalID.value = setInterval(() => {
-        // Calculate how much time has passed since the last position update
-        const now = Date.now()
-        const elapsedSeconds = (now - (lastProgressUpdate.value || 0)) / 1000
-        lastProgressUpdate.value = now
-
-        const delta = +((elapsedSeconds / duration) * 100).toFixed(9) // + 0.0808 (%) ... every 100ms
-
-        seekPosition.value = +(seekPosition.value + delta).toFixed(9) // 48.3168 (%) ...
-
+        // Check if we've reached the end (composable handles position updates automatically)
         if (seekPosition.value >= 100) {
           stopAutoProgress()
-
-          // Force an update of player state from server when we reach the end
           console.log('Track reached the end, fetching current player state from server')
           fetchCurrentPlayer()
         }
-      }, progressInterval)
+      }, 500) // 500ms interval to check for track end
     } else {
       stopAutoProgress()
     }

@@ -1,0 +1,18 @@
+# HiFiBerry Web UI and API nginx site
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    # Include HiFiBerry Audio Control API proxy configuration
+    include /etc/nginx/hifiberry-audiocontrol.nginx;
+
+    # Include HiFiBerry Config API proxy configuration
+    include /etc/nginx/hifiberry-config.nginx;
+
+    # Include HiFiBerry DSP Toolkit API proxy configuration
+    include /etc/nginx/hifiberry-sigmatcp.nginx;
+
+    # Include HiFiBerry Web UI configuration
+    include /etc/nginx/hifiberry-webui.nginx;
+}

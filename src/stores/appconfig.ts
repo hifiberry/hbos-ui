@@ -15,6 +15,12 @@ export interface AppConfig {
     apiPrefix: string
     useProxy: boolean
   }
+  dsptoolkit_api: {
+    deviceIP: string
+    devicePort: number
+    apiPrefix: string
+    useProxy: boolean
+  }
 }
 
 export const useAppConfigStore = defineStore('appconfig', () => {
@@ -31,6 +37,12 @@ export const useAppConfigStore = defineStore('appconfig', () => {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
       devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
       apiPrefix: import.meta.env.VITE_APP_CONFIG_API_PREFIX || '/api/config/v1',
+      useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
+    },
+    dsptoolkit_api: {
+      deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
+      devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
+      apiPrefix: import.meta.env.VITE_APP_DSPTOOLKIT_API_PREFIX || '/api/dsptoolkit',
       useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
     }
   })
@@ -87,7 +99,7 @@ export const useAppConfigStore = defineStore('appconfig', () => {
       const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
       apiUrl = `http://${deviceIP}${portSuffix}${apiPrefix}`
     }
-    
+
     return apiUrl
   }
 
@@ -113,8 +125,25 @@ export const useAppConfigStore = defineStore('appconfig', () => {
       const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
       configApiUrl = `http://${deviceIP}${portSuffix}${apiPrefix}`
     }
-    
+
     return configApiUrl
+  }
+
+  const getDSPToolkitApiBaseUrl = (): string => {
+    const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.dsptoolkit_api
+
+    let dspToolkitApiUrl: string
+    if (useProxy) {
+      // Use current host and port for proxy in development
+      const currentUrl = window.location.origin
+      dspToolkitApiUrl = `${currentUrl}${apiPrefix}`
+    } else {
+      // Don't include port 80 in the URL as it's the default HTTP port
+      const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
+      dspToolkitApiUrl = `http://${deviceIP}${portSuffix}${apiPrefix}`
+    }
+
+    return dspToolkitApiUrl
   }
 
   return {
@@ -132,6 +161,7 @@ export const useAppConfigStore = defineStore('appconfig', () => {
     getApiBaseUrl,
     getWsBaseUrl,
     getConfigApiBaseUrl,
+    getDSPToolkitApiBaseUrl,
 
     // Getters
     radioPlayer: () => config.value.radioPlayer,

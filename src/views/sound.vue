@@ -466,14 +466,14 @@ function decrementFrequency() {
 function incrementGain() {
   const filter = currentFilter.value;
   if (filter) {
-    filter.gain = Math.min(25, filter.gain + 1);
+    filter.gain = Math.min(25, filter.gain + 0.5);
   }
 }
 
 function decrementGain() {
   const filter = currentFilter.value;
   if (filter) {
-    filter.gain = Math.max(-25, filter.gain - 1);
+    filter.gain = Math.max(-25, filter.gain - 0.5);
   }
 }
 

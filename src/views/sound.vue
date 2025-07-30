@@ -142,7 +142,7 @@
                   <AppIcon icon="resize-narrower" @click="narrowBand" />
                 </div>
               </div>
-              <div class="control-label">Width</div>
+              <div class="control-label">Q (width)</div>
             </div>
           </div>
         </div>
@@ -169,20 +169,15 @@
       <div v-if="showAddFilterModal" class="modal-backdrop" @click.self="showAddFilterModal = false">
         <div class="modal-content">
           <h2>Add New Filter</h2>
-          <p>Select filter type before adding:</p>
+          <p>Select filter type</p>
 
           <div class="filter-type-selector">
             <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
-              :class="['filter-type-option', { selected: selectedFilterType === type }]"
-              @click="selectedFilterType = type">
+              :class="['filter-type-option']"
+              @click="addFilterOfType(type)">
               <AppIcon :icon="getFilterIconName(type)" class="filter-icon" />
               <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
             </button>
-          </div>
-
-          <div class="modal-actions">
-            <button :disabled="!selectedFilterType" @click="confirmAddFilter">Confirm</button>
-            <button @click="showAddFilterModal = false; selectedFilterType = null">Cancel</button>
           </div>
         </div>
       </div>
@@ -214,6 +209,7 @@ import {
 // Constants
 const SAMPLE_RATE = 48000; // Default sample rate for biquad calculations
 const CONFIG_STEPS_PER_OCTAVE = 10; // Number of frequency steps per octave for logarithmic scaling
+const CONFIG_Q_STEP_FACTOR = 1.07; // Logarithmic step factor for Q value changes
 
 // Available filter types for the UI
 const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf'];
@@ -240,7 +236,6 @@ const formatFilterTypeName = (type: BiquadFilterType): string => {
 type Channel = 'left' | 'right';
 
 const activeChannel = ref<Channel>('left');
-const selectedFilterType = ref<BiquadFilterType | null>(null);
 const filters = ref<Filter[]>([
   { id: 1, icon: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true } // Initial filter with Q=0.71
 ]);
@@ -415,13 +410,11 @@ function setActiveFilter(id: number) {
   activeFilterId.value = id;
 }
 
-const confirmAddFilter = () => {
-  if (!selectedFilterType.value) return;
-
+const addFilterOfType = (type: BiquadFilterType) => {
   const newId = Date.now();
   const newFilter: Filter = {
     id: newId,
-    icon: selectedFilterType.value,
+    icon: type,
     text: 'New',
     frequency: 1000,
     gain: 0,
@@ -431,7 +424,6 @@ const confirmAddFilter = () => {
   filters.value.push(newFilter);
   setActiveFilter(newId); // Make the newly added filter active
 
-  selectedFilterType.value = null;
   showAddFilterModal.value = false;
 };
 
@@ -488,17 +480,16 @@ function decrementGain() {
 function widenBand() {
   const filter = currentFilter.value;
   if (filter && typeof filter.Q === 'number') {
-    // Widening the band means DECREASING the Q value
-    filter.Q = Math.max(0.1, filter.Q - 0.5);
+    // Widening the band means DECREASING the Q value using logarithmic scaling
+    filter.Q = Math.max(0.1, filter.Q / CONFIG_Q_STEP_FACTOR);
   }
 }
 
 function narrowBand() {
   const filter = currentFilter.value;
   if (filter && typeof filter.Q === 'number') {
-    // Narrowing the band means INCREASING the Q value
-    // Change max Q value from 20.0 to 25.0, and step to 0.1
-    filter.Q = Math.min(25.0, filter.Q + 0.1);
+    // Narrowing the band means INCREASING the Q value using logarithmic scaling
+    filter.Q = Math.min(25.0, filter.Q * CONFIG_Q_STEP_FACTOR);
   }
 }
 
@@ -553,13 +544,21 @@ const updateSvgDimensions = () => {
   }
 };
 
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && showAddFilterModal.value) {
+    showAddFilterModal.value = false;
+  }
+};
+
 onMounted(() => {
   updateSvgDimensions();
   window.addEventListener('resize', updateSvgDimensions);
+  window.addEventListener('keydown', handleKeydown);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateSvgDimensions);
+  window.removeEventListener('keydown', handleKeydown);
 });
 
 watch(filters, () => {
@@ -1013,54 +1012,9 @@ watch(filters, () => {
         }
       }
 
-      &:hover:not(.selected) {
-        background-color: rgba(225, 30, 74, 0.1); // Light background on hover for unselected
+      &:hover {
+        background-color: rgba(225, 30, 74, 0.1); // Light background on hover
         border-color: #e11e4a;
-      }
-    }
-  }
-
-  .modal-actions {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      color: white;
-
-      &:first-child {
-        background-color: #e11e4a;
-
-        &:hover {
-          background-color: #c71a3f;
-        }
-      }
-
-      &:last-child {
-        background-color: #555;
-
-        &:hover {
-          background-color: #777;
-        }
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      &.delete-button {
-        background-color: #dc3545;
-
-        &:hover {
-          background-color: #c82333;
-        }
       }
     }
   }

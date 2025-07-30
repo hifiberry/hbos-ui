@@ -1,7 +1,6 @@
 <template>
   <div class="sound">
     <h1>Speaker Equaliser</h1>
-
     <div class="card">
       <div class="graph" ref="graphContainer" @mousemove="handleMouseMove" @mouseup="handleMouseUp"
         @mouseleave="handleMouseUp">
@@ -18,6 +17,9 @@
               stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
             <line :x1="frequencyToX(narrowBandStartFreq)" :x2="frequencyToX(narrowBandStartFreq)" :y1="0"
               :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
+
+            <path v-if="eqEnabled && allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
+              stroke="#e11e4a" fill="none" stroke-width="2.5" />
 
             <template v-if="activeFilterGraphData">
               <path :d="activeFilterGraphData.areaPath" fill="rgba(0, 184, 255, 0.1)" stroke="none" />
@@ -121,16 +123,6 @@
             </div>
             <div class="control-item">
               <div class="control-value">
-                <div>Q {{ activeFilterQDisplay }}</div>
-                <div class="chevron">
-                  <AppIcon icon="resize-wider" @click="decrementQ" />
-                  <AppIcon icon="resize-narrower" @click="incrementQ" />
-                </div>
-              </div>
-              <div class="control-label">Width</div>
-            </div>
-            <div class="control-item">
-              <div class="control-value">
                 <div>{{ currentFilter.gain }} dB</div>
                 <div class="chevron">
                   <AppIcon icon="minus-small" @click="decrementGain" />
@@ -138,6 +130,16 @@
                 </div>
               </div>
               <div class="control-label">Gain</div>
+            </div>
+            <div class="control-item">
+              <div class="control-value">
+                <div>Q</div>
+                <div class="chevron">
+                  <AppIcon icon="resize-wider" @click="widenBand" />
+                  <AppIcon icon="resize-narrower" @click="narrowBand" />
+                </div>
+              </div>
+              <div class="control-label">Width</div>
             </div>
           </div>
         </div>
@@ -166,9 +168,11 @@
         <p>Select filter type before adding:</p>
 
         <div class="filter-type-selector">
-          <button v-for="type in ['filter-peak', 'filter-low-shelf', 'filter-high-shelf']" :key="type"
-            :class="['filter-type-option', { selected: selectedFilterType === type }]" @click="selectedFilterType = type">
-            <AppIcon :icon="type" />
+          <button v-for="type in ['filter-low-shelf', 'filter-peak', 'filter-high-shelf']" :key="type"
+            :class="['filter-type-option', { selected: selectedFilterType === type }]"
+            @click="selectedFilterType = type">
+            <AppIcon :icon="type" class="filter-icon" />
+            <span class="filter-name">{{ type.replace('filter-', '').replace('-', ' ') }}</span>
           </button>
         </div>
 
@@ -198,7 +202,6 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import AppIcon from '@/components/app-icon.vue';
 
-// --- Types ---
 type Channel = 'left' | 'right';
 
 interface Filter {
@@ -207,30 +210,27 @@ interface Filter {
   text: string;
   frequency: number;
   gain: number;
-  Q?: number; // Q is optional for some filter types, but we'll use a default if not present
+  Q?: number;
   enabled: boolean;
 }
 
-// --- State ---
 const activeChannel = ref<Channel>('left');
 const selectedFilterType = ref<string | null>(null);
 const filters = ref<Filter[]>([
-  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true },
-  { id: 2, icon: 'filter-low-shelf', text: '50', frequency: 50, gain: -20, Q: 0.71, enabled: true },
-  { id: 3, icon: 'filter-high-shelf', text: '8000', frequency: 8000, gain: 10, Q: 0.71, enabled: true },
+  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 8.71, enabled: true }
 ]);
 const showAddFilterModal = ref(false);
 const showFilterOptionsModal = ref(false);
-const filterToOperateOn = ref<Filter | null>(null); // Used to pass filter data to the options modal
+const filterToOperateOn = ref<Filter | null>(null);
 
 const activeFilterId = ref<number | null>(filters.value[0]?.id || null);
 const eqEnabled = ref(true);
 
 const isDragging = ref(false);
 const svgElement = ref<SVGSVGElement | null>(null);
-const selectedBand = ref<Filter | null>(null); // The band currently being dragged
+const selectedBand = ref<Filter | null>(null);
 
-const graphContainer = ref<HTMLDivElement | null>(null); // Corrected to HTMLDivElement
+const graphContainer = ref<HTMLDivElement | null>(null);
 
 const svgWidth = ref(900);
 const svgHeight = ref(300);
@@ -242,17 +242,9 @@ const plotHeight = computed(() => svgHeight.value - margin.top - margin.bottom);
 const gainGridLines = [-25, -15, -5, 0, 5, 15, 25];
 const gainGridLabels = [-25, -15, -5, 0, 5, 15, 25];
 
-// Define the frequencies for your two new vertical lines
 const wideBandStartFreq = ref(300);
 const narrowBandStartFreq = ref(1500);
 
-// --- Graph Scaling Functions ---
-
-/**
- * Converts a frequency value to an X-coordinate on the SVG plot (logarithmic scale).
- * @param freq The frequency in Hz.
- * @returns The X-coordinate.
- */
 const frequencyToX = (freq: number) => {
   const logMinFreq = Math.log10(20);
   const logMaxFreq = Math.log10(10000);
@@ -260,11 +252,6 @@ const frequencyToX = (freq: number) => {
   return ((logFreq - logMinFreq) / (logMaxFreq - logMinFreq)) * plotWidth.value;
 };
 
-/**
- * Converts an X-coordinate on the SVG plot back to a frequency value.
- * @param x The X-coordinate.
- * @returns The frequency in Hz.
- */
 const xToFrequency = (x: number) => {
   const logMinFreq = Math.log10(20);
   const logMaxFreq = Math.log10(10000);
@@ -272,110 +259,77 @@ const xToFrequency = (x: number) => {
   return Math.pow(10, logFreq);
 };
 
-/**
- * Converts a gain value (dB) to a Y-coordinate on the SVG plot.
- * @param gain The gain in dB.
- * @returns The Y-coordinate.
- */
 const gainToY = (gain: number) => {
   const minGain = -25;
   const maxGain = 25;
   return plotHeight.value - ((gain - minGain) / (maxGain - minGain)) * plotHeight.value;
 };
 
-/**
- * Converts a Y-coordinate on the SVG plot back to a gain value (dB).
- * @param y The Y-coordinate.
- * @returns The gain in dB.
- */
 const yToGain = (y: number) => {
   const minGain = -25;
   const maxGain = 25;
   return maxGain - (y / plotHeight.value) * (maxGain - minGain);
 };
 
-// --- Filter Gain Calculation ---
-
-/**
- * Calculates the gain at a specific frequency for a given filter band.
- * This is a simplified model for visualization, not a precise audio DSP implementation.
- * @param freq The frequency at which to calculate gain.
- * @param band The filter band object.
- * @returns The calculated gain in dB.
- */
 const calculateFilterGain = (freq: number, band: Filter): number => {
-  if (!band.enabled) return 0; // If filter is disabled, it contributes no gain
+  if (!band.enabled) return 0;
 
-  const A = band.gain; // Max gain for the filter
-  const Fc = band.frequency; // Center/cutoff frequency
-  const Q = band.Q || 0.71; // Q factor, default to 0.71 if not set
-
-  // Ensure Q is a positive number to prevent division by zero or invalid calculations
+  const A_db = band.gain;
+  const Fc = band.frequency;
+  const Q = band.Q || 1.0;
   const safeQ = Math.max(0.01, Q);
 
-  let gainVal = 0;
+  let gainVal_db = 0;
 
-  if (band.icon.includes('filter-peak')) {
-    // Peak/Bell filter (Gaussian-like curve for visualization)
-    const normalizedLogFreq = Math.log10(freq / Fc);
-    const widthFactor = 1 / safeQ;
-    gainVal = A * Math.exp(-Math.pow(normalizedLogFreq / widthFactor, 2));
+  switch (band.icon) {
+    case 'filter-peak':
+      const normalizedLogFreqPeak = Math.log10(freq / Fc);
+      const widthFactorPeak = 1 / safeQ;
+      gainVal_db = A_db * Math.exp(-Math.pow(normalizedLogFreqPeak / widthFactorPeak, 2));
+      break;
 
-  } else if (band.icon === 'filter-low-shelf') {
-    // Low-shelf filter - Simplified approximation for visualization
-    // A smoother transition based on the distance from Fc
-    if (freq <= Fc) {
-      gainVal = A; // Full gain below cutoff
-    } else {
-      // Attenuate gradually: uses a logistic-like function for smooth rolloff
-      const slopeFactor = 0.5; // Adjust this for steeper/gentler slopes
-      gainVal = A * (1 - Math.tanh((freq - Fc) / (Fc * safeQ * slopeFactor)));
-    }
-  } else if (band.icon === 'filter-high-shelf') {
-    // High-shelf filter - Simplified approximation for visualization
-    // A smoother transition based on the distance from Fc
-    if (freq >= Fc) {
-      gainVal = A; // Full gain above cutoff
-    } else {
-      // Attenuate gradually
-      const slopeFactor = 0.5; // Adjust this for steeper/gentler slopes
-      gainVal = A * (1 - Math.tanh((Fc - freq) / (Fc * safeQ * slopeFactor)));
-    }
+    case 'filter-low-shelf':
+      const ratioLow = freq / Fc;
+      gainVal_db = A_db / (1 + Math.pow(ratioLow, 2 * safeQ));
+      break;
+
+    case 'filter-high-shelf':
+      const ratioHigh = Fc / freq;
+      gainVal_db = A_db / (1 + Math.pow(ratioHigh, 2 * safeQ));
+      break;
+
+    default:
+      return 0;
   }
-  return gainVal;
+
+  return gainVal_db;
 };
 
-// --- Computed Properties ---
-
 const currentFilter = computed(() => {
-  // Returns the currently active filter or a default empty filter object
   return filters.value.find((f) => f.id === activeFilterId.value) || {
     id: 0,
     icon: 'filter-peak',
     text: '',
     frequency: 1000,
     gain: 0,
-    Q: 0.71,
+    Q: 8.71,
     enabled: true,
   };
 });
 
-// **UPDATED**: Dynamically generate frequency grid lines
 const freqGridLines = computed(() => {
   const minOverallFreq = 20;
   const maxOverallFreq = 10000;
-  const lines: Set<number> = new Set(); // Use a Set to automatically handle unique values
+  const lines: Set<number> = new Set();
 
-  // Add major decade lines: 100, 1000, 10000
   for (let i = 100; i <= maxOverallFreq; i *= 10) {
     if (i >= minOverallFreq) {
       lines.add(i);
     }
   }
 
-  // Add intermediate lines (e.g., 20, 50, 200, 500, 2000, 5000)
-  const multipliers = [2, 5]; // for 2x and 5x of the decade
-  for (let i = 10; i < maxOverallFreq * 2; i *= 10) { // Iterate a bit beyond max to catch 20, 50
+  const multipliers = [2, 5];
+  for (let i = 10; i < maxOverallFreq * 2; i *= 10) {
     for (const mult of multipliers) {
       const freq = i * mult;
       if (freq >= minOverallFreq && freq <= maxOverallFreq) {
@@ -384,8 +338,6 @@ const freqGridLines = computed(() => {
     }
   }
 
-  // Ensure wideBandStartFreq and narrowBandStartFreq are also part of the lines
-  // Round them to typical Hz values to avoid very specific, odd numbers if they're dragged
   const roundedWideBand = Math.round(wideBandStartFreq.value / 10) * 10;
   const roundedNarrowBand = Math.round(narrowBandStartFreq.value / 10) * 10;
 
@@ -396,36 +348,33 @@ const freqGridLines = computed(() => {
     lines.add(roundedNarrowBand);
   }
 
-  // Convert Set to Array, sort, and filter to ensure no exact duplicates
   return Array.from(lines)
-              .filter(f => f >= minOverallFreq && f <= maxOverallFreq) // Final check within bounds
-              .sort((a, b) => a - b);
+    .filter(f => f >= minOverallFreq && f <= maxOverallFreq)
+    .sort((a, b) => a - b);
 });
 
 
 const activeFilterGraphData = computed(() => {
   if (!eqEnabled.value || !activeFilterId.value) {
-    return null; // Don't draw graph if EQ is off or no filter is active
+    return null;
   }
 
   const band = filters.value.find(f => f.id === activeFilterId.value);
   if (!band || !band.enabled) {
-    return null; // Don't draw graph if the active filter is disabled
+    return null;
   }
 
   const linePoints: string[] = [];
   const areaPoints: string[] = [];
-  const baselineY = gainToY(0); // Y-coordinate for 0 dB gain
+  const baselineY = gainToY(0);
 
-  // Start the area path at the bottom-left of the graph
   areaPoints.push(`${frequencyToX(20)},${baselineY}`);
 
   const minFreq = 20;
   const maxFreq = 10000;
-  const numPoints = 200; // Number of points to sample for the curve
+  const numPoints = 200;
 
   for (let i = 0; i <= numPoints; i++) {
-    // Calculate frequency on a logarithmic scale for even distribution across the graph
     const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
     const freq = Math.pow(10, logFreq);
 
@@ -437,26 +386,53 @@ const activeFilterGraphData = computed(() => {
     areaPoints.push(`${x},${y}`);
   }
 
-  // Complete the area path back to the bottom-right and then bottom-left
   areaPoints.push(`${frequencyToX(10000)},${baselineY}`);
-  areaPoints.push(`${frequencyToX(20)},${baselineY}`); // Close the path
+  areaPoints.push(`${frequencyToX(20)},${baselineY}`);
 
   return {
-    linePath: `M ${linePoints.join(' L ')}`, // SVG path for the line
-    areaPath: `M ${areaPoints.join(' L ')}` // SVG path for the filled area
+    linePath: `M ${linePoints.join(' L ')}`,
+    areaPath: `M ${areaPoints.join(' L ')}`
   };
 });
 
+const allFiltersCombinedGraphData = computed(() => {
+  if (!eqEnabled.value || filters.value.length === 0) {
+    return null;
+  }
+
+  const linePoints: string[] = [];
+  const minFreq = 20;
+  const maxFreq = 10000;
+  const numPoints = 200;
+
+  for (let i = 0; i <= numPoints; i++) {
+    const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
+    const freq = Math.pow(10, logFreq);
+    let totalCombinedGain_db = 0.0;
+
+    filters.value.forEach(band => {
+      if (band.enabled) {
+        totalCombinedGain_db += calculateFilterGain(freq, band);
+      }
+    });
+
+    const x = frequencyToX(freq);
+    const y = gainToY(totalCombinedGain_db);
+    linePoints.push(`${x},${y}`);
+  }
+
+  return {
+    linePath: `M ${linePoints.join(' L ')}`,
+  };
+});
+
+
 const activeFilterQDisplay = computed(() => {
-  // Displays Q value, formatted to 2 decimal places
   return currentFilter.value.Q ? currentFilter.value.Q.toFixed(2) : 'N/A';
 });
 
-// --- Methods ---
-
 function setActiveChannel(channel: Channel) {
   activeChannel.value = channel;
-  // Potentially load filters specific to this channel here
 }
 
 function setActiveFilter(id: number) {
@@ -473,7 +449,7 @@ function handleViewGraph() {
     setActiveFilter(filterToOperateOn.value.id);
   }
   showFilterOptionsModal.value = false;
-  filterToOperateOn.value = null; // Clear the temporary filter
+  filterToOperateOn.value = null;
 }
 
 function handleDeleteFilter() {
@@ -481,33 +457,32 @@ function handleDeleteFilter() {
     const indexToRemove = filters.value.findIndex(f => f.id === filterToOperateOn.value!.id);
     if (indexToRemove !== -1) {
       filters.value.splice(indexToRemove, 1);
-      // If the deleted filter was active, set the first available filter as active, or null if none
       if (activeFilterId.value === filterToOperateOn.value.id) {
         activeFilterId.value = filters.value[0]?.id || null;
       }
     }
   }
   showFilterOptionsModal.value = false;
-  filterToOperateOn.value = null; // Clear the temporary filter
+  filterToOperateOn.value = null;
 }
 
 const confirmAddFilter = () => {
   if (!selectedFilterType.value) return;
 
-  const newId = Date.now(); // Simple unique ID
+  const newId = Date.now();
   const newFilter: Filter = {
     id: newId,
     icon: selectedFilterType.value,
-    text: 'New', // Default text
+    text: 'New',
     frequency: 1000,
     gain: 0,
-    Q: 0.71,
+    Q: selectedFilterType.value === 'filter-peak' ? 8.71 : 1.0,
     enabled: true,
   };
   filters.value.push(newFilter);
-  setActiveFilter(newId); // Make the new filter active
+  setActiveFilter(newId);
 
-  selectedFilterType.value = null; // Reset selected type
+  selectedFilterType.value = null;
   showAddFilterModal.value = false;
 };
 
@@ -517,16 +492,13 @@ const removeActiveFilter = () => {
   const indexToRemove = filters.value.findIndex(f => f.id === activeFilterId.value);
   if (indexToRemove !== -1) {
     filters.value.splice(indexToRemove, 1);
-    activeFilterId.value = filters.value[0]?.id || null; // Set first filter as active or null
+    activeFilterId.value = filters.value[0]?.id || null;
   }
 };
-
-// --- Filter Control Adjustments ---
 
 function incrementFrequency() {
   const filter = currentFilter.value;
   if (filter) {
-    // Round to nearest 10 for frequency adjustments
     filter.frequency = Math.min(10000, Math.round((filter.frequency + 100) / 10) * 10);
   }
 }
@@ -552,30 +524,83 @@ function decrementGain() {
   }
 }
 
-function incrementQ() {
-  const filter = currentFilter.value;
-  if (filter && typeof filter.Q === 'number') {
-    filter.Q = parseFloat((filter.Q + 0.1).toFixed(2));
-    if (filter.Q > 10) filter.Q = 10;
+const freqStep = 50;
+
+function widenBand() {
+  const minOverallFreq = 20;
+  const maxOverallFreq = 10000;
+  const minBandwidth = freqStep * 2;
+
+  let newNarrow = narrowBandStartFreq.value + freqStep;
+  let newWide = wideBandStartFreq.value - freqStep;
+
+  newNarrow = Math.min(maxOverallFreq, newNarrow);
+  newWide = Math.max(minOverallFreq, newWide);
+
+  if (newNarrow - newWide >= minBandwidth) {
+    narrowBandStartFreq.value = newNarrow;
+    wideBandStartFreq.value = newWide;
+  } else {
+    if (narrowBandStartFreq.value < maxOverallFreq) {
+      narrowBandStartFreq.value = Math.min(maxOverallFreq, narrowBandStartFreq.value + freqStep);
+    }
+    if (wideBandStartFreq.value > minOverallFreq) {
+      wideBandStartFreq.value = Math.max(minOverallFreq, wideBandStartFreq.value - freqStep);
+    }
+    if (narrowBandStartFreq.value - wideBandStartFreq.value < minBandwidth) {
+      if (narrowBandStartFreq.value - minBandwidth >= minOverallFreq) {
+        wideBandStartFreq.value = narrowBandStartFreq.value - minBandwidth;
+      } else if (wideBandStartFreq.value + minBandwidth <= maxOverallFreq) {
+        narrowBandStartFreq.value = wideBandStartFreq.value + minBandwidth;
+      }
+    }
+  }
+  if (wideBandStartFreq.value > narrowBandStartFreq.value) {
+    [wideBandStartFreq.value, narrowBandStartFreq.value] = [narrowBandStartFreq.value, wideBandStartFreq.value];
   }
 }
 
-function decrementQ() {
-  const filter = currentFilter.value;
-  if (filter && typeof filter.Q === 'number') {
-    filter.Q = parseFloat((filter.Q - 0.1).toFixed(2));
-    if (filter.Q < 0.1) filter.Q = 0.1;
+function narrowBand() {
+  const minOverallFreq = 20;
+  const maxOverallFreq = 10000;
+  const minBandwidth = freqStep * 2;
+
+  let newNarrow = narrowBandStartFreq.value - freqStep;
+  let newWide = wideBandStartFreq.value + freqStep;
+
+  newNarrow = Math.max(minOverallFreq, newNarrow);
+  newWide = Math.min(maxOverallFreq, newWide);
+
+  if (newNarrow - newWide >= minBandwidth) {
+    narrowBandStartFreq.value = newNarrow;
+    wideBandStartFreq.value = newWide;
+  } else {
+    if (narrowBandStartFreq.value > minOverallFreq + minBandwidth) {
+      narrowBandStartFreq.value = Math.max(minOverallFreq + minBandwidth, narrowBandStartFreq.value - freqStep);
+    }
+    if (wideBandStartFreq.value < maxOverallFreq - minBandwidth) {
+      wideBandStartFreq.value = Math.min(maxOverallFreq - minBandwidth, wideBandStartFreq.value + freqStep);
+    }
+    if (narrowBandStartFreq.value - wideBandStartFreq.value < minBandwidth) {
+      if (narrowBandStartFreq.value - minBandwidth >= minOverallFreq) {
+        wideBandStartFreq.value = narrowBandStartFreq.value - minBandwidth;
+      }
+      if (wideBandStartFreq.value + minBandwidth <= maxOverallFreq) {
+        narrowBandStartFreq.value = wideBandStartFreq.value + minBandwidth;
+      }
+    }
+  }
+  if (wideBandStartFreq.value > narrowBandStartFreq.value) {
+    [wideBandStartFreq.value, narrowBandStartFreq.value] = [narrowBandStartFreq.value, wideBandStartFreq.value];
   }
 }
-
-// --- Dragging Logic for Graph Nodes ---
 
 const startDrag = (e: MouseEvent, band: Filter) => {
   selectedBand.value = band;
   isDragging.value = true;
-  setActiveFilter(band.id); // Make the dragged filter active
+  setActiveFilter(band.id);
   if (svgElement.value) {
-    svgElement.value.style.cursor = 'grabbing'; // Change cursor while dragging
+    svgElement.value.style.cursor = 'grabbing';
   }
 };
 
@@ -583,40 +608,27 @@ const handleMouseMove = (e: MouseEvent) => {
   if (!isDragging.value || !selectedBand.value || !svgElement.value) return;
 
   const rect = svgElement.value.getBoundingClientRect();
-  // Calculate coordinates relative to the SVG plot area
   const xInPlot = e.clientX - rect.left - margin.left;
   const yInPlot = e.clientY - rect.top - margin.top;
 
-  // Clamp coordinates within the plot boundaries
   const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot));
   const clampedY = Math.max(0, Math.min(plotHeight.value, yInPlot));
 
-  // Convert clamped coordinates back to frequency and gain
-  // Round frequency to nearest 10 Hz for cleaner values
   const newFreq = Math.round(xToFrequency(clampedX) / 10) * 10;
-  // Round gain to nearest integer
   const newGain = Math.round(yToGain(clampedY));
 
-  // Update the selected filter's properties
   selectedBand.value.frequency = newFreq;
   selectedBand.value.gain = newGain;
 };
 
 const handleMouseUp = () => {
   isDragging.value = false;
-  selectedBand.value = null; // Clear selected band
+  selectedBand.value = null;
   if (svgElement.value) {
-    svgElement.value.style.cursor = 'grab'; // Reset cursor
+    svgElement.value.style.cursor = 'grab';
   }
 };
 
-// --- Utility Functions ---
-
-/**
- * Formats frequency for SVG labels (e.g., 1000 -> 1k).
- * @param val Frequency value.
- * @returns Formatted string.
- */
 const formatHzForSVG = (val: number) => {
   if (val >= 1000) {
     return `${val / 1000}k`;
@@ -624,18 +636,12 @@ const formatHzForSVG = (val: number) => {
   return `${val}`;
 };
 
-/**
- * Updates SVG dimensions based on parent container size.
- */
 const updateSvgDimensions = () => {
   if (graphContainer.value) {
     svgWidth.value = graphContainer.value.offsetWidth;
-    // Maintain a minimum height and scale height proportionally with width
     svgHeight.value = Math.max(300, graphContainer.value.offsetWidth / 3);
   }
 };
-
-// --- Lifecycle Hooks ---
 
 onMounted(() => {
   updateSvgDimensions();
@@ -646,21 +652,13 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateSvgDimensions);
 });
 
-// --- Watchers ---
-
-// Updates filter text when frequency changes
 watch(filters, () => {
   filters.value.forEach((f) => {
     f.text = `${f.frequency}`;
   });
-}, { deep: true }); // Deep watch is important for reactivity on nested filter properties
+}, { deep: true });
 
-// Watch for changes in wideBandStartFreq and narrowBandStartFreq to ensure grid updates
-watch([wideBandStartFreq, narrowBandStartFreq], () => {
-  // The freqGridLines computed property will automatically re-evaluate
-  // when these reactive references change. No explicit action needed here,
-  // as the computed property already depends on these.
-});
+watch([wideBandStartFreq, narrowBandStartFreq], () => { });
 </script>
 
 <style scoped lang="scss">
@@ -1020,6 +1018,8 @@ watch([wideBandStartFreq, narrowBandStartFreq], () => {
   }
 }
 
+/* Your existing SCSS styles remain unchanged as per the request */
+
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -1054,6 +1054,56 @@ watch([wideBandStartFreq, narrowBandStartFreq], () => {
     font-size: 16px;
     margin-bottom: 20px;
     color: black;
+  }
+
+  .filter-type-selector {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+
+    .filter-type-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px 20px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      background-color: transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: #333; // Text color for default state
+
+      .filter-icon {
+        width: 40px; // Make icon big
+        height: 40px; // Make icon big
+        margin-bottom: 8px; // Space between icon and name
+        fill: #707070; // Default icon color
+        transition: fill 0.3s ease;
+      }
+
+      .filter-name {
+        font-size: 14px; // Adjust font size for the name
+        font-weight: 500;
+        text-transform: capitalize; // Capitalize the first letter of each word
+      }
+
+      &.selected {
+        background-color: #e11e4a; // Fill color on click
+        border-color: #e11e4a; // Border color on click
+        color: white; // Text color when selected
+
+        .filter-icon {
+          fill: white; // Icon color when selected
+        }
+      }
+
+      &:hover:not(.selected) {
+        background-color: rgba(225, 30, 74, 0.1); // Light background on hover for unselected
+        border-color: #e11e4a;
+      }
+    }
   }
 
   .modal-actions {

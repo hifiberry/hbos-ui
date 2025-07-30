@@ -154,6 +154,7 @@
     :isDangerous="deployResult ? deployResult.success === false : false"
     :disabled="isDeploying"
     :icon="deployResult ? (deployResult.success ? 'tabler/check' : 'tabler/x') : 'tabler/download'"
+    :hideCancelButton="!!deployResult"
     @close="closeDeployModal"
     @confirm="deployProfile"
   />
@@ -257,12 +258,12 @@ const deployModalMessage = computed(() => {
 
   return `Are you sure you want to deploy "${selectedProfileForDeploy.value.profileName}" (v${selectedProfileForDeploy.value.profileVersion}) to your DSP?
 
-📋 This will:
+This will:
 • Write the profile to DSP EEPROM memory
 • Update the cached profile on the system
 • Verify the checksum after deployment
 
-⚠️ CRITICAL WARNINGS:
+CRITICAL WARNINGS:
 • Do NOT disconnect power during programming
 • Do NOT shut down the system during programming
 • Programming typically takes 30-60 seconds
@@ -405,11 +406,11 @@ const deployProfile = async () => {
     if (result.status === 'success') {
       deployResult.value = {
         success: true,
-        message: `✅ Profile deployed successfully!
+        message: `Profile deployed successfully!
 
 ${result.message}
 
-Checksum verification: ${result.checksum?.match ? '✓ Passed' : '⚠ Failed'}
+Checksum verification: ${result.checksum?.match ? 'Passed' : 'Failed'}
 
 The DSP profile has been successfully written to EEPROM memory and is now active.`
       }
@@ -425,14 +426,14 @@ The DSP profile has been successfully written to EEPROM memory and is now active
     console.error('Failed to deploy DSP profile:', error)
 
     // Provide detailed error feedback in modal
-    let errorMessage = '❌ Failed to deploy DSP profile'
+    let errorMessage = 'Failed to deploy DSP profile'
 
     if (error instanceof Error) {
       errorMessage += `:\n\n${error.message}`
 
       // Check if it's a network/API error
       if (error.message.includes('fetch')) {
-        errorMessage += '\n\n💡 Check that the DSP service is running and accessible.'
+        errorMessage += '\n\nCheck that the DSP service is running and accessible.'
       }
     } else {
       errorMessage += ':\n\nUnknown error occurred'

@@ -1,7 +1,6 @@
 <template>
   <div class="sound">
     <h1>Speaker Equaliser</h1>
-
     <div class="card">
       <div class="graph" ref="graphContainer" @mousemove="handleMouseMove" @mouseup="handleMouseUp"
         @mouseleave="handleMouseUp">
@@ -134,7 +133,7 @@
             </div>
             <div class="control-item">
               <div class="control-value">
-                <div>Band Freqs</div>
+                <div>Q</div>
                 <div class="chevron">
                   <AppIcon icon="resize-wider" @click="widenBand" />
                   <AppIcon icon="resize-narrower" @click="narrowBand" />
@@ -169,10 +168,11 @@
         <p>Select filter type before adding:</p>
 
         <div class="filter-type-selector">
-          <button v-for="type in ['filter-peak', 'filter-low-shelf', 'filter-high-shelf']" :key="type"
+          <button v-for="type in ['filter-low-shelf', 'filter-peak', 'filter-high-shelf']" :key="type"
             :class="['filter-type-option', { selected: selectedFilterType === type }]"
             @click="selectedFilterType = type">
-            <AppIcon :icon="type" />
+            <AppIcon :icon="type" class="filter-icon" />
+            <span class="filter-name">{{ type.replace('filter-', '').replace('-', ' ') }}</span>
           </button>
         </div>
 
@@ -217,9 +217,7 @@ interface Filter {
 const activeChannel = ref<Channel>('left');
 const selectedFilterType = ref<string | null>(null);
 const filters = ref<Filter[]>([
-  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 8.71, enabled: true },
-  { id: 2, icon: 'filter-low-shelf', text: '50', frequency: 50, gain: -20, Q: 1.0, enabled: true },
-  { id: 3, icon: 'filter-high-shelf', text: '8000', frequency: 8000, gain: 10, Q: 1.0, enabled: true },
+  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 8.71, enabled: true }
 ]);
 const showAddFilterModal = ref(false);
 const showFilterOptionsModal = ref(false);
@@ -277,39 +275,34 @@ const calculateFilterGain = (freq: number, band: Filter): number => {
   if (!band.enabled) return 0;
 
   const A_db = band.gain;
-  const A_linear = Math.pow(10, A_db / 20);
   const Fc = band.frequency;
   const Q = band.Q || 1.0;
   const safeQ = Math.max(0.01, Q);
 
-  let gainVal_linear = 1;
+  let gainVal_db = 0;
 
   switch (band.icon) {
     case 'filter-peak':
       const normalizedLogFreqPeak = Math.log10(freq / Fc);
       const widthFactorPeak = 1 / safeQ;
-      gainVal_linear = Math.pow(10, (A_db * Math.exp(-Math.pow(normalizedLogFreqPeak / widthFactorPeak, 2))) / 20);
+      gainVal_db = A_db * Math.exp(-Math.pow(normalizedLogFreqPeak / widthFactorPeak, 2));
       break;
 
     case 'filter-low-shelf':
-      // This implements the High-Cut (Low-Pass) Shelving filter as shown in your "low shelf.webp" image.
-      // Gain is 0dB at low frequencies, transitions to A_db at high frequencies.
-      const slopeFactorLowShelf = Math.pow(freq / Fc, 2 * safeQ);
-      gainVal_linear = (1 + A_linear * slopeFactorLowShelf) / (1 + slopeFactorLowShelf);
+      const ratioLow = freq / Fc;
+      gainVal_db = A_db / (1 + Math.pow(ratioLow, 2 * safeQ));
       break;
 
     case 'filter-high-shelf':
-      // This implements the High-Pass Shelving filter as shown in your "mnm_Graph_For_High-Pass_Shelving_Filter.webp" image.
-      // Gain is A_db at high frequencies, transitions to 0dB at low frequencies.
-      const slopeFactorHighShelf = Math.pow(Fc / freq, 2 * safeQ);
-      gainVal_linear = (1 + A_linear * slopeFactorHighShelf) / (1 + slopeFactorHighShelf);
+      const ratioHigh = Fc / freq;
+      gainVal_db = A_db / (1 + Math.pow(ratioHigh, 2 * safeQ));
       break;
 
     default:
       return 0;
   }
 
-  return 20 * Math.log10(gainVal_linear);
+  return gainVal_db;
 };
 
 const currentFilter = computed(() => {
@@ -410,23 +403,21 @@ const allFiltersCombinedGraphData = computed(() => {
   const linePoints: string[] = [];
   const minFreq = 20;
   const maxFreq = 10000;
-  const numPoints = 200; // Number of points to sample for the graph
+  const numPoints = 200;
 
   for (let i = 0; i <= numPoints; i++) {
     const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
     const freq = Math.pow(10, logFreq);
-    let totalGainLinear = 1.0;
+    let totalCombinedGain_db = 0.0;
 
     filters.value.forEach(band => {
       if (band.enabled) {
-        const bandGain_db = calculateFilterGain(freq, band);
-        totalGainLinear *= Math.pow(10, bandGain_db / 20);
+        totalCombinedGain_db += calculateFilterGain(freq, band);
       }
     });
 
-    const combinedGain_db = 20 * Math.log10(totalGainLinear);
     const x = frequencyToX(freq);
-    const y = gainToY(combinedGain_db);
+    const y = gainToY(totalCombinedGain_db);
     linePoints.push(`${x},${y}`);
   }
 
@@ -485,7 +476,7 @@ const confirmAddFilter = () => {
     text: 'New',
     frequency: 1000,
     gain: 0,
-    Q: selectedFilterType.value === 'filter-peak' ? 8.71 : 1.0, // Default Q based on type
+    Q: selectedFilterType.value === 'filter-peak' ? 8.71 : 1.0,
     enabled: true,
   };
   filters.value.push(newFilter);
@@ -1027,6 +1018,8 @@ watch([wideBandStartFreq, narrowBandStartFreq], () => { });
   }
 }
 
+/* Your existing SCSS styles remain unchanged as per the request */
+
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -1061,6 +1054,56 @@ watch([wideBandStartFreq, narrowBandStartFreq], () => { });
     font-size: 16px;
     margin-bottom: 20px;
     color: black;
+  }
+
+  .filter-type-selector {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+
+    .filter-type-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px 20px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      background-color: transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: #333; // Text color for default state
+
+      .filter-icon {
+        width: 40px; // Make icon big
+        height: 40px; // Make icon big
+        margin-bottom: 8px; // Space between icon and name
+        fill: #707070; // Default icon color
+        transition: fill 0.3s ease;
+      }
+
+      .filter-name {
+        font-size: 14px; // Adjust font size for the name
+        font-weight: 500;
+        text-transform: capitalize; // Capitalize the first letter of each word
+      }
+
+      &.selected {
+        background-color: #e11e4a; // Fill color on click
+        border-color: #e11e4a; // Border color on click
+        color: white; // Text color when selected
+
+        .filter-icon {
+          fill: white; // Icon color when selected
+        }
+      }
+
+      &:hover:not(.selected) {
+        background-color: rgba(225, 30, 74, 0.1); // Light background on hover for unselected
+        border-color: #e11e4a;
+      }
+    }
   }
 
   .modal-actions {

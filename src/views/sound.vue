@@ -80,7 +80,7 @@
           <div class="filter-buttons">
             <button v-for="filter in filters" :key="filter.id"
               :class="['filter', { active: activeFilterId === filter.id }]" @click="openFilterOptionsModal(filter)">
-              <AppIcon :icon="filter.icon" :class="filter.icon === 'filter-peak' ? 'icon-stroke' : ''" />
+              <AppIcon :icon="getFilterIconName(filter.icon)" :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
               <div v-if="filter.text" class="filter-text">{{ filter.text }}</div>
             </button>
             <button class="filter add-filter-button" @click="showAddFilterModal = true">
@@ -170,11 +170,11 @@
         <p>Select filter type before adding:</p>
 
         <div class="filter-type-selector">
-          <button v-for="type in ['filter-low-shelf', 'filter-peak', 'filter-high-shelf']" :key="type"
+          <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
             :class="['filter-type-option', { selected: selectedFilterType === type }]"
             @click="selectedFilterType = type">
-            <AppIcon :icon="type" class="filter-icon" />
-            <span class="filter-name">{{ type.replace('filter-', '').replace('-', ' ') }}</span>
+            <AppIcon :icon="getFilterIconName(type)" class="filter-icon" />
+            <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
           </button>
         </div>
 
@@ -209,19 +209,49 @@ import {
 } from '@/utils/filtercalc';
 
 import {
+  type BiquadFilterType
+} from '@/utils/biquad';
+
+import {
   frequencyToX,
   xToFrequency,
   gainToY,
   yToGain,
-  generateFrequencyGridLines
+  generateFrequencyGridLines,
+  DEFAULT_FREQ_RANGE
 } from '@/utils/filtergraph';
+
+// Constants
+const SAMPLE_RATE = 48000; // Default sample rate for biquad calculations
+
+// Available filter types for the UI
+const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf'];
+
+// Helper functions for filter type display
+const getFilterIconName = (type: BiquadFilterType): string => {
+  switch (type) {
+    case 'lowshelf': return 'filter-low-shelf';
+    case 'peaking': return 'filter-peak';
+    case 'highshelf': return 'filter-high-shelf';
+    default: return 'filter-peak';
+  }
+};
+
+const formatFilterTypeName = (type: BiquadFilterType): string => {
+  switch (type) {
+    case 'lowshelf': return 'low shelf';
+    case 'peaking': return 'peak';
+    case 'highshelf': return 'high shelf';
+    default: return type;
+  }
+};
 
 type Channel = 'left' | 'right';
 
 const activeChannel = ref<Channel>('left');
-const selectedFilterType = ref<string | null>(null);
+const selectedFilterType = ref<BiquadFilterType | null>(null);
 const filters = ref<Filter[]>([
-  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 8.71, enabled: true } // Initial filter with a Q value
+  { id: 1, icon: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 8.71, enabled: true } // Initial filter with a Q value
 ]);
 const showAddFilterModal = ref(false);
 const showFilterOptionsModal = ref(false);
@@ -282,7 +312,7 @@ const activeFilterBandwidthEnd = computed(() => {
     }
 
     // Clamp values to graph limits
-    return Math.min(10000, filter.frequency + (bandwidthHz / 2));
+    return Math.min(DEFAULT_FREQ_RANGE.max, filter.frequency + (bandwidthHz / 2));
   }
   return null;
 });
@@ -325,10 +355,10 @@ const activeFilterGraphData = computed(() => {
   const areaPoints: string[] = [];
   const baselineY = gainToYLocal(0);
 
-  areaPoints.push(`${frequencyToXLocal(20)},${baselineY}`);
+  areaPoints.push(`${frequencyToXLocal(DEFAULT_FREQ_RANGE.min)},${baselineY}`);
 
-  const minFreq = 20;
-  const maxFreq = 10000;
+  const minFreq = DEFAULT_FREQ_RANGE.min;
+  const maxFreq = DEFAULT_FREQ_RANGE.max;
   const numPoints = 200;
 
   for (let i = 0; i <= numPoints; i++) {
@@ -336,15 +366,15 @@ const activeFilterGraphData = computed(() => {
     const freq = Math.pow(10, logFreq);
 
     const x = frequencyToXLocal(freq);
-    const gainVal = calculateFilterGain(freq, band);
+    const gainVal = calculateFilterGain(freq, band, SAMPLE_RATE);
     const y = gainToYLocal(gainVal);
 
     linePoints.push(`${x},${y}`);
     areaPoints.push(`${x},${y}`);
   }
 
-  areaPoints.push(`${frequencyToXLocal(10000)},${baselineY}`);
-  areaPoints.push(`${frequencyToXLocal(20)},${baselineY}`);
+  areaPoints.push(`${frequencyToXLocal(DEFAULT_FREQ_RANGE.max)},${baselineY}`);
+  areaPoints.push(`${frequencyToXLocal(DEFAULT_FREQ_RANGE.min)},${baselineY}`);
 
   return {
     linePath: `M ${linePoints.join(' L ')}`,
@@ -358,8 +388,8 @@ const allFiltersCombinedGraphData = computed(() => {
   }
 
   const linePoints: string[] = [];
-  const minFreq = 20;
-  const maxFreq = 10000;
+  const minFreq = DEFAULT_FREQ_RANGE.min;
+  const maxFreq = DEFAULT_FREQ_RANGE.max;
   const numPoints = 200;
 
   for (let i = 0; i <= numPoints; i++) {
@@ -369,7 +399,7 @@ const allFiltersCombinedGraphData = computed(() => {
 
     filters.value.forEach(band => {
       if (band.enabled) {
-        totalCombinedGain_db += calculateFilterGain(freq, band);
+        totalCombinedGain_db += calculateFilterGain(freq, band, SAMPLE_RATE);
       }
     });
 
@@ -456,14 +486,14 @@ const removeActiveFilter = () => {
 function incrementFrequency() {
   const filter = currentFilter.value;
   if (filter) {
-    filter.frequency = Math.min(10000, Math.round((filter.frequency + 100) / 10) * 10);
+    filter.frequency = Math.min(DEFAULT_FREQ_RANGE.max, Math.round((filter.frequency + 100) / 10) * 10);
   }
 }
 
 function decrementFrequency() {
   const filter = currentFilter.value;
   if (filter) {
-    filter.frequency = Math.max(20, Math.round((filter.frequency - 100) / 10) * 10);
+    filter.frequency = Math.max(DEFAULT_FREQ_RANGE.min, Math.round((filter.frequency - 100) / 10) * 10);
   }
 }
 

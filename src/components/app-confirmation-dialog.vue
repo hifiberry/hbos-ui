@@ -40,7 +40,7 @@
         </button>
         <button
           @click="handleConfirm"
-          :disabled="requiresTextConfirmation && userInput !== confirmationText"
+          :disabled="(requiresTextConfirmation && userInput !== confirmationText) || disabled"
           class="confirm-button"
           :class="{ danger: isDangerous }"
         >
@@ -65,6 +65,7 @@ interface Props {
   icon?: string
   requiresTextConfirmation?: boolean
   confirmationText?: string
+  disabled?: boolean
 }
 
 interface Emits {
@@ -77,7 +78,8 @@ const props = withDefaults(defineProps<Props>(), {
   cancelButtonText: 'Cancel',
   isDangerous: false,
   requiresTextConfirmation: false,
-  confirmationText: 'CONFIRM'
+  confirmationText: 'CONFIRM',
+  disabled: false
 })
 
 const emit = defineEmits<Emits>()
@@ -241,43 +243,19 @@ watch(() => props.isOpen, (newValue) => {
   justify-content: flex-end;
 
   button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: background-color 0.2s ease;
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    @include button-base;
+    @include button-md;
   }
 
   .cancel-button {
-    background: var(--color-border);
-    color: var(--color-body);
-
-    &:hover:not(:disabled) {
-      background: var(--color-border-hover, #e5e7eb);
-    }
+    @include button-secondary;
   }
 
   .confirm-button {
-    background: var(--color-primary);
-    color: white;
-
-    &:hover:not(:disabled) {
-      background: var(--color-primary-dark);
-    }
+    @include button-primary;
 
     &.danger {
-      background: var(--color-error, #ef4444);
-
-      &:hover:not(:disabled) {
-        background: var(--color-error-dark, #dc2626);
-      }
+      @include button-danger;
     }
   }
 }

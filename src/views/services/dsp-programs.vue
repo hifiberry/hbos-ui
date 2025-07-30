@@ -1,329 +1,683 @@
 <template>
   <div class="dsp-programs">
-    <h1>DSP Programs</h1>
+    <div class="breadcrumbs">
+      <AppBackRouter :to="{ name: 'services' }">DSP Programs</AppBackRouter>
+    </div>
 
     <div class="dsp-programs-content">
-      <div class="info-section">
-        <div class="info-card">
-          <div class="card-header">
-            <AppIcon icon="download" class="card-icon" />
-            <h2>Available DSP Programs</h2>
-          </div>
-          <p class="card-description">
-            Download and manage digital signal processing programs for your HiFiBerry system.
-          </p>
-        </div>
+      <div class="dsp-programs-header">
+        <p>Here you can download the software to your digital sound processor. When it is installed, you can change the sound settings in the "Sound" menu.</p>
       </div>
 
-      <div class="programs-section">
-        <div class="section-header">
-          <h2>Program Repository</h2>
-          <button class="refresh-button" @click="refreshPrograms" :disabled="loading">
-            <AppIcon icon="refresh" :class="{ spinning: loading }" />
-            <span>Refresh</span>
-          </button>
+      <!-- DSP Programs Card - Only show if DSP is detected -->
+          <h2>Installed DSP profile</h2>
+      <div v-if="detectedDSP?.status === 'detected'" class="info-card">
+        <div class="card-header">
+          <AppIcon icon="info" class="card-icon" />
+        </div>
+        <table class="info-table">
+          <tbody>
+            <template v-if="cacheStatus?.profile?.cached && cacheStatus.profile.name">
+              <tr>
+                <td class="label">Profile Name</td>
+                <td class="value">{{ cacheStatus.profile.name }}</td>
+              </tr>
+              <tr v-if="cacheStatus.metadata?.system?.profileVersion">
+                <td class="label">Version</td>
+                <td class="value">{{ cacheStatus.metadata.system.profileVersion }}</td>
+              </tr>
+              <tr v-if="cacheStatus.metadata?.system?.sampleRate">
+                <td class="label">Sample Rate</td>
+                <td class="value">{{ cacheStatus.metadata.system.sampleRate.toLocaleString() }} Hz</td>
+              </tr>
+              <tr v-if="programChecksum?.checksum">
+                <td class="label">Program Checksum</td>
+                <td class="value">{{ programChecksum.checksum }}</td>
+              </tr>
+            </template>
+            <template v-else-if="programChecksum?.checksum">
+              <tr>
+                <td class="label">Program Checksum</td>
+                <td class="value">{{ programChecksum.checksum }}</td>
+              </tr>
+            </template>
+            <template v-else>
+              <tr>
+                <td class="label">Status</td>
+                <td class="value">No DSP profile information available</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Available DSP Profiles Section -->
+      <div class="dsp-profiles mt-5">
+        <div class="profiles-header">
+          <h2>Available DSP Profiles for {{ soundcardDisplayName }}</h2>
         </div>
 
-        <div v-if="loading" class="loading-section">
-          <AppIcon icon="loading" class="loading-icon spinning" />
-          <p>Loading DSP programs...</p>
+        <div v-if="dspLoading || soundcardLoading || metadataLoading || cacheLoading || profilesLoading || programChecksumLoading" class="d-flex align-items-center justify-content-center py-5">
+          <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+          <span>Detecting sound card and DSP hardware...</span>
         </div>
 
-        <div v-else-if="error" class="error-section">
-          <div class="error-content">
-            <AppIcon icon="bell" class="error-icon" />
-            <p class="error-message">{{ error }}</p>
-            <button @click="refreshPrograms" class="retry-button">
-              Try Again
-            </button>
+        <div v-else-if="dspError" class="card">
+          <div class="card-body">
+            <div class="alert alert-danger mb-0">
+              <div class="d-flex align-items-center">
+                <AppIcon name="alert-triangle" class="text-danger me-2" size="1.5rem" />
+                <div>
+                  <h4 class="alert-title mb-1">Detection Failed</h4>
+                  <div class="text-muted">{{ dspError }}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div v-else class="programs-grid">
-          <div class="program-card coming-soon">
-            <div class="program-header">
-              <AppIcon icon="dsp" class="program-icon" />
-              <h3>DSP Program Repository</h3>
+        <div v-else-if="detectedDSP?.status !== 'detected'" class="card">
+          <div class="card-body">
+            <div class="alert alert-info mb-0">
+              <div class="d-flex align-items-center">
+                <AppIcon name="info-circle" class="text-info me-3" size="2rem" />
+                <div>
+                  <h4 class="alert-title mb-1">No DSP Hardware Available</h4>
+                  <div class="text-muted">
+                    Current sound card: <strong>{{ soundcard || 'Unknown' }}</strong><br>
+                    DSP programming is only available with DSP-enabled sound cards such as:
+                    <ul class="mt-2 mb-0">
+                      <li><strong>Beocreate</strong> - HiFiBerry's premium DSP sound card</li>
+                      <li><strong>DAC+DSP</strong> - High-quality DAC with integrated DSP</li>
+                      <li><strong>DSP-enabled sound card + DSP add-on</strong> - Compatible sound card with DSP expansion</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p class="program-description">
-              DSP program download and management features are coming soon.
-            </p>
-            <div class="program-status">
-              <span class="status-badge coming-soon">Coming Soon</span>
+          </div>
+        </div>
+
+        <div v-else-if="profilesList.length" class="profiles-list">
+          <div
+            v-for="profile in profilesList"
+            :key="profile.filename"
+            class="card profile-card"
+            @click="openDeployModal(profile)"
+          >
+            <div class="profile-item">
+              <div class="profile-main">
+                <div class="profile-info">
+                  <AppIcon icon="tabler/speaker" class="profile-icon" />
+                  <div class="profile-details">
+                    <h3>{{ profile.profileName }}</h3>
+                    <div class="profile-version">
+                      <span class="version-badge">v{{ profile.profileVersion }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="profile-actions">
+                  <AppIcon icon="tabler/download" class="deploy-icon" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="card">
+          <div class="card-body">
+            <div class="empty">
+              <div class="empty-icon">
+                <AppIcon icon="tabler/folder" size="3rem" />
+              </div>
+              <p v-if="showOnlyCompatibleProfiles && detectedModelName" class="empty-title">No compatible profiles found</p>
+              <p v-else class="empty-title">No profiles available</p>
+              <p v-if="showOnlyCompatibleProfiles && detectedModelName" class="empty-subtitle text-muted">
+                No DSP profiles are available for {{ detectedModelName }}. Try disabling the hardware filter to see all profiles.
+              </p>
+              <p v-else class="empty-subtitle text-muted">
+                No DSP profiles are currently available. Check your profile directory or upload new profiles.
+              </p>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Deploy Profile Confirmation Dialog -->
+  <AppConfirmationDialog
+    :isOpen="showDeployModal"
+    :title="deployModalTitle"
+    :message="deployModalMessage"
+    :confirmButtonText="deployResult ? 'OK' : (isDeploying ? 'Deploying...' : 'Deploy Profile')"
+    :isDangerous="deployResult ? deployResult.success === false : false"
+    :disabled="isDeploying"
+    :icon="deployResult ? (deployResult.success ? 'tabler/check' : 'tabler/x') : 'tabler/download'"
+    @close="closeDeployModal"
+    @confirm="deployProfile"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
+import AppBackRouter from '@/components/app-back-router.vue'
+import AppConfirmationDialog from '@/components/app-confirmation-dialog.vue'
+import { getDetectedDSP, type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
+import { detectSoundCard, type SoundCardDetectionResponse } from '@/api/system'
 
 // State
-const loading = ref(false)
-const error = ref('')
+const dspLoading = ref(false)
+const dspError = ref<string>('')
+const detectedDSP = ref<DetectedDSP | null>(null)
+const soundcardDetection = ref<SoundCardDetectionResponse | null>(null)
+const soundcardLoading = ref(false)
+const metadata = ref<DSPMetadata | null>(null)
+const metadataLoading = ref(false)
+const cacheStatus = ref<CacheStatus | null>(null)
+const cacheLoading = ref(false)
+const profilesMetadata = ref<DSPProfilesMetadataResponse | null>(null)
+const profilesLoading = ref(false)
+const programChecksum = ref<DSPProgramChecksumResponse | null>(null)
+const programChecksumLoading = ref(false)
+const showOnlyCompatibleProfiles = ref(true)
+
+// Deploy modal state
+const showDeployModal = ref(false)
+const selectedProfileForDeploy = ref<(DSPProfile & { filename: string }) | null>(null)
+const isDeploying = ref(false)
+const deployResult = ref<{ success: boolean; message: string } | null>(null)
+
+// Computed properties
+const soundcard = computed(() => {
+  return soundcardDetection.value?.data?.card_name || null
+})
+
+const soundcardDisplayName = computed(() => {
+  const cardName = soundcard.value
+  if (!cardName) return 'Unknown'
+
+  const card = cardName.toLowerCase()
+  if (card.includes('beocreate')) return 'Beocreate'
+  if (card.includes('dac+dsp') || card.includes('dacdsp')) return 'DAC+DSP'
+  if (card.includes('dac2') && card.includes('pro')) return 'DAC2 Pro + DSP add-on'
+  if (card.includes('dac2')) return 'DAC2 + DSP add-on'
+  if (card.includes('dsp')) return 'DSP-enabled sound card'
+
+  return cardName
+})
+
+const detectedModelName = computed(() => {
+  const cardName = soundcard.value
+  if (!cardName) return null
+
+  const card = cardName.toLowerCase()
+  if (card.includes('beocreate')) return 'Beocreate 4-Channel Amplifier'
+  if (card.includes('dac+dsp') || card.includes('dacdsp')) return 'DAC+ DSP'
+  if (card.includes('dac2')) return 'DSP add-on'
+
+  return null
+})
+
+const profilesList = computed(() => {
+  if (!profilesMetadata.value?.profiles) return []
+
+  let profiles = Object.entries(profilesMetadata.value.profiles).map(([filename, profile]) => ({
+    filename,
+    ...profile
+  }))
+
+  // Filter by hardware compatibility if enabled
+  if (showOnlyCompatibleProfiles.value && detectedModelName.value) {
+    profiles = profiles.filter(profile =>
+      profile.modelName === detectedModelName.value
+    )
+  }
+
+  return profiles
+})
+
+// Deploy modal computed properties
+const deployModalTitle = computed(() => {
+  if (deployResult.value) {
+    return deployResult.value.success ? 'Deployment Successful' : 'Deployment Failed'
+  }
+  return selectedProfileForDeploy.value
+    ? `Deploy ${selectedProfileForDeploy.value.profileName}?`
+    : 'Deploy DSP Profile'
+})
+
+const deployModalMessage = computed(() => {
+  if (deployResult.value) {
+    return deployResult.value.message
+  }
+
+  if (!selectedProfileForDeploy.value) return ''
+
+  return `Are you sure you want to deploy "${selectedProfileForDeploy.value.profileName}" (v${selectedProfileForDeploy.value.profileVersion}) to your DSP?
+
+📋 This will:
+• Write the profile to DSP EEPROM memory
+• Update the cached profile on the system
+• Verify the checksum after deployment
+
+⚠️ CRITICAL WARNINGS:
+• Do NOT disconnect power during programming
+• Do NOT shut down the system during programming
+• Programming typically takes 30-60 seconds
+• The system may be unresponsive during deployment
+
+This will overwrite the current DSP configuration.`
+})
 
 // Methods
-const refreshPrograms = async () => {
-  loading.value = true
-  error.value = ''
-  
+const loadSoundcard = async () => {
+  soundcardLoading.value = true
+
   try {
-    // Simulate API call - replace with actual implementation later
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // For now, just reset the loading state
-    loading.value = false
-  } catch (err) {
-    console.error('Error refreshing DSP programs:', err)
-    error.value = err instanceof Error ? err.message : 'Failed to load DSP programs'
-    loading.value = false
+    soundcardDetection.value = await detectSoundCard()
+  } catch (error) {
+    console.error('Failed to detect soundcard:', error)
+    soundcardDetection.value = null
+  } finally {
+    soundcardLoading.value = false
   }
 }
+
+const loadCacheStatus = async () => {
+  cacheLoading.value = true
+
+  try {
+    cacheStatus.value = await getCacheStatus()
+  } catch (error) {
+    console.error('Failed to get cache status:', error)
+    cacheStatus.value = null
+  } finally {
+    cacheLoading.value = false
+  }
+}
+
+const loadProfilesMetadata = async () => {
+  profilesLoading.value = true
+
+  try {
+    profilesMetadata.value = await getDSPProfilesMetadata()
+  } catch (error) {
+    console.error('Failed to get profiles metadata:', error)
+    profilesMetadata.value = null
+  } finally {
+    profilesLoading.value = false
+  }
+}
+
+const loadMetadata = async () => {
+  metadataLoading.value = true
+
+  try {
+    metadata.value = await getMetadata()
+  } catch (error) {
+    console.error('Failed to get DSP metadata:', error)
+    metadata.value = null
+  } finally {
+    metadataLoading.value = false
+  }
+}
+
+const loadProgramChecksum = async () => {
+  programChecksumLoading.value = true
+
+  try {
+    programChecksum.value = await getDSPProgramChecksum()
+  } catch (error) {
+    console.error('Failed to get DSP program checksum:', error)
+    programChecksum.value = null
+  } finally {
+    programChecksumLoading.value = false
+  }
+}
+
+const loadDSPDetection = async () => {
+  dspLoading.value = true
+  dspError.value = ''
+
+  try {
+    detectedDSP.value = await getDetectedDSP()
+  } catch (error) {
+    console.error('Failed to detect DSP hardware:', error)
+    dspError.value = error instanceof Error ? error.message : 'Unable to communicate with DSP service'
+  } finally {
+    dspLoading.value = false
+  }
+}
+
+const loadAll = async () => {
+  await Promise.all([
+    loadSoundcard(),
+    loadDSPDetection(),
+    loadMetadata(),
+    loadCacheStatus(),
+    loadProfilesMetadata(),
+    loadProgramChecksum()
+  ])
+}
+
+// Deploy modal methods
+const openDeployModal = (profile: DSPProfile & { filename: string }) => {
+  selectedProfileForDeploy.value = profile
+  showDeployModal.value = true
+}
+
+const closeDeployModal = () => {
+  if (!isDeploying.value) {
+    showDeployModal.value = false
+    selectedProfileForDeploy.value = null
+    deployResult.value = null
+  }
+}
+
+const deployProfile = async () => {
+  if (!selectedProfileForDeploy.value || isDeploying.value) return
+
+  // If showing result, close the modal
+  if (deployResult.value) {
+    closeDeployModal()
+    return
+  }
+
+  isDeploying.value = true
+
+  try {
+    // Get the filepath - use the full server path from the profile metadata
+    const profile = selectedProfileForDeploy.value as DSPProfile & { filename: string }
+    const filepath = profile._system?.filepath || profile.filename
+
+    if (!filepath) {
+      throw new Error('Profile filepath not available')
+    }
+
+    // Deploy the profile using the server filepath
+    const result = await updateDSPProfile({ file: filepath })
+
+    console.log('Profile deployed successfully:', result)
+
+    // Show success message in modal
+    if (result.status === 'success') {
+      deployResult.value = {
+        success: true,
+        message: `✅ Profile deployed successfully!
+
+${result.message}
+
+Checksum verification: ${result.checksum?.match ? '✓ Passed' : '⚠ Failed'}
+
+The DSP profile has been successfully written to EEPROM memory and is now active.`
+      }
+    }
+
+    // Refresh the cache status and program checksum to show the new profile
+    await Promise.all([
+      loadCacheStatus(),
+      loadProgramChecksum()
+    ])
+
+  } catch (error) {
+    console.error('Failed to deploy DSP profile:', error)
+
+    // Provide detailed error feedback in modal
+    let errorMessage = '❌ Failed to deploy DSP profile'
+
+    if (error instanceof Error) {
+      errorMessage += `:\n\n${error.message}`
+
+      // Check if it's a network/API error
+      if (error.message.includes('fetch')) {
+        errorMessage += '\n\n💡 Check that the DSP service is running and accessible.'
+      }
+    } else {
+      errorMessage += ':\n\nUnknown error occurred'
+    }
+
+    deployResult.value = {
+      success: false,
+      message: errorMessage
+    }
+  } finally {
+    isDeploying.value = false
+  }
+}
+
+// Lifecycle
+onMounted(() => {
+  loadAll()
+})
 </script>
 
 <style scoped lang="scss">
-@use '@/assets/scss/mixins' as *;
+@use '@/assets/scss/service-item' as *;
 
 .dsp-programs {
-  h1 {
+  .breadcrumbs {
     margin-bottom: 32px;
-    color: var(--color-head);
   }
 
-  .dsp-programs-content {
+  .dsp-programs-header {
+    margin-bottom: 32px;
+
+    h2 {
+      margin: 0 0 8px 0;
+      color: var(--color-head);
+    }
+
+    p {
+      margin: 0;
+      color: var(--color-body-secondary);
+    }
+  }
+}
+
+/* Cards spacing to match players page */
+.dsp-programs-content {
+  .card {
+    @include service-card-base;
+  }
+}
+
+/* Custom alert styles for better visual hierarchy */
+.alert {
+  border: none;
+  border-radius: 8px;
+}
+
+.alert-success {
+  background-color: var(--tblr-success-lt, #d1e7dd);
+  color: var(--tblr-success-fg, #0f5132);
+}
+
+.alert-warning {
+  background-color: var(--tblr-warning-lt, #fff3cd);
+  color: var(--tblr-warning-fg, #664d03);
+}
+
+.alert-danger {
+  background-color: var(--tblr-danger-lt, #f8d7da);
+  color: var(--tblr-danger-fg, #721c24);
+}
+
+.alert ul {
+  padding-left: 1.5rem;
+}
+
+.alert-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* DSP Profiles Section Styles */
+.dsp-profiles {
+  .profiles-header {
+    margin-bottom: 32px;
+
+    h3 {
+      margin: 0 0 8px 0;
+      color: var(--color-head);
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+  }
+}
+
+.profiles-list {
+  .card {
+    @include service-card-base;
+    border: 1px solid var(--tblr-border-color, #dee2e6);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--tblr-primary, #206bc4);
+      box-shadow: 0 2px 8px rgba(32, 107, 196, 0.1);
+    }
+
+    &.profile-card {
+      cursor: pointer;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(32, 107, 196, 0.15);
+      }
+    }
+  }
+
+  .profile-item {
+    @include service-item-base;
+
+    .profile-main {
+      @include service-main-layout;
+    }
+
+    .profile-info {
+      @include service-info-layout;
+
+      .profile-icon {
+        @include service-icon-base;
+        width: 2.5rem;
+        height: 2.5rem;
+        color: var(--tblr-primary, #206bc4);
+        flex-shrink: 0;
+      }
+
+      .profile-details {
+        @include service-details-base;
+
+        h3 {
+          margin: 0 0 0.25rem 0;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--tblr-body-color, #1e293b);
+          line-height: 1.25;
+        }
+      }
+    }
+
+    .profile-version {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--tblr-success, #2fb344);
+      background-color: var(--tblr-success-lt, #d1e7dd);
+      border-radius: 4px;
+    }
+
+    .profile-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+
+      .deploy-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        color: var(--tblr-primary, #206bc4);
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+      }
+    }
+
+    &:hover .profile-actions .deploy-icon {
+      opacity: 1;
+    }
+  }
+}
+
+// Info table styles matching system-info page
+.info-card {
+  background: var(--background-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 24px;
+
+  .card-header {
     display: flex;
-    flex-direction: column;
-    gap: 24px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
 
-    .info-section {
-      .info-card {
-        background: var(--background-card);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        padding: 24px;
-
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 16px;
-
-          .card-icon {
-            width: 20px;
-            height: 20px;
-            color: var(--color-primary);
-          }
-
-          h2 {
-            margin: 0;
-            color: var(--color-head);
-            font-size: 1.25rem;
-            font-weight: 600;
-          }
-        }
-
-        .card-description {
-          color: var(--color-body-secondary);
-          line-height: 1.5;
-          margin: 0;
-        }
-      }
+    .card-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--color-primary);
     }
 
-    .programs-section {
-      .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
+    h2 {
+      margin: 0;
+      color: var(--color-head);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+  }
 
-        h2 {
-          margin: 0;
-          color: var(--color-head);
-          font-size: 1.5rem;
+  .info-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    tbody {
+      tr {
+        border-bottom: 1px solid var(--color-border);
+
+        &:last-child {
+          border-bottom: none;
         }
 
-        .refresh-button {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 16px;
-          background: var(--color-primary);
-          color: white;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: background-color 0.2s ease;
+        td {
+          padding: 5px 0;
+          vertical-align: top;
 
-          &:hover:not(:disabled) {
-            background: var(--color-primary-dark);
-          }
-
-          &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-
-          .spinning {
-            animation: spin 1s linear infinite;
-          }
-        }
-      }
-
-      .loading-section {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 60px 20px;
-        text-align: center;
-        color: var(--color-body-secondary);
-
-        .loading-icon {
-          width: 32px;
-          height: 32px;
-          margin-bottom: 16px;
-          color: var(--color-primary);
-        }
-      }
-
-      .error-section {
-        display: flex;
-        justify-content: center;
-        padding: 40px 20px;
-
-        .error-content {
-          background: var(--background-error);
-          border: 1px solid var(--color-error);
-          border-radius: 8px;
-          padding: 24px;
-          text-align: center;
-          max-width: 400px;
-
-          .error-icon {
-            width: 24px;
-            height: 24px;
-            color: var(--color-error);
-            margin-bottom: 12px;
-          }
-
-          .error-message {
-            color: var(--color-error);
-            margin-bottom: 16px;
-          }
-
-          .retry-button {
-            background: var(--color-error);
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
-            cursor: pointer;
+          &.label {
             font-weight: 500;
-            transition: background-color 0.2s ease;
-
-            &:hover {
-              background: var(--color-error-dark);
-            }
-          }
-        }
-      }
-
-      .programs-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-
-        .program-card {
-          background: var(--background-card);
-          border: 1px solid var(--color-border);
-          border-radius: 8px;
-          padding: 24px;
-          transition: all 0.2s ease;
-
-          &.coming-soon {
-            border-color: var(--color-body-secondary);
-            opacity: 0.8;
-          }
-
-          .program-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-
-            .program-icon {
-              width: 24px;
-              height: 24px;
-              color: var(--color-primary);
-            }
-
-            h3 {
-              margin: 0;
-              color: var(--color-head);
-              font-size: 1.1rem;
-            }
-          }
-
-          .program-description {
             color: var(--color-body-secondary);
+            width: 40%;
+            padding-right: 16px;
+            vertical-align: top;
             line-height: 1.5;
-            margin-bottom: 16px;
           }
 
-          .program-status {
-            .status-badge {
-              padding: 4px 12px;
-              border-radius: 4px;
-              font-size: 0.875em;
-              font-weight: 500;
-
-              &.coming-soon {
-                background: var(--background-warning);
-                color: var(--color-warning);
-              }
-            }
+          &.value {
+            color: var(--color-body);
+            font-family: 'Metropolis', sans-serif;
+            vertical-align: top;
+            line-height: 1.5;
           }
-        }
-      }
-    }
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@media (max-width: 768px) {
-  .dsp-programs {
-    .dsp-programs-content {
-      .programs-section {
-        .section-header {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 16px;
-
-          .refresh-button {
-            align-self: stretch;
-            justify-content: center;
-          }
-        }
-
-        .programs-grid {
-          grid-template-columns: 1fr;
         }
       }
     }

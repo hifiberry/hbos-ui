@@ -103,8 +103,29 @@ const router = createRouter({
         },
         {
           path: '/sound',
-          name: 'sound',
-          component: () => import('@/views/sound.vue'),
+          component: () => import('@/views/router-view.vue'),
+          children: [
+            {
+              path: '',
+              name: 'sound',
+              component: () => import('@/views/sound/index.vue'),
+            },
+            {
+              path: 'speaker-equalizer',
+              name: 'speaker-equalizer',
+              component: () => import('@/views/sound/speaker-equalizer.vue'),
+            },
+            {
+              path: 'crossover-design',
+              name: 'crossover-design',
+              component: () => import('@/views/sound/crossover-design.vue'),
+            },
+            {
+              path: 'room-acoustics',
+              name: 'room-acoustics',
+              component: () => import('@/views/sound/room-acoustics.vue'),
+            },
+          ],
         },
       ],
     },

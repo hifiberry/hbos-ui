@@ -72,13 +72,13 @@ function dragMove(event: MouseEvent) {
 
   const svg = document.querySelector('svg');
   if (!svg) return;
-  
+
   const pt = svg.createSVGPoint();
   pt.x = event.clientX;
   pt.y = event.clientY;
   const screenCTM = svg.getScreenCTM();
   if (!screenCTM) return;
-  
+
   const cursorpt = pt.matrixTransform(screenCTM.inverse());
 
   const newFreq = Math.min(Math.max(xScale.invert(cursorpt.x), DEFAULT_FREQ_RANGE.min), DEFAULT_FREQ_RANGE.max);

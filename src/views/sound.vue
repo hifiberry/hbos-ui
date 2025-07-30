@@ -392,10 +392,6 @@ const allFiltersCombinedGraphData = computed(() => {
   const maxFreq = DEFAULT_FREQ_RANGE.max;
   const numPoints = 200;
 
-  let minGain = Infinity;
-  let maxGain = -Infinity;
-  const gainValues: number[] = [];
-
   for (let i = 0; i <= numPoints; i++) {
     const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
     const freq = Math.pow(10, logFreq);
@@ -403,38 +399,14 @@ const allFiltersCombinedGraphData = computed(() => {
 
     filters.value.forEach(band => {
       if (band.enabled) {
-        const bandGain = calculateFilterGain(freq, band, SAMPLE_RATE);
-        totalCombinedGain_db += bandGain;
-        
-        // Log individual filter contributions for peaking filters
-        if (band.icon === 'peaking' && Math.abs(bandGain) > 0.1) {
-          console.log(`Peaking filter at ${freq.toFixed(1)}Hz: gain=${bandGain.toFixed(2)}dB, filter_freq=${band.frequency}Hz, filter_gain=${band.gain}dB, Q=${band.Q}`);
-        }
+        totalCombinedGain_db += calculateFilterGain(freq, band, SAMPLE_RATE);
       }
     });
-
-    // Track min/max gain values
-    minGain = Math.min(minGain, totalCombinedGain_db);
-    maxGain = Math.max(maxGain, totalCombinedGain_db);
-    gainValues.push(totalCombinedGain_db);
 
     const x = frequencyToXLocal(freq);
     const y = gainToYLocal(totalCombinedGain_db);
     linePoints.push(`${x},${y}`);
   }
-
-  // Console log the min/max values for debugging
-  console.log(`Frequency Response Calculation:`, {
-    minGain: minGain.toFixed(2) + 'dB',
-    maxGain: maxGain.toFixed(2) + 'dB',
-    range: (maxGain - minGain).toFixed(2) + 'dB',
-    enabledFilters: filters.value.filter(f => f.enabled).map(f => ({
-      type: f.icon,
-      freq: f.frequency,
-      gain: f.gain,
-      Q: f.Q
-    }))
-  });
 
   return {
     linePath: `M ${linePoints.join(' L ')}`,

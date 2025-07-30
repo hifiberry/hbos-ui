@@ -13,10 +13,12 @@
                 :y1="0" :y2="plotHeight" />
             </g>
 
-            <line :x1="frequencyToX(wideBandStartFreq)" :x2="frequencyToX(wideBandStartFreq)" :y1="0" :y2="plotHeight"
-              stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
-            <line :x1="frequencyToX(narrowBandStartFreq)" :x2="frequencyToX(narrowBandStartFreq)" :y1="0"
-              :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
+            <template v-if="activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
+              <line :x1="frequencyToX(activeFilterBandwidthStart)" :x2="frequencyToX(activeFilterBandwidthStart)"
+                :y1="0" :y2="plotHeight" stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
+              <line :x1="frequencyToX(activeFilterBandwidthEnd)" :x2="frequencyToX(activeFilterBandwidthEnd)" :y1="0"
+                :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
+            </template>
 
             <path v-if="eqEnabled && allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
               stroke="#e11e4a" fill="none" stroke-width="2.5" />
@@ -133,7 +135,7 @@
             </div>
             <div class="control-item">
               <div class="control-value">
-                <div>Q</div>
+                <div>{{ activeFilterQDisplay }}</div>
                 <div class="chevron">
                   <AppIcon icon="resize-wider" @click="widenBand" />
                   <AppIcon icon="resize-narrower" @click="narrowBand" />
@@ -206,18 +208,18 @@ type Channel = 'left' | 'right';
 
 interface Filter {
   id: number;
-  icon: string;
+  icon: string; // e.g., 'filter-peak', 'filter-low-shelf', 'filter-high-shelf'
   text: string;
   frequency: number;
   gain: number;
-  Q?: number;
+  Q?: number; // Q factor, representing width/slope
   enabled: boolean;
 }
 
 const activeChannel = ref<Channel>('left');
 const selectedFilterType = ref<string | null>(null);
 const filters = ref<Filter[]>([
-  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 8.71, enabled: true }
+  { id: 1, icon: 'filter-peak', text: '1000', frequency: 1000, gain: 0, Q: 8.71, enabled: true } // Initial filter with a Q value
 ]);
 const showAddFilterModal = ref(false);
 const showFilterOptionsModal = ref(false);
@@ -232,8 +234,9 @@ const selectedBand = ref<Filter | null>(null);
 
 const graphContainer = ref<HTMLDivElement | null>(null);
 
+// **MODIFICATION 1: Initial svgHeight set to a smaller fixed value**
 const svgWidth = ref(900);
-const svgHeight = ref(300);
+const svgHeight = ref(100); // Set a smaller initial height, e.g., 100px
 
 const margin = { top: 10, right: 30, bottom: 30, left: 50 };
 const plotWidth = computed(() => svgWidth.value - margin.left - margin.right);
@@ -242,8 +245,45 @@ const plotHeight = computed(() => svgHeight.value - margin.top - margin.bottom);
 const gainGridLines = [-25, -15, -5, 0, 5, 15, 25];
 const gainGridLabels = [-25, -15, -5, 0, 5, 15, 25];
 
-const wideBandStartFreq = ref(300);
-const narrowBandStartFreq = ref(1500);
+// MODIFIED: Computed properties for dynamic bandwidth lines (now for all filter types)
+const activeFilterBandwidthStart = computed(() => {
+  const filter = currentFilter.value;
+  // Lines should always be shown for the active filter if Q is valid and positive
+  if (typeof filter.Q === 'number' && filter.Q > 0) {
+    let bandwidthHz;
+
+    // Different interpretations of Q for different filter types
+    if (filter.icon === 'filter-peak') {
+      bandwidthHz = filter.frequency / filter.Q; // Standard Q for peak filter
+    } else {
+      // For shelf filters, Q influences the slope. We'll use a scaled Fc/Q
+      // as a visual approximation for the 'transition width'.
+      // Adjust the multiplier (e.g., 0.5, 1.0, 2.0) to visually match your preference for shelves.
+      bandwidthHz = filter.frequency / (filter.Q * 2); // Example: make shelf "width" less dramatic
+    }
+
+    // Clamp values to graph limits
+    return Math.max(20, filter.frequency - (bandwidthHz / 2));
+  }
+  return null;
+});
+
+const activeFilterBandwidthEnd = computed(() => {
+  const filter = currentFilter.value;
+  if (typeof filter.Q === 'number' && filter.Q > 0) {
+    let bandwidthHz;
+
+    if (filter.icon === 'filter-peak') {
+      bandwidthHz = filter.frequency / filter.Q;
+    } else {
+      bandwidthHz = filter.frequency / (filter.Q * 2);
+    }
+
+    // Clamp values to graph limits
+    return Math.min(10000, filter.frequency + (bandwidthHz / 2));
+  }
+  return null;
+});
 
 const frequencyToX = (freq: number) => {
   const logMinFreq = Math.log10(20);
@@ -276,26 +316,40 @@ const calculateFilterGain = (freq: number, band: Filter): number => {
 
   const A_db = band.gain;
   const Fc = band.frequency;
-  const Q = band.Q || 1.0;
-  const safeQ = Math.max(0.01, Q);
+  const Q = Math.max(0.01, band.Q || 1.0); // Ensure Q is at least 0.01 to avoid division by zero
 
   let gainVal_db = 0;
 
   switch (band.icon) {
     case 'filter-peak':
-      const normalizedLogFreqPeak = Math.log10(freq / Fc);
-      const widthFactorPeak = 1 / safeQ;
-      gainVal_db = A_db * Math.exp(-Math.pow(normalizedLogFreqPeak / widthFactorPeak, 2));
+      // MODIFIED: Added explicit check for A_db === 0 to ensure flat line at 0 gain
+      if (A_db === 0) {
+        gainVal_db = 0;
+      } else {
+        const normalizedLogFreqPeak = Math.log10(freq / Fc);
+        const widthFactor = 1 / Q;
+        gainVal_db = A_db * Math.exp(-Math.pow(normalizedLogFreqPeak / widthFactor, 2));
+      }
       break;
 
     case 'filter-low-shelf':
+      // Ensure that as frequency approaches 0, the gain approaches A_db.
+      // And as frequency increases, it approaches 0 (or flat).
+      const p_ls = Math.pow(freq / Fc, 2);
+      const K_ls = Math.sqrt(Q); // A parameter often used with Q for shelf filters
+      const gainFactorLow = (1 + Math.sqrt(2 * K_ls) * p_ls + p_ls) / (1 + Math.sqrt(2 * K_ls) * p_ls + p_ls); // Placeholder, actual formula is more complex.
+      // A more common shelf filter approximation:
       const ratioLow = freq / Fc;
-      gainVal_db = A_db / (1 + Math.pow(ratioLow, 2 * safeQ));
+      const slopeFactorLow = 1 + Math.pow(ratioLow, 2 * Q); // Q controls steepness
+      gainVal_db = A_db / slopeFactorLow;
       break;
 
     case 'filter-high-shelf':
+      // Ensure that as frequency increases, the gain approaches A_db.
+      // And as frequency approaches 0, it approaches 0 (or flat).
       const ratioHigh = Fc / freq;
-      gainVal_db = A_db / (1 + Math.pow(ratioHigh, 2 * safeQ));
+      const slopeFactorHigh = 1 + Math.pow(ratioHigh, 2 * Q); // Q controls steepness
+      gainVal_db = A_db / slopeFactorHigh;
       break;
 
     default:
@@ -306,13 +360,15 @@ const calculateFilterGain = (freq: number, band: Filter): number => {
 };
 
 const currentFilter = computed(() => {
+  // Ensure that if no filter is active, it defaults to something that won't cause errors
+  // but also won't display bandwidth lines (unless you want default lines)
   return filters.value.find((f) => f.id === activeFilterId.value) || {
     id: 0,
-    icon: 'filter-peak',
+    icon: 'none', // Default to 'none' or a type that won't trigger lines if you don't want them on startup
     text: '',
     frequency: 1000,
     gain: 0,
-    Q: 8.71,
+    Q: 1.0, // Default Q, ensuring it's a number
     enabled: true,
   };
 });
@@ -337,17 +393,6 @@ const freqGridLines = computed(() => {
       }
     }
   }
-
-  const roundedWideBand = Math.round(wideBandStartFreq.value / 10) * 10;
-  const roundedNarrowBand = Math.round(narrowBandStartFreq.value / 10) * 10;
-
-  if (roundedWideBand >= minOverallFreq && roundedWideBand <= maxOverallFreq) {
-    lines.add(roundedWideBand);
-  }
-  if (roundedNarrowBand >= minOverallFreq && roundedNarrowBand <= maxOverallFreq) {
-    lines.add(roundedNarrowBand);
-  }
-
   return Array.from(lines)
     .filter(f => f >= minOverallFreq && f <= maxOverallFreq)
     .sort((a, b) => a - b);
@@ -458,7 +503,7 @@ function handleDeleteFilter() {
     if (indexToRemove !== -1) {
       filters.value.splice(indexToRemove, 1);
       if (activeFilterId.value === filterToOperateOn.value.id) {
-        activeFilterId.value = filters.value[0]?.id || null;
+        activeFilterId.value = filters.value[0]?.id || null; // Select first filter if deleted was active
       }
     }
   }
@@ -476,11 +521,11 @@ const confirmAddFilter = () => {
     text: 'New',
     frequency: 1000,
     gain: 0,
-    Q: selectedFilterType.value === 'filter-peak' ? 8.71 : 1.0,
+    Q: 1.0, // Default Q for all filter types, you can adjust this if needed
     enabled: true,
   };
   filters.value.push(newFilter);
-  setActiveFilter(newId);
+  setActiveFilter(newId); // Make the newly added filter active
 
   selectedFilterType.value = null;
   showAddFilterModal.value = false;
@@ -492,7 +537,7 @@ const removeActiveFilter = () => {
   const indexToRemove = filters.value.findIndex(f => f.id === activeFilterId.value);
   if (indexToRemove !== -1) {
     filters.value.splice(indexToRemove, 1);
-    activeFilterId.value = filters.value[0]?.id || null;
+    activeFilterId.value = filters.value[0]?.id || null; // Set active to first available filter or null
   }
 };
 
@@ -524,74 +569,20 @@ function decrementGain() {
   }
 }
 
-const freqStep = 50;
-
 function widenBand() {
-  const minOverallFreq = 20;
-  const maxOverallFreq = 10000;
-  const minBandwidth = freqStep * 2;
-
-  let newNarrow = narrowBandStartFreq.value + freqStep;
-  let newWide = wideBandStartFreq.value - freqStep;
-
-  newNarrow = Math.min(maxOverallFreq, newNarrow);
-  newWide = Math.max(minOverallFreq, newWide);
-
-  if (newNarrow - newWide >= minBandwidth) {
-    narrowBandStartFreq.value = newNarrow;
-    wideBandStartFreq.value = newWide;
-  } else {
-    if (narrowBandStartFreq.value < maxOverallFreq) {
-      narrowBandStartFreq.value = Math.min(maxOverallFreq, narrowBandStartFreq.value + freqStep);
-    }
-    if (wideBandStartFreq.value > minOverallFreq) {
-      wideBandStartFreq.value = Math.max(minOverallFreq, wideBandStartFreq.value - freqStep);
-    }
-    if (narrowBandStartFreq.value - wideBandStartFreq.value < minBandwidth) {
-      if (narrowBandStartFreq.value - minBandwidth >= minOverallFreq) {
-        wideBandStartFreq.value = narrowBandStartFreq.value - minBandwidth;
-      } else if (wideBandStartFreq.value + minBandwidth <= maxOverallFreq) {
-        narrowBandStartFreq.value = wideBandStartFreq.value + minBandwidth;
-      }
-    }
-  }
-  if (wideBandStartFreq.value > narrowBandStartFreq.value) {
-    [wideBandStartFreq.value, narrowBandStartFreq.value] = [narrowBandStartFreq.value, wideBandStartFreq.value];
+  const filter = currentFilter.value;
+  if (filter && typeof filter.Q === 'number') {
+    // Widening the band means DECREASING the Q value
+    filter.Q = Math.max(0.1, filter.Q - 0.5);
   }
 }
 
 function narrowBand() {
-  const minOverallFreq = 20;
-  const maxOverallFreq = 10000;
-  const minBandwidth = freqStep * 2;
-
-  let newNarrow = narrowBandStartFreq.value - freqStep;
-  let newWide = wideBandStartFreq.value + freqStep;
-
-  newNarrow = Math.max(minOverallFreq, newNarrow);
-  newWide = Math.min(maxOverallFreq, newWide);
-
-  if (newNarrow - newWide >= minBandwidth) {
-    narrowBandStartFreq.value = newNarrow;
-    wideBandStartFreq.value = newWide;
-  } else {
-    if (narrowBandStartFreq.value > minOverallFreq + minBandwidth) {
-      narrowBandStartFreq.value = Math.max(minOverallFreq + minBandwidth, narrowBandStartFreq.value - freqStep);
-    }
-    if (wideBandStartFreq.value < maxOverallFreq - minBandwidth) {
-      wideBandStartFreq.value = Math.min(maxOverallFreq - minBandwidth, wideBandStartFreq.value + freqStep);
-    }
-    if (narrowBandStartFreq.value - wideBandStartFreq.value < minBandwidth) {
-      if (narrowBandStartFreq.value - minBandwidth >= minOverallFreq) {
-        wideBandStartFreq.value = narrowBandStartFreq.value - minBandwidth;
-      }
-      if (wideBandStartFreq.value + minBandwidth <= maxOverallFreq) {
-        narrowBandStartFreq.value = wideBandStartFreq.value + minBandwidth;
-      }
-    }
-  }
-  if (wideBandStartFreq.value > narrowBandStartFreq.value) {
-    [wideBandStartFreq.value, narrowBandStartFreq.value] = [narrowBandStartFreq.value, wideBandStartFreq.value];
+  const filter = currentFilter.value;
+  if (filter && typeof filter.Q === 'number') {
+    // Narrowing the band means INCREASING the Q value
+    // Change max Q value from 20.0 to 25.0, and step to 0.1
+    filter.Q = Math.min(25.0, filter.Q + 0.1);
   }
 }
 
@@ -636,10 +627,13 @@ const formatHzForSVG = (val: number) => {
   return `${val}`;
 };
 
+// **MODIFICATION 2: Updated updateSvgDimensions to set a fixed height**
 const updateSvgDimensions = () => {
   if (graphContainer.value) {
     svgWidth.value = graphContainer.value.offsetWidth;
-    svgHeight.value = Math.max(300, graphContainer.value.offsetWidth / 3);
+    // Set a fixed height here. This will override the initial ref value.
+    // If you want it responsive but shorter, use Math.max(MIN_HEIGHT, graphContainer.value.offsetWidth / LARGER_DIVISOR);
+    svgHeight.value = 500; // Example: Set to a fixed 100px. Adjust as needed (e.g., 80, 60).
   }
 };
 
@@ -657,8 +651,6 @@ watch(filters, () => {
     f.text = `${f.frequency}`;
   });
 }, { deep: true });
-
-watch([wideBandStartFreq, narrowBandStartFreq], () => { });
 </script>
 
 <style scoped lang="scss">
@@ -681,7 +673,9 @@ watch([wideBandStartFreq, narrowBandStartFreq], () => { });
 
     svg {
       width: 100%;
-      height: 100%;
+      // **MODIFICATION 3: Removed or commented out height: 100%;**
+      /* height: 100%; */
+      // The height attribute bound via Vue (:height="svgHeight") will now control the height.
       overflow: visible;
       cursor: grab;
 

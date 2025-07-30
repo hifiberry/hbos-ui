@@ -14,7 +14,6 @@
             @touchend="endBypass"
             :class="{ bypassed: isBypassed }"
           />
-          <AppIcon icon="more" />
         </div>
       </div>
       <div class="card">
@@ -88,7 +87,7 @@
 
         <div class="filters-list">
           <div v-for="filter in filters" :key="filter.id" class="card">
-            <div class="filter-item" :class="{ active: activeFilterId === filter.id }">
+            <div class="filter-item" :class="{ active: activeFilterId === filter.id }" @click="setActiveFilter(filter.id)">
               <div class="filter-main">
                 <div class="filter-info">
                   <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon"
@@ -97,7 +96,7 @@
                     <h3>{{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</h3>
                   </div>
                 </div>
-                <div class="filter-actions">
+                <div class="filter-actions" @click.stop>
                   <div class="filter-toggle">
                     <label class="toggle-switch">
                       <input type="checkbox" v-model="filter.enabled" />
@@ -110,7 +109,7 @@
                 </div>
               </div>
 
-              <div class="filter-controls">
+              <div class="filter-controls" @click.stop>
                 <div class="control-group">
                   <label>Frequency</label>
                   <div class="control-buttons">
@@ -928,6 +927,7 @@ watch(filters, () => {
         background: rgba(255, 255, 255, 0.02);
         border: 1px solid rgba(112, 112, 112, 0.3);
         transition: all 0.2s ease-in-out;
+        cursor: pointer;
 
         &.active {
           border-color: #e11e4a;
@@ -942,6 +942,11 @@ watch(filters, () => {
             border-color: #e11e4a;
             background: rgba(225, 30, 74, 0.05);
           }
+        }
+
+        &:hover:not(.add-filter-item) {
+          border-color: rgba(225, 30, 74, 0.5);
+          background: rgba(225, 30, 74, 0.02);
         }
 
         .filter-main {

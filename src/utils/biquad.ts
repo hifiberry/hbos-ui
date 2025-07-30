@@ -66,7 +66,7 @@ export function calculateBiquadCoefficients(filter: BiquadFilter): BiquadCoeffic
 
     case 'peaking':
       const APeaking = Math.pow(10, gain / 40); // A = sqrt(linearGain)
-      
+
       b0 = 1 + alpha * APeaking;
       b1 = -2 * cos;
       b2 = 1 - alpha * APeaking;

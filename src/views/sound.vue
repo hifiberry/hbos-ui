@@ -1,62 +1,63 @@
 <template>
-  <div class="sound">
-    <h1>Speaker Equaliser</h1>
-    <div class="card">
-      <div class="graph" ref="graphContainer" @mousemove="handleMouseMove" @mouseup="handleMouseUp"
-        @mouseleave="handleMouseUp">
-        <svg ref="svgElement" :width="svgWidth" :height="svgHeight">
-          <g :transform="`translate(${margin.left},${margin.top})`">
-            <g stroke="#444" stroke-dasharray="4">
-              <line v-for="y in gainGridLines" :key="'gain-grid-' + y" :y1="gainToYLocal(y)" :y2="gainToYLocal(y)" :x1="0"
-                :x2="plotWidth" />
-              <line v-for="f in freqGridLines" :key="'freq-grid-' + f" :x1="frequencyToXLocal(f)" :x2="frequencyToXLocal(f)"
-                :y1="0" :y2="plotHeight" />
+  <div class="sound-page">
+    <div class="sound">
+      <h1>Speaker Equaliser</h1>
+      <div class="card">
+        <div class="graph" ref="graphContainer" @mousemove="handleMouseMove" @mouseup="handleMouseUp"
+          @mouseleave="handleMouseUp">
+          <svg ref="svgElement" :width="svgWidth" :height="svgHeight">
+            <g :transform="`translate(${margin.left},${margin.top})`">
+              <g stroke="#444" stroke-dasharray="4">
+                <line v-for="y in gainGridLines" :key="'gain-grid-' + y" :y1="gainToYLocal(y)" :y2="gainToYLocal(y)" :x1="0"
+                  :x2="plotWidth" />
+                <line v-for="f in freqGridLines" :key="'freq-grid-' + f" :x1="frequencyToXLocal(f)" :x2="frequencyToXLocal(f)"
+                  :y1="0" :y2="plotHeight" />
+              </g>
+
+              <template v-if="activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
+                <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
+                  :y1="0" :y2="plotHeight" stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
+                <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
+                  :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
+              </template>
+
+              <path v-if="eqEnabled && allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
+                stroke="#e11e4a" fill="none" stroke-width="2.5" />
+
+              <template v-if="activeFilterGraphData">
+                <path :d="activeFilterGraphData.areaPath" fill="rgba(0, 184, 255, 0.1)" stroke="none" />
+                <path :d="activeFilterGraphData.linePath" stroke="#00b8ff" fill="none" stroke-width="2" />
+              </template>
+              <template v-else>
+                <line :x1="0" :y1="gainToYLocal(0)" :x2="plotWidth" :y2="gainToYLocal(0)" stroke="#999" stroke-width="1"
+                  stroke-dasharray="2 2" />
+              </template>
+
+              <circle v-for="band in filters" :key="'node-' + band.id" :cx="frequencyToXLocal(band.frequency)"
+                :cy="gainToYLocal(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'"
+                style="cursor: grab;" @mousedown.prevent="startDrag($event, band)" />
             </g>
 
-            <template v-if="activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
-              <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
-                :y1="0" :y2="plotHeight" stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
-              <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
-                :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
-            </template>
+            <g class="x-axis-labels" :transform="`translate(${margin.left}, ${svgHeight - margin.bottom + 5})`">
+              <text v-for="f in freqGridLines" :key="'x-label-' + f" :x="frequencyToXLocal(f)" y="0" text-anchor="middle"
+                fill="#aaa" font-size="10">
+                {{ formatHzForSVG(f) }}
+              </text>
+            </g>
 
-            <path v-if="eqEnabled && allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
-              stroke="#e11e4a" fill="none" stroke-width="2.5" />
-
-            <template v-if="activeFilterGraphData">
-              <path :d="activeFilterGraphData.areaPath" fill="rgba(0, 184, 255, 0.1)" stroke="none" />
-              <path :d="activeFilterGraphData.linePath" stroke="#00b8ff" fill="none" stroke-width="2" />
-            </template>
-            <template v-else>
-              <line :x1="0" :y1="gainToYLocal(0)" :x2="plotWidth" :y2="gainToYLocal(0)" stroke="#999" stroke-width="1"
-                stroke-dasharray="2 2" />
-            </template>
-
-            <circle v-for="band in filters" :key="'node-' + band.id" :cx="frequencyToXLocal(band.frequency)"
-              :cy="gainToYLocal(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'"
-              style="cursor: grab;" @mousedown.prevent="startDrag($event, band)" />
-          </g>
-
-          <g class="x-axis-labels" :transform="`translate(${margin.left}, ${svgHeight - margin.bottom + 5})`">
-            <text v-for="f in freqGridLines" :key="'x-label-' + f" :x="frequencyToXLocal(f)" y="0" text-anchor="middle"
-              fill="#aaa" font-size="10">
-              {{ formatHzForSVG(f) }}
-            </text>
-          </g>
-
-          <g class="y-axis-labels" :transform="`translate(${margin.left - 5}, ${margin.top})`">
-            <text v-for="g in gainGridLabels" :key="'y-label-' + g" x="0" :y="gainToYLocal(g)" text-anchor="end"
-              dominant-baseline="middle" fill="#aaa" font-size="10">
-              {{ g }}
-            </text>
-          </g>
-        </svg>
+            <g class="y-axis-labels" :transform="`translate(${margin.left - 5}, ${margin.top})`">
+              <text v-for="g in gainGridLabels" :key="'y-label-' + g" x="0" :y="gainToYLocal(g)" text-anchor="end"
+                dominant-baseline="middle" fill="#aaa" font-size="10">
+                {{ g }}
+              </text>
+            </g>
+          </svg>
+        </div>
       </div>
-    </div>
 
-    <div class="card mt-3">
-      <div class="equaliser-panel">
-        <div class="tabs">
+      <div class="card mt-3">
+        <div class="equaliser-panel">
+          <div class="tabs">
           <button :class="['tab', { active: activeChannel === 'left' }]" @click="setActiveChannel('left')">
             Left Channel
           </button>
@@ -160,44 +161,46 @@
             <button class="save-listen-mode">Save Listening Mode</button>
           </div>
         </div>
+        </div>
       </div>
     </div>
+
+    <teleport to="body">
+      <div v-if="showAddFilterModal" class="modal-backdrop" @click.self="showAddFilterModal = false">
+        <div class="modal-content">
+          <h2>Add New Filter</h2>
+          <p>Select filter type before adding:</p>
+
+          <div class="filter-type-selector">
+            <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
+              :class="['filter-type-option', { selected: selectedFilterType === type }]"
+              @click="selectedFilterType = type">
+              <AppIcon :icon="getFilterIconName(type)" class="filter-icon" />
+              <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
+            </button>
+          </div>
+
+          <div class="modal-actions">
+            <button :disabled="!selectedFilterType" @click="confirmAddFilter">Confirm</button>
+            <button @click="showAddFilterModal = false; selectedFilterType = null">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="showFilterOptionsModal" class="modal-backdrop" @click.self="showFilterOptionsModal = false">
+        <div class="modal-content">
+          <h2>Filter Options</h2>
+          <p>What would you like to do with this filter?</p>
+
+          <div class="modal-actions">
+            <button @click="handleViewGraph">View Graph</button>
+            <button @click="handleDeleteFilter" class="delete-button">Delete Filter</button>
+            <button @click="showFilterOptionsModal = false; filterToOperateOn = null">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </teleport>
   </div>
-  <teleport to="body">
-    <div v-if="showAddFilterModal" class="modal-backdrop" @click.self="showAddFilterModal = false">
-      <div class="modal-content">
-        <h2>Add New Filter</h2>
-        <p>Select filter type before adding:</p>
-
-        <div class="filter-type-selector">
-          <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
-            :class="['filter-type-option', { selected: selectedFilterType === type }]"
-            @click="selectedFilterType = type">
-            <AppIcon :icon="getFilterIconName(type)" class="filter-icon" />
-            <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
-          </button>
-        </div>
-
-        <div class="modal-actions">
-          <button :disabled="!selectedFilterType" @click="confirmAddFilter">Confirm</button>
-          <button @click="showAddFilterModal = false; selectedFilterType = null">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showFilterOptionsModal" class="modal-backdrop" @click.self="showFilterOptionsModal = false">
-      <div class="modal-content">
-        <h2>Filter Options</h2>
-        <p>What would you like to do with this filter?</p>
-
-        <div class="modal-actions">
-          <button @click="handleViewGraph">View Graph</button>
-          <button @click="handleDeleteFilter" class="delete-button">Delete Filter</button>
-          <button @click="showFilterOptionsModal = false; filterToOperateOn = null">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </teleport>
 </template>
 
 <script setup lang="ts">
@@ -596,7 +599,11 @@ watch(filters, () => {
 </script>
 
 <style scoped lang="scss">
-/* Your existing SCSS styles remain unchanged as per the request */
+.sound-page {
+  // Wrapper to ensure single root element for transitions
+  width: 100%;
+  height: 100%;
+}
 
 .sound {
   padding: 20px;

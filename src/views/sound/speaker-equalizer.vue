@@ -32,7 +32,7 @@
               </clipPath>
             </defs>
             <g :transform="`translate(${margin.left},${margin.top})`">
-              <g stroke="#444" stroke-dasharray="4">
+              <g stroke="#444" stroke-width="0.5">
                 <line v-for="y in gainGridLines" :key="'gain-grid-' + y" :y1="gainToYLocal(y)" :y2="gainToYLocal(y)" :x1="0"
                   :x2="plotWidth" />
                 <line v-for="f in freqGridLines" :key="'freq-grid-' + f" :x1="frequencyToXLocal(f)" :x2="frequencyToXLocal(f)"

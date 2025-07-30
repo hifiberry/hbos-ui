@@ -14,6 +14,8 @@
             @touchend="endBypass"
             :class="{ bypassed: isBypassed }"
           />
+          <img src="/images/svg/folder_open.svg" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
+          <img src="/images/svg/save.svg" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
         </div>
       </div>
       <div class="card">
@@ -499,6 +501,61 @@ const removeFilter = (filterId: number) => {
   }
 };
 
+// Load EQ settings from a JSON file
+const loadEQSettings = () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (event: Event) => {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target?.result as string);
+          if (data.filters && Array.isArray(data.filters)) {
+            filters.value = data.filters.map((filter: Filter, index: number) => ({
+              ...filter,
+              id: Date.now() + index // Ensure unique IDs
+            }));
+            // Set the first filter as active if any exist
+            if (filters.value.length > 0) {
+              activeFilterId.value = filters.value[0].id;
+            }
+          }
+        } catch (error) {
+          console.error('Error loading EQ settings:', error);
+          alert('Error loading EQ settings. Please check the file format.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+  input.click();
+};
+
+// Save current EQ settings to a JSON file
+const saveEQSettings = () => {
+  const data = {
+    filters: filters.value,
+    channelMode: channelMode.value,
+    activeChannel: activeChannel.value,
+    timestamp: new Date().toISOString()
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `eq-settings-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+};
+
 function incrementFilterFrequency(filter: Filter) {
   // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
   const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
@@ -675,6 +732,18 @@ watch(filters, () => {
         &.bypassed {
           fill: #00b8ff;
           filter: drop-shadow(0 0 4px rgba(0, 184, 255, 0.5));
+        }
+      }
+
+      .icon-btn {
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        filter: invert(44%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(1);
+        transition: filter 0.2s ease;
+
+        &:hover {
+          filter: invert(23%) sepia(89%) saturate(1352%) hue-rotate(340deg) brightness(99%) contrast(80%);
         }
       }
     }

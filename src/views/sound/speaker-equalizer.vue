@@ -20,6 +20,11 @@
         <div class="graph" ref="graphContainer" @mousemove="handleMouseMove" @mouseup="handleMouseUp"
           @mouseleave="handleMouseUp">
           <svg ref="svgElement" :width="svgWidth" :height="svgHeight">
+            <defs>
+              <clipPath id="plotClipPath">
+                <rect :x="0" :y="0" :width="plotWidth" :height="plotHeight" />
+              </clipPath>
+            </defs>
             <g :transform="`translate(${margin.left},${margin.top})`">
               <g stroke="#444" stroke-dasharray="4">
                 <line v-for="y in gainGridLines" :key="'gain-grid-' + y" :y1="gainToYLocal(y)" :y2="gainToYLocal(y)" :x1="0"
@@ -28,24 +33,26 @@
                   :y1="0" :y2="plotHeight" />
               </g>
 
-              <template v-if="activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
-                <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
-                  :y1="0" :y2="plotHeight" stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
-                <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
-                  :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
-              </template>
+              <g clip-path="url(#plotClipPath)">
+                <template v-if="activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
+                  <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
+                    :y1="0" :y2="plotHeight" stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
+                  <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
+                    :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
+                </template>
 
-              <path v-if="allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
-                stroke="#e11e4a" fill="none" stroke-width="2.5" />
+                <path v-if="allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
+                  stroke="#e11e4a" fill="none" stroke-width="2.5" />
 
-              <template v-if="activeFilterGraphData">
-                <path :d="activeFilterGraphData.areaPath" fill="rgba(0, 184, 255, 0.1)" stroke="none" />
-                <path :d="activeFilterGraphData.linePath" stroke="#00b8ff" fill="none" stroke-width="2" />
-              </template>
-              <template v-else>
-                <line :x1="0" :y1="gainToYLocal(0)" :x2="plotWidth" :y2="gainToYLocal(0)" stroke="#999" stroke-width="1"
-                  stroke-dasharray="2 2" />
-              </template>
+                <template v-if="activeFilterGraphData">
+                  <path :d="activeFilterGraphData.areaPath" fill="rgba(0, 184, 255, 0.1)" stroke="none" />
+                  <path :d="activeFilterGraphData.linePath" stroke="#00b8ff" fill="none" stroke-width="2" />
+                </template>
+                <template v-else>
+                  <line :x1="0" :y1="gainToYLocal(0)" :x2="plotWidth" :y2="gainToYLocal(0)" stroke="#999" stroke-width="1"
+                    stroke-dasharray="2 2" />
+                </template>
+              </g>
 
               <circle v-for="band in filters" :key="'node-' + band.id" :cx="frequencyToXLocal(band.frequency)"
                 :cy="gainToYLocal(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'"

@@ -66,6 +66,9 @@ ICONS_TO_CONVERT = [
     'nas.svg',
     'cloud.svg',
     'dsp-program.svg',  # DSP program icon
+    'processor.svg',  # Processor/CPU icon for DSP backends
+    'command_line.svg',  # Terminal/command line icon
+    'balloon.svg',  # Balloon icon for console filter backend
 ]
 
 def convert_svg_to_png(svg_path, png_path, size):

@@ -196,7 +196,7 @@
           </div>
 
           <div class="card">
-            <div class="filter-item add-filter-item" 
+            <div class="filter-item add-filter-item"
                  :class="{ disabled: !canAddFilterToCurrentChannel }"
                  @click="canAddFilterToCurrentChannel && (showAddFilterModal = true)">
               <div class="filter-main">
@@ -238,11 +238,11 @@
           </div>
         </div>
       </div>
-      
+
       <div v-if="showBackendInfoModal" class="modal-backdrop" @click.self="showBackendInfoModal = false">
         <div class="modal-content backend-info-modal">
           <div class="modal-header">
-            <h2>Backend Information</h2>
+            <h2>{{ backendCapabilities?.backendName || 'Backend' }} Information</h2>
             <button class="close-btn" @click="showBackendInfoModal = false">×</button>
           </div>
           <div class="modal-body" v-html="backendCapabilities?.backendDescription"></div>
@@ -334,26 +334,26 @@ const loadBackendCapabilities = async () => {
 // Computed property to check if current channel can accept more filters
 const canAddFilterToCurrentChannel = computed(() => {
   if (!backendCapabilities.value) return false;
-  
+
   const currentBankName = activeChannel.value;
   const bankInfo = backendCapabilities.value.availableFilterBanks.find(
     bank => bank.name === currentBankName
   );
-  
+
   if (!bankInfo) return false;
-  
+
   return bankInfo.currentFilterCount < bankInfo.maxFilters;
 });
 
 // Computed property to get current filter count and limit for UI display
 const currentChannelFilterInfo = computed(() => {
   if (!backendCapabilities.value) return null;
-  
+
   const currentBankName = activeChannel.value;
   const bankInfo = backendCapabilities.value.availableFilterBanks.find(
     bank => bank.name === currentBankName
   );
-  
+
   return bankInfo;
 });
 
@@ -1212,7 +1212,7 @@ const handleMouseUp = () => {
   if (isDragging.value && selectedBand.value) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     applyFilterChangeToMultipleChannels(selectedBand.value.id, (filter: Filter) => {
-      // The filter has already been updated in handleMouseMove, 
+      // The filter has already been updated in handleMouseMove,
       // this just triggers the store update with current values
       // No additional changes needed here, just trigger store sync
     });
@@ -1222,7 +1222,7 @@ const handleMouseUp = () => {
   if (isDraggingBandwidth.value && draggingFilter.value) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     applyFilterChangeToMultipleChannels(draggingFilter.value.id, (filter: Filter) => {
-      // The filter Q has already been updated in handleMouseMove, 
+      // The filter Q has already been updated in handleMouseMove,
       // this just triggers the store update with current values
       // No additional changes needed here, just trigger store sync
     });

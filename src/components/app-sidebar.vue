@@ -96,6 +96,28 @@ const routes = computed(() => {
       ],
     },
     {
+      name: 'sound',
+      title: 'Sound',
+      icon: 'music-note-simple-light',
+      children: [
+        {
+          name: 'speaker-equalizer',
+          title: 'Speaker Eq',
+          icon: 'tabler/speaker',
+        },
+        {
+          name: 'crossover-design',
+          title: 'Crossover',
+          icon: 'tabler/crossover',
+        },
+        {
+          name: 'room-acoustics',
+          title: 'Room Eq',
+          icon: 'tabler/armchair',
+        },
+      ],
+    },
+    {
       name: 'services',
       title: 'Settings',
       icon: 'settings',
@@ -129,28 +151,6 @@ const routes = computed(() => {
           name: 'system-tools',
           title: 'System Tools',
           icon: 'tool',
-        },
-      ],
-    },
-    {
-      name: 'sound',
-      title: 'Sound',
-      icon: 'music-note-simple-light',
-      children: [
-        {
-          name: 'speaker-equalizer',
-          title: 'Speaker Eq',
-          icon: 'tabler/speaker',
-        },
-        {
-          name: 'crossover-design',
-          title: 'Crossover',
-          icon: 'tabler/crossover',
-        },
-        {
-          name: 'room-acoustics',
-          title: 'Room Eq',
-          icon: 'tabler/armchair',
         },
       ],
     },

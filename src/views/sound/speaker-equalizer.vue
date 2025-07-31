@@ -4,12 +4,12 @@
       <div class="page-header">
         <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
         <div class="header-actions">
-          <img src="/images/svg/link.svg" 
-            @click="toggleChannelMode" 
-            title="Channel Mode" 
+          <img src="/images/svg/link.svg"
+            @click="toggleChannelMode"
+            title="Channel Mode"
             :class="{ linked: channelMode === 'both' }"
             class="icon-btn" />
-          <img src="/images/svg/ear.svg" 
+          <img src="/images/svg/ear.svg"
             @mousedown="startBypass"
             @mouseup="endBypass"
             @mouseleave="endBypass"
@@ -235,6 +235,7 @@ import {
 const SAMPLE_RATE = 48000; // Default sample rate for biquad calculations
 const CONFIG_STEPS_PER_OCTAVE = 10; // Number of frequency steps per octave for logarithmic scaling
 const CONFIG_Q_STEP_FACTOR = 1.07; // Logarithmic step factor for Q value changes
+const EQ_FILE_PREFIX = 'speaker-eq'; // File prefix for save/load functionality
 
 // Available filter types for the UI
 const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf'];
@@ -528,8 +529,8 @@ const loadEQSettings = () => {
             }
           }
         } catch (error) {
-          console.error('Error loading EQ settings:', error);
-          alert('Error loading EQ settings. Please check the file format.');
+          console.error('Error loading Speaker EQ settings:', error);
+          alert('Error loading Speaker EQ settings. Please check the file format.');
         }
       };
       reader.readAsText(file);
@@ -552,7 +553,7 @@ const saveEQSettings = () => {
 
   const link = document.createElement('a');
   link.href = url;
-  link.download = `eq-settings-${new Date().toISOString().split('T')[0]}.json`;
+  link.download = `${EQ_FILE_PREFIX}-${new Date().toISOString().split('T')[0]}.json`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

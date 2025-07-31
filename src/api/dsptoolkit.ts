@@ -253,12 +253,12 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout')
     }
-    
+
     // Check for JSON parsing errors that might indicate HTML response
     if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
       throw new Error('HiFiBerry DSP software not available')
     }
-    
+
     throw error
   }
 }
@@ -306,12 +306,12 @@ async function longApiRequest<T>(endpoint: string, options: RequestInit = {}, ti
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error(`Request timeout (exceeded ${timeout / 1000} seconds)`)
     }
-    
+
     // Check for JSON parsing errors that might indicate HTML response
     if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
       throw new Error('HiFiBerry DSP software not available')
     }
-    
+
     throw error
   }
 }

@@ -294,7 +294,7 @@ const loadCacheStatus = async () => {
       cacheStatus.value = null
       return
     }
-    
+
     cacheStatus.value = await getCacheStatus()
   } catch (error) {
     console.error('Failed to get cache status:', error)
@@ -314,7 +314,7 @@ const loadProfilesMetadata = async () => {
       profilesMetadata.value = null
       return
     }
-    
+
     profilesMetadata.value = await getDSPProfilesMetadata()
   } catch (error) {
     console.error('Failed to get profiles metadata:', error)
@@ -334,7 +334,7 @@ const loadMetadata = async () => {
       metadata.value = null
       return
     }
-    
+
     metadata.value = await getMetadata()
   } catch (error) {
     console.error('Failed to get DSP metadata:', error)
@@ -354,7 +354,7 @@ const loadProgramChecksum = async () => {
       programChecksum.value = null
       return
     }
-    
+
     programChecksum.value = await getDSPProgramChecksum()
   } catch (error) {
     console.error('Failed to get DSP program checksum:', error)
@@ -371,7 +371,7 @@ const loadDSPDetection = async () => {
   try {
     // Use the store to check DSP status with caching
     const dspStatus = await dspToolkitStore.checkDSPStatus()
-    
+
     if (dspStatus === 'backend_error') {
       dspError.value = 'HiFiBerry DSP software not available'
       detectedDSP.value = null

@@ -34,6 +34,13 @@ This document tracks icons that need to be created or sourced for various servic
 - **Usage**: System info page, cover art providers section
 - **Notes**: Current icon is functional but could be more specific to album artwork/cover art
 
+### DSP Program
+
+- **Current Status**: Using generic speaker icon
+- **Needed**: DSP program/software icon
+- **Usage**: DSP programs page, profile listings
+- **Notes**: Should represent DSP software/programming concept, possibly showing signal processing or audio programming
+
 ## Hardware Icons
 
 ### Beocreate 4CA

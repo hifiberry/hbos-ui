@@ -134,7 +134,7 @@
                 <div class="filter-actions" @click.stop>
                   <div class="filter-toggle">
                     <label class="toggle-switch">
-                      <input type="checkbox" v-model="filter.enabled" />
+                      <input type="checkbox" :checked="filter.enabled" @change="toggleFilterEnabled(filter)" />
                       <span class="toggle-slider"></span>
                     </label>
                   </div>
@@ -229,6 +229,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import AppIcon from '@/components/app-icon.vue';
+import { useFilterStore, type Filter as StoreFilter } from '@/stores/filter_connector';
 import {
   type Filter,
   calculateFilterGain
@@ -285,6 +286,72 @@ const formatFilterTypeName = (type: BiquadFilterType): string => {
 
 type Channel = 'left' | 'right';
 type ChannelMode = 'individual' | 'both';
+
+// Initialize filter store
+const filterStore = useFilterStore();
+
+// Helper functions to convert between UI Filter and Store Filter types
+const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
+  // Map UI filter types to store filter types
+  const typeMapping: Record<string, StoreFilter['type']> = {
+    'lowshelf': 'shelf-low',
+    'peaking': 'peak',
+    'highshelf': 'shelf-high',
+    'highpass': 'highpass',
+    'lowpass': 'lowpass',
+    'bandpass': 'bandpass',
+    'bandstop': 'bandstop',
+    'allpass': 'allpass'
+  };
+
+  return {
+    type: typeMapping[uiFilter.icon] || 'peak',
+    frequency: uiFilter.frequency,
+    gain: uiFilter.gain,
+    q: uiFilter.Q,
+    enabled: uiFilter.enabled
+  };
+};
+
+const convertStoreFilterToUI = (storeFilter: StoreFilter, numericId: number): Filter => {
+  // Map store filter types back to UI filter types
+  const typeMapping: Record<StoreFilter['type'], string> = {
+    'shelf-low': 'lowshelf',
+    'peak': 'peaking',
+    'shelf-high': 'highshelf',
+    'highpass': 'highpass',
+    'lowpass': 'lowpass',
+    'bandpass': 'bandpass',
+    'bandstop': 'bandstop',
+    'allpass': 'allpass'
+  };
+
+  return {
+    id: numericId,
+    icon: typeMapping[storeFilter.type] as BiquadFilterType,
+    text: storeFilter.frequency.toString(),
+    frequency: storeFilter.frequency,
+    gain: storeFilter.gain || 0,
+    Q: storeFilter.q,
+    enabled: storeFilter.enabled
+  };
+};
+
+// Initialize filter banks in the store
+onMounted(async () => {
+  // Create both current and prepare for future channel expansion
+  const currentChannels = ['left', 'right'];
+  await filterStore.createMultipleFilterBanks(currentChannels);
+
+  // Add initial filters to the store
+  for (const [index, filter] of leftFilters.value.entries()) {
+    await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
+  }
+
+  for (const [index, filter] of rightFilters.value.entries()) {
+    await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
+  }
+});
 
 const activeChannel = ref<Channel>('left');
 const channelMode = ref<ChannelMode>('individual');
@@ -435,28 +502,41 @@ const setCurrentFilterArray = (newFilters: Filter[]) => {
   }
 };
 
-const addFilterToCurrentChannel = (filter: Filter) => {
+const addFilterToCurrentChannel = async (filter: Filter) => {
   if (channelMode.value === 'both') {
     // When in both mode, add to both channels with the same ID
     leftFilters.value.push({ ...filter });
     rightFilters.value.push({ ...filter }); // Same ID for both channels
+
+    // Add to filter store for both channels
+    const storeFilter = convertUIFilterToStore(filter);
+    await filterStore.addFilter('left', leftFilters.value.length - 1, storeFilter);
+    await filterStore.addFilter('right', rightFilters.value.length - 1, storeFilter);
   } else {
     // When in individual mode, add only to the active channel
     if (activeChannel.value === 'left') {
       leftFilters.value.push(filter);
+      await filterStore.addFilter('left', leftFilters.value.length - 1, convertUIFilterToStore(filter));
     } else {
       rightFilters.value.push(filter);
+      await filterStore.addFilter('right', rightFilters.value.length - 1, convertUIFilterToStore(filter));
     }
   }
 };
 
-const removeFilterFromCurrentChannel = (filterId: number) => {
+const removeFilterFromCurrentChannel = async (filterId: number) => {
   if (channelMode.value === 'both') {
     // When in both mode, remove from both channels
     const leftIndex = leftFilters.value.findIndex(f => f.id === filterId);
     const rightIndex = rightFilters.value.findIndex(f => f.id === filterId);
-    if (leftIndex !== -1) leftFilters.value.splice(leftIndex, 1);
-    if (rightIndex !== -1) rightFilters.value.splice(rightIndex, 1);
+    if (leftIndex !== -1) {
+      leftFilters.value.splice(leftIndex, 1);
+      await filterStore.removeFilter('left', leftIndex);
+    }
+    if (rightIndex !== -1) {
+      rightFilters.value.splice(rightIndex, 1);
+      await filterStore.removeFilter('right', rightIndex);
+    }
   } else {
     // When in individual mode, remove only from the active channel
     const currentFilters = getCurrentFilterArray();
@@ -464,8 +544,10 @@ const removeFilterFromCurrentChannel = (filterId: number) => {
     if (indexToRemove !== -1) {
       if (activeChannel.value === 'left') {
         leftFilters.value.splice(indexToRemove, 1);
+        await filterStore.removeFilter('left', indexToRemove);
       } else {
         rightFilters.value.splice(indexToRemove, 1);
+        await filterStore.removeFilter('right', indexToRemove);
       }
     }
   }
@@ -647,7 +729,7 @@ function setActiveFilter(id: number) {
   activeFilterId.value = id;
 }
 
-const addFilterOfType = (type: BiquadFilterType) => {
+const addFilterOfType = async (type: BiquadFilterType) => {
   const newId = Date.now();
   const newFilter: Filter = {
     id: newId,
@@ -659,14 +741,14 @@ const addFilterOfType = (type: BiquadFilterType) => {
     enabled: true,
   };
 
-  addFilterToCurrentChannel(newFilter);
+  await addFilterToCurrentChannel(newFilter);
   setActiveFilter(newId); // Make the newly added filter active
 
   showAddFilterModal.value = false;
 };
 
-const removeFilter = (filterId: number) => {
-  removeFilterFromCurrentChannel(filterId);
+const removeFilter = async (filterId: number) => {
+  await removeFilterFromCurrentChannel(filterId);
 
   // If we removed the active filter, set active to first available filter or null
   if (activeFilterId.value === filterId) {
@@ -684,7 +766,7 @@ const loadEQSettings = () => {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = JSON.parse(e.target?.result as string);
           if (data.filters && Array.isArray(data.filters)) {
@@ -704,9 +786,27 @@ const loadEQSettings = () => {
                 ...filter,
                 id: Date.now() + index + 1000
               }));
+
+              // Update filter store with loaded filters
+              await filterStore.clearFiltersFromBank('left');
+              await filterStore.clearFiltersFromBank('right');
+
+              for (const [index, filter] of leftFilters.value.entries()) {
+                await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
+              }
+
+              for (const [index, filter] of rightFilters.value.entries()) {
+                await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
+              }
             } else {
               // Legacy format - load to current channel
               setCurrentFilterArray(loadedFilters);
+
+              // Update filter store for current channel
+              await filterStore.clearFiltersFromBank(activeChannel.value);
+              for (const [index, filter] of loadedFilters.entries()) {
+                await filterStore.addFilter(activeChannel.value, index, convertUIFilterToStore(filter));
+              }
             }
 
             // Set the first filter as active if any exist
@@ -754,20 +854,55 @@ const saveEQSettings = () => {
   URL.revokeObjectURL(url);
 };
 
-// Helper function to apply changes to both channels when in 'both' mode
-const applyFilterChangeToAllChannels = (filterId: number, updateFn: (filter: Filter) => void) => {
-  if (channelMode.value === 'both') {
-    // Apply to both channels
-    const leftFilter = leftFilters.value.find(f => f.id === filterId);
-    const rightFilter = rightFilters.value.find(f => f.id === filterId);
+// Helper function to apply changes to multiple channels based on current mode
+// Supports future expansion beyond left/right to A,B,C,D,E,F,G,H or C1,C2,C3,C4 etc.
+const applyFilterChangeToMultipleChannels = async (filterId: number, updateFn: (filter: Filter) => void, targetChannels?: string[]) => {
+  // Determine which channels to update
+  let channelsToUpdate: string[] = [];
 
-    if (leftFilter) updateFn(leftFilter);
-    if (rightFilter) updateFn(rightFilter);
+  if (targetChannels) {
+    // Use explicitly provided channels
+    channelsToUpdate = targetChannels;
+  } else if (channelMode.value === 'both') {
+    // Apply to both left and right channels
+    channelsToUpdate = ['left', 'right'];
   } else {
     // Apply to current channel only
-    const currentFilters = getCurrentFilterArray();
-    const filter = currentFilters.find(f => f.id === filterId);
-    if (filter) updateFn(filter);
+    channelsToUpdate = [activeChannel.value];
+  }
+
+  // Apply updates to each specified channel
+  for (const channelName of channelsToUpdate) {
+    let filters: Filter[] = [];
+
+    // Get the filter array for this channel (expandable for future channels)
+    switch (channelName) {
+      case 'left':
+        filters = leftFilters.value;
+        break;
+      case 'right':
+        filters = rightFilters.value;
+        break;
+      // Future channels can be added here:
+      // case 'A': case 'B': case 'C': case 'D':
+      // case 'E': case 'F': case 'G': case 'H':
+      //   filters = getChannelFilters(channelName); break;
+      // case 'C1': case 'C2': case 'C3': case 'C4':
+      //   filters = getNumericChannelFilters(channelName); break;
+      default:
+        console.warn(`[Filter Store] Unknown channel: ${channelName}`);
+        continue;
+    }
+
+    const filter = filters.find(f => f.id === filterId);
+    if (filter) {
+      updateFn(filter);
+      // Update filter store for this channel
+      const filterIndex = filters.findIndex(f => f.id === filterId);
+      if (filterIndex !== -1) {
+        await filterStore.updateFilter(channelName, filterIndex, convertUIFilterToStore(filter));
+      }
+    }
   }
 };
 
@@ -782,7 +917,7 @@ function incrementFilterFrequency(filter: Filter) {
     f.frequency = Math.min(DEFAULT_FREQ_RANGE.max, Math.round(newFreq));
   };
 
-  applyFilterChangeToAllChannels(filter.id, updateFn);
+  applyFilterChangeToMultipleChannels(filter.id, updateFn);
 }
 
 function decrementFilterFrequency(filter: Filter) {
@@ -796,7 +931,7 @@ function decrementFilterFrequency(filter: Filter) {
     f.frequency = Math.max(DEFAULT_FREQ_RANGE.min, Math.round(newFreq));
   };
 
-  applyFilterChangeToAllChannels(filter.id, updateFn);
+  applyFilterChangeToMultipleChannels(filter.id, updateFn);
 }
 
 function incrementFilterGain(filter: Filter) {
@@ -804,7 +939,7 @@ function incrementFilterGain(filter: Filter) {
     f.gain = Math.min(DEFAULT_GAIN_RANGE.max, f.gain + 0.5);
   };
 
-  applyFilterChangeToAllChannels(filter.id, updateFn);
+  applyFilterChangeToMultipleChannels(filter.id, updateFn);
 }
 
 function decrementFilterGain(filter: Filter) {
@@ -812,7 +947,7 @@ function decrementFilterGain(filter: Filter) {
     f.gain = Math.max(DEFAULT_GAIN_RANGE.min, f.gain - 0.5);
   };
 
-  applyFilterChangeToAllChannels(filter.id, updateFn);
+  applyFilterChangeToMultipleChannels(filter.id, updateFn);
 }
 
 function widenFilterBand(filter: Filter) {
@@ -823,7 +958,7 @@ function widenFilterBand(filter: Filter) {
     }
   };
 
-  applyFilterChangeToAllChannels(filter.id, updateFn);
+  applyFilterChangeToMultipleChannels(filter.id, updateFn);
 }
 
 function narrowFilterBand(filter: Filter) {
@@ -834,7 +969,15 @@ function narrowFilterBand(filter: Filter) {
     }
   };
 
-  applyFilterChangeToAllChannels(filter.id, updateFn);
+  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+}
+
+function toggleFilterEnabled(filter: Filter) {
+  const updateFn = (f: Filter) => {
+    f.enabled = !f.enabled;
+  };
+
+  applyFilterChangeToMultipleChannels(filter.id, updateFn);
 }
 
 const startDrag = (e: MouseEvent, band: Filter) => {
@@ -1003,6 +1146,26 @@ const updateCursor = (xInPlot: number, yInPlot: number) => {
 };
 
 const handleMouseUp = () => {
+  // If we were dragging a filter, update the store with the final values
+  if (isDragging.value && selectedBand.value) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    applyFilterChangeToMultipleChannels(selectedBand.value.id, (filter: Filter) => {
+      // The filter has already been updated in handleMouseMove, 
+      // this just triggers the store update with current values
+      // No additional changes needed here, just trigger store sync
+    });
+  }
+
+  // If we were dragging bandwidth, update the store with the final Q value
+  if (isDraggingBandwidth.value && draggingFilter.value) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    applyFilterChangeToMultipleChannels(draggingFilter.value.id, (filter: Filter) => {
+      // The filter Q has already been updated in handleMouseMove, 
+      // this just triggers the store update with current values
+      // No additional changes needed here, just trigger store sync
+    });
+  }
+
   isDragging.value = false;
   selectedBand.value = null;
 

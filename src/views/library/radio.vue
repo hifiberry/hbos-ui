@@ -8,12 +8,8 @@
       <!-- Search Section -->
       <div class="search-section">
         <div class="search-container">
-          <AppSearch
-            v-model="searchQuery"
-            :debounce="1000"
-            placeholder="Search for radio stations with radiobrowser"
-            @change="onSearch"
-          />
+          <AppSearch v-model="searchQuery" :debounce="1000" placeholder="Search for radio stations with radiobrowser"
+            @change="onSearch" />
         </div>
       </div>
 
@@ -21,18 +17,10 @@
       <div v-if="hasFavorites" class="favorites-section">
         <h2>Favorites</h2>
         <div class="stations-grid">
-          <div
-            v-for="favorite in favoritesList"
-            :key="favorite.id"
-            class="station-poster favorite"
-            @click="playStation(favorite)"
-            @mousedown="startLongPress(favorite)"
-            @mouseup="cancelLongPress"
-            @mouseleave="cancelLongPress"
-            @touchstart="startLongPress(favorite)"
-            @touchend="cancelLongPress"
-            @touchcancel="cancelLongPress"
-          >
+          <div v-for="favorite in favoritesList" :key="favorite.id" class="station-poster favorite"
+            @click="playStation(favorite)" @mousedown="startLongPress(favorite)" @mouseup="cancelLongPress"
+            @mouseleave="cancelLongPress" @touchstart="startLongPress(favorite)" @touchend="cancelLongPress"
+            @touchcancel="cancelLongPress">
             <div class="station-poster-img">
               <img
                 v-if="(typeof favorite.metadata?.logo_url === 'string' && favorite.metadata.logo_url) ||
@@ -59,11 +47,8 @@
               </div>
             </div>
             <div class="station-actions">
-              <button
-                class="favorite-btn active"
-                @click.stop="removeFromFavorites(favorite.id)"
-                title="Remove from favorites"
-              >
+              <button class="favorite-btn active" @click.stop="removeFromFavorites(favorite.id)"
+                title="Remove from favorites">
                 <AppIcon icon="clear" />
               </button>
             </div>
@@ -86,20 +71,9 @@
         </div>
 
         <div v-else class="stations-grid">
-          <div
-            v-for="station in searchResults"
-            :key="station.id"
-            class="station-poster"
-            @click="playStation(station)"
-          >
+          <div v-for="station in searchResults" :key="station.id" class="station-poster" @click="playStation(station)">
             <div class="station-poster-img">
-              <img
-                v-if="station.image"
-                :src="station.image"
-                :alt="station.name"
-                loading="lazy"
-                @error="onImageError"
-              />
+              <img v-if="station.image" :src="station.image" :alt="station.name" loading="lazy" @error="onImageError" />
               <AppIcon v-else icon="radio" class="station-poster-placeholder" />
             </div>
             <div class="station-poster-attr">
@@ -116,11 +90,8 @@
               </div>
             </div>
             <div class="station-actions">
-              <button
-                :class="['favorite-btn', { active: station.isFavorite }]"
-                @click.stop="toggleFavorite(station)"
-                :title="station.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
-              >
+              <button :class="['favorite-btn', { active: station.isFavorite }]" @click.stop="toggleFavorite(station)"
+                :title="station.isFavorite ? 'Remove from favorites' : 'Add to favorites'">
                 <AppIcon :icon="station.isFavorite ? 'clear' : 'plus'" />
               </button>
             </div>
@@ -137,12 +108,8 @@
     </div>
 
     <!-- Edit Popup -->
-    <AppRadioEditPopup
-      :is-visible="showEditPopup"
-      :station="editingStation"
-      @close="closeEditPopup"
-      @save="saveEditedStation"
-    />
+    <AppRadioEditPopup :is-visible="showEditPopup" :station="editingStation" @close="closeEditPopup"
+      @save="saveEditedStation" />
   </div>
 </template>
 
@@ -261,7 +228,8 @@ onMounted(async () => {
     }
   }
 
-  .radio-content {    .search-section {
+  .radio-content {
+    .search-section {
       margin-bottom: 40px;
 
       .search-container {
@@ -501,7 +469,12 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

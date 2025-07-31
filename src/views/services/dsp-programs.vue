@@ -10,144 +10,124 @@
         <p>Here you can download the software to your digital sound processor. When it is installed, you can change the sound settings in the "Sound" menu.</p>
       </div>
 
-      <!-- DSP Programs Card - Only show if DSP is detected -->
-          <h2>Installed DSP profile</h2>
-      <div v-if="detectedDSP?.status === 'detected'" class="info-card">
-        <div class="card-header">
-          <AppIcon icon="info" class="card-icon" />
+      <!-- Show simple message when DSP is not available -->
+      <div v-if="dspError || detectedDSP?.status !== 'detected'" class="card">
+        <div class="card-body">
+          <div class="alert alert-info mb-0">
+            <div class="d-flex align-items-center justify-content-center">
+              <div class="text-center">
+                <AppIcon name="info-circle" class="text-info mb-3" size="3rem" />
+                <h4 class="alert-title">{{ dspError || 'No DSP hardware detected' }}</h4>
+              </div>
+            </div>
+          </div>
         </div>
-        <table class="info-table">
-          <tbody>
-            <template v-if="cacheStatus?.profile?.cached && cacheStatus.profile.name">
-              <tr>
-                <td class="label">Profile Name</td>
-                <td class="value">{{ cacheStatus.profile.name }}</td>
-              </tr>
-              <tr v-if="cacheStatus.metadata?.system?.profileVersion">
-                <td class="label">Version</td>
-                <td class="value">{{ cacheStatus.metadata.system.profileVersion }}</td>
-              </tr>
-              <tr v-if="cacheStatus.metadata?.system?.sampleRate">
-                <td class="label">Sample Rate</td>
-                <td class="value">{{ cacheStatus.metadata.system.sampleRate.toLocaleString() }} Hz</td>
-              </tr>
-              <tr v-if="programChecksum?.checksum">
-                <td class="label">Program Checksum</td>
-                <td class="value">{{ programChecksum.checksum }}</td>
-              </tr>
-            </template>
-            <template v-else-if="programChecksum?.checksum">
-              <tr>
-                <td class="label">Program Checksum</td>
-                <td class="value">{{ programChecksum.checksum }}</td>
-              </tr>
-            </template>
-            <template v-else>
-              <tr>
-                <td class="label">Status</td>
-                <td class="value">No DSP profile information available</td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
       </div>
 
-      <!-- Available DSP Profiles Section -->
-      <div class="dsp-profiles mt-5">
-        <div class="profiles-header">
-          <h2>Available DSP Profiles for {{ soundcardDisplayName }}</h2>
-        </div>
-
-        <div v-if="dspLoading || soundcardLoading || metadataLoading || cacheLoading || profilesLoading || programChecksumLoading" class="d-flex align-items-center justify-content-center py-5">
-          <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-          <span>Detecting sound card and DSP hardware...</span>
-        </div>
-
-        <div v-else-if="dspError" class="card">
-          <div class="card-body">
-            <div class="alert alert-danger mb-0">
-              <div class="d-flex align-items-center">
-                <AppIcon name="alert-triangle" class="text-danger me-2" size="1.5rem" />
-                <div>
-                  <h4 class="alert-title mb-1">Detection Failed</h4>
-                  <div class="text-muted">{{ dspError }}</div>
-                </div>
-              </div>
-            </div>
+      <!-- DSP Programs Card - Only show if DSP is detected -->
+      <template v-else>
+        <h2>Installed DSP profile</h2>
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="info" class="card-icon" />
           </div>
+          <table class="info-table">
+            <tbody>
+              <template v-if="cacheStatus?.profile?.cached && cacheStatus.profile.name">
+                <tr>
+                  <td class="label">Profile Name</td>
+                  <td class="value">{{ cacheStatus.profile.name }}</td>
+                </tr>
+                <tr v-if="cacheStatus.metadata?.system?.profileVersion">
+                  <td class="label">Version</td>
+                  <td class="value">{{ cacheStatus.metadata.system.profileVersion }}</td>
+                </tr>
+                <tr v-if="cacheStatus.metadata?.system?.sampleRate">
+                  <td class="label">Sample Rate</td>
+                  <td class="value">{{ cacheStatus.metadata.system.sampleRate.toLocaleString() }} Hz</td>
+                </tr>
+                <tr v-if="programChecksum?.checksum">
+                  <td class="label">Program Checksum</td>
+                  <td class="value">{{ programChecksum.checksum }}</td>
+                </tr>
+              </template>
+              <template v-else-if="programChecksum?.checksum">
+                <tr>
+                  <td class="label">Program Checksum</td>
+                  <td class="value">{{ programChecksum.checksum }}</td>
+                </tr>
+              </template>
+              <template v-else>
+                <tr>
+                  <td class="label">Status</td>
+                  <td class="value">No DSP profile information available</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
         </div>
 
-        <div v-else-if="detectedDSP?.status !== 'detected'" class="card">
-          <div class="card-body">
-            <div class="alert alert-info mb-0">
-              <div class="d-flex align-items-center">
-                <AppIcon name="info-circle" class="text-info me-3" size="2rem" />
-                <div>
-                  <h4 class="alert-title mb-1">No DSP Hardware Available</h4>
-                  <div class="text-muted">
-                    Current sound card: <strong>{{ soundcard || 'Unknown' }}</strong><br>
-                    DSP programming is only available with DSP-enabled sound cards such as:
-                    <ul class="mt-2 mb-0">
-                      <li><strong>Beocreate</strong> - HiFiBerry's premium DSP sound card</li>
-                      <li><strong>DAC+DSP</strong> - High-quality DAC with integrated DSP</li>
-                      <li><strong>DSP-enabled sound card + DSP add-on</strong> - Compatible sound card with DSP expansion</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <!-- Available DSP Profiles Section -->
+        <div class="dsp-profiles mt-5">
+          <div class="profiles-header">
+            <h2>Available DSP Profiles for {{ soundcardDisplayName }}</h2>
           </div>
-        </div>
 
-        <div v-else-if="profilesList.length" class="profiles-list">
-          <div
-            v-for="profile in profilesList"
-            :key="profile.filename"
-            class="card profile-card"
-            :class="{ 'installed-profile': profile.isInstalled }"
-            @click="openDeployModal(profile)"
-          >
-            <div class="profile-item">
-              <div class="profile-main">
-                <div class="profile-info">
-                  <AppIcon icon="tabler/speaker" class="profile-icon" />
-                  <div class="profile-details">
-                    <h3>{{ profile.profileName }}</h3>
-                    <div class="profile-version">
-                      <span class="version-badge">v{{ profile.profileVersion }}</span>
-                      <span class="checksum-badge" :class="{ 'installed-checksum': profile.isInstalled }">
-                        {{ profile.checksum || 'N/A' }}
-                      </span>
-                      <span v-if="profile.isInstalled" class="installed-badge">Installed</span>
+          <div v-if="dspLoading || soundcardLoading || metadataLoading || cacheLoading || profilesLoading || programChecksumLoading" class="d-flex align-items-center justify-content-center py-5">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            <span>Detecting sound card and DSP hardware...</span>
+          </div>
+
+          <div v-else-if="profilesList.length" class="profiles-list">
+            <div
+              v-for="profile in profilesList"
+              :key="profile.filename"
+              class="card profile-card"
+              :class="{ 'installed-profile': profile.isInstalled }"
+              @click="openDeployModal(profile)"
+            >
+              <div class="profile-item">
+                <div class="profile-main">
+                  <div class="profile-info">
+                    <AppIcon icon="tabler/speaker" class="profile-icon" />
+                    <div class="profile-details">
+                      <h3>{{ profile.profileName }}</h3>
+                      <div class="profile-version">
+                        <span class="version-badge">v{{ profile.profileVersion }}</span>
+                        <span class="checksum-badge" :class="{ 'installed-checksum': profile.isInstalled }">
+                          {{ profile.checksum || 'N/A' }}
+                        </span>
+                        <span v-if="profile.isInstalled" class="installed-badge">Installed</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="profile-actions">
-                  <AppIcon icon="tabler/download" class="deploy-icon" />
+                  <div class="profile-actions">
+                    <AppIcon icon="tabler/download" class="deploy-icon" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div v-else class="card">
-          <div class="card-body">
-            <div class="empty">
-              <div class="empty-icon">
-                <AppIcon icon="tabler/folder" size="3rem" />
+          <div v-else class="card">
+            <div class="card-body">
+              <div class="empty">
+                <div class="empty-icon">
+                  <AppIcon icon="tabler/folder" size="3rem" />
+                </div>
+                <p v-if="detectedModelName" class="empty-title">No compatible profiles found</p>
+                <p v-else class="empty-title">No profiles available</p>
+                <p v-if="detectedModelName" class="empty-subtitle text-muted">
+                  No DSP profiles are available for {{ detectedModelName }}.
+                </p>
+                <p v-else class="empty-subtitle text-muted">
+                  No DSP profiles are currently available. Check your profile directory or upload new profiles.
+                </p>
               </div>
-              <p v-if="detectedModelName" class="empty-title">No compatible profiles found</p>
-              <p v-else class="empty-title">No profiles available</p>
-              <p v-if="detectedModelName" class="empty-subtitle text-muted">
-                No DSP profiles are available for {{ detectedModelName }}.
-              </p>
-              <p v-else class="empty-subtitle text-muted">
-                No DSP profiles are currently available. Check your profile directory or upload new profiles.
-              </p>
             </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
     </div>
 
@@ -584,6 +564,7 @@ onMounted(() => {
 .alert-title {
   font-size: 1.1rem;
   font-weight: 600;
+  margin: 0;
 }
 
 /* DSP Profiles Section Styles */

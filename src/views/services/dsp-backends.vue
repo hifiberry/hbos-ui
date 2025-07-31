@@ -41,7 +41,7 @@
                   </div>
                   <div v-if="currentBackendCapabilities && selectedBackend === backendId" class="backend-capabilities">
                     <div class="capability-item" v-for="bankInfo in currentBackendCapabilities.availableFilterBanks" :key="bankInfo.name">
-                      <span class="capability-name">{{ bankInfo.name }}</span>
+                      <span class="capability-name">{{ getFilterBankDisplayName(bankInfo.name) }}</span>
                       <span class="capability-value">{{ bankInfo.maxFilters }} filters</span>
                     </div>
                   </div>
@@ -84,6 +84,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit';
+import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import AppIcon from '@/components/app-icon.vue';
 import AppBackRouter from '@/components/app-back-router.vue';
 

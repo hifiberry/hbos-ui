@@ -210,9 +210,6 @@
                 <!-- Generic biquad coefficient controls -->
                 <template v-else>
                   <div class="generic-coefficients">
-                    <div class="coefficients-header">
-                      <label>Biquad Coefficients (Normalized: a0 = 1)</label>
-                    </div>
                     <div class="coefficient-inputs">
                       <div class="coefficient-group">
                         <label>b0</label>
@@ -2010,18 +2007,6 @@ watch(activeChannel, async () => {
           flex-direction: column;
           gap: 20px;
           width: 100%;
-
-          .coefficients-header {
-            text-align: center;
-
-            label {
-              font-size: 12px;
-              color: #666;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-              font-weight: 500;
-            }
-          }
 
           .coefficient-inputs {
             display: grid;

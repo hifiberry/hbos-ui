@@ -4,18 +4,18 @@ import { check_dsp_toolkit, type DSPToolkitStatus } from '@/api/dsptoolkit'
 
 /**
  * DSP Toolkit Store
- * 
+ *
  * This store manages the DSP hardware detection status with caching.
  * It should be used throughout the app before making any DSP-related API calls.
- * 
+ *
  * Usage examples:
- * 
+ *
  * // Check if DSP operations are allowed
  * const dspStore = useDSPToolkitStore()
  * if (await dspStore.canUseDSP()) {
  *   // Proceed with DSP operations
  * }
- * 
+ *
  * // Get detailed status
  * const status = await dspStore.getDSPStatus()
  * if (status === 'yes') {
@@ -25,7 +25,7 @@ import { check_dsp_toolkit, type DSPToolkitStatus } from '@/api/dsptoolkit'
  * } else if (status === 'backend_error') {
  *   // Backend communication error
  * }
- * 
+ *
  * // Force a fresh check (bypassing cache)
  * const status = await dspStore.checkDSPStatus(true)
  */
@@ -42,7 +42,7 @@ export const useDSPToolkitStore = defineStore('dsp-toolkit', () => {
   const isDSPDetected = computed(() => status.value === 'yes')
   const hasBackendError = computed(() => status.value === 'backend_error')
   const isNoDSP = computed(() => status.value === 'no')
-  
+
   // Check if cache is still valid
   const isCacheValid = computed(() => {
     if (!lastChecked.value || !status.value) return false
@@ -59,7 +59,7 @@ export const useDSPToolkitStore = defineStore('dsp-toolkit', () => {
     }
 
     isChecking.value = true
-    
+
     try {
       const result = await check_dsp_toolkit()
       status.value = result
@@ -101,14 +101,14 @@ export const useDSPToolkitStore = defineStore('dsp-toolkit', () => {
     isChecking,
     lastChecked,
     cacheTimeout,
-    
+
     // Getters
     isDSPAvailable,
     isDSPDetected,
     hasBackendError,
     isNoDSP,
     isCacheValid,
-    
+
     // Actions
     checkDSPStatus,
     clearCache,

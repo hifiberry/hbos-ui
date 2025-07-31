@@ -85,7 +85,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       // Check DSP availability first using the store
       const dspToolkitStore = useDSPToolkitStore()
       const canUseDSP = await dspToolkitStore.canUseDSP()
-      
+
       if (!canUseDSP) {
         const dspStatus = dspToolkitStore.status
         let errorMessage = 'DSP Toolkit backend unavailable: '

@@ -23,7 +23,7 @@ export const filterBankTranslations: Record<string, FilterBankTranslation> = {
     displayName: 'Both',
     description: 'Stereo linked filters'
   },
-  
+
   // IIR Crossover filters (A-Z)
   'iir_a': {
     displayName: 'Xover A',
@@ -129,7 +129,7 @@ export const filterBankTranslations: Record<string, FilterBankTranslation> = {
     displayName: 'Xover Z',
     description: 'IIR Crossover Filter Z'
   },
-  
+
   // Common filter bank names
   'master': {
     displayName: 'Master',

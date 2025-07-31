@@ -49,6 +49,11 @@ export default defineConfig(() => {
           changeOrigin: true,
           secure: false,
         },
+        '/api/dsptoolkit': {
+          target: `http://${deviceIP}:${devicePort}`,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   }

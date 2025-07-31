@@ -203,6 +203,31 @@ export function createBiquadFilter(
 }
 
 /**
+ * Convert Q factor to bandwidth in octaves using the Audio EQ Cookbook formula
+ * For digital filters with bilinear transform compensation
+ */
+export function qToBandwidth(Q: number, omega0: number): number {
+  // From Audio EQ Cookbook: 1/Q = 2*sinh(ln(2)/2 * BW * omega0/sin(omega0))
+  // Solving for BW: BW = (2/ln(2)) * asinh(1/(2*Q)) * sin(omega0)/omega0
+
+  const oneOverQ = 1 / Q;
+  const asinh_term = Math.asinh(oneOverQ / 2);
+  const bandwidth = (2 / Math.log(2)) * asinh_term * Math.sin(omega0) / omega0;
+
+  return bandwidth;
+}
+
+/**
+ * Convert bandwidth in octaves to Q factor using the Audio EQ Cookbook formula
+ * For digital filters with bilinear transform compensation
+ */
+export function bandwidthToQ(bandwidth: number, omega0: number): number {
+  // From Audio EQ Cookbook: 1/Q = 2*sinh(ln(2)/2 * BW * omega0/sin(omega0))
+  const sinh_term = 2 * Math.sinh(Math.log(2) / 2 * bandwidth * omega0 / Math.sin(omega0));
+  return 1 / sinh_term;
+}
+
+/**
  * Calculate the bandwidth of a biquad filter
  * Returns the frequency range where the filter has significant effect
  */
@@ -218,65 +243,85 @@ export function calculateBiquadBandwidth(
 
   switch (type) {
     case FILTER_TYPES.PEAKING: {
-      // For peaking filters, calculate -3dB points
-      // Bandwidth = fc / Q
-      const bandwidth = frequency / Q;
-      const lowerFreq = frequency - bandwidth / 2;
-      const upperFreq = frequency + bandwidth / 2;
-      
-      return {
-        lowerFreq: Math.max(1, lowerFreq), // Clamp to minimum 1 Hz
-        upperFreq: Math.min(filter.sampleRate / 2, upperFreq) // Clamp to Nyquist
-      };
-    }
+      // For peaking filters, use the Audio EQ Cookbook bandwidth formula
+      // BW is the bandwidth in octaves between -3 dB frequencies
 
-    case FILTER_TYPES.LOWPASS: {
-      // For lowpass: transition region around the cutoff frequency
-      // Use Q to determine the transition width
-      const transitionWidth = frequency / Q;
-      const lowerFreq = Math.max(1, frequency - transitionWidth);
-      const upperFreq = Math.min(filter.sampleRate / 2, frequency + transitionWidth);
-      
+      const omega0 = 2 * Math.PI * frequency / filter.sampleRate;
+      const bandwidthOctaves = qToBandwidth(Q, omega0);
+
+      // Convert octave bandwidth to frequency range
+      // In log space: log(f1) = log(fc) - BW/2*log(2), log(f2) = log(fc) + BW/2*log(2)
+      // Which gives: f1 = fc * 2^(-BW/2), f2 = fc * 2^(BW/2)
+      // This makes them symmetrical in log space, not linear space
+      const halfBandwidthLog = bandwidthOctaves / 2;
+      const lowerFreq = frequency / Math.pow(2, halfBandwidthLog);
+      const upperFreq = frequency * Math.pow(2, halfBandwidthLog);
+
       return {
-        lowerFreq,
-        upperFreq
+        lowerFreq: Math.max(1, lowerFreq),
+        upperFreq: Math.min(filter.sampleRate / 2, upperFreq)
+      };
+    }    case FILTER_TYPES.LOWPASS: {
+      // For lowpass: use Audio EQ Cookbook Q-to-bandwidth calculation
+      const omega0 = 2 * Math.PI * frequency / filter.sampleRate;
+      const bandwidthOctaves = qToBandwidth(Q, omega0);
+
+      // Convert octave bandwidth to frequency range (symmetrical in log space)
+      const halfBandwidthLog = bandwidthOctaves / 2;
+      const lowerFreq = frequency / Math.pow(2, halfBandwidthLog);
+      const upperFreq = frequency * Math.pow(2, halfBandwidthLog);
+
+      return {
+        lowerFreq: Math.max(1, lowerFreq),
+        upperFreq: Math.min(filter.sampleRate / 2, upperFreq)
       };
     }
 
     case FILTER_TYPES.HIGHPASS: {
-      // For highpass: transition region around the cutoff frequency
-      // Use Q to determine the transition width
-      const transitionWidth = frequency / Q;
-      const lowerFreq = Math.max(1, frequency - transitionWidth);
-      const upperFreq = Math.min(filter.sampleRate / 2, frequency + transitionWidth);
-      
+      // For highpass: use Audio EQ Cookbook Q-to-bandwidth calculation
+      const omega0 = 2 * Math.PI * frequency / filter.sampleRate;
+      const bandwidthOctaves = qToBandwidth(Q, omega0);
+
+      // Convert octave bandwidth to frequency range (symmetrical in log space)
+      const halfBandwidthLog = bandwidthOctaves / 2;
+      const lowerFreq = frequency / Math.pow(2, halfBandwidthLog);
+      const upperFreq = frequency * Math.pow(2, halfBandwidthLog);
+
       return {
-        lowerFreq,
-        upperFreq
+        lowerFreq: Math.max(1, lowerFreq),
+        upperFreq: Math.min(filter.sampleRate / 2, upperFreq)
       };
     }
 
     case FILTER_TYPES.LOWSHELF: {
-      // For low shelf: transition region around the corner frequency
-      // Use Q to determine the transition width
-      const transitionWidth = frequency / Q;
-      const centerTransition = frequency;
-      
+      // For low shelf: use Audio EQ Cookbook Q-to-bandwidth calculation
+      const omega0 = 2 * Math.PI * frequency / filter.sampleRate;
+      const bandwidthOctaves = qToBandwidth(Q, omega0);
+
+      // Convert octave bandwidth to frequency range (symmetrical in log space)
+      const halfBandwidthLog = bandwidthOctaves / 2;
+      const lowerFreq = frequency / Math.pow(2, halfBandwidthLog);
+      const upperFreq = frequency * Math.pow(2, halfBandwidthLog);
+
       return {
-        lowerFreq: Math.max(1, centerTransition - transitionWidth),
-        upperFreq: Math.min(filter.sampleRate / 2, centerTransition + transitionWidth)
+        lowerFreq: Math.max(1, lowerFreq),
+        upperFreq: Math.min(filter.sampleRate / 2, upperFreq)
       };
     }
 
     case FILTER_TYPES.HIGHSHELF: {
-      // For high shelf: transition region around the corner frequency
-      // Use Q to determine the transition width
-      const transitionWidth = frequency / Q;
-      const centerTransition = frequency;
-      
+      // For high shelf: use Audio EQ Cookbook Q-to-bandwidth calculation
+      const omega0 = 2 * Math.PI * frequency / filter.sampleRate;
+      const bandwidthOctaves = qToBandwidth(Q, omega0);
+
+      // Convert octave bandwidth to frequency range (symmetrical in log space)
+      const halfBandwidthLog = bandwidthOctaves / 2;
+      const lowerFreq = frequency / Math.pow(2, halfBandwidthLog);
+      const upperFreq = frequency * Math.pow(2, halfBandwidthLog);
+
       return {
-        lowerFreq: Math.max(1, centerTransition - transitionWidth),
-        upperFreq: Math.min(filter.sampleRate / 2, centerTransition + transitionWidth)
+        lowerFreq: Math.max(1, lowerFreq),
+        upperFreq: Math.min(filter.sampleRate / 2, upperFreq)
       };
     }
 

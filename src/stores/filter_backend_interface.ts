@@ -1,6 +1,6 @@
 /**
  * Backend Interface for Filter Operations
- * 
+ *
  * This defines the contract for different filter backend implementations.
  * Implementations can be console logging (for demo), HTTP API calls, WebSocket, etc.
  */

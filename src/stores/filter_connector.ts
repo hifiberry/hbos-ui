@@ -55,7 +55,7 @@ export type { Filter, FilterBank, FilterBanks, BackendCapabilities }
 export const useFilterStore = defineStore('filter', () => {
   // State
   const filterBanks = ref<FilterBanks>({})
-  
+
   // Backend implementation - can be swapped for different implementations
   const backend = new ConsoleFilterBackend()
 
@@ -77,11 +77,11 @@ export const useFilterStore = defineStore('filter', () => {
   const canAddFilterToBank = async (bankName: string): Promise<boolean> => {
     const capabilities = await getBackendCapabilities()
     const bankInfo = capabilities.availableFilterBanks.find(bank => bank.name === bankName)
-    
+
     if (!bankInfo) {
       return false // Bank doesn't exist in capabilities
     }
-    
+
     return bankInfo.currentFilterCount < bankInfo.maxFilters
   }
 
@@ -126,10 +126,10 @@ export const useFilterStore = defineStore('filter', () => {
       const bankInfo = capabilities.availableFilterBanks.find(bank => bank.name === bankName)
       const maxFilters = bankInfo?.maxFilters || 0
       const currentCount = bankInfo?.currentFilterCount || 0
-      
+
       throw new Error(`Cannot add filter: Bank "${bankName}" has reached its maximum capacity of ${maxFilters} filters (currently has ${currentCount})`)
     }
-    
+
     const filterId = await backend.addFilter(bankName, position, filter)
     await syncFromBackend()
     return filterId

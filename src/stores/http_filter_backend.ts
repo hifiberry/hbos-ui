@@ -1,9 +1,9 @@
 /**
  * HTTP API Filter Backend (Example Implementation)
- * 
+ *
  * This implementation communicates with a real backend HTTP API.
  * This is an example of how easy it is to swap backends.
- * 
+ *
  * To use this instead of console logging, simply change the backend
  * initialization in filter_connector.ts from:
  * const backend = new ConsoleFilterBackend()
@@ -17,9 +17,9 @@ export class HttpFilterBackend extends FilterBackend {
   public readonly name = 'HTTP API Filter Backend'
   public readonly description = `
     <p><strong>HTTP API Filter Backend</strong></p>
-    
+
     <p>This backend communicates with a real audio processing server via HTTP REST API calls.</p>
-    
+
     <h4>Features:</h4>
     <ul>
       <li><strong>Real Backend Integration:</strong> Connects to actual audio processing hardware/software</li>
@@ -27,7 +27,7 @@ export class HttpFilterBackend extends FilterBackend {
       <li><strong>Persistent Storage:</strong> Filter configurations are saved on the server</li>
       <li><strong>Dynamic Capabilities:</strong> Filter bank limits and availability determined by server</li>
     </ul>
-    
+
     <h4>API Endpoints:</h4>
     <ul>
       <li><code>GET /capabilities</code> - Get backend information and limits</li>
@@ -35,7 +35,7 @@ export class HttpFilterBackend extends FilterBackend {
       <li><code>PUT /filter-banks/{name}/filters/{position}</code> - Update filter</li>
       <li><code>DELETE /filter-banks/{name}/filters/{position}</code> - Remove filter</li>
     </ul>
-    
+
     <p><em>This backend requires a compatible audio processing server to be running and accessible.</em></p>
   `.trim()
   private apiBaseUrl: string
@@ -59,7 +59,7 @@ export class HttpFilterBackend extends FilterBackend {
     }
 
     const response = await fetch(url, options)
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
@@ -78,7 +78,7 @@ export class HttpFilterBackend extends FilterBackend {
       position,
       filter
     }) as { id: string }
-    
+
     console.log(`[HTTP Filter Backend] Added filter to ${bankName}:`, result)
     return result.id
   }
@@ -144,7 +144,7 @@ export class HttpFilterBackend extends FilterBackend {
 
 // Example usage:
 // const backend = new HttpFilterBackend('http://localhost:8080/api/v1')
-// 
+//
 // This would make HTTP calls like:
 // POST http://localhost:8080/api/v1/filter-banks/left/filters
 // GET http://localhost:8080/api/v1/filter-banks

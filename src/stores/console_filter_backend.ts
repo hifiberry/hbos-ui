@@ -12,14 +12,10 @@ import { FilterBackend, type Filter, type FilterBanks, type BackendCapabilities,
 export class ConsoleFilterBackend extends FilterBackend {
   public readonly name = 'Console Filter Backend (Demo)'
   public readonly description = `
-    <p><strong>Console Filter Backend (Demo)</strong></p>
-
     <p><em>⚠️ This is a demonstration backend with no actual audio processing functionality. It's designed solely to showcase the filter designer interface and interactions.</em></p>
-
+    
     <h4>Purpose:</h4>
-    <p>This demo backend allows you to experience the filter designer UI, test filter operations, and understand how the interface works without connecting to real audio hardware.</p>
-
-    <h4>What it does:</h4>
+    <p>This demo backend allows you to experience the filter designer UI, test filter operations, and understand how the interface works without connecting to real audio hardware.</p>    <h4>What it does:</h4>
     <ul>
       <li><strong>Visual Demonstration:</strong> Shows how filters appear and behave in the interface</li>
       <li><strong>Console Logging:</strong> All filter operations are logged to the browser console for development purposes</li>
@@ -43,8 +39,8 @@ export class ConsoleFilterBackend extends FilterBackend {
 
   // Configuration for predefined filter banks
   private readonly PREDEFINED_BANKS = {
-    left: { maxFilters: 4 },
-    right: { maxFilters: 4 }
+    left: { maxFilters: 16 },
+    right: { maxFilters: 16 }
   }
 
   constructor() {

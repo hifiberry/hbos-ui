@@ -43,9 +43,9 @@
                 <!-- Bandwidth indicator area and lines -->
                 <template v-if="SHOW_BANDWIDTH_LINES && activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
                   <!-- Light shaded area between bandwidth lines -->
-                  <rect :x="frequencyToXLocal(activeFilterBandwidthStart)" :y="0" 
-                        :width="frequencyToXLocal(activeFilterBandwidthEnd) - frequencyToXLocal(activeFilterBandwidthStart)" 
-                        :height="plotHeight" 
+                  <rect :x="frequencyToXLocal(activeFilterBandwidthStart)" :y="0"
+                        :width="frequencyToXLocal(activeFilterBandwidthEnd) - frequencyToXLocal(activeFilterBandwidthStart)"
+                        :height="plotHeight"
                         fill="rgba(0, 184, 255, 0.03)" stroke="none" />
                   <!-- Bandwidth indicator lines -->
                   <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"

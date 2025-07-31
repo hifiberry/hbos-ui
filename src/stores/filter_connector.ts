@@ -47,6 +47,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { ConsoleFilterBackend } from './console_filter_backend'
+import { DSPToolkitFilterBackend } from './dsp_toolkit_filter_backend'
 import type { Filter, FilterBank, FilterBanks, FilterBackend, BackendCapabilities } from './filter_backend_interface'
 
 // Re-export types for convenience
@@ -56,8 +57,25 @@ export const useFilterStore = defineStore('filter', () => {
   // State
   const filterBanks = ref<FilterBanks>({})
 
-  // Backend implementation - can be swapped for different implementations
-  const backend = new ConsoleFilterBackend()
+  // Available backend implementations
+  const availableBackends = {
+    console: new ConsoleFilterBackend(),
+    dspToolkit: new DSPToolkitFilterBackend()
+  }
+
+  // Current backend - can be switched dynamically
+  const currentBackendType = ref<keyof typeof availableBackends>('console')
+
+  // Get current backend instance
+  const getCurrentBackend = (): FilterBackend => availableBackends[currentBackendType.value]
+
+  // Function to switch backends
+  const switchBackend = async (backendType: keyof typeof availableBackends): Promise<void> => {
+    if (backendType === currentBackendType.value) return
+
+    currentBackendType.value = backendType
+    await syncFromBackend()
+  }
 
   // Computed
   const getAllBanks = computed(() => filterBanks.value)
@@ -65,12 +83,12 @@ export const useFilterStore = defineStore('filter', () => {
 
   // Helper function to sync backend state with local state
   const syncFromBackend = async (): Promise<void> => {
-    filterBanks.value = await backend.getCurrentConfig()
+    filterBanks.value = await getCurrentBackend().getCurrentConfig()
   }
 
   // Get backend capabilities (name, filter bank limits, etc.)
   const getBackendCapabilities = async (): Promise<BackendCapabilities> => {
-    return await backend.getBackendCapabilities()
+    return await getCurrentBackend().getBackendCapabilities()
   }
 
   // Check if a filter bank can accept more filters
@@ -91,7 +109,7 @@ export const useFilterStore = defineStore('filter', () => {
    * Create a new filter bank if it doesn't exist
    */
   const createFilterBank = async (bankName: string): Promise<void> => {
-    await backend.createFilterBank(bankName)
+    await getCurrentBackend().createFilterBank(bankName)
     await syncFromBackend()
   }
 
@@ -130,7 +148,7 @@ export const useFilterStore = defineStore('filter', () => {
       throw new Error(`Cannot add filter: Bank "${bankName}" has reached its maximum capacity of ${maxFilters} filters (currently has ${currentCount})`)
     }
 
-    const filterId = await backend.addFilter(bankName, position, filter)
+    const filterId = await getCurrentBackend().addFilter(bankName, position, filter)
     await syncFromBackend()
     return filterId
   }
@@ -140,7 +158,7 @@ export const useFilterStore = defineStore('filter', () => {
    * Other filters will shift to fill the gap
    */
   const removeFilter = async (bankName: string, position: number): Promise<boolean> => {
-    const result = await backend.removeFilter(bankName, position)
+    const result = await getCurrentBackend().removeFilter(bankName, position)
     if (result) {
       await syncFromBackend()
     }
@@ -151,7 +169,7 @@ export const useFilterStore = defineStore('filter', () => {
    * Update a filter at a specific position in a bank
    */
   const updateFilter = async (bankName: string, position: number, updates: Partial<Omit<Filter, 'id'>>): Promise<boolean> => {
-    const result = await backend.updateFilter(bankName, position, updates)
+    const result = await getCurrentBackend().updateFilter(bankName, position, updates)
     if (result) {
       await syncFromBackend()
     }
@@ -162,7 +180,7 @@ export const useFilterStore = defineStore('filter', () => {
    * Clear all filters from a specific bank
    */
   const clearFiltersFromBank = async (bankName: string): Promise<void> => {
-    await backend.clearFiltersFromBank(bankName)
+    await getCurrentBackend().clearFiltersFromBank(bankName)
     await syncFromBackend()
   }
 
@@ -170,7 +188,7 @@ export const useFilterStore = defineStore('filter', () => {
    * Remove an entire filter bank
    */
   const removeFilterBank = async (bankName: string): Promise<boolean> => {
-    const result = await backend.removeFilterBank(bankName)
+    const result = await getCurrentBackend().removeFilterBank(bankName)
     if (result) {
       await syncFromBackend()
     }
@@ -242,8 +260,9 @@ export const useFilterStore = defineStore('filter', () => {
    */
   const resetAllBanks = async (): Promise<void> => {
     // For console backend, we can call its reset method directly
-    if (backend instanceof ConsoleFilterBackend) {
-      backend.resetAllBanks()
+    const currentBackend = getCurrentBackend()
+    if (currentBackend instanceof ConsoleFilterBackend) {
+      currentBackend.resetAllBanks()
     }
     await syncFromBackend()
   }
@@ -252,14 +271,14 @@ export const useFilterStore = defineStore('filter', () => {
    * Export filter configuration for backend communication
    */
   const exportFilterConfig = async (): Promise<FilterBanks> => {
-    return await backend.exportFilterConfig()
+    return await getCurrentBackend().exportFilterConfig()
   }
 
   /**
    * Import filter configuration from backend
    */
   const importFilterConfig = async (config: FilterBanks): Promise<void> => {
-    await backend.importFilterConfig(config)
+    await getCurrentBackend().importFilterConfig(config)
     await syncFromBackend()
   }
 
@@ -269,7 +288,7 @@ export const useFilterStore = defineStore('filter', () => {
    */
   const createMultipleFilterBanks = async (bankNames: string[]): Promise<void> => {
     for (const bankName of bankNames) {
-      await backend.createFilterBank(bankName)
+      await getCurrentBackend().createFilterBank(bankName)
     }
     await syncFromBackend()
   }
@@ -339,6 +358,10 @@ export const useFilterStore = defineStore('filter', () => {
     // Backend management
     syncFromBackend,
     getBackendCapabilities,
-    canAddFilterToBank
+    canAddFilterToBank,
+    getCurrentBackend,
+    switchBackend,
+    currentBackendType: computed(() => currentBackendType.value),
+    availableBackends: computed(() => Object.keys(availableBackends))
   }
 })

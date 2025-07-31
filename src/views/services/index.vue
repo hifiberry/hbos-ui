@@ -49,6 +49,17 @@
         </span>
       </router-link>
 
+      <router-link :to="{ name: 'dsp-backends' }" class="service-card">
+        <div class="service-header">
+          <AppIcon icon="processor" class="service-icon" />
+          <h2>DSP Backends</h2>
+        </div>
+        <p class="service-description">Select and configure digital signal processing backends</p>
+        <span class="service-link">
+          View DSP Backends
+        </span>
+      </router-link>
+
       <router-link :to="{ name: 'system-info' }" class="service-card">
         <div class="service-header">
           <AppIcon icon="computer" class="service-icon" />

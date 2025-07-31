@@ -80,6 +80,11 @@ const router = createRouter({
               component: () => import('@/views/services/dsp-programs.vue'),
             },
             {
+              path: 'dsp-backends',
+              name: 'dsp-backends',
+              component: () => import('@/views/services/dsp-backends.vue'),
+            },
+            {
               path: 'system-info',
               name: 'system-info',
               component: () => import('@/views/services/system-info.vue'),

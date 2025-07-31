@@ -10,12 +10,12 @@
 import { FilterBackend, type Filter, type FilterBanks, type BackendCapabilities, type FilterBankInfo } from './filter_backend_interface'
 
 export class ConsoleFilterBackend extends FilterBackend {
-  public readonly name = 'Console Filter Backend (Demo)'
+  public readonly name = 'Demo'
+  public readonly shortDescription = 'Demo backend for UI testing and development'
   public readonly description = `
-    <p><em>⚠️ This is a demonstration backend with no actual audio processing functionality. It's designed solely to showcase the filter designer interface and interactions.</em></p>
+    <p><em>Demo backend that does nothing and is only there to demonstrate the UI</em></p>
 
-    <h4>Purpose:</h4>
-    <p>This demo backend allows you to experience the filter designer UI, test filter operations, and understand how the interface works without connecting to real audio hardware.</p>    <h4>What it does:</h4>
+    <h4>What it does:</h4>
     <ul>
       <li><strong>Visual Demonstration:</strong> Shows how filters appear and behave in the interface</li>
       <li><strong>Console Logging:</strong> All filter operations are logged to the browser console for development purposes</li>
@@ -98,6 +98,7 @@ export class ConsoleFilterBackend extends FilterBackend {
     const capabilities: BackendCapabilities = {
       backendName: this.name,
       backendDescription: this.description,
+      backendShortDescription: this.shortDescription,
       availableFilterBanks
     }
 

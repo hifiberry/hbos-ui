@@ -33,6 +33,7 @@ export interface BackendCapabilities {
   availableFilterBanks: FilterBankInfo[]
   backendName: string
   backendDescription: string
+  backendShortDescription: string
 }
 
 /**

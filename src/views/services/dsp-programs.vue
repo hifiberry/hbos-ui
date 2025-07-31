@@ -172,8 +172,12 @@ import { ref, onMounted, computed } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppConfirmationDialog from '@/components/app-confirmation-dialog.vue'
-import { getDetectedDSP, type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
+import { type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
 import { detectSoundCard, type SoundCardDetectionResponse } from '@/api/system'
+import { useDSPToolkitStore } from '@/stores/dsp-toolkit'
+
+// Stores
+const dspToolkitStore = useDSPToolkitStore()
 
 // State
 const dspLoading = ref(false)
@@ -304,6 +308,13 @@ const loadCacheStatus = async () => {
   cacheLoading.value = true
 
   try {
+    // Check if DSP is available before making the call
+    const canUseDSP = await dspToolkitStore.canUseDSP()
+    if (!canUseDSP) {
+      cacheStatus.value = null
+      return
+    }
+    
     cacheStatus.value = await getCacheStatus()
   } catch (error) {
     console.error('Failed to get cache status:', error)
@@ -317,6 +328,13 @@ const loadProfilesMetadata = async () => {
   profilesLoading.value = true
 
   try {
+    // Check if DSP is available before making the call
+    const canUseDSP = await dspToolkitStore.canUseDSP()
+    if (!canUseDSP) {
+      profilesMetadata.value = null
+      return
+    }
+    
     profilesMetadata.value = await getDSPProfilesMetadata()
   } catch (error) {
     console.error('Failed to get profiles metadata:', error)
@@ -330,6 +348,13 @@ const loadMetadata = async () => {
   metadataLoading.value = true
 
   try {
+    // Check if DSP is available before making the call
+    const canUseDSP = await dspToolkitStore.canUseDSP()
+    if (!canUseDSP) {
+      metadata.value = null
+      return
+    }
+    
     metadata.value = await getMetadata()
   } catch (error) {
     console.error('Failed to get DSP metadata:', error)
@@ -343,6 +368,13 @@ const loadProgramChecksum = async () => {
   programChecksumLoading.value = true
 
   try {
+    // Check if DSP is available before making the call
+    const canUseDSP = await dspToolkitStore.canUseDSP()
+    if (!canUseDSP) {
+      programChecksum.value = null
+      return
+    }
+    
     programChecksum.value = await getDSPProgramChecksum()
   } catch (error) {
     console.error('Failed to get DSP program checksum:', error)
@@ -357,10 +389,21 @@ const loadDSPDetection = async () => {
   dspError.value = ''
 
   try {
-    detectedDSP.value = await getDetectedDSP()
+    // Use the store to check DSP status with caching
+    const dspStatus = await dspToolkitStore.checkDSPStatus()
+    
+    if (dspStatus === 'backend_error') {
+      dspError.value = 'HiFiBerry DSP software not available'
+      detectedDSP.value = null
+    } else if (dspStatus === 'yes') {
+      detectedDSP.value = { detected_dsp: 'detected', status: 'detected' }
+    } else {
+      detectedDSP.value = { detected_dsp: 'none', status: 'not_detected' }
+    }
   } catch (error) {
     console.error('Failed to detect DSP hardware:', error)
     dspError.value = error instanceof Error ? error.message : 'Unable to communicate with DSP service'
+    detectedDSP.value = null
   } finally {
     dspLoading.value = false
   }

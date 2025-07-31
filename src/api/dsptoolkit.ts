@@ -235,6 +235,17 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
+    // Check if response is actually JSON by looking at content type
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      // Try to read as text to check if it's HTML
+      const text = await response.text()
+      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+        throw new Error('HiFiBerry DSP software not available')
+      }
+      throw new Error('Invalid response format from DSP service')
+    }
+
     return await response.json()
   } catch (error) {
     clearTimeout(timeoutId)
@@ -242,6 +253,12 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout')
     }
+    
+    // Check for JSON parsing errors that might indicate HTML response
+    if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
+      throw new Error('HiFiBerry DSP software not available')
+    }
+    
     throw error
   }
 }
@@ -271,6 +288,17 @@ async function longApiRequest<T>(endpoint: string, options: RequestInit = {}, ti
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
+    // Check if response is actually JSON by looking at content type
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      // Try to read as text to check if it's HTML
+      const text = await response.text()
+      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+        throw new Error('HiFiBerry DSP software not available')
+      }
+      throw new Error('Invalid response format from DSP service')
+    }
+
     return await response.json()
   } catch (error) {
     clearTimeout(timeoutId)
@@ -278,6 +306,12 @@ async function longApiRequest<T>(endpoint: string, options: RequestInit = {}, ti
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error(`Request timeout (exceeded ${timeout / 1000} seconds)`)
     }
+    
+    // Check for JSON parsing errors that might indicate HTML response
+    if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
+      throw new Error('HiFiBerry DSP software not available')
+    }
+    
     throw error
   }
 }
@@ -405,4 +439,25 @@ export async function getDSPProfilesMetadata(): Promise<DSPProfilesMetadataRespo
 // Program Checksum API
 export async function getDSPProgramChecksum(): Promise<DSPProgramChecksumResponse> {
   return apiRequest<DSPProgramChecksumResponse>('/checksum')
+}
+
+// DSP Toolkit Status Check
+export type DSPToolkitStatus = 'yes' | 'no' | 'backend_error'
+
+export async function check_dsp_toolkit(): Promise<DSPToolkitStatus> {
+  try {
+    const result = await getDetectedDSP()
+    return result.status === 'detected' ? 'yes' : 'no'
+  } catch (error) {
+    // Check if it's a backend communication error
+    if (error instanceof Error) {
+      if (error.message.includes('HiFiBerry DSP software not available') ||
+          error.message.includes('Request timeout') ||
+          error.message.includes('fetch') ||
+          error.message.includes('HTTP 5')) {
+        return 'backend_error'
+      }
+    }
+    return 'backend_error'
+  }
 }

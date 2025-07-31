@@ -15,10 +15,11 @@
             class="backend-item"
             :class="{
               'active': selectedBackend === backendId,
-              'loading': switchingBackend
+              'loading': switchingBackend,
+              'unavailable': isBackendUnavailable(backendId)
             }"
             @click="switchToBackend(backendId)"
-            :style="{ cursor: switchingBackend || selectedBackend === backendId ? 'default' : 'pointer' }"
+            :style="{ cursor: switchingBackend || selectedBackend === backendId || isBackendUnavailable(backendId) ? 'default' : 'pointer' }"
           >
             <div class="backend-main">
               <div class="backend-info">
@@ -27,8 +28,12 @@
                   <h3>{{ backend.name }}</h3>
                   <p class="backend-description">{{ getBackendDescription(backendId) }}</p>
                   <div class="backend-status">
-                    <span :class="['status-badge', selectedBackend === backendId ? 'active' : 'inactive']">
-                      {{ selectedBackend === backendId ? 'Active' : 'Available' }}
+                    <span :class="[
+                      'status-badge', 
+                      isBackendUnavailable(backendId) ? 'unavailable' : 
+                      selectedBackend === backendId ? 'active' : 'inactive'
+                    ]">
+                      {{ getBackendStatus(backendId) }}
                     </span>
                     <span v-if="switchingBackend && pendingBackend === backendId" class="switching-indicator">
                       Switching...
@@ -78,11 +83,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
+import { useDSPToolkitStore } from '@/stores/dsp-toolkit';
 import AppIcon from '@/components/app-icon.vue';
 import AppBackRouter from '@/components/app-back-router.vue';
 
-// Initialize filter store
+// Initialize stores
 const filterStore = useFilterStore();
+const dspToolkitStore = useDSPToolkitStore();
 
 // Reactive state
 const selectedBackend = ref<'console' | 'dspToolkit'>('console');
@@ -99,12 +106,25 @@ const availableBackends = computed(() => ({
     name: 'Demo'
   },
   dspToolkit: {
-    name: 'DSP Toolkit'
+    name: 'HiFiBerry DSP'
   }
 }));
 
 // Get backend description from capabilities
 const getBackendDescription = (backendId: string): string => {
+  if (backendId === 'dspToolkit') {
+    if (dspToolkitStore.status === 'backend_error') {
+      return 'HiFiBerry DSP software not available';
+    } else if (dspToolkitStore.status === 'no') {
+      return 'No DSP hardware detected';
+    } else if (dspToolkitStore.status === 'yes') {
+      const capabilities = allBackendCapabilities.value[backendId];
+      return capabilities?.backendShortDescription || 'Real-time DSP hardware control';
+    } else {
+      return 'Checking DSP availability...';
+    }
+  }
+  
   const capabilities = allBackendCapabilities.value[backendId];
   return capabilities?.backendShortDescription || '';
 };
@@ -113,6 +133,22 @@ const getBackendDescription = (backendId: string): string => {
 const currentBackendCapabilities = computed(() => {
   return allBackendCapabilities.value[selectedBackend.value] || null;
 });
+
+// Check if a backend is unavailable
+const isBackendUnavailable = (backendId: string): boolean => {
+  if (backendId === 'dspToolkit') {
+    return dspToolkitStore.status === 'no' || dspToolkitStore.status === 'backend_error';
+  }
+  return false;
+};
+
+// Get backend status text
+const getBackendStatus = (backendId: string): string => {
+  if (isBackendUnavailable(backendId)) {
+    return 'Unavailable';
+  }
+  return selectedBackend.value === backendId ? 'Active' : 'Available';
+};
 
 // Helper function to get backend icon
 const getBackendIcon = (backendId: 'console' | 'dspToolkit'): string => {
@@ -129,8 +165,22 @@ const getBackendIcon = (backendId: 'console' | 'dspToolkit'): string => {
 // Load current backend and capabilities for all backends
 const loadBackendInfo = async () => {
   try {
+    // Check DSP status first
+    await dspToolkitStore.checkDSPStatus();
+    
     // Get current backend type
     selectedBackend.value = filterStore.currentBackendType;
+
+    // Check if current backend is DSP toolkit but DSP is unavailable
+    if (selectedBackend.value === 'dspToolkit' && !await dspToolkitStore.canUseDSP()) {
+      console.log('DSP Toolkit backend is active but DSP is unavailable, switching to Demo backend');
+      try {
+        await filterStore.switchBackend('console');
+        selectedBackend.value = 'console';
+      } catch (error) {
+        console.error('Failed to switch to Demo backend:', error);
+      }
+    }
 
     // Load capabilities for the current backend first
     const currentCapabilities = await filterStore.getBackendCapabilities();
@@ -141,6 +191,12 @@ const loadBackendInfo = async () => {
     for (const backendType of backendTypes) {
       if (backendType !== selectedBackend.value && !allBackendCapabilities.value[backendType]) {
         try {
+          // Skip DSP toolkit if no DSP is available
+          if (backendType === 'dspToolkit' && !await dspToolkitStore.canUseDSP()) {
+            console.log('Skipping DSP toolkit capabilities loading - no DSP available');
+            continue;
+          }
+          
           await filterStore.switchBackend(backendType);
           const capabilities = await filterStore.getBackendCapabilities();
           allBackendCapabilities.value[backendType] = capabilities;
@@ -172,6 +228,21 @@ const loadBackendInfo = async () => {
 const switchToBackend = async (backendId: 'console' | 'dspToolkit') => {
   // Don't switch if already switching, already selected, or if it's the same backend
   if (switchingBackend.value || selectedBackend.value === backendId) return;
+
+  // Check if DSP is available before switching to DSP toolkit
+  if (backendId === 'dspToolkit' && !await dspToolkitStore.canUseDSP()) {
+    const dspStatus = dspToolkitStore.status;
+    let message = 'Cannot switch to DSP Toolkit: ';
+    if (dspStatus === 'backend_error') {
+      message += 'HiFiBerry DSP software not available';
+    } else if (dspStatus === 'no') {
+      message += 'No DSP hardware detected';
+    } else {
+      message += 'DSP is not available';
+    }
+    alert(message);
+    return;
+  }
 
   try {
     switchingBackend.value = true;
@@ -290,7 +361,7 @@ onMounted(async () => {
           transition: all 0.2s ease;
           cursor: pointer;
 
-          &:hover:not(.active):not(.loading) {
+          &:hover:not(.active):not(.loading):not(.unavailable) {
             background: rgba(var(--color-surface-rgb), 0.3);
             border-color: var(--color-border-hover);
           }
@@ -299,6 +370,16 @@ onMounted(async () => {
             opacity: 0.7;
             pointer-events: none;
             cursor: default;
+          }
+
+          &.unavailable {
+            opacity: 0.6;
+            pointer-events: none;
+            cursor: not-allowed;
+            
+            .backend-icon {
+              opacity: 0.5;
+            }
           }
 
           .backend-main {
@@ -338,6 +419,11 @@ onMounted(async () => {
                     &.inactive {
                       background: rgba(112, 112, 112, 0.2);
                       color: var(--color-body-secondary);
+                    }
+
+                    &.unavailable {
+                      background: rgba(255, 107, 107, 0.2);
+                      color: #ff6b6b;
                     }
                   }
 

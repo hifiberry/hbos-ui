@@ -20,6 +20,7 @@ import {
   type DSPMetadata,
   type CacheStatus
 } from '@/api/dsptoolkit'
+import { useDSPToolkitStore } from './dsp-toolkit'
 
 // Extended FilterBank interface with maxFilters information
 interface ExtendedFilterBank extends FilterBank {
@@ -81,6 +82,23 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     if (this.initialized) return
 
     try {
+      // Check DSP availability first using the store
+      const dspToolkitStore = useDSPToolkitStore()
+      const canUseDSP = await dspToolkitStore.canUseDSP()
+      
+      if (!canUseDSP) {
+        const dspStatus = dspToolkitStore.status
+        let errorMessage = 'DSP Toolkit backend unavailable: '
+        if (dspStatus === 'backend_error') {
+          errorMessage += 'HiFiBerry DSP software not available'
+        } else if (dspStatus === 'no') {
+          errorMessage += 'No DSP hardware detected'
+        } else {
+          errorMessage += 'DSP is not accessible'
+        }
+        throw new Error(errorMessage)
+      }
+
       // Load current metadata and cache status
       [this.metadata, this.cacheStatus] = await Promise.all([
         getMetadata(),

@@ -103,6 +103,7 @@
             v-for="profile in profilesList"
             :key="profile.filename"
             class="card profile-card"
+            :class="{ 'installed-profile': profile.isInstalled }"
             @click="openDeployModal(profile)"
           >
             <div class="profile-item">
@@ -113,6 +114,7 @@
                     <h3>{{ profile.profileName }}</h3>
                     <div class="profile-version">
                       <span class="version-badge">v{{ profile.profileVersion }}</span>
+                      <span v-if="profile.isInstalled" class="installed-badge">Installed</span>
                     </div>
                   </div>
                 </div>
@@ -130,10 +132,10 @@
               <div class="empty-icon">
                 <AppIcon icon="tabler/folder" size="3rem" />
               </div>
-              <p v-if="showOnlyCompatibleProfiles && detectedModelName" class="empty-title">No compatible profiles found</p>
+              <p v-if="detectedModelName" class="empty-title">No compatible profiles found</p>
               <p v-else class="empty-title">No profiles available</p>
-              <p v-if="showOnlyCompatibleProfiles && detectedModelName" class="empty-subtitle text-muted">
-                No DSP profiles are available for {{ detectedModelName }}. Try disabling the hardware filter to see all profiles.
+              <p v-if="detectedModelName" class="empty-subtitle text-muted">
+                No DSP profiles are available for {{ detectedModelName }}.
               </p>
               <p v-else class="empty-subtitle text-muted">
                 No DSP profiles are currently available. Check your profile directory or upload new profiles.
@@ -182,7 +184,6 @@ const profilesMetadata = ref<DSPProfilesMetadataResponse | null>(null)
 const profilesLoading = ref(false)
 const programChecksum = ref<DSPProgramChecksumResponse | null>(null)
 const programChecksumLoading = ref(false)
-const showOnlyCompatibleProfiles = ref(true)
 
 // Deploy modal state
 const showDeployModal = ref(false)
@@ -226,11 +227,12 @@ const profilesList = computed(() => {
 
   let profiles = Object.entries(profilesMetadata.value.profiles).map(([filename, profile]) => ({
     filename,
-    ...profile
+    ...profile,
+    isInstalled: profile.checksum === programChecksum.value?.checksum
   }))
 
-  // Filter by hardware compatibility if enabled
-  if (showOnlyCompatibleProfiles.value && detectedModelName.value) {
+  // Always filter by hardware compatibility to show only compatible profiles
+  if (detectedModelName.value) {
     profiles = profiles.filter(profile =>
       profile.modelName === detectedModelName.value
     )
@@ -244,9 +246,16 @@ const deployModalTitle = computed(() => {
   if (deployResult.value) {
     return deployResult.value.success ? 'Deployment Successful' : 'Deployment Failed'
   }
-  return selectedProfileForDeploy.value
-    ? `Deploy ${selectedProfileForDeploy.value.profileName}?`
-    : 'Deploy DSP Profile'
+
+  if (selectedProfileForDeploy.value) {
+    const profile = selectedProfileForDeploy.value
+    const isInstalled = profile.programChecksum === programChecksum.value
+    return isInstalled
+      ? `${profile.profileName} - Already Installed`
+      : `Deploy ${profile.profileName}?`
+  }
+
+  return 'Deploy DSP Profile'
 })
 
 const deployModalMessage = computed(() => {
@@ -364,7 +373,22 @@ const loadAll = async () => {
 }
 
 // Deploy modal methods
-const openDeployModal = (profile: DSPProfile & { filename: string }) => {
+const openDeployModal = (profile: DSPProfile & { filename: string; isInstalled?: boolean }) => {
+  if (profile.isInstalled) {
+    // Show a simple info modal for already installed profiles
+    deployResult.value = {
+      success: true,
+      message: `This profile is already installed and active on your DSP.
+
+Profile: ${profile.profileName} (v${profile.profileVersion})
+Checksum: ${profile.checksum}
+
+No action is needed.`
+    }
+    showDeployModal.value = true
+    return
+  }
+
   selectedProfileForDeploy.value = profile
   showDeployModal.value = true
 }
@@ -548,6 +572,18 @@ onMounted(() => {
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(32, 107, 196, 0.15);
       }
+
+      &.installed-profile {
+        background: var(--tblr-secondary-lt, #f8f9fa);
+        border-color: var(--tblr-secondary, #6c757d);
+
+        &:hover {
+          background: var(--tblr-secondary-lt, #f8f9fa);
+          border-color: var(--tblr-secondary, #6c757d);
+          transform: none;
+          box-shadow: 0 2px 8px rgba(108, 117, 125, 0.1);
+        }
+      }
     }
   }
 
@@ -597,6 +633,18 @@ onMounted(() => {
       line-height: 1;
       color: var(--tblr-success, #2fb344);
       background-color: var(--tblr-success-lt, #d1e7dd);
+      border-radius: 4px;
+    }
+
+    .installed-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--tblr-primary, #206bc4);
+      background-color: var(--tblr-primary-lt, #dae8f5);
       border-radius: 4px;
     }
 

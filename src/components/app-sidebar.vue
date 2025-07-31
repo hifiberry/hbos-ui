@@ -16,12 +16,8 @@
             </span>
           </router-link>
           <div class="nav-item__dropdown">
-            <router-link
-              v-for="childrenRoute in route.children"
-              :key="childrenRoute.name"
-              :to="{ name: childrenRoute.name }"
-              class="nav-item"
-            >
+            <router-link v-for="childrenRoute in route.children" :key="childrenRoute.name"
+              :to="{ name: childrenRoute.name }" class="nav-item">
               <span class="nav-item__icon">
                 <AppIcon :icon="childrenRoute.icon" />
               </span>
@@ -100,6 +96,28 @@ const routes = computed(() => {
       ],
     },
     {
+      name: 'sound',
+      title: 'Sound',
+      icon: 'music-note-simple-light',
+      children: [
+        {
+          name: 'speaker-equalizer',
+          title: 'Speaker Eq',
+          icon: 'tabler/speaker',
+        },
+        {
+          name: 'crossover-design',
+          title: 'Crossover',
+          icon: 'tabler/crossover',
+        },
+        {
+          name: 'room-acoustics',
+          title: 'Room Eq',
+          icon: 'tabler/armchair',
+        },
+      ],
+    },
+    {
       name: 'services',
       title: 'Settings',
       icon: 'settings',
@@ -136,11 +154,6 @@ const routes = computed(() => {
         },
       ],
     },
-    // {
-    //   name: 'sound',
-    //   title: 'Sound',
-    //   icon: 'music-note-simple-light',
-    // },
   ]
 
   return baseRoutes
@@ -160,6 +173,7 @@ const routes = computed(() => {
   padding: 80px 12px 0;
   transition: all 0.2s linear;
   z-index: 5;
+
   @include media-down(lg) {
     top: auto;
     background-color: var(--background-body);
@@ -167,16 +181,19 @@ const routes = computed(() => {
     height: auto;
     padding: 20px 15px;
   }
+
   &:hover {
     width: 200px;
+
     .nav-item__arrow {
       opacity: 1;
     }
   }
+
   &:not(&:hover) {
     .nav-item {
       &.router-link-active {
-        & + .nav-item__dropdown {
+        &+.nav-item__dropdown {
           padding: 0 0 0 12px;
           max-height: 0;
           overflow: hidden;
@@ -189,10 +206,12 @@ const routes = computed(() => {
       }
     }
   }
+
   .nav {
     padding: 20px 0;
     overflow-y: auto;
     overflow-x: hidden;
+
     @include media-down(lg) {
       padding: 0;
       overflow: visible;
@@ -201,54 +220,66 @@ const routes = computed(() => {
       justify-content: space-around;
       flex-wrap: nowrap;
     }
-    & > * {
+
+    &>* {
       &:not(:last-child) {
         margin-bottom: 32px;
+
         @include media-down(lg) {
           margin: 0;
         }
       }
     }
+
     .nav-item {
       @include media-down(lg) {
         display: flex;
         flex-direction: column;
       }
+
       &.router-link-active {
         color: $color-sidebar-item-active;
         background-color: $background-sidebar-item-active;
+
         @include media-down(lg) {
           background-color: transparent;
           color: $primary;
         }
+
         .nav-item__icon,
         .nav-item__arrow {
           svg {
             color: $color-sidebar-item-active;
           }
         }
+
         .nav-item__icon {
           @include media-down(lg) {
             background-color: $background-sidebar-item-active;
           }
         }
+
         .nav-item__title {
           font-weight: 600;
         }
-        & + .nav-item__dropdown {
+
+        &+.nav-item__dropdown {
           max-height: 300px;
           padding-top: 12px;
           opacity: 1;
+
           @include media-down(lg) {
             display: none;
           }
         }
+
         .nav-item__arrow {
           transform: rotate(180deg);
           top: 6px;
         }
       }
     }
+
     &-item {
       border-radius: 5px;
       display: flex;
@@ -257,23 +288,28 @@ const routes = computed(() => {
       gap: 2px;
       color: var(--color-sidebar);
       transition: all 0.2s linear;
+
       &:hover {
         color: $color-sidebar-hover;
         background-color: $background-sidebar-item-hover;
+
         @include media-down(lg) {
           color: var(--color-sidebar);
           background-color: transparent;
         }
+
         .nav-item__icon,
         .nav-item__arrow {
           svg {
             color: $color-sidebar-hover;
+
             @include media-down(lg) {
               color: var(--color-sidebar);
             }
           }
         }
       }
+
       &__icon {
         width: 32px;
         height: 32px;
@@ -284,15 +320,18 @@ const routes = computed(() => {
         flex: none;
         transition: fill 3s linear;
       }
+
       &__parent {
-        & > .nav {
+        &>.nav {
           &-item {
             position: relative;
+
             .nav-item__arrow {
               position: absolute;
               top: 8px;
               right: 7px;
               transition: transform 0.2s linear;
+
               svg {
                 width: 16px;
                 height: 16px;
@@ -301,15 +340,18 @@ const routes = computed(() => {
           }
         }
       }
+
       &__title {
         white-space: nowrap;
         flex: 1;
         padding-right: 5px;
+
         @include media-down(lg) {
           font-size: 10px;
           padding: 5px 0 0;
         }
       }
+
       &__dropdown {
         padding: 0 0 0 12px;
         max-height: 0;
@@ -319,13 +361,16 @@ const routes = computed(() => {
           max-height 0.2s linear,
           padding-top 0.2s linear,
           opacity 0.2s linear;
+
         .nav-item {
           &:not(:last-child) {
             margin-bottom: 12px;
           }
+
           &.router-link-active {
             color: $color-sidebar-hover;
             background-color: $background-sidebar-item-hover;
+
             .nav-item__icon {
               svg {
                 color: $color-sidebar-hover;
@@ -334,20 +379,25 @@ const routes = computed(() => {
           }
         }
       }
+
       &__arrow {
         opacity: 0;
+
         @include media-down(lg) {
           display: none;
         }
       }
     }
   }
+
   &-controls {
     display: none;
     margin-bottom: 12px;
+
     &:deep(.app-audio-controls) {
       width: auto;
     }
+
     @include media-down(lg) {
       display: block;
     }

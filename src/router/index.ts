@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import sandbox_routes from '@/views/sandbox/routes'
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -105,30 +103,31 @@ const router = createRouter({
         },
         {
           path: '/sound',
-          name: 'sound',
-          component: () => import('@/views/sound.vue'),
+          component: () => import('@/views/router-view.vue'),
+          children: [
+            {
+              path: '',
+              name: 'sound',
+              component: () => import('@/views/sound/index.vue'),
+            },
+            {
+              path: 'speaker-equalizer',
+              name: 'speaker-equalizer',
+              component: () => import('@/views/sound/speaker-equalizer.vue'),
+            },
+            {
+              path: 'crossover-design',
+              name: 'crossover-design',
+              component: () => import('@/views/sound/crossover-design.vue'),
+            },
+            {
+              path: 'room-acoustics',
+              name: 'room-acoustics',
+              component: () => import('@/views/sound/room-acoustics.vue'),
+            },
+          ],
         },
       ],
-    },
-    {
-      path: '/sandbox',
-      component: () => import('@/layouts/sandbox.vue'),
-      children: [
-        { path: '', name: 'sandbox', component: () => import('@/views/sandbox/index.vue') },
-        {
-          path: 'bundle/:bundle?',
-          name: 'sandbox-bundle',
-          component: () => import('@/views/sandbox/bundle.vue'),
-        },
-        ...sandbox_routes,
-      ],
-      beforeEnter: () => {
-        if (import.meta.env.DEV) {
-          return true
-        } else {
-          return { path: '/' }
-        }
-      },
     },
     {
       path: '/now-playing-minimal',

@@ -228,8 +228,9 @@ const showBackendDetails = async (backendId: 'console' | 'dspToolkit') => {
     console.error('Failed to load backend details:', error);
   }
 };// Initialize on mount
-onMounted(() => {
-  loadBackendInfo();
+onMounted(async () => {
+  await filterStore.initializeBackend();
+  await loadBackendInfo();
 });
 </script>
 

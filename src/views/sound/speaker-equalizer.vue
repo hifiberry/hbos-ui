@@ -382,6 +382,9 @@ const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
 
 // Initialize filter banks in the store
 onMounted(async () => {
+  // Initialize backend from settingsDB first
+  await filterStore.initializeBackend();
+  
   // Load backend capabilities first
   await loadBackendCapabilities();
 

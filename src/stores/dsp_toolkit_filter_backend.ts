@@ -312,8 +312,8 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       return keyA.localeCompare(keyB)
     })
 
-    const availableFilterBanks: FilterBankInfo[] = sortedBankEntries.map(([, bank]) => ({
-      name: bank.name,
+    const availableFilterBanks: FilterBankInfo[] = sortedBankEntries.map(([bankKey, bank]) => ({
+      name: bankKey, // Use bank key instead of display name for compatibility
       maxFilters: bank.maxFilters,
       currentFilterCount: bank.filters.length
     }))

@@ -39,16 +39,20 @@
                   :y1="0" :y2="plotHeight" />
               </g>
 
-              <g clip-path="url(#plotClipPath)">
-                <!-- Bandwidth indicator lines (commented out) -->
-                <!--
-                <template v-if="activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
+                            <g clip-path="url(#plotClipPath)">
+                <!-- Bandwidth indicator area and lines -->
+                <template v-if="SHOW_BANDWIDTH_LINES && activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
+                  <!-- Light shaded area between bandwidth lines -->
+                  <rect :x="frequencyToXLocal(activeFilterBandwidthStart)" :y="0" 
+                        :width="frequencyToXLocal(activeFilterBandwidthEnd) - frequencyToXLocal(activeFilterBandwidthStart)" 
+                        :height="plotHeight" 
+                        fill="rgba(0, 184, 255, 0.03)" stroke="none" />
+                  <!-- Bandwidth indicator lines -->
                   <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
-                    :y1="0" :y2="plotHeight" stroke="#e11e4a" stroke-width="1.5" stroke-dasharray="8 4" />
+                    :y1="0" :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
                   <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
                     :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
                 </template>
-                -->
 
                 <path v-if="allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
                   stroke="#e11e4a" fill="none" stroke-width="2.5" />
@@ -236,6 +240,7 @@ const SAMPLE_RATE = 48000; // Default sample rate for biquad calculations
 const CONFIG_STEPS_PER_OCTAVE = 10; // Number of frequency steps per octave for logarithmic scaling
 const CONFIG_Q_STEP_FACTOR = 1.07; // Logarithmic step factor for Q value changes
 const EQ_FILE_PREFIX = 'speaker-eq'; // File prefix for save/load functionality
+const SHOW_BANDWIDTH_LINES = true; // Global setting to enable/disable bandwidth indicator lines
 
 // Available filter types for the UI
 const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf'];

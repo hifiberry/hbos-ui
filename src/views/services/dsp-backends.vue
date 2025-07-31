@@ -132,7 +132,7 @@ const loadBackendInfo = async () => {
     // Get current backend type
     selectedBackend.value = filterStore.currentBackendType;
 
-    // Load capabilities for all backends
+    // Load capabilities for the current backend first
     const currentCapabilities = await filterStore.getBackendCapabilities();
     allBackendCapabilities.value[selectedBackend.value] = currentCapabilities;
 
@@ -157,7 +157,11 @@ const loadBackendInfo = async () => {
 
     console.log('Backend info loaded:', {
       selectedBackend: selectedBackend.value,
-      allCapabilities: allBackendCapabilities.value
+      allCapabilities: allBackendCapabilities.value,
+      shortDescriptions: Object.entries(allBackendCapabilities.value).map(([id, caps]) => ({
+        id,
+        shortDescription: caps.backendShortDescription
+      }))
     });
   } catch (error) {
     console.error('Failed to load backend info:', error);
@@ -214,12 +218,16 @@ const showBackendDetails = async (backendId: 'console' | 'dspToolkit') => {
       description: capabilities.backendDescription
     };
     showBackendInfoModal.value = true;
+
+    console.log('Backend details loaded:', {
+      backendId,
+      name: capabilities.backendName,
+      shortDescription: capabilities.backendShortDescription
+    });
   } catch (error) {
     console.error('Failed to load backend details:', error);
   }
-};
-
-// Initialize on mount
+};// Initialize on mount
 onMounted(() => {
   loadBackendInfo();
 });

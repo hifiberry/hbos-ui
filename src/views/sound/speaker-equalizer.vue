@@ -220,7 +220,10 @@ import {
 } from '@/utils/filtercalc';
 
 import {
-  type BiquadFilterType
+  type BiquadFilterType,
+  calculateBiquadBandwidth,
+  createBiquadFilter,
+  FILTER_TYPES
 } from '@/utils/biquad';
 
 import {
@@ -297,42 +300,73 @@ const plotHeight = computed(() => svgHeight.value - margin.top - margin.bottom);
 const gainGridLines = generateGainGridLines();
 const gainGridLabels = generateGainGridLines();
 
-// MODIFIED: Computed properties for dynamic bandwidth lines (now for all filter types)
+// MODIFIED: Computed properties for dynamic bandwidth lines using biquad calculations
 const activeFilterBandwidthStart = computed(() => {
   const filter = currentFilter.value;
-  // Lines should always be shown for the active filter if Q is valid and positive
-  if (typeof filter.Q === 'number' && filter.Q > 0) {
-    let bandwidthHz;
 
-    // Different interpretations of Q for different filter types
-    if (filter.icon === 'filter-peak') {
-      bandwidthHz = filter.frequency / filter.Q; // Standard Q for peak filter
-    } else {
-      // For shelf filters, Q influences the slope. We'll use a scaled Fc/Q
-      // as a visual approximation for the 'transition width'.
-      // Adjust the multiplier (e.g., 0.5, 1.0, 2.0) to visually match your preference for shelves.
-      bandwidthHz = filter.frequency / (filter.Q * 2); // Example: make shelf "width" less dramatic
+  // Convert our Filter type to BiquadFilter type for the bandwidth calculation
+  if (typeof filter.Q === 'number' && filter.Q > 0 && filter.frequency > 0) {
+    // Map filter icon to biquad filter type
+    let biquadType: BiquadFilterType;
+    switch (filter.icon) {
+      case 'peaking':
+        biquadType = FILTER_TYPES.PEAKING;
+        break;
+      case 'lowshelf':
+        biquadType = FILTER_TYPES.LOWSHELF;
+        break;
+      case 'highshelf':
+        biquadType = FILTER_TYPES.HIGHSHELF;
+        break;
+      default:
+        biquadType = FILTER_TYPES.PEAKING;
     }
 
-    // Clamp values to graph limits
-    return Math.max(20, filter.frequency - (bandwidthHz / 2));
+    const biquadFilter = createBiquadFilter(
+      biquadType,
+      filter.frequency,
+      filter.gain || 0,
+      filter.Q,
+      SAMPLE_RATE
+    );
+
+    const bandwidth = calculateBiquadBandwidth(biquadFilter);
+    return bandwidth ? bandwidth.lowerFreq : null;
   }
   return null;
 });
 
 const activeFilterBandwidthEnd = computed(() => {
   const filter = currentFilter.value;
-  if (typeof filter.Q === 'number' && filter.Q > 0) {
-    let bandwidthHz;
 
-    if (filter.icon === 'filter-peak') {
-      bandwidthHz = filter.frequency / filter.Q;
-    } else {
-      bandwidthHz = filter.frequency / (filter.Q * 2);
+  // Convert our Filter type to BiquadFilter type for the bandwidth calculation
+  if (typeof filter.Q === 'number' && filter.Q > 0 && filter.frequency > 0) {
+    // Map filter icon to biquad filter type
+    let biquadType: BiquadFilterType;
+    switch (filter.icon) {
+      case 'peaking':
+        biquadType = FILTER_TYPES.PEAKING;
+        break;
+      case 'lowshelf':
+        biquadType = FILTER_TYPES.LOWSHELF;
+        break;
+      case 'highshelf':
+        biquadType = FILTER_TYPES.HIGHSHELF;
+        break;
+      default:
+        biquadType = FILTER_TYPES.PEAKING;
     }
 
-    // Clamp values to graph limits
-    return Math.min(DEFAULT_FREQ_RANGE.max, filter.frequency + (bandwidthHz / 2));
+    const biquadFilter = createBiquadFilter(
+      biquadType,
+      filter.frequency,
+      filter.gain || 0,
+      filter.Q,
+      SAMPLE_RATE
+    );
+
+    const bandwidth = calculateBiquadBandwidth(biquadFilter);
+    return bandwidth ? bandwidth.upperFreq : null;
   }
   return null;
 });

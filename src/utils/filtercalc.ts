@@ -17,6 +17,14 @@ export interface Filter {
   gain: number;
   Q?: number; // Q factor, representing width/slope
   enabled: boolean;
+  // For generic_normalized filters, provide the 5 coefficients directly
+  genericCoeffs?: {
+    b0: number;
+    b1: number;
+    b2: number;
+    a1: number;
+    a2: number;
+  };
 }
 
 export interface FrequencyResponsePoint {
@@ -30,7 +38,21 @@ export interface FrequencyResponsePoint {
 export function calculateFilterGain(freq: number, band: Filter, sampleRate: number = 48000): number {
   if (!band.enabled) return 0;
 
-  // Create biquad filter with the band parameters
+  // For generic normalized filters, create with coefficients
+  if (band.icon === 'generic_normalized' && band.genericCoeffs) {
+    const biquadFilter = {
+      type: 'generic_normalized' as BiquadFilterType,
+      frequency: band.frequency, // Not used for generic filters
+      gain: band.gain,           // Not used for generic filters
+      Q: band.Q || 1.0,         // Not used for generic filters
+      sampleRate,
+      genericCoeffs: band.genericCoeffs
+    };
+
+    return calculateBiquadGainDB(biquadFilter, freq);
+  }
+
+  // Create standard biquad filter with the band parameters
   const biquadFilter = createBiquadFilter(
     band.icon, // Now directly using BiquadFilterType
     band.frequency,

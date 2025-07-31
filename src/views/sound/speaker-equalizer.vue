@@ -85,11 +85,11 @@
                 </template>
               </g>
 
-              <circle v-for="band in filters" :key="'node-' + band.id" :cx="frequencyToXLocal(band.frequency)"
+              <circle v-for="band in filters.filter(f => f.icon !== 'generic_normalized')" :key="'node-' + band.id" :cx="frequencyToXLocal(band.frequency)"
                 :cy="gainToYLocal(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'" />
 
               <!-- Invisible larger hit areas for filter nodes -->
-              <circle v-for="band in filters" :key="'hit-area-' + band.id" :cx="frequencyToXLocal(band.frequency)"
+              <circle v-for="band in filters.filter(f => f.icon !== 'generic_normalized')" :key="'hit-area-' + band.id" :cx="frequencyToXLocal(band.frequency)"
                 :cy="gainToYLocal(band.gain)" r="12" fill="transparent"
                 @mousedown.prevent="startDrag($event, band)" @dragstart.prevent
                 style="cursor: grab;" />
@@ -136,7 +136,17 @@
                   <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon"
                     :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
                   <div class="filter-details">
-                    <h3>{{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</h3>
+                    <h3 v-if="filter.icon === 'generic_normalized'">
+                      {{ formatFilterTypeName(filter.icon) }} |
+                      b0={{ filter.genericCoeffs?.b0 || 1 }}
+                      b1={{ filter.genericCoeffs?.b1 || 0 }}
+                      b2={{ filter.genericCoeffs?.b2 || 0 }}
+                      a1={{ filter.genericCoeffs?.a1 || 0 }}
+                      a2={{ filter.genericCoeffs?.a2 || 0 }}
+                    </h3>
+                    <h3 v-else>
+                      {{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}
+                    </h3>
                   </div>
                 </div>
                 <div class="filter-actions" @click.stop>
@@ -153,44 +163,95 @@
               </div>
 
               <div class="filter-controls" @click.stop>
-                <div class="control-group">
-                  <label>Frequency</label>
-                  <div class="control-buttons">
-                    <button @click="decrementFilterFrequency(filter)" class="control-btn">
-                      <AppIcon icon="minus-small" />
-                    </button>
-                    <span class="control-value">{{ filter.frequency }} Hz</span>
-                    <button @click="incrementFilterFrequency(filter)" class="control-btn">
-                      <AppIcon icon="plus-small" />
-                    </button>
-                  </div>
-                </div>
+                <!-- Standard filter controls for non-generic filters -->
+                <template v-if="filter.icon !== 'generic_normalized'">
+                  <div class="standard-controls">
+                    <div class="control-group">
+                      <label>Frequency</label>
+                      <div class="control-buttons">
+                        <button @click="decrementFilterFrequency(filter)" class="control-btn">
+                          <AppIcon icon="minus-small" />
+                        </button>
+                        <span class="control-value">{{ filter.frequency }} Hz</span>
+                        <button @click="incrementFilterFrequency(filter)" class="control-btn">
+                          <AppIcon icon="plus-small" />
+                        </button>
+                      </div>
+                    </div>
 
-                <div class="control-group">
-                  <label>Gain</label>
-                  <div class="control-buttons">
-                    <button @click="decrementFilterGain(filter)" class="control-btn">
-                      <AppIcon icon="minus-small" />
-                    </button>
-                    <span class="control-value">{{ filter.gain }} dB</span>
-                    <button @click="incrementFilterGain(filter)" class="control-btn">
-                      <AppIcon icon="plus-small" />
-                    </button>
-                  </div>
-                </div>
+                    <div class="control-group">
+                      <label>Gain</label>
+                      <div class="control-buttons">
+                        <button @click="decrementFilterGain(filter)" class="control-btn">
+                          <AppIcon icon="minus-small" />
+                        </button>
+                        <span class="control-value">{{ filter.gain }} dB</span>
+                        <button @click="incrementFilterGain(filter)" class="control-btn">
+                          <AppIcon icon="plus-small" />
+                        </button>
+                      </div>
+                    </div>
 
-                <div class="control-group">
-                  <label>Q (width)</label>
-                  <div class="control-buttons">
-                    <button @click="widenFilterBand(filter)" class="control-btn">
-                      <AppIcon icon="minus-small" />
-                    </button>
-                    <span class="control-value">{{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</span>
-                    <button @click="narrowFilterBand(filter)" class="control-btn">
-                      <AppIcon icon="plus-small" />
-                    </button>
+                    <div class="control-group">
+                      <label>Q (width)</label>
+                      <div class="control-buttons">
+                        <button @click="widenFilterBand(filter)" class="control-btn">
+                          <AppIcon icon="minus-small" />
+                        </button>
+                        <span class="control-value">{{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</span>
+                        <button @click="narrowFilterBand(filter)" class="control-btn">
+                          <AppIcon icon="plus-small" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </template>
+
+                <!-- Generic biquad coefficient controls -->
+                <template v-else>
+                  <div class="generic-coefficients">
+                    <div class="coefficients-header">
+                      <label>Biquad Coefficients (Normalized: a0 = 1)</label>
+                    </div>
+                    <div class="coefficient-inputs">
+                      <div class="coefficient-group">
+                        <label>b0</label>
+                        <input type="number" step="0.001"
+                               :value="filter.genericCoeffs?.b0 || 1"
+                               @input="updateGenericCoeff(filter, 'b0', $event)"
+                               placeholder="1.000" />
+                      </div>
+                      <div class="coefficient-group">
+                        <label>b1</label>
+                        <input type="number" step="0.001"
+                               :value="filter.genericCoeffs?.b1 || 0"
+                               @input="updateGenericCoeff(filter, 'b1', $event)"
+                               placeholder="0.000" />
+                      </div>
+                      <div class="coefficient-group">
+                        <label>b2</label>
+                        <input type="number" step="0.001"
+                               :value="filter.genericCoeffs?.b2 || 0"
+                               @input="updateGenericCoeff(filter, 'b2', $event)"
+                               placeholder="0.000" />
+                      </div>
+                      <div class="coefficient-group">
+                        <label>a1</label>
+                        <input type="number" step="0.001"
+                               :value="filter.genericCoeffs?.a1 || 0"
+                               @input="updateGenericCoeff(filter, 'a1', $event)"
+                               placeholder="0.000" />
+                      </div>
+                      <div class="coefficient-group">
+                        <label>a2</label>
+                        <input type="number" step="0.001"
+                               :value="filter.genericCoeffs?.a2 || 0"
+                               @input="updateGenericCoeff(filter, 'a2', $event)"
+                               placeholder="0.000" />
+                      </div>
+                    </div>
+                  </div>
+                </template>
               </div>
             </div>
           </div>
@@ -289,7 +350,7 @@ const EQ_FILE_PREFIX = 'speaker-eq'; // File prefix for save/load functionality
 const SHOW_BANDWIDTH_LINES = true; // Global setting to enable/disable bandwidth indicator lines
 
 // Available filter types for the UI
-const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf'];
+const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf', 'generic_normalized'];
 
 // Helper functions for filter type display
 const getFilterIconName = (type: BiquadFilterType): string => {
@@ -297,6 +358,7 @@ const getFilterIconName = (type: BiquadFilterType): string => {
     case 'lowshelf': return 'filter-low-shelf';
     case 'peaking': return 'filter-peak';
     case 'highshelf': return 'filter-high-shelf';
+    case 'generic_normalized': return 'math-function';
     default: return 'filter-peak';
   }
 };
@@ -306,6 +368,7 @@ const formatFilterTypeName = (type: BiquadFilterType): string => {
     case 'lowshelf': return 'Low Shelfing';
     case 'peaking': return 'Peaking EQ';
     case 'highshelf': return 'High Shelfing';
+    case 'generic_normalized': return 'Generic Biquad';
     default: return type;
   }
 };
@@ -384,7 +447,7 @@ const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
 onMounted(async () => {
   // Initialize backend from settingsDB first
   await filterStore.initializeBackend();
-  
+
   // Load backend capabilities first
   await loadBackendCapabilities();
 
@@ -462,6 +525,11 @@ const gainGridLabels = generateGainGridLines();
 const activeFilterBandwidthStart = computed(() => {
   const filter = currentFilter.value;
 
+  // Generic filters don't have bandwidth
+  if (filter.icon === 'generic_normalized') {
+    return null;
+  }
+
   // Convert our Filter type to BiquadFilter type for the bandwidth calculation
   if (typeof filter.Q === 'number' && filter.Q > 0 && filter.frequency > 0) {
     // Map filter icon to biquad filter type
@@ -496,6 +564,11 @@ const activeFilterBandwidthStart = computed(() => {
 
 const activeFilterBandwidthEnd = computed(() => {
   const filter = currentFilter.value;
+
+  // Generic filters don't have bandwidth
+  if (filter.icon === 'generic_normalized') {
+    return null;
+  }
 
   // Convert our Filter type to BiquadFilter type for the bandwidth calculation
   if (typeof filter.Q === 'number' && filter.Q > 0 && filter.frequency > 0) {
@@ -795,6 +868,17 @@ const addFilterOfType = async (type: BiquadFilterType) => {
       enabled: true,
     };
 
+    // For generic normalized filters, add default coefficients
+    if (type === 'generic_normalized') {
+      newFilter.genericCoeffs = {
+        b0: 1.0,
+        b1: 0.0,
+        b2: 0.0,
+        a1: 0.0,
+        a2: 0.0
+      };
+    }
+
     await addFilterToCurrentChannel(newFilter);
     setActiveFilter(newId); // Make the newly added filter active
 
@@ -1031,6 +1115,34 @@ function narrowFilterBand(filter: Filter) {
     if (typeof f.Q === 'number') {
       // Narrowing the band means INCREASING the Q value using logarithmic scaling
       f.Q = Math.min(25.0, f.Q * CONFIG_Q_STEP_FACTOR);
+    }
+  };
+
+  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+}
+
+function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
+  const target = event.target as HTMLInputElement;
+  const value = parseFloat(target.value);
+
+  // Validate that the value is a real number
+  if (isNaN(value)) {
+    return;
+  }
+
+  const updateFn = (f: Filter) => {
+    // Initialize genericCoeffs if it doesn't exist
+    if (!f.genericCoeffs) {
+      f.genericCoeffs = { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 };
+    }
+
+    // Update the specific coefficient
+    switch (coeffName) {
+      case 'b0': f.genericCoeffs.b0 = value; break;
+      case 'b1': f.genericCoeffs.b1 = value; break;
+      case 'b2': f.genericCoeffs.b2 = value; break;
+      case 'a1': f.genericCoeffs.a1 = value; break;
+      case 'a2': f.genericCoeffs.a2 = value; break;
     }
   };
 
@@ -1836,9 +1948,13 @@ watch(activeChannel, async () => {
         }
 
         .filter-controls {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
+          display: block;
+
+          .standard-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+          }
 
           .control-group {
             display: flex;
@@ -1884,6 +2000,79 @@ watch(activeChannel, async () => {
                 min-width: 60px;
                 text-align: center;
                 color: #333;
+              }
+            }
+          }
+        }
+
+        .generic-coefficients {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          width: 100%;
+
+          .coefficients-header {
+            text-align: center;
+
+            label {
+              font-size: 12px;
+              color: #666;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              font-weight: 500;
+            }
+          }
+
+          .coefficient-inputs {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            width: 100%;
+
+            .coefficient-group {
+              display: flex;
+              flex-direction: column;
+              align-items: stretch;
+              gap: 8px;
+
+              label {
+                font-size: 12px;
+                color: #666;
+                font-weight: 600;
+                text-transform: uppercase;
+                text-align: center;
+                letter-spacing: 0.5px;
+              }
+
+              input {
+                width: 100%;
+                padding: 10px 12px;
+                border: 1px solid rgba(112, 112, 112, 0.5);
+                border-radius: 6px;
+                background: rgba(255, 255, 255, 0.95);
+                color: #333;
+                font-size: 13px;
+                font-weight: 500;
+                text-align: center;
+                transition: all 0.2s ease;
+                font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+
+                &:focus {
+                  outline: none;
+                  border-color: #e11e4a;
+                  background: white;
+                  box-shadow: 0 0 0 2px rgba(225, 30, 74, 0.1);
+                }
+
+                &:hover {
+                  border-color: rgba(225, 30, 74, 0.7);
+                  background: white;
+                }
+
+                &::placeholder {
+                  color: #999;
+                  font-style: italic;
+                }
               }
             }
           }

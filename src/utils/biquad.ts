@@ -1,7 +1,7 @@
 /**
  * Biquad filter implementations for standard audio filter types
  * Contains mathematically accurate biquad filter calculations
- * 
+ *
  * Supports standard filter types (lowpass, highpass, peaking, shelving)
  * and generic normalized filters using direct coefficient specification.
  */
@@ -36,7 +36,7 @@ export interface BiquadFilter {
   // For generic_normalized filters, provide the 5 coefficients directly
   genericCoeffs?: {
     b0: number;
-    b1: number; 
+    b1: number;
     b2: number;
     a1: number;
     a2: number;
@@ -119,7 +119,7 @@ export function calculateBiquadCoefficients(filter: BiquadFilter): BiquadCoeffic
       if (!filter.genericCoeffs) {
         throw new Error('Generic normalized filter requires genericCoeffs to be provided');
       }
-      
+
       b0 = filter.genericCoeffs.b0;
       b1 = filter.genericCoeffs.b1;
       b2 = filter.genericCoeffs.b2;
@@ -373,7 +373,7 @@ export function validateBiquadFilter(filter: BiquadFilter): boolean {
       filter.sampleRate > 0
     );
   }
-  
+
   // Standard validation for other filter types
   return (
     filter.frequency > 0 &&
@@ -405,7 +405,7 @@ export function createGenericNormalizedBiquad(
   return {
     type: FILTER_TYPES.GENERIC_NORMALIZED,
     frequency: 1000, // Placeholder - not used for generic filters
-    gain: 0,         // Placeholder - not used for generic filters  
+    gain: 0,         // Placeholder - not used for generic filters
     Q: 1,            // Placeholder - not used for generic filters
     sampleRate,
     genericCoeffs: {

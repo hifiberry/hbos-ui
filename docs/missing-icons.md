@@ -64,6 +64,20 @@ This document tracks icons that need to be created or sourced for various servic
 - **Usage**: DSP programs page, hardware detection
 - **Notes**: Should represent DSP expansion board for existing sound cards
 
+### Toslink
+
+- **Current Status**: Missing specific icon
+- **Needed**: Toslink optical audio connector icon
+- **Usage**: Audio interface settings, connection indicators
+- **Notes**: Should represent optical digital audio connector/cable
+
+### Analog Input
+
+- **Current Status**: Missing specific icon
+- **Needed**: Analog audio input connector icon
+- **Usage**: Audio interface settings, connection indicators
+- **Notes**: Should represent analog audio input jack/connector (3.5mm, RCA, XLR, etc.)
+
 ## Icon Requirements
 
 - **Format**: SVG preferred

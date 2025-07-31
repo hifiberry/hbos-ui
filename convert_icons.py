@@ -65,6 +65,7 @@ ICONS_TO_CONVERT = [
     'heart.svg',
     'nas.svg',
     'cloud.svg',
+    'dsp-program.svg',  # DSP program icon
 ]
 
 def convert_svg_to_png(svg_path, png_path, size):

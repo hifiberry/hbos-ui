@@ -2,7 +2,7 @@
   <div class="sound-page">
     <div class="sound">
       <div class="page-header">
-        <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
+        <h1>Speaker Equaliser {{ channelMode === 'both' ? getFilterBankDisplayName('both') : (activeChannel === 'left' ? getFilterBankDisplayName('left') : getFilterBankDisplayName('right')) }}</h1>
         <div class="header-actions">
           <AppIcon :icon="channelMode === 'both' ? 'link' : 'link-unlinked'" @click="toggleChannelMode" />
           <AppIcon
@@ -73,10 +73,10 @@
         <div class="equaliser-panel">
           <div class="tabs">
           <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'left' }]" @click="setActiveChannel('left')">
-            Left
+            {{ getFilterBankDisplayName('left') }}
           </button>
           <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'right' }]" @click="setActiveChannel('right')">
-            Right
+            {{ getFilterBankDisplayName('right') }}
           </button>
         </div>
 
@@ -194,6 +194,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import AppIcon from '@/components/app-icon.vue';
+import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import {
   type Filter,
   calculateFilterGain

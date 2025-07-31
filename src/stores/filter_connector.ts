@@ -49,6 +49,7 @@ import { defineStore } from 'pinia'
 import { ConsoleFilterBackend } from './console_filter_backend'
 import { DSPToolkitFilterBackend } from './dsp_toolkit_filter_backend'
 import type { Filter, FilterBank, FilterBanks, FilterBackend, BackendCapabilities } from './filter_backend_interface'
+import { getConfigValue, setConfigValue } from '@/api/config'
 
 // Re-export types for convenience
 export type { Filter, FilterBank, FilterBanks, BackendCapabilities }
@@ -63,8 +64,44 @@ export const useFilterStore = defineStore('filter', () => {
     dspToolkit: new DSPToolkitFilterBackend()
   }
 
-  // Current backend - can be switched dynamically
+  // Storage key for persisting backend selection
+  const BACKEND_CONFIG_KEY = 'dsp.filter.backend'
+
+  // Load backend selection from settingsDB, defaulting to 'console'
+  const getStoredBackendType = async (): Promise<keyof typeof availableBackends> => {
+    try {
+      const response = await getConfigValue(BACKEND_CONFIG_KEY)
+      if (response.data?.value && response.data.value in availableBackends) {
+        return response.data.value as keyof typeof availableBackends
+      }
+    } catch (error) {
+      console.warn('Failed to load backend selection from settingsDB:', error)
+    }
+    return 'console' // Default fallback
+  }
+
+  // Save backend selection to settingsDB
+  const saveBackendType = async (backendType: keyof typeof availableBackends): Promise<void> => {
+    try {
+      await setConfigValue(BACKEND_CONFIG_KEY, backendType)
+    } catch (error) {
+      console.warn('Failed to save backend selection to settingsDB:', error)
+    }
+  }
+
+  // Current backend - starts with console, then loads from settingsDB
   const currentBackendType = ref<keyof typeof availableBackends>('console')
+
+  // Initialize backend from settingsDB
+  const initializeBackend = async (): Promise<void> => {
+    try {
+      const storedType = await getStoredBackendType()
+      currentBackendType.value = storedType
+    } catch (error) {
+      console.warn('Failed to initialize backend from settingsDB, using console:', error)
+      currentBackendType.value = 'console'
+    }
+  }
 
   // Get current backend instance
   const getCurrentBackend = (): FilterBackend => availableBackends[currentBackendType.value]
@@ -74,6 +111,7 @@ export const useFilterStore = defineStore('filter', () => {
     if (backendType === currentBackendType.value) return
 
     currentBackendType.value = backendType
+    await saveBackendType(backendType) // Persist the selection
     await syncFromBackend()
   }
 
@@ -361,6 +399,7 @@ export const useFilterStore = defineStore('filter', () => {
     canAddFilterToBank,
     getCurrentBackend,
     switchBackend,
+    initializeBackend,
     currentBackendType: computed(() => currentBackendType.value),
     availableBackends: computed(() => Object.keys(availableBackends))
   }

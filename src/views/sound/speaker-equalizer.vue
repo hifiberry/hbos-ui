@@ -24,8 +24,8 @@
       </div>
       <div class="card">
         <div class="graph" ref="graphContainer" @mousemove="handleMouseMove" @mouseup="handleMouseUp"
-          @mouseleave="handleMouseUp">
-          <svg ref="svgElement" :width="svgWidth" :height="svgHeight">
+          @mouseleave="handleMouseUp" @dragstart.prevent>
+          <svg ref="svgElement" :width="svgWidth" :height="svgHeight" @dragstart.prevent>
             <defs>
               <clipPath id="plotClipPath">
                 <rect :x="0" :y="0" :width="plotWidth" :height="plotHeight" />
@@ -47,11 +47,21 @@
                         :width="frequencyToXLocal(activeFilterBandwidthEnd) - frequencyToXLocal(activeFilterBandwidthStart)"
                         :height="plotHeight"
                         fill="rgba(0, 184, 255, 0.03)" stroke="none" />
-                  <!-- Bandwidth indicator lines -->
+                  <!-- Draggable bandwidth indicator lines -->
                   <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
-                    :y1="0" :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
+                    :y1="0" :y2="plotHeight" stroke="#00b8ff" stroke-width="3" stroke-dasharray="4 2" />
                   <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
-                    :y2="plotHeight" stroke="#00b8ff" stroke-width="1.5" stroke-dasharray="4 2" />
+                    :y2="plotHeight" stroke="#00b8ff" stroke-width="3" stroke-dasharray="4 2" />
+                  
+                  <!-- Invisible wider hit areas for easier dragging -->
+                  <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
+                    :y1="0" :y2="plotHeight" stroke="transparent" stroke-width="16"
+                    @mousedown.prevent="startBandwidthDrag($event, 'start')" @dragstart.prevent 
+                    style="cursor: ew-resize;" />
+                  <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
+                    :y2="plotHeight" stroke="transparent" stroke-width="16"
+                    @mousedown.prevent="startBandwidthDrag($event, 'end')" @dragstart.prevent 
+                    style="cursor: ew-resize;" />
                 </template>
 
                 <path v-if="allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
@@ -68,8 +78,13 @@
               </g>
 
               <circle v-for="band in filters" :key="'node-' + band.id" :cx="frequencyToXLocal(band.frequency)"
-                :cy="gainToYLocal(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'"
-                style="cursor: grab;" @mousedown.prevent="startDrag($event, band)" />
+                :cy="gainToYLocal(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'" />
+              
+              <!-- Invisible larger hit areas for filter nodes -->
+              <circle v-for="band in filters" :key="'hit-area-' + band.id" :cx="frequencyToXLocal(band.frequency)"
+                :cy="gainToYLocal(band.gain)" r="12" fill="transparent" 
+                @mousedown.prevent="startDrag($event, band)" @dragstart.prevent 
+                style="cursor: grab;" />
             </g>
 
             <g class="x-axis-labels" :transform="`translate(${margin.left}, ${svgHeight - margin.bottom + 20})`">
@@ -223,7 +238,8 @@ import {
   type BiquadFilterType,
   calculateBiquadBandwidth,
   createBiquadFilter,
-  FILTER_TYPES
+  FILTER_TYPES,
+  bandwidthToQ
 } from '@/utils/biquad';
 
 import {
@@ -286,6 +302,11 @@ const activeFilterId = ref<number | null>(filters.value[0]?.id || null);
 const isDragging = ref(false);
 const svgElement = ref<SVGSVGElement | null>(null);
 const selectedBand = ref<Filter | null>(null);
+
+// Bandwidth dragging state
+const isDraggingBandwidth = ref(false);
+const bandwidthDragSide = ref<'start' | 'end' | null>(null);
+const draggingFilter = ref<Filter | null>(null);
 
 const graphContainer = ref<HTMLDivElement | null>(null);
 
@@ -485,7 +506,7 @@ function toggleChannelMode() {
 
 // Bypass functionality - temporarily disable all filters while pressed
 function startBypass() {
-  if (isBypassed.value || isDragging.value) return; // Already bypassed or dragging
+  if (isBypassed.value || isDragging.value || isDraggingBandwidth.value) return; // Already bypassed or dragging
 
   isBypassed.value = true;
 
@@ -643,36 +664,177 @@ function narrowFilterBand(filter: Filter) {
 }
 
 const startDrag = (e: MouseEvent, band: Filter) => {
+  e.preventDefault();
+  e.stopPropagation();
+
   selectedBand.value = band;
   isDragging.value = true;
   setActiveFilter(band.id);
+
   if (svgElement.value) {
     svgElement.value.style.cursor = 'grabbing';
   }
+
+  // Add global event listeners for more reliable dragging
+  document.addEventListener('mousemove', handleGlobalMouseMove);
+  document.addEventListener('mouseup', handleGlobalMouseUp);
+
+  // Prevent text selection during drag
+  document.body.style.userSelect = 'none';
+};
+
+const startBandwidthDrag = (e: MouseEvent, side: 'start' | 'end') => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const activeFilter = filters.value.find(f => f.id === activeFilterId.value);
+  if (!activeFilter) return;
+
+  isDraggingBandwidth.value = true;
+  bandwidthDragSide.value = side;
+  draggingFilter.value = activeFilter;
+
+  if (svgElement.value) {
+    svgElement.value.style.cursor = 'ew-resize';
+  }
+
+  // Add global event listeners for more reliable dragging
+  document.addEventListener('mousemove', handleGlobalMouseMove);
+  document.addEventListener('mouseup', handleGlobalMouseUp);
+
+  // Prevent text selection during drag
+  document.body.style.userSelect = 'none';
 };
 
 const handleMouseMove = (e: MouseEvent) => {
-  if (!isDragging.value || !selectedBand.value || !svgElement.value) return;
+  if (!svgElement.value) return;
 
   const rect = svgElement.value.getBoundingClientRect();
   const xInPlot = e.clientX - rect.left - margin.left;
   const yInPlot = e.clientY - rect.top - margin.top;
 
-  const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot));
-  const clampedY = Math.max(0, Math.min(plotHeight.value, yInPlot));
+  if (isDraggingBandwidth.value && draggingFilter.value && bandwidthDragSide.value) {
+    // Handle bandwidth line dragging
+    const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot));
+    const newFreq = xToFrequencyLocal(clampedX);
 
-  const newFreq = Math.round(xToFrequencyLocal(clampedX) / 10) * 10;
-  const newGain = Math.max(DEFAULT_GAIN_RANGE.min, Math.min(DEFAULT_GAIN_RANGE.max, Math.round(yToGainLocal(clampedY))));
+    const filter = draggingFilter.value;
+    const centerFreq = filter.frequency;
 
-  selectedBand.value.frequency = newFreq;
-  selectedBand.value.gain = newGain;
+    // Calculate the new bandwidth based on the dragged frequency
+    let newBandwidthOctaves: number;
+
+    if (bandwidthDragSide.value === 'start') {
+      // Dragging the lower frequency line
+      const upperFreq = activeFilterBandwidthEnd.value || centerFreq * Math.sqrt(2);
+      newBandwidthOctaves = Math.log2(upperFreq / Math.max(newFreq, 1));
+    } else {
+      // Dragging the upper frequency line
+      const lowerFreq = activeFilterBandwidthStart.value || centerFreq / Math.sqrt(2);
+      newBandwidthOctaves = Math.log2(Math.max(newFreq, 1) / lowerFreq);
+    }
+
+    // Clamp bandwidth to reasonable values
+    newBandwidthOctaves = Math.max(0.1, Math.min(10, newBandwidthOctaves));
+
+    // Convert bandwidth to Q using the Audio EQ Cookbook formula
+    const omega0 = 2 * Math.PI * centerFreq / SAMPLE_RATE;
+    const newQ = bandwidthToQ(newBandwidthOctaves, omega0);
+
+    // Clamp Q to reasonable values
+    filter.Q = Math.max(0.1, Math.min(25.0, newQ));
+
+  } else if (isDragging.value && selectedBand.value) {
+    // Handle filter point dragging (existing functionality)
+    const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot));
+    const clampedY = Math.max(0, Math.min(plotHeight.value, yInPlot));
+
+    const newFreq = Math.round(xToFrequencyLocal(clampedX) / 10) * 10;
+    const newGain = Math.max(DEFAULT_GAIN_RANGE.min, Math.min(DEFAULT_GAIN_RANGE.max, Math.round(yToGainLocal(clampedY))));
+
+    selectedBand.value.frequency = newFreq;
+    selectedBand.value.gain = newGain;
+  } else {
+    // Update cursor based on mouse position when not dragging
+    updateCursor(xInPlot, yInPlot);
+  }
+};
+
+// Function to update cursor based on mouse position
+const updateCursor = (xInPlot: number, yInPlot: number) => {
+  if (!svgElement.value) return;
+
+  const BANDWIDTH_LINE_TOLERANCE = 16; // pixels - increased to match hit area
+  const FILTER_NODE_TOLERANCE = 12; // pixels
+
+  let newCursor = 'default';
+
+  // Check if we're near any filter nodes first (highest priority)
+  for (const filter of filters.value) {
+    const filterX = frequencyToXLocal(filter.frequency);
+    const filterY = gainToYLocal(filter.gain);
+
+    const distanceToNode = Math.sqrt(
+      Math.pow(xInPlot - filterX, 2) + Math.pow(yInPlot - filterY, 2)
+    );
+
+    if (distanceToNode <= FILTER_NODE_TOLERANCE) {
+      newCursor = 'grab';
+      break;
+    }
+  }
+
+  // If not near a filter node, check if we're near bandwidth lines
+  if (newCursor === 'default' && SHOW_BANDWIDTH_LINES &&
+      activeFilterBandwidthStart.value !== null && activeFilterBandwidthEnd.value !== null) {
+
+    const startLineX = frequencyToXLocal(activeFilterBandwidthStart.value);
+    const endLineX = frequencyToXLocal(activeFilterBandwidthEnd.value);
+
+    // Check if mouse is near the start bandwidth line
+    if (Math.abs(xInPlot - startLineX) <= BANDWIDTH_LINE_TOLERANCE) {
+      newCursor = 'ew-resize';
+    }
+    // Check if mouse is near the end bandwidth line
+    else if (Math.abs(xInPlot - endLineX) <= BANDWIDTH_LINE_TOLERANCE) {
+      newCursor = 'ew-resize';
+    }
+  }
+
+  svgElement.value.style.cursor = newCursor;
 };
 
 const handleMouseUp = () => {
   isDragging.value = false;
   selectedBand.value = null;
+
+  // Reset bandwidth dragging state
+  isDraggingBandwidth.value = false;
+  bandwidthDragSide.value = null;
+  draggingFilter.value = null;
+
+  // Reset cursor to default - it will be updated on next mouse move
   if (svgElement.value) {
-    svgElement.value.style.cursor = 'grab';
+    svgElement.value.style.cursor = 'default';
+  }
+};
+
+// Global mouse event handlers for more reliable dragging
+const handleGlobalMouseMove = (e: MouseEvent) => {
+  if (!isDragging.value && !isDraggingBandwidth.value) return;
+  handleMouseMove(e);
+};
+
+const handleGlobalMouseUp = () => {
+  if (isDragging.value || isDraggingBandwidth.value) {
+    handleMouseUp();
+
+    // Remove global event listeners
+    document.removeEventListener('mousemove', handleGlobalMouseMove);
+    document.removeEventListener('mouseup', handleGlobalMouseUp);
+
+    // Restore text selection
+    document.body.style.userSelect = '';
   }
 };
 
@@ -724,6 +886,13 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateSvgDimensions);
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('keyup', handleKeyup);
+
+  // Clean up global mouse event listeners
+  document.removeEventListener('mousemove', handleGlobalMouseMove);
+  document.removeEventListener('mouseup', handleGlobalMouseUp);
+
+  // Restore text selection
+  document.body.style.userSelect = '';
 });
 
 watch(filters, () => {
@@ -812,6 +981,10 @@ watch(filters, () => {
     position: relative;
     border-radius: 8px;
     width: 100%;
+    user-select: none; /* Prevent text selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 
     svg {
       width: 100%;
@@ -819,7 +992,7 @@ watch(filters, () => {
       /* height: 100%; */
       // The height attribute bound via Vue (:height="svgHeight") will now control the height.
       overflow: visible;
-      cursor: grab;
+      user-select: none; /* Prevent text selection in SVG */
 
       .x-axis-labels,
       .y-axis-labels {

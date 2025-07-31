@@ -37,7 +37,7 @@
                   <div v-if="currentBackendCapabilities && selectedBackend === backendId" class="backend-capabilities">
                     <div class="capability-item" v-for="bankInfo in currentBackendCapabilities.availableFilterBanks" :key="bankInfo.name">
                       <span class="capability-name">{{ bankInfo.name }}</span>
-                      <span class="capability-value">{{ bankInfo.currentFilterCount }}/{{ bankInfo.maxFilters }} filters</span>
+                      <span class="capability-value">{{ bankInfo.maxFilters }} filters</span>
                     </div>
                   </div>
                 </div>

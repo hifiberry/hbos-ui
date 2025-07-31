@@ -9,6 +9,7 @@
 import {
   FilterBackend,
   type Filter,
+  type FilterBank,
   type FilterBanks,
   type BackendCapabilities,
   type FilterBankInfo
@@ -20,12 +21,23 @@ import {
   type CacheStatus
 } from '@/api/dsptoolkit'
 
+// Extended FilterBank interface with maxFilters information
+interface ExtendedFilterBank extends FilterBank {
+  maxFilters: number
+  baseAddress?: number // Memory base address for DSP hardware
+}
+
+// Extended FilterBanks interface
+interface ExtendedFilterBanks {
+  [bankName: string]: ExtendedFilterBank
+}
+
 export class DSPToolkitFilterBackend extends FilterBackend {
-  readonly name = 'DSP Toolkit'
-  readonly shortDescription = 'Real DSP hardware backend for live audio processing'
+  readonly name = 'HiFiBery DSP'
+  readonly shortDescription = 'Support for HiFiBerry DSP hardware'
   readonly description = `
     <div class="backend-info">
-      <p><strong>Real DSP Hardware Backend</strong></p>
+      <p><strong>HiFiBerry DSP</strong></p>
       <p>This backend connects directly to your DSP hardware using the DSP Toolkit API.
       Filter banks are automatically configured based on your current DSP profile metadata.</p>
 
@@ -57,7 +69,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     </div>
   `
 
-  private filterBanks: FilterBanks = {}
+  private filterBanks: ExtendedFilterBanks = {}
   private metadata: DSPMetadata | null = null
   private cacheStatus: CacheStatus | null = null
   private initialized = false
@@ -97,41 +109,162 @@ export class DSPToolkitFilterBackend extends FilterBackend {
   private async buildFilterBanksFromMetadata(): Promise<void> {
     this.filterBanks = {}
 
+    // Log available metadata for debugging
+    console.log('DSP Metadata:', this.metadata)
+    console.log('Cache Status:', this.cacheStatus)
+
     // Get basic info from metadata
     const profileName = this.cacheStatus?.profile?.name || 'Unknown Profile'
     const sampleRate = this.metadata?._system?.sampleRate || 48000
 
-    // For now, create standard stereo filter banks
-    // In a real implementation, this would parse the actual DSP metadata
-    // to determine available filter banks and their configurations
+    // Parse filter banks from metadata
+    if (this.metadata) {
+      // Parse custom filter banks (Left/Right channels)
+      this.parseCustomFilterBanks()
 
+      // Parse IIR filter banks (IIR_A, IIR_B, IIR_C, etc.)
+      this.parseIIRFilterBanks()
+    }
+
+    // If no filter banks were found in metadata, create default stereo banks
+    if (Object.keys(this.filterBanks).length === 0) {
+      console.warn('No filter banks found in metadata, creating default stereo configuration')
+      this.createDefaultFilterBanks(profileName)
+    }
+
+    console.log(`Built ${Object.keys(this.filterBanks).length} filter banks for ${profileName} at ${sampleRate}Hz:`, Object.keys(this.filterBanks))
+  }
+
+  /**
+   * Parse custom filter register banks (Left/Right channels) from metadata
+   */
+  private parseCustomFilterBanks(): void {
+    if (!this.metadata) return
+
+    // Look for customFilterRegisterBankLeft and customFilterRegisterBankRight
+    const metadata = this.metadata as Record<string, unknown>
+    const leftBank = metadata.customFilterRegisterBankLeft
+    const rightBank = metadata.customFilterRegisterBankRight
+
+    if (leftBank && typeof leftBank === 'string') {
+      const leftBankInfo = this.parseFilterBankInfo(leftBank, 'Left Channel')
+      if (leftBankInfo) {
+        this.filterBanks['left'] = leftBankInfo
+        console.log(`Parsed left filter bank: ${leftBank} -> ${leftBankInfo.maxFilters} filters at address ${leftBankInfo.baseAddress}`)
+      }
+    }
+
+    if (rightBank && typeof rightBank === 'string') {
+      const rightBankInfo = this.parseFilterBankInfo(rightBank, 'Right Channel')
+      if (rightBankInfo) {
+        this.filterBanks['right'] = rightBankInfo
+        console.log(`Parsed right filter bank: ${rightBank} -> ${rightBankInfo.maxFilters} filters at address ${rightBankInfo.baseAddress}`)
+      }
+    }
+  }
+
+  /**
+   * Parse IIR filter banks (IIR_A, IIR_B, IIR_C, etc.) from metadata
+   */
+  private parseIIRFilterBanks(): void {
+    if (!this.metadata) return
+
+    // Look for IIR_A, IIR_B, IIR_C, etc. in metadata
+    const iirBankPattern = /^IIR_[A-Z]$/
+    const iirBanks: Array<{ key: string; value: string }> = []
+
+    // Collect all IIR banks first
+    for (const [key, value] of Object.entries(this.metadata)) {
+      if (iirBankPattern.test(key) && typeof value === 'string') {
+        iirBanks.push({ key, value })
+      }
+    }
+
+    // Sort alphabetically by key
+    iirBanks.sort((a, b) => a.key.localeCompare(b.key))
+
+    // Parse sorted IIR banks
+    for (const { key, value } of iirBanks) {
+      const letter = key.split('_')[1] // Extract the letter (A, B, C, etc.)
+      const displayName = `Crossover ${letter}` // Change display name
+      const bankInfo = this.parseFilterBankInfo(value, displayName)
+      if (bankInfo) {
+        this.filterBanks[key.toLowerCase()] = bankInfo
+        console.log(`Parsed IIR filter bank: ${key} = ${value} -> ${bankInfo.maxFilters} filters at address ${bankInfo.baseAddress}`)
+      }
+    }
+  }
+
+  /**
+   * Parse filter bank info from metadata string format "baseAddress/memorySize"
+   */
+  private parseFilterBankInfo(bankString: string, displayName: string): ExtendedFilterBank | null {
+    try {
+      const parts = bankString.split('/')
+      if (parts.length !== 2) {
+        console.warn(`Invalid filter bank format: ${bankString}`)
+        return null
+      }
+
+      const baseAddress = parseInt(parts[0], 10)
+      const memoryCells = parseInt(parts[1], 10)
+
+      if (isNaN(baseAddress) || isNaN(memoryCells)) {
+        console.warn(`Invalid numeric values in filter bank: ${bankString}`)
+        return null
+      }
+
+      // Calculate number of filters: memory cells / 5
+      const maxFilters = Math.floor(memoryCells / 5)
+
+      return {
+        name: displayName,
+        filters: [],
+        maxFilters,
+        baseAddress
+      }
+    } catch (error) {
+      console.error(`Error parsing filter bank ${bankString}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Create default filter banks when no metadata is available
+   */
+  private createDefaultFilterBanks(profileName: string): void {
     // Left channel filter bank
     this.filterBanks['left'] = {
       name: `Left Channel (${profileName})`,
-      filters: []
+      filters: [],
+      maxFilters: 8 // Default fallback
+      // No baseAddress for default banks
     }
 
     // Right channel filter bank
     this.filterBanks['right'] = {
       name: `Right Channel (${profileName})`,
-      filters: []
+      filters: [],
+      maxFilters: 8 // Default fallback
+      // No baseAddress for default banks
     }
 
     // If metadata indicates additional channels, add them
-    // This is a placeholder - real implementation would parse metadata structure
     if (this.isMultiChannelProfile()) {
       this.filterBanks['center'] = {
         name: `Center Channel (${profileName})`,
-        filters: []
+        filters: [],
+        maxFilters: 8
+        // No baseAddress for default banks
       }
 
       this.filterBanks['subwoofer'] = {
         name: `Subwoofer (${profileName})`,
-        filters: []
+        filters: [],
+        maxFilters: 8
+        // No baseAddress for default banks
       }
     }
-
-    console.log(`Built ${Object.keys(this.filterBanks).length} filter banks for ${profileName} at ${sampleRate}Hz`)
   }
 
   /**
@@ -167,10 +300,21 @@ export class DSPToolkitFilterBackend extends FilterBackend {
   async getBackendCapabilities(): Promise<BackendCapabilities> {
     await this.initialize()
 
-    const maxFilters = this.getMaxFiltersPerBank()
-    const availableFilterBanks: FilterBankInfo[] = Object.entries(this.filterBanks).map(([, bank]) => ({
+    // Sort filter banks: left, right first, then IIR banks alphabetically
+    const sortedBankEntries = Object.entries(this.filterBanks).sort(([keyA], [keyB]) => {
+      // Prioritize left and right channels
+      if (keyA === 'left') return -1
+      if (keyB === 'left') return 1
+      if (keyA === 'right') return -1
+      if (keyB === 'right') return 1
+
+      // Then sort IIR banks alphabetically
+      return keyA.localeCompare(keyB)
+    })
+
+    const availableFilterBanks: FilterBankInfo[] = sortedBankEntries.map(([, bank]) => ({
       name: bank.name,
-      maxFilters,
+      maxFilters: bank.maxFilters,
       currentFilterCount: bank.filters.length
     }))
 
@@ -190,7 +334,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     }
 
     const bank = this.filterBanks[bankName]
-    const maxFilters = this.getMaxFiltersPerBank()
+    const maxFilters = bank.maxFilters
 
     if (bank.filters.length >= maxFilters) {
       throw new Error(`Cannot add filter: ${bankName} bank is at maximum capacity (${maxFilters})`)
@@ -311,7 +455,9 @@ export class DSPToolkitFilterBackend extends FilterBackend {
 
     this.filterBanks[bankName] = {
       name: bankName,
-      filters: []
+      filters: [],
+      maxFilters: 8 // Default value for manually created banks
+      // No baseAddress for manually created banks
     }
 
     console.log(`DSP Toolkit: Created new filter bank '${bankName}'`, {
@@ -340,8 +486,15 @@ export class DSPToolkitFilterBackend extends FilterBackend {
   async exportFilterConfig(): Promise<FilterBanks> {
     await this.initialize()
 
-    // Return a deep copy to prevent external modification
-    return JSON.parse(JSON.stringify(this.filterBanks))
+    // Convert ExtendedFilterBanks to FilterBanks (remove maxFilters)
+    const result: FilterBanks = {}
+    for (const [bankName, bank] of Object.entries(this.filterBanks)) {
+      result[bankName] = {
+        name: bank.name,
+        filters: bank.filters
+      }
+    }
+    return result
   }
 
   async importFilterConfig(config: FilterBanks): Promise<void> {
@@ -349,14 +502,24 @@ export class DSPToolkitFilterBackend extends FilterBackend {
 
     // Validate the imported configuration
     for (const [bankName, bank] of Object.entries(config)) {
-      const maxFilters = this.getMaxFiltersPerBank()
+      // Use existing bank's maxFilters or default to 8
+      const existingBank = this.filterBanks[bankName]
+      const maxFilters = existingBank?.maxFilters || 8
       if (bank.filters.length > maxFilters) {
         throw new Error(`Import failed: Bank '${bankName}' has ${bank.filters.length} filters, but maximum is ${maxFilters}`)
       }
     }
 
-    // Import the configuration
-    this.filterBanks = JSON.parse(JSON.stringify(config))
+    // Import the configuration, preserving maxFilters from existing banks
+    for (const [bankName, bank] of Object.entries(config)) {
+      const existingBank = this.filterBanks[bankName]
+      this.filterBanks[bankName] = {
+        name: bank.name,
+        filters: JSON.parse(JSON.stringify(bank.filters)),
+        maxFilters: existingBank?.maxFilters || 8,
+        baseAddress: existingBank?.baseAddress // Preserve baseAddress if it exists
+      }
+    }
 
     console.log('DSP Toolkit: Imported filter configuration', {
       bankCount: Object.keys(config).length,

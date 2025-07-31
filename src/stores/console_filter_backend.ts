@@ -11,7 +11,7 @@ import { FilterBackend, type Filter, type FilterBanks, type BackendCapabilities,
 
 export class ConsoleFilterBackend extends FilterBackend {
   public readonly name = 'Demo'
-  public readonly shortDescription = 'Demo backend for UI testing and development'
+  public readonly shortDescription = 'Demo backend for UI testing'
   public readonly description = `
     <p><em>Demo backend that does nothing and is only there to demonstrate the UI</em></p>
 

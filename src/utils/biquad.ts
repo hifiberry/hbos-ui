@@ -1,6 +1,9 @@
 /**
  * Biquad filter implementations for standard audio filter types
  * Contains mathematically accurate biquad filter calculations
+ * 
+ * Supports standard filter types (lowpass, highpass, peaking, shelving)
+ * and generic normalized filters using direct coefficient specification.
  */
 
 // Filter type constants
@@ -9,7 +12,8 @@ export const FILTER_TYPES = {
   HIGHPASS: 'highpass',
   LOWSHELF: 'lowshelf',
   HIGHSHELF: 'highshelf',
-  PEAKING: 'peaking'
+  PEAKING: 'peaking',
+  GENERIC_NORMALIZED: 'generic_normalized' // Direct coefficient specification with a0 = 1
 } as const;
 
 export type BiquadFilterType = typeof FILTER_TYPES[keyof typeof FILTER_TYPES];
@@ -29,6 +33,15 @@ export interface BiquadFilter {
   gain: number;       // Gain in dB
   Q: number;          // Q factor
   sampleRate: number; // Sample rate in Hz
+  // For generic_normalized filters, provide the 5 coefficients directly
+  genericCoeffs?: {
+    b0: number;
+    b1: number; 
+    b2: number;
+    a1: number;
+    a2: number;
+    // a0 is always 1 for normalized filters
+  };
 }
 
 /**
@@ -99,6 +112,20 @@ export function calculateBiquadCoefficients(filter: BiquadFilter): BiquadCoeffic
       a0 = (A + 1) - (A - 1) * cos + beta2 * sin;
       a1 = 2 * ((A - 1) - (A + 1) * cos);
       a2 = (A + 1) - (A - 1) * cos - beta2 * sin;
+      break;
+
+    case FILTER_TYPES.GENERIC_NORMALIZED:
+      // Use provided coefficients directly (already normalized with a0 = 1)
+      if (!filter.genericCoeffs) {
+        throw new Error('Generic normalized filter requires genericCoeffs to be provided');
+      }
+      
+      b0 = filter.genericCoeffs.b0;
+      b1 = filter.genericCoeffs.b1;
+      b2 = filter.genericCoeffs.b2;
+      a0 = 1; // Always 1 for normalized filters
+      a1 = filter.genericCoeffs.a1;
+      a2 = filter.genericCoeffs.a2;
       break;
   }
 
@@ -334,6 +361,20 @@ export function calculateBiquadBandwidth(
  * Validate biquad filter parameters
  */
 export function validateBiquadFilter(filter: BiquadFilter): boolean {
+  // For generic normalized filters, validate the coefficients instead of standard parameters
+  if (filter.type === FILTER_TYPES.GENERIC_NORMALIZED) {
+    return (
+      filter.genericCoeffs !== undefined &&
+      isFinite(filter.genericCoeffs.b0) &&
+      isFinite(filter.genericCoeffs.b1) &&
+      isFinite(filter.genericCoeffs.b2) &&
+      isFinite(filter.genericCoeffs.a1) &&
+      isFinite(filter.genericCoeffs.a2) &&
+      filter.sampleRate > 0
+    );
+  }
+  
+  // Standard validation for other filter types
   return (
     filter.frequency > 0 &&
     filter.frequency < filter.sampleRate / 2 && // Nyquist limit
@@ -341,4 +382,38 @@ export function validateBiquadFilter(filter: BiquadFilter): boolean {
     filter.sampleRate > 0 &&
     isFinite(filter.gain)
   );
+}
+
+/**
+ * Create a generic normalized biquad filter with 5-element definition (a0 = 1)
+ * @param b0 - Numerator coefficient b0
+ * @param b1 - Numerator coefficient b1
+ * @param b2 - Numerator coefficient b2
+ * @param a1 - Denominator coefficient a1 (a0 is implicitly 1)
+ * @param a2 - Denominator coefficient a2 (a0 is implicitly 1)
+ * @param sampleRate - Sample rate in Hz
+ * @returns BiquadFilter object for generic normalized filter
+ */
+export function createGenericNormalizedBiquad(
+  b0: number,
+  b1: number,
+  b2: number,
+  a1: number,
+  a2: number,
+  sampleRate: number = 48000
+): BiquadFilter {
+  return {
+    type: FILTER_TYPES.GENERIC_NORMALIZED,
+    frequency: 1000, // Placeholder - not used for generic filters
+    gain: 0,         // Placeholder - not used for generic filters  
+    Q: 1,            // Placeholder - not used for generic filters
+    sampleRate,
+    genericCoeffs: {
+      b0,
+      b1,
+      b2,
+      a1,
+      a2
+    }
+  };
 }

@@ -138,6 +138,11 @@ const routes = computed(() => {
           icon: 'nas',
         },
         {
+          name: 'dsp-backends',
+          title: 'DSP Backends',
+          icon: 'processor',
+        },
+        {
           name: 'dsp-programs',
           title: 'DSP Programs',
           icon: 'download',

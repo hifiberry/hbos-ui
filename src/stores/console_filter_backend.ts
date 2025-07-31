@@ -13,7 +13,7 @@ export class ConsoleFilterBackend extends FilterBackend {
   public readonly name = 'Console Filter Backend (Demo)'
   public readonly description = `
     <p><em>⚠️ This is a demonstration backend with no actual audio processing functionality. It's designed solely to showcase the filter designer interface and interactions.</em></p>
-    
+
     <h4>Purpose:</h4>
     <p>This demo backend allows you to experience the filter designer UI, test filter operations, and understand how the interface works without connecting to real audio hardware.</p>    <h4>What it does:</h4>
     <ul>

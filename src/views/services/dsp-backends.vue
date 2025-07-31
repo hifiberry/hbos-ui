@@ -29,8 +29,8 @@
                   <p class="backend-description">{{ getBackendDescription(backendId) }}</p>
                   <div class="backend-status">
                     <span :class="[
-                      'status-badge', 
-                      isBackendUnavailable(backendId) ? 'unavailable' : 
+                      'status-badge',
+                      isBackendUnavailable(backendId) ? 'unavailable' :
                       selectedBackend === backendId ? 'active' : 'inactive'
                     ]">
                       {{ getBackendStatus(backendId) }}
@@ -125,7 +125,7 @@ const getBackendDescription = (backendId: string): string => {
       return 'Checking DSP availability...';
     }
   }
-  
+
   const capabilities = allBackendCapabilities.value[backendId];
   return capabilities?.backendShortDescription || '';
 };
@@ -168,7 +168,7 @@ const loadBackendInfo = async () => {
   try {
     // Check DSP status first
     await dspToolkitStore.checkDSPStatus();
-    
+
     // Get current backend type
     selectedBackend.value = filterStore.currentBackendType;
 
@@ -197,7 +197,7 @@ const loadBackendInfo = async () => {
             console.log('Skipping DSP toolkit capabilities loading - no DSP available');
             continue;
           }
-          
+
           await filterStore.switchBackend(backendType);
           const capabilities = await filterStore.getBackendCapabilities();
           allBackendCapabilities.value[backendType] = capabilities;
@@ -353,8 +353,8 @@ onMounted(async () => {
         }
 
         &.active-card {
-          background: rgba(225, 30, 74, 0.05);
-          border-color: #e11e4a;
+          background: rgba(34, 197, 94, 0.05);
+          border-color: #22c55e;
         }
 
         .backend-item {
@@ -377,7 +377,7 @@ onMounted(async () => {
             opacity: 0.6;
             pointer-events: none;
             cursor: not-allowed;
-            
+
             .backend-icon {
               opacity: 0.5;
             }
@@ -413,8 +413,8 @@ onMounted(async () => {
                     @include status-indicator-base;
 
                     &.active {
-                      background: rgba(225, 30, 74, 0.2);
-                      color: #e11e4a;
+                      background: rgba(34, 197, 94, 0.2);
+                      color: #22c55e;
                     }
 
                     &.inactive {
@@ -445,7 +445,7 @@ onMounted(async () => {
                     align-items: center;
                     gap: 6px;
                     padding: 6px 10px;
-                    background: rgba(225, 30, 74, 0.1);
+                    background: rgba(128, 128, 128, 0.1);
                     border-radius: 4px;
                     font-size: 13px;
 
@@ -455,7 +455,7 @@ onMounted(async () => {
                     }
 
                     .capability-value {
-                      color: #e11e4a;
+                      color: var(--color-body-secondary);
                       font-weight: 500;
                     }
                   }

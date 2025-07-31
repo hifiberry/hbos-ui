@@ -1,5 +1,6 @@
 <template>
-  <div class="dsp-programs">
+  <div class="dsp-programs-page">
+    <div class="dsp-programs">
     <div class="breadcrumbs">
       <AppBackRouter :to="{ name: 'services' }">DSP Programs</AppBackRouter>
     </div>
@@ -114,6 +115,9 @@
                     <h3>{{ profile.profileName }}</h3>
                     <div class="profile-version">
                       <span class="version-badge">v{{ profile.profileVersion }}</span>
+                      <span class="checksum-badge" :class="{ 'installed-checksum': profile.isInstalled }">
+                        {{ profile.checksum || 'N/A' }}
+                      </span>
                       <span v-if="profile.isInstalled" class="installed-badge">Installed</span>
                     </div>
                   </div>
@@ -145,21 +149,22 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
 
-  <!-- Deploy Profile Confirmation Dialog -->
-  <AppConfirmationDialog
-    :isOpen="showDeployModal"
-    :title="deployModalTitle"
-    :message="deployModalMessage"
-    :confirmButtonText="deployResult ? 'OK' : (isDeploying ? 'Deploying...' : 'Deploy Profile')"
-    :isDangerous="deployResult ? deployResult.success === false : false"
-    :disabled="isDeploying"
-    :icon="deployResult ? (deployResult.success ? 'tabler/check' : 'tabler/x') : 'tabler/download'"
-    :hideCancelButton="!!deployResult"
-    @close="closeDeployModal"
-    @confirm="deployProfile"
-  />
+    <!-- Deploy Profile Confirmation Dialog -->
+    <AppConfirmationDialog
+      :isOpen="showDeployModal"
+      :title="deployModalTitle"
+      :message="deployModalMessage"
+      :confirmButtonText="deployResult ? 'OK' : (isDeploying ? 'Deploying...' : 'Deploy Profile')"
+      :isDangerous="deployResult ? deployResult.success === false : false"
+      :disabled="isDeploying"
+      :icon="deployResult ? (deployResult.success ? 'tabler/check' : 'tabler/x') : 'tabler/download'"
+      :hideCancelButton="!!deployResult"
+      @close="closeDeployModal"
+      @confirm="deployProfile"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -601,7 +606,7 @@ onMounted(() => {
         @include service-icon-base;
         width: 2.5rem;
         height: 2.5rem;
-        color: var(--tblr-primary, #206bc4);
+        color: var(--color-body-secondary);
         flex-shrink: 0;
       }
 
@@ -622,6 +627,26 @@ onMounted(() => {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      margin-bottom: 0.5rem;
+
+      .checksum-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        line-height: 1;
+        font-family: 'Courier New', monospace;
+        color: var(--tblr-muted, #6c757d);
+        background-color: var(--tblr-gray-100, #f8f9fa);
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+
+        &.installed-checksum {
+          color: var(--tblr-primary, #206bc4);
+          background-color: var(--tblr-primary-lt, #dae8f5);
+        }
+      }
     }
 
     .version-badge {

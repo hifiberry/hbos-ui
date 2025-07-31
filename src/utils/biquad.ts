@@ -3,12 +3,16 @@
  * Contains mathematically accurate biquad filter calculations
  */
 
-export type BiquadFilterType =
-  | 'lowpass'
-  | 'highpass'
-  | 'lowshelf'
-  | 'highshelf'
-  | 'peaking';
+// Filter type constants
+export const FILTER_TYPES = {
+  LOWPASS: 'lowpass',
+  HIGHPASS: 'highpass',
+  LOWSHELF: 'lowshelf',
+  HIGHSHELF: 'highshelf',
+  PEAKING: 'peaking'
+} as const;
+
+export type BiquadFilterType = typeof FILTER_TYPES[keyof typeof FILTER_TYPES];
 
 export interface BiquadCoefficients {
   b0: number;
@@ -46,7 +50,7 @@ export function calculateBiquadCoefficients(filter: BiquadFilter): BiquadCoeffic
   let a0 = 1, a1 = 0, a2 = 0;
 
   switch (type) {
-    case 'lowpass':
+    case FILTER_TYPES.LOWPASS:
       b0 = (1 - cos) / 2;
       b1 = 1 - cos;
       b2 = (1 - cos) / 2;
@@ -55,7 +59,7 @@ export function calculateBiquadCoefficients(filter: BiquadFilter): BiquadCoeffic
       a2 = 1 - alpha;
       break;
 
-    case 'highpass':
+    case FILTER_TYPES.HIGHPASS:
       b0 = (1 + cos) / 2;
       b1 = -(1 + cos);
       b2 = (1 + cos) / 2;
@@ -64,7 +68,7 @@ export function calculateBiquadCoefficients(filter: BiquadFilter): BiquadCoeffic
       a2 = 1 - alpha;
       break;
 
-    case 'peaking':
+    case FILTER_TYPES.PEAKING:
       const APeaking = Math.pow(10, gain / 40); // A = sqrt(linearGain)
 
       b0 = 1 + alpha * APeaking;
@@ -75,7 +79,7 @@ export function calculateBiquadCoefficients(filter: BiquadFilter): BiquadCoeffic
       a2 = 1 - alpha / APeaking;
       break;
 
-    case 'lowshelf':
+    case FILTER_TYPES.LOWSHELF:
       const beta = Math.sqrt(A) / Q;
 
       b0 = A * ((A + 1) - (A - 1) * cos + beta * sin);
@@ -86,7 +90,7 @@ export function calculateBiquadCoefficients(filter: BiquadFilter): BiquadCoeffic
       a2 = (A + 1) + (A - 1) * cos - beta * sin;
       break;
 
-    case 'highshelf':
+    case FILTER_TYPES.HIGHSHELF:
       const beta2 = Math.sqrt(A) / Q;
 
       b0 = A * ((A + 1) + (A - 1) * cos + beta2 * sin);
@@ -196,6 +200,89 @@ export function createBiquadFilter(
     Q,
     sampleRate
   };
+}
+
+/**
+ * Calculate the bandwidth of a biquad filter
+ * Returns the frequency range where the filter has significant effect
+ */
+export function calculateBiquadBandwidth(
+  filter: BiquadFilter
+): { lowerFreq: number; upperFreq: number } | null {
+  const { type, frequency, Q } = filter;
+
+  // Return null for filters without meaningful bandwidth
+  if (Q <= 0 || frequency <= 0) {
+    return null;
+  }
+
+  switch (type) {
+    case FILTER_TYPES.PEAKING: {
+      // For peaking filters, calculate -3dB points
+      // Bandwidth = fc / Q
+      const bandwidth = frequency / Q;
+      const lowerFreq = frequency - bandwidth / 2;
+      const upperFreq = frequency + bandwidth / 2;
+      
+      return {
+        lowerFreq: Math.max(1, lowerFreq), // Clamp to minimum 1 Hz
+        upperFreq: Math.min(filter.sampleRate / 2, upperFreq) // Clamp to Nyquist
+      };
+    }
+
+    case FILTER_TYPES.LOWPASS: {
+      // For lowpass: transition region around the cutoff frequency
+      // Use Q to determine the transition width
+      const transitionWidth = frequency / Q;
+      const lowerFreq = Math.max(1, frequency - transitionWidth);
+      const upperFreq = Math.min(filter.sampleRate / 2, frequency + transitionWidth);
+      
+      return {
+        lowerFreq,
+        upperFreq
+      };
+    }
+
+    case FILTER_TYPES.HIGHPASS: {
+      // For highpass: transition region around the cutoff frequency
+      // Use Q to determine the transition width
+      const transitionWidth = frequency / Q;
+      const lowerFreq = Math.max(1, frequency - transitionWidth);
+      const upperFreq = Math.min(filter.sampleRate / 2, frequency + transitionWidth);
+      
+      return {
+        lowerFreq,
+        upperFreq
+      };
+    }
+
+    case FILTER_TYPES.LOWSHELF: {
+      // For low shelf: transition region around the corner frequency
+      // Use Q to determine the transition width
+      const transitionWidth = frequency / Q;
+      const centerTransition = frequency;
+      
+      return {
+        lowerFreq: Math.max(1, centerTransition - transitionWidth),
+        upperFreq: Math.min(filter.sampleRate / 2, centerTransition + transitionWidth)
+      };
+    }
+
+    case FILTER_TYPES.HIGHSHELF: {
+      // For high shelf: transition region around the corner frequency
+      // Use Q to determine the transition width
+      const transitionWidth = frequency / Q;
+      const centerTransition = frequency;
+      
+      return {
+        lowerFreq: Math.max(1, centerTransition - transitionWidth),
+        upperFreq: Math.min(filter.sampleRate / 2, centerTransition + transitionWidth)
+      };
+    }
+
+    default:
+      return null;
+  }
 }
 
 /**

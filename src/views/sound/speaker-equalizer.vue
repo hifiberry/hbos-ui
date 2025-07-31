@@ -49,9 +49,9 @@
                         fill="rgba(0, 184, 255, 0.03)" stroke="none" />
                   <!-- Draggable bandwidth indicator lines -->
                   <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
-                    :y1="0" :y2="plotHeight" stroke="#00b8ff" stroke-width="3" stroke-dasharray="4 2" />
+                    :y1="0" :y2="plotHeight" stroke="#00b8ff" stroke-width="1" stroke-dasharray="4 2" />
                   <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
-                    :y2="plotHeight" stroke="#00b8ff" stroke-width="3" stroke-dasharray="4 2" />
+                    :y2="plotHeight" stroke="#00b8ff" stroke-width="1" stroke-dasharray="4 2" />
                   
                   <!-- Invisible wider hit areas for easier dragging -->
                   <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"

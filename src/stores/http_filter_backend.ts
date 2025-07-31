@@ -11,9 +11,33 @@
  * const backend = new HttpFilterBackend('http://your-api-url')
  */
 
-import { FilterBackend, type Filter, type FilterBanks } from './filter_backend_interface'
+import { FilterBackend, type Filter, type FilterBanks, type BackendCapabilities } from './filter_backend_interface'
 
 export class HttpFilterBackend extends FilterBackend {
+  public readonly name = 'HTTP API Filter Backend'
+  public readonly description = `
+    <p><strong>HTTP API Filter Backend</strong></p>
+    
+    <p>This backend communicates with a real audio processing server via HTTP REST API calls.</p>
+    
+    <h4>Features:</h4>
+    <ul>
+      <li><strong>Real Backend Integration:</strong> Connects to actual audio processing hardware/software</li>
+      <li><strong>RESTful API:</strong> Uses standard HTTP methods (GET, POST, PUT, DELETE)</li>
+      <li><strong>Persistent Storage:</strong> Filter configurations are saved on the server</li>
+      <li><strong>Dynamic Capabilities:</strong> Filter bank limits and availability determined by server</li>
+    </ul>
+    
+    <h4>API Endpoints:</h4>
+    <ul>
+      <li><code>GET /capabilities</code> - Get backend information and limits</li>
+      <li><code>POST /filter-banks/{name}/filters</code> - Add filter</li>
+      <li><code>PUT /filter-banks/{name}/filters/{position}</code> - Update filter</li>
+      <li><code>DELETE /filter-banks/{name}/filters/{position}</code> - Remove filter</li>
+    </ul>
+    
+    <p><em>This backend requires a compatible audio processing server to be running and accessible.</em></p>
+  `.trim()
   private apiBaseUrl: string
 
   constructor(apiBaseUrl: string) {
@@ -41,6 +65,12 @@ export class HttpFilterBackend extends FilterBackend {
     }
 
     return await response.json()
+  }
+
+  async getBackendCapabilities(): Promise<BackendCapabilities> {
+    const result = await this.apiCall('/capabilities') as BackendCapabilities
+    console.log(`[${this.name}] Retrieved backend capabilities:`, result)
+    return result
   }
 
   async addFilter(bankName: string, position: number, filter: Omit<Filter, 'id'>): Promise<string> {

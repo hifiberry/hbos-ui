@@ -23,10 +23,36 @@ export interface FilterBanks {
   [bankName: string]: FilterBank
 }
 
+export interface FilterBankInfo {
+  name: string
+  maxFilters: number
+  currentFilterCount: number
+}
+
+export interface BackendCapabilities {
+  availableFilterBanks: FilterBankInfo[]
+  backendName: string
+  backendDescription: string
+}
+
 /**
  * Abstract base class for filter backend implementations
  */
 export abstract class FilterBackend {
+  /**
+   * Name of this backend implementation
+   */
+  abstract readonly name: string
+
+  /**
+   * Extended description of this backend implementation
+   */
+  abstract readonly description: string
+
+  /**
+   * Get information about available filter banks and their limits
+   */
+  abstract getBackendCapabilities(): Promise<BackendCapabilities>
   /**
    * Add a filter to a specific bank at a specific position
    */

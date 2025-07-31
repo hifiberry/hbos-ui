@@ -2,7 +2,15 @@
   <div class="sound-page">
     <div class="sound">
       <div class="page-header">
-        <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
+        <div class="title-section">
+          <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
+          <div class="backend-info" v-if="backendName">
+            <span class="backend-name" @click="showBackendInfoModal = true">{{ backendName }}</span>
+            <span class="filter-limits" v-if="currentChannelFilterInfo">
+              • {{ currentChannelFilterInfo.currentFilterCount }}/{{ currentChannelFilterInfo.maxFilters }} filters
+            </span>
+          </div>
+        </div>
         <div class="header-actions">
           <img src="/images/svg/link.svg"
             @click="toggleChannelMode"
@@ -188,13 +196,21 @@
           </div>
 
           <div class="card">
-            <div class="filter-item add-filter-item" @click="showAddFilterModal = true">
+            <div class="filter-item add-filter-item" 
+                 :class="{ disabled: !canAddFilterToCurrentChannel }"
+                 @click="canAddFilterToCurrentChannel && (showAddFilterModal = true)">
               <div class="filter-main">
                 <div class="filter-info">
                   <AppIcon icon="plus" class="filter-icon" />
                   <div class="filter-details">
-                    <h3>Add New Filter</h3>
-                    <div class="filter-frequency">Click to add</div>
+                    <h3>{{ canAddFilterToCurrentChannel ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
+                    <div class="filter-frequency">
+                      <span v-if="currentChannelFilterInfo">
+                        {{ currentChannelFilterInfo.currentFilterCount }}/{{ currentChannelFilterInfo.maxFilters }} filters
+                      </span>
+                      <span v-else-if="canAddFilterToCurrentChannel">Click to add</span>
+                      <span v-else>Cannot add more filters</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -222,6 +238,16 @@
           </div>
         </div>
       </div>
+      
+      <div v-if="showBackendInfoModal" class="modal-backdrop" @click.self="showBackendInfoModal = false">
+        <div class="modal-content backend-info-modal">
+          <div class="modal-header">
+            <h2>Backend Information</h2>
+            <button class="close-btn" @click="showBackendInfoModal = false">×</button>
+          </div>
+          <div class="modal-body" v-html="backendCapabilities?.backendDescription"></div>
+        </div>
+      </div>
     </teleport>
   </div>
 </template>
@@ -229,7 +255,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import AppIcon from '@/components/app-icon.vue';
-import { useFilterStore, type Filter as StoreFilter } from '@/stores/filter_connector';
+import { useFilterStore, type Filter as StoreFilter, type BackendCapabilities } from '@/stores/filter_connector';
 import {
   type Filter,
   calculateFilterGain
@@ -290,6 +316,47 @@ type ChannelMode = 'individual' | 'both';
 // Initialize filter store
 const filterStore = useFilterStore();
 
+// Backend capabilities and filter limits
+const backendCapabilities = ref<BackendCapabilities | null>(null);
+const backendName = ref('');
+
+// Load backend capabilities on mount
+const loadBackendCapabilities = async () => {
+  try {
+    backendCapabilities.value = await filterStore.getBackendCapabilities();
+    backendName.value = backendCapabilities.value?.backendName || '';
+    console.log('Backend capabilities loaded:', backendCapabilities.value);
+  } catch (error) {
+    console.error('Failed to load backend capabilities:', error);
+  }
+};
+
+// Computed property to check if current channel can accept more filters
+const canAddFilterToCurrentChannel = computed(() => {
+  if (!backendCapabilities.value) return false;
+  
+  const currentBankName = activeChannel.value;
+  const bankInfo = backendCapabilities.value.availableFilterBanks.find(
+    bank => bank.name === currentBankName
+  );
+  
+  if (!bankInfo) return false;
+  
+  return bankInfo.currentFilterCount < bankInfo.maxFilters;
+});
+
+// Computed property to get current filter count and limit for UI display
+const currentChannelFilterInfo = computed(() => {
+  if (!backendCapabilities.value) return null;
+  
+  const currentBankName = activeChannel.value;
+  const bankInfo = backendCapabilities.value.availableFilterBanks.find(
+    bank => bank.name === currentBankName
+  );
+  
+  return bankInfo;
+});
+
 // Helper functions to convert between UI Filter and Store Filter types
 const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
   // Map UI filter types to store filter types
@@ -313,32 +380,11 @@ const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
   };
 };
 
-const convertStoreFilterToUI = (storeFilter: StoreFilter, numericId: number): Filter => {
-  // Map store filter types back to UI filter types
-  const typeMapping: Record<StoreFilter['type'], string> = {
-    'shelf-low': 'lowshelf',
-    'peak': 'peaking',
-    'shelf-high': 'highshelf',
-    'highpass': 'highpass',
-    'lowpass': 'lowpass',
-    'bandpass': 'bandpass',
-    'bandstop': 'bandstop',
-    'allpass': 'allpass'
-  };
-
-  return {
-    id: numericId,
-    icon: typeMapping[storeFilter.type] as BiquadFilterType,
-    text: storeFilter.frequency.toString(),
-    frequency: storeFilter.frequency,
-    gain: storeFilter.gain || 0,
-    Q: storeFilter.q,
-    enabled: storeFilter.enabled
-  };
-};
-
 // Initialize filter banks in the store
 onMounted(async () => {
+  // Load backend capabilities first
+  await loadBackendCapabilities();
+
   // Create both current and prepare for future channel expansion
   const currentChannels = ['left', 'right'];
   await filterStore.createMultipleFilterBanks(currentChannels);
@@ -351,6 +397,9 @@ onMounted(async () => {
   for (const [index, filter] of rightFilters.value.entries()) {
     await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
   }
+
+  // Reload capabilities after adding initial filters to get updated counts
+  await loadBackendCapabilities();
 });
 
 const activeChannel = ref<Channel>('left');
@@ -376,6 +425,7 @@ const filters = computed(() => {
 });
 
 const showAddFilterModal = ref(false);
+const showBackendInfoModal = ref(false);
 
 // Bypass functionality state
 const isBypassed = ref(false);
@@ -730,21 +780,30 @@ function setActiveFilter(id: number) {
 }
 
 const addFilterOfType = async (type: BiquadFilterType) => {
-  const newId = Date.now();
-  const newFilter: Filter = {
-    id: newId,
-    icon: type,
-    text: 'New',
-    frequency: 1000,
-    gain: 0,
-    Q: 0.71, // Default Q set to 0.71 as requested
-    enabled: true,
-  };
+  try {
+    const newId = Date.now();
+    const newFilter: Filter = {
+      id: newId,
+      icon: type,
+      text: 'New',
+      frequency: 1000,
+      gain: 0,
+      Q: 0.71, // Default Q set to 0.71 as requested
+      enabled: true,
+    };
 
-  await addFilterToCurrentChannel(newFilter);
-  setActiveFilter(newId); // Make the newly added filter active
+    await addFilterToCurrentChannel(newFilter);
+    setActiveFilter(newId); // Make the newly added filter active
 
-  showAddFilterModal.value = false;
+    // Reload capabilities to update the UI filter counts
+    await loadBackendCapabilities();
+
+    showAddFilterModal.value = false;
+  } catch (error) {
+    console.error('Failed to add filter:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    alert(`Failed to add filter: ${errorMessage}`);
+  }
 };
 
 const removeFilter = async (filterId: number) => {
@@ -755,6 +814,9 @@ const removeFilter = async (filterId: number) => {
     const currentFilters = getCurrentFilterArray();
     activeFilterId.value = currentFilters[0]?.id || null;
   }
+
+  // Reload capabilities to update the UI filter counts
+  await loadBackendCapabilities();
 };
 
 // Load EQ settings from a JSON file
@@ -1217,12 +1279,16 @@ const updateSvgDimensions = () => {
 };
 
 const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && showAddFilterModal.value) {
-    showAddFilterModal.value = false;
+  if (e.key === 'Escape') {
+    if (showAddFilterModal.value) {
+      showAddFilterModal.value = false;
+    } else if (showBackendInfoModal.value) {
+      showBackendInfoModal.value = false;
+    }
   }
 
   // Spacebar for bypass (common in audio software)
-  if (e.code === 'Space' && !showAddFilterModal.value) {
+  if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value) {
     e.preventDefault(); // Prevent page scroll
     startBypass();
   }
@@ -1230,7 +1296,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 const handleKeyup = (e: KeyboardEvent) => {
   // Release spacebar to end bypass
-  if (e.code === 'Space' && !showAddFilterModal.value) {
+  if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value) {
     e.preventDefault();
     endBypass();
   }
@@ -1265,6 +1331,11 @@ watch([leftFilters, rightFilters], () => {
     f.text = `${f.frequency}`;
   });
 }, { deep: true });
+
+// Watch for active channel changes to reload capabilities
+watch(activeChannel, async () => {
+  await loadBackendCapabilities();
+});
 </script>
 
 <style scoped lang="scss">
@@ -1285,11 +1356,43 @@ watch([leftFilters, rightFilters], () => {
     align-items: center;
     margin-bottom: 20px;
 
-    h1 {
-      margin: 0;
-      font-family: 'Metropolis', sans-serif;
-      font-weight: 500;
-      font-size: 28px;
+    .title-section {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      h1 {
+        margin: 0;
+        font-family: 'Metropolis', sans-serif;
+        font-weight: 500;
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      .backend-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #aaa;
+
+        .backend-name {
+          font-weight: 500;
+          cursor: pointer;
+          color: #00b8ff;
+          text-decoration: underline;
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: #0096cc;
+          }
+        }
+
+        .filter-limits {
+          color: #00b8ff;
+          font-weight: 500;
+        }
+      }
     }
 
     .header-actions {
@@ -1614,9 +1717,25 @@ watch([leftFilters, rightFilters], () => {
           cursor: pointer;
           border-style: dashed;
 
-          &:hover {
+          &:hover:not(.disabled) {
             border-color: #e11e4a;
             background: rgba(225, 30, 74, 0.05);
+          }
+
+          &.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            border-color: #555;
+            color: #777;
+
+            .filter-icon {
+              opacity: 0.5;
+            }
+
+            &:hover {
+              border-color: #555;
+              background: rgba(255, 255, 255, 0.02);
+            }
           }
         }
 
@@ -1955,6 +2074,93 @@ watch([leftFilters, rightFilters], () => {
         background-color: rgba(225, 30, 74, 0.1); // Light background on hover
         border-color: #e11e4a;
       }
+    }
+  }
+}
+
+.backend-info-modal {
+  width: 600px !important;
+  max-width: 90% !important;
+  text-align: left !important;
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+
+    h2 {
+      margin: 0;
+      color: black;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #f0f0f0;
+        color: #000;
+      }
+    }
+  }
+
+  .modal-body {
+    color: #333;
+    line-height: 1.6;
+
+    h4 {
+      color: #e11e4a;
+      font-size: 16px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    ul {
+      margin: 10px 0;
+      padding-left: 20px;
+
+      li {
+        margin-bottom: 8px;
+      }
+    }
+
+    code {
+      background-color: #f5f5f5;
+      color: #d63384;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    strong {
+      color: #000;
+    }
+
+    em {
+      color: #666;
+      font-style: italic;
+    }
+
+    p:first-child strong {
+      color: #e11e4a;
+      font-size: 18px;
     }
   }
 }

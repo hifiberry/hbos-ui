@@ -96,49 +96,6 @@ export function yToGain(
 }
 
 /**
- * Calculate bandwidth start frequency for a filter
- */
-export function calculateFilterBandwidthStart(filter: Filter): number | null {
-  if (typeof filter.Q !== 'number' || filter.Q <= 0) {
-    return null;
-  }
-
-  let bandwidthHz;
-
-  // Different interpretations of Q for different filter types
-  if (filter.icon === 'peaking') {
-    bandwidthHz = filter.frequency / filter.Q; // Standard Q for peak filter
-  } else {
-    // For shelf filters, Q influences the slope. We'll use a scaled Fc/Q
-    // as a visual approximation for the 'transition width'.
-    bandwidthHz = filter.frequency / (filter.Q * 2); // Make shelf "width" less dramatic
-  }
-
-  // Clamp values to graph limits
-  return Math.max(DEFAULT_FREQ_RANGE.min, filter.frequency - (bandwidthHz / 2));
-}
-
-/**
- * Calculate bandwidth end frequency for a filter
- */
-export function calculateFilterBandwidthEnd(filter: Filter): number | null {
-  if (typeof filter.Q !== 'number' || filter.Q <= 0) {
-    return null;
-  }
-
-  let bandwidthHz;
-
-  if (filter.icon === 'peaking') {
-    bandwidthHz = filter.frequency / filter.Q;
-  } else {
-    bandwidthHz = filter.frequency / (filter.Q * 2);
-  }
-
-  // Clamp values to graph limits
-  return Math.min(DEFAULT_FREQ_RANGE.max, filter.frequency + (bandwidthHz / 2));
-}
-
-/**
  * Convert frequency response points to visual points with coordinates
  */
 export function addCoordinatesToPoints(

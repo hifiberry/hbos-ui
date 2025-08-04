@@ -355,7 +355,7 @@ const getFilterIconName = (type: BiquadFilterType): string => {
     case 'lowshelf': return 'filter-low-shelf';
     case 'peaking': return 'filter-peak';
     case 'highshelf': return 'filter-high-shelf';
-    case 'generic_normalized': return 'math-function';
+    case 'generic_normalized': return 'filter-peak'; // Using same icon as peaking for now
     default: return 'filter-peak';
   }
 };

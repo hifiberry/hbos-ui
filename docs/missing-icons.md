@@ -78,6 +78,13 @@ This document tracks icons that need to be created or sourced for various servic
 - **Usage**: Audio interface settings, connection indicators
 - **Notes**: Should represent analog audio input jack/connector (3.5mm, RCA, XLR, etc.)
 
+### Mathematical Function (Generic Biquad Filter)
+
+- **Current Status**: Missing specific icon (temporarily using filter-peak icon)
+- **Needed**: Mathematical function/equation icon for generic biquad filters
+- **Usage**: Audio equalizer interface, generic normalized biquad filter representation
+- **Notes**: Should represent mathematical/algorithmic processing, possibly showing equations or mathematical symbols. Currently shares the same icon as peaking EQ filter.
+
 ## Icon Requirements
 
 - **Format**: SVG preferred

@@ -2185,8 +2185,9 @@ watch(activeChannel, async () => {
   background-color: white;
   padding: 30px;
   border-radius: 10px;
-  width: 400px;
-  max-width: 90%;
+  width: max-content;
+  min-width: 400px;
+  max-width: 90vw;
   text-align: center;
   font-family: 'Metropolis', sans-serif;
   border: 1px solid #333;
@@ -2206,6 +2207,7 @@ watch(activeChannel, async () => {
 
   .filter-type-selector {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 15px;
     margin-bottom: 30px;

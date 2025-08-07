@@ -362,10 +362,10 @@ const getFilterIconName = (type: BiquadFilterType): string => {
 
 const formatFilterTypeName = (type: BiquadFilterType): string => {
   switch (type) {
-    case 'lowshelf': return 'Low Shelfing';
-    case 'peaking': return 'Peaking EQ';
-    case 'highshelf': return 'High Shelfing';
-    case 'generic_normalized': return 'Generic Biquad';
+    case 'lowshelf': return 'Low\nShelf';
+    case 'peaking': return 'Peaking\nEQ';
+    case 'highshelf': return 'High\nShelf';
+    case 'generic_normalized': return 'Generic\nBiquad';
     default: return type;
   }
 };
@@ -2224,6 +2224,8 @@ watch(activeChannel, async () => {
       cursor: pointer;
       transition: all 0.3s ease;
       color: #333; // Text color for default state
+      min-width: 120px; // Set a minimum width to make boxes more compact
+      max-width: 140px; // Set a maximum width
 
       .filter-icon {
         width: 40px; // Make icon big
@@ -2237,6 +2239,9 @@ watch(activeChannel, async () => {
         font-size: 14px; // Adjust font size for the name
         font-weight: 500;
         text-transform: capitalize; // Capitalize the first letter of each word
+        white-space: pre-line; // Allow line breaks from \n characters
+        text-align: center; // Center the multi-line text
+        line-height: 1.2; // Tighter line spacing for compact appearance
       }
 
       &.selected {

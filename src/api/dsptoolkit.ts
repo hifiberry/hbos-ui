@@ -569,6 +569,21 @@ export async function setFilterBankBypassState(
   })
 }
 
+// Convenience function for bypassing individual filters within a filter bank
+export async function setIndividualFilterBypassState(
+  bankAddress: string,
+  filterOffset: number,
+  bypassed: boolean,
+  checksum?: string
+): Promise<FilterBypassSetResponse> {
+  return setFilterBypassState({
+    address: bankAddress,
+    offset: filterOffset,
+    bypassed,
+    checksum
+  })
+}
+
 // DSP Toolkit Status Check
 export type DSPToolkitStatus = 'yes' | 'no' | 'backend_error'
 

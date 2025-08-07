@@ -570,6 +570,7 @@ onMounted(() => {
 /* DSP Profiles Section Styles */
 .dsp-profiles {
   .profiles-header {
+    padding-top: 25px;
     margin-bottom: 32px;
 
     h3 {

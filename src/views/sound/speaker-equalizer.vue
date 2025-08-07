@@ -329,6 +329,7 @@ import {
 
 import {
   setFilterBankBypassState,
+  setIndividualFilterBypassState,
   type FilterBypassSetResponse
 } from '@/api/dsptoolkit';
 
@@ -1264,12 +1265,86 @@ function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
   applyFilterChangeToMultipleChannels(filter.id, updateFn);
 }
 
-function toggleFilterEnabled(filter: Filter) {
-  const updateFn = (f: Filter) => {
-    f.enabled = !f.enabled;
-  };
+async function toggleFilterEnabled(filter: Filter) {
+  try {
+    // Determine which channels to update
+    let channelsToUpdate: string[] = [];
+    
+    if (channelMode.value === 'both') {
+      // Apply to both left and right channels
+      channelsToUpdate = ['left', 'right'];
+    } else {
+      // Apply to current channel only
+      channelsToUpdate = [activeChannel.value];
+    }
 
-  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+    // Toggle the enabled state
+    const newEnabledState = !filter.enabled;
+
+    // Update UI and backend for each channel
+    const bypassPromises: Promise<void>[] = [];
+
+    for (const channelName of channelsToUpdate) {
+      let filters: Filter[] = [];
+      let bankAddress: string = '';
+
+      // Get the filter array and bank address for this channel
+      switch (channelName) {
+        case 'left':
+          filters = leftFilters.value;
+          bankAddress = 'customFilterRegisterBankLeft';
+          break;
+        case 'right':
+          filters = rightFilters.value;
+          bankAddress = 'customFilterRegisterBankRight';
+          break;
+        default:
+          console.warn(`[Filter Toggle] Unknown channel: ${channelName}`);
+          continue;
+      }
+
+      const targetFilter = filters.find(f => f.id === filter.id);
+      if (targetFilter) {
+        // Update UI state
+        targetFilter.enabled = newEnabledState;
+
+        // Get the filter index (offset) within the channel
+        const filterOffset = filters.findIndex(f => f.id === filter.id);
+        
+        if (filterOffset !== -1) {
+          // Update filter store
+          await filterStore.updateFilter(channelName, filterOffset, convertUIFilterToStore(targetFilter));
+          
+          // Call REST API to bypass/enable the individual filter in hardware
+          // Note: bypassed = !enabled (when enabled=false, filter should be bypassed=true)
+          const bypassPromise = setIndividualFilterBypassState(
+            bankAddress,
+            filterOffset,
+            !newEnabledState, // bypassed is opposite of enabled
+          ).then(response => {
+            console.log(`Filter ${channelName}[${filterOffset}] ${newEnabledState ? 'enabled' : 'bypassed'} - ${response.message}`);
+          }).catch(error => {
+            console.error(`Failed to ${newEnabledState ? 'enable' : 'bypass'} filter ${channelName}[${filterOffset}]:`, error);
+            // Revert UI state on error
+            if (targetFilter) {
+              targetFilter.enabled = !newEnabledState;
+            }
+            throw error;
+          });
+
+          bypassPromises.push(bypassPromise);
+        }
+      }
+    }
+
+    // Wait for all bypass operations to complete
+    await Promise.all(bypassPromises);
+
+  } catch (error) {
+    console.error('Failed to toggle filter enabled state:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    alert(`Failed to toggle filter: ${errorMessage}`);
+  }
 }
 
 const startDrag = (e: MouseEvent, band: Filter) => {

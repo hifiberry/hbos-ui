@@ -840,7 +840,7 @@ async function toggleChannelMode() {
     try {
       const config = createLinkedChannelConfig();
       await copyFiltersToChannels(config, sourceChannelName, [targetChannelName]);
-      
+
       console.log(`Synced filters from ${sourceChannelName} to ${targetChannelName} channel when linking channels`);
     } catch (error) {
       console.error(`Failed to sync filters to ${targetChannelName} channel:`, error);

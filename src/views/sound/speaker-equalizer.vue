@@ -391,6 +391,31 @@ const loadBackendCapabilities = async () => {
   }
 };
 
+// Load existing filters from the backend
+const loadFiltersFromBackend = async () => {
+  try {
+    // Sync from backend to get the current filter configuration
+    await filterStore.syncFromBackend();
+    
+    // Convert backend filters to UI format
+    const backendFilters = filterStore.filterBanks;
+    
+    // Update left channel filters
+    if (backendFilters.left?.filters) {
+      leftFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `left_${index + 1}`));
+    }
+    
+    // Update right channel filters
+    if (backendFilters.right?.filters) {
+      rightFilters.value = backendFilters.right.filters.map((filter, index) => convertStoreFilterToUI(filter, `right_${index + 1}`));
+    }
+    
+    console.log('Loaded filters from backend:', { leftCount: leftFilters.value.length, rightCount: rightFilters.value.length });
+  } catch (error) {
+    console.error('Failed to load filters from backend:', error);
+  }
+};
+
 // Computed property to check if current channel can accept more filters
 const canAddFilterToCurrentChannel = computed(() => {
   if (!backendCapabilities.value) return false;
@@ -440,6 +465,30 @@ const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
   };
 };
 
+const convertStoreFilterToUI = (storeFilter: StoreFilter, id: string): Filter => {
+  // Map store filter types to UI filter icons (using only supported BiquadFilterType values)
+  const iconMapping: Record<StoreFilter['type'], BiquadFilterType> = {
+    'shelf-low': 'lowshelf',
+    'peak': 'peaking',
+    'shelf-high': 'highshelf',
+    'highpass': 'highpass',
+    'lowpass': 'lowpass',
+    'bandpass': 'peaking', // Fallback to peaking for unsupported types
+    'bandstop': 'peaking', // Fallback to peaking for unsupported types
+    'allpass': 'peaking'   // Fallback to peaking for unsupported types
+  };
+
+  return {
+    id: parseInt(id.split('_')[1]) || 0,
+    icon: iconMapping[storeFilter.type] || 'peaking',
+    text: storeFilter.frequency.toString(),
+    frequency: storeFilter.frequency,
+    gain: storeFilter.gain || 0,
+    Q: storeFilter.q || 0.71,
+    enabled: storeFilter.enabled
+  };
+};
+
 // Initialize filter banks in the store
 onMounted(async () => {
   // Initialize backend from settingsDB first
@@ -452,16 +501,10 @@ onMounted(async () => {
   const currentChannels = ['left', 'right'];
   await filterStore.createMultipleFilterBanks(currentChannels);
 
-  // Add initial filters to the store
-  for (const [index, filter] of leftFilters.value.entries()) {
-    await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
-  }
+  // Load existing filters from the backend
+  await loadFiltersFromBackend();
 
-  for (const [index, filter] of rightFilters.value.entries()) {
-    await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
-  }
-
-  // Reload capabilities after adding initial filters to get updated counts
+  // Reload capabilities after loading filters to get updated counts
   await loadBackendCapabilities();
 });
 
@@ -469,12 +512,8 @@ const activeChannel = ref<Channel>('left');
 const channelMode = ref<ChannelMode>('individual');
 
 // Separate filter banks for left and right channels
-const leftFilters = ref<Filter[]>([
-  { id: 1, icon: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true } // Initial filter with Q=0.71
-]);
-const rightFilters = ref<Filter[]>([
-  { id: 2, icon: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true } // Initial filter with Q=0.71
-]);
+const leftFilters = ref<Filter[]>([]);
+const rightFilters = ref<Filter[]>([]);
 
 // Computed property for current filters based on channel mode
 const filters = computed(() => {

@@ -210,6 +210,35 @@ export interface DSPProfileUpdateResponse {
   }
 }
 
+// Filter Store Types
+export interface StoredFilter {
+  address: string
+  offset: number
+  filter: DSPFilter | FilterCoefficients
+  timestamp: number
+}
+
+export interface FilterStoreResponse {
+  checksum?: string
+  current?: boolean
+  filters: Record<string, StoredFilter>
+  profiles?: Record<string, Record<string, StoredFilter>>
+}
+
+export interface FilterStoreRequest {
+  checksum?: string
+  filters: Array<{
+    address: string
+    offset?: number
+    filter: DSPFilter | FilterCoefficients
+  }>
+}
+
+export interface FilterStoreDeleteResponse {
+  status: 'success'
+  message: string
+}
+
 // API Functions
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const appConfigStore = useAppConfigStore()
@@ -439,6 +468,61 @@ export async function getDSPProfilesMetadata(): Promise<DSPProfilesMetadataRespo
 // Program Checksum API
 export async function getDSPProgramChecksum(): Promise<DSPProgramChecksumResponse> {
   return apiRequest<DSPProgramChecksumResponse>('/checksum')
+}
+
+// Filter Store API
+export async function getStoredFilters(params?: {
+  checksum?: string
+  current?: boolean
+}): Promise<FilterStoreResponse> {
+  const queryParams = new URLSearchParams()
+
+  if (params?.checksum) {
+    queryParams.append('checksum', params.checksum)
+  }
+
+  if (params?.current) {
+    queryParams.append('current', 'true')
+  }
+
+  const query = queryParams.toString()
+  const endpoint = query ? `/filters?${query}` : '/filters'
+
+  return apiRequest<FilterStoreResponse>(endpoint)
+}
+
+export async function storeFilters(request: FilterStoreRequest): Promise<FilterStoreDeleteResponse> {
+  return apiRequest<FilterStoreDeleteResponse>('/filters', {
+    method: 'POST',
+    body: JSON.stringify(request)
+  })
+}
+
+export async function deleteStoredFilters(params: {
+  checksum?: string
+  address?: string
+  all?: boolean
+}): Promise<FilterStoreDeleteResponse> {
+  const queryParams = new URLSearchParams()
+
+  if (params.checksum) {
+    queryParams.append('checksum', params.checksum)
+  }
+
+  if (params.address) {
+    queryParams.append('address', params.address)
+  }
+
+  if (params.all) {
+    queryParams.append('all', 'true')
+  }
+
+  const query = queryParams.toString()
+  const endpoint = `/filters?${query}`
+
+  return apiRequest<FilterStoreDeleteResponse>(endpoint, {
+    method: 'DELETE'
+  })
 }
 
 // DSP Toolkit Status Check

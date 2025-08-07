@@ -18,7 +18,16 @@ import {
   getMetadata,
   getCacheStatus,
   type DSPMetadata,
-  type CacheStatus
+  type CacheStatus,
+  setBiquadFilter,
+  getStoredFilters,
+  storeFilters,
+  deleteStoredFilters,
+  type DSPFilter,
+  type FilterCoefficients,
+  type BiquadRequest,
+  getDSPProgramChecksum,
+  type StoredFilter
 } from '@/api/dsptoolkit'
 import { useDSPToolkitStore } from './dsp-toolkit'
 
@@ -26,11 +35,19 @@ import { useDSPToolkitStore } from './dsp-toolkit'
 interface ExtendedFilterBank extends FilterBank {
   maxFilters: number
   baseAddress?: number // Memory base address for DSP hardware
+  metadataKey?: string // Original metadata key for this bank
 }
 
 // Extended FilterBanks interface
 interface ExtendedFilterBanks {
   [bankName: string]: ExtendedFilterBank
+}
+
+// Filter bank name mapping: UI names -> DSP profile metadata keys
+const FILTER_BANK_MAPPING: Record<string, string> = {
+  'left': 'customFilterRegisterBankLeft',
+  'right': 'customFilterRegisterBankRight'
+  // Additional mappings can be added here for other filter banks
 }
 
 export class DSPToolkitFilterBackend extends FilterBackend {
@@ -108,6 +125,9 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       // Build filter banks based on available metadata
       await this.buildFilterBanksFromMetadata()
 
+      // Load existing filters from the DSP filter store
+      await this.loadStoredFilters()
+
       this.initialized = true
       console.log('DSP Toolkit backend initialized', {
         profile: this.cacheStatus?.profile?.name,
@@ -159,24 +179,22 @@ export class DSPToolkitFilterBackend extends FilterBackend {
   private parseCustomFilterBanks(): void {
     if (!this.metadata) return
 
-    // Look for customFilterRegisterBankLeft and customFilterRegisterBankRight
     const metadata = this.metadata as Record<string, unknown>
-    const leftBank = metadata.customFilterRegisterBankLeft
-    const rightBank = metadata.customFilterRegisterBankRight
 
-    if (leftBank && typeof leftBank === 'string') {
-      const leftBankInfo = this.parseFilterBankInfo(leftBank, 'Left Channel')
-      if (leftBankInfo) {
-        this.filterBanks['left'] = leftBankInfo
-        console.log(`Parsed left filter bank: ${leftBank} -> ${leftBankInfo.maxFilters} filters at address ${leftBankInfo.baseAddress}`)
-      }
-    }
+    // Use the mapping to find the correct metadata keys
+    for (const [uiName, metadataKey] of Object.entries(FILTER_BANK_MAPPING)) {
+      const bankValue = metadata[metadataKey]
 
-    if (rightBank && typeof rightBank === 'string') {
-      const rightBankInfo = this.parseFilterBankInfo(rightBank, 'Right Channel')
-      if (rightBankInfo) {
-        this.filterBanks['right'] = rightBankInfo
-        console.log(`Parsed right filter bank: ${rightBank} -> ${rightBankInfo.maxFilters} filters at address ${rightBankInfo.baseAddress}`)
+      if (bankValue && typeof bankValue === 'string') {
+        const displayName = uiName === 'left' ? 'Left Channel' : 'Right Channel'
+        const bankInfo = this.parseFilterBankInfo(bankValue, displayName)
+
+        if (bankInfo) {
+          // Store the metadata key for later use in hardware communication
+          bankInfo.metadataKey = metadataKey
+          this.filterBanks[uiName] = bankInfo
+          console.log(`Parsed ${uiName} filter bank: ${metadataKey} = ${bankValue} -> ${bankInfo.maxFilters} filters at address ${bankInfo.baseAddress}`)
+        }
       }
     }
   }
@@ -207,6 +225,8 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       const displayName = `Crossover ${letter}` // Change display name
       const bankInfo = this.parseFilterBankInfo(value, displayName)
       if (bankInfo) {
+        // Store the original metadata key for hardware communication
+        bankInfo.metadataKey = key
         this.filterBanks[key.toLowerCase()] = bankInfo
         console.log(`Parsed IIR filter bank: ${key} = ${value} -> ${bankInfo.maxFilters} filters at address ${bankInfo.baseAddress}`)
       }
@@ -315,6 +335,123 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     return 8
   }
 
+  /**
+   * Load stored filters from the DSP filter store for the current profile
+   */
+  private async loadStoredFilters(): Promise<void> {
+    try {
+      // Get stored filters for the current DSP profile
+      const storedFilters = await getStoredFilters({ current: true })
+
+      if (!storedFilters.filters) {
+        console.log('DSP Filter Store: No stored filters found for current profile')
+        return
+      }
+
+      // Convert stored filters back to our internal format and populate filter banks
+      for (const [filterKey, storedFilter] of Object.entries(storedFilters.filters)) {
+        const bankName = this.getBankNameFromMetadataKey(storedFilter.address)
+        if (bankName && this.filterBanks[bankName]) {
+          const internalFilter = this.convertDSPFilterToInternalFormat(storedFilter, filterKey)
+          if (internalFilter) {
+            // Insert filter at the correct position based on offset
+            this.filterBanks[bankName].filters[storedFilter.offset] = internalFilter
+          }
+        }
+      }
+
+      console.log('DSP Filter Store: Loaded stored filters for current profile', {
+        checksum: storedFilters.checksum,
+        filterCount: Object.keys(storedFilters.filters).length
+      })
+    } catch (error) {
+      // Don't fail initialization if we can't load stored filters
+      console.warn('Failed to load stored filters:', error)
+    }
+  }
+
+  /**
+   * Get the internal bank name from a metadata key
+   */
+  private getBankNameFromMetadataKey(metadataKey: string): string | null {
+    // Check the mapping in reverse
+    for (const [bankName, mappedKey] of Object.entries(FILTER_BANK_MAPPING)) {
+      if (mappedKey === metadataKey) {
+        return bankName
+      }
+    }
+
+    // For IIR banks, convert from IIR_A to iir_a
+    if (metadataKey.startsWith('IIR_')) {
+      return metadataKey.toLowerCase()
+    }
+
+    return null
+  }
+
+  /**
+   * Convert DSP filter format back to our internal format
+   */
+  private convertDSPFilterToInternalFormat(storedFilter: StoredFilter, filterKey: string): Filter | null {
+    const filter = storedFilter.filter
+
+    // Handle direct coefficients (unsupported for now)
+    if ('a0' in filter) {
+      console.warn(`Direct coefficient filters not supported for reconstruction: ${filterKey}`)
+      return null
+    }
+
+    // Convert typed filters
+    const baseFilter = {
+      id: filterKey,
+      enabled: true,
+      frequency: 'f' in filter ? filter.f : 1000
+    }
+
+    switch (filter.type) {
+      case 'PeakingEq':
+        return {
+          ...baseFilter,
+          type: 'peak',
+          gain: filter.db,
+          q: filter.q
+        }
+      case 'HighPass':
+        return {
+          ...baseFilter,
+          type: 'highpass',
+          gain: filter.db,
+          q: filter.q
+        }
+      case 'LowPass':
+        return {
+          ...baseFilter,
+          type: 'lowpass',
+          gain: filter.db,
+          q: filter.q
+        }
+      case 'HighShelf':
+        return {
+          ...baseFilter,
+          type: 'shelf-high',
+          gain: filter.db
+        }
+      case 'LowShelf':
+        return {
+          ...baseFilter,
+          type: 'shelf-low',
+          gain: filter.db
+        }
+      case 'Volume':
+        // Volume filters are typically transparent and not useful to reconstruct
+        console.log(`Skipping volume filter reconstruction: ${filterKey}`)
+        return null
+      default:
+        console.warn(`Unknown DSP filter type for reconstruction: ${filter}`)
+        return null
+    }
+  }
+
   async getBackendCapabilities(): Promise<BackendCapabilities> {
     await this.initialize()
 
@@ -377,12 +514,11 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       filterId,
       frequency: filter.frequency,
       position: position,
-      // TODO: Here would be the actual DSP hardware update
-      note: 'Hardware update not yet implemented'
+      note: 'Updated DSP hardware'
     })
 
-    // TODO: Implement actual DSP hardware update
-    // await this.updateDSPHardware(bankName, bank.filters)
+    // Update DSP hardware with the new filter configuration
+    await this.updateDSPHardware(bankName, bank.filters)
 
     return filterId
   }
@@ -405,12 +541,11 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     console.log(`DSP Toolkit: Removed filter from ${bankName} bank`, {
       filterId: removedFilter.id,
       position,
-      // TODO: Here would be the actual DSP hardware update
-      note: 'Hardware update not yet implemented'
+      note: 'Updated DSP hardware'
     })
 
-    // TODO: Implement actual DSP hardware update
-    // await this.updateDSPHardware(bankName, bank.filters)
+    // Update DSP hardware with the updated filter configuration
+    await this.updateDSPHardware(bankName, bank.filters)
 
     return true
   }
@@ -436,12 +571,11 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       filterId: filter.id,
       position,
       updates,
-      // TODO: Here would be the actual DSP hardware update
-      note: 'Hardware update not yet implemented'
+      note: 'Updated DSP hardware'
     })
 
-    // TODO: Implement actual DSP hardware update
-    // await this.updateDSPHardware(bankName, bank.filters)
+    // Update DSP hardware with the updated filter configuration
+    await this.updateDSPHardware(bankName, bank.filters)
 
     return true
   }
@@ -456,19 +590,19 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     this.filterBanks[bankName].filters = []
 
     console.log(`DSP Toolkit: Cleared all filters from ${bankName} bank`, {
-      // TODO: Here would be the actual DSP hardware update
-      note: 'Hardware update not yet implemented'
+      note: 'Updated DSP hardware'
     })
 
-    // TODO: Implement actual DSP hardware update
-    // await this.updateDSPHardware(bankName, [])
+    // Update DSP hardware with empty filter configuration
+    await this.updateDSPHardware(bankName, [])
   }
 
   async createFilterBank(bankName: string): Promise<void> {
     await this.initialize()
 
     if (this.filterBanks[bankName]) {
-      throw new Error(`Filter bank '${bankName}' already exists`)
+      console.log(`DSP Toolkit: Filter bank '${bankName}' already exists, skipping creation`)
+      return
     }
 
     this.filterBanks[bankName] = {
@@ -479,8 +613,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     }
 
     console.log(`DSP Toolkit: Created new filter bank '${bankName}'`, {
-      // TODO: Here would be the actual DSP hardware configuration
-      note: 'Hardware configuration not yet implemented'
+      note: 'Manually created bank - no hardware configuration needed'
     })
   }
 
@@ -542,14 +675,13 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     console.log('DSP Toolkit: Imported filter configuration', {
       bankCount: Object.keys(config).length,
       totalFilters: Object.values(config).reduce((sum, bank) => sum + bank.filters.length, 0),
-      // TODO: Here would be the actual DSP hardware update
-      note: 'Hardware update not yet implemented'
+      note: 'Updated DSP hardware'
     })
 
-    // TODO: Implement actual DSP hardware update for all banks
-    // for (const [bankName, bank] of Object.entries(this.filterBanks)) {
-    //   await this.updateDSPHardware(bankName, bank.filters)
-    // }
+    // Update DSP hardware for all imported banks
+    for (const [bankName, bank] of Object.entries(this.filterBanks)) {
+      await this.updateDSPHardware(bankName, bank.filters)
+    }
   }
 
   async getCurrentConfig(): Promise<FilterBanks> {
@@ -558,15 +690,188 @@ export class DSPToolkitFilterBackend extends FilterBackend {
   }
 
   /**
-   * TODO: Implement actual DSP hardware communication
-   * This method would translate our filter representation to DSP-specific
-   * biquad coefficients and write them to the appropriate DSP memory addresses
+   * Update DSP hardware with the current filter configuration
+   * This method translates our filter representation to DSP-specific
+   * biquad coefficients and writes them to the appropriate DSP memory addresses
    */
-  // private async updateDSPHardware(bankName: string, filters: Filter[]): Promise<void> {
-  //   // Implementation would:
-  //   // 1. Convert Filter objects to DSP biquad coefficients
-  //   // 2. Calculate appropriate memory addresses for the bank
-  //   // 3. Use DSP Toolkit API to write coefficients to hardware
-  //   // 4. Handle error cases and validation
-  // }
+  private async updateDSPHardware(bankName: string, filters: Filter[]): Promise<void> {
+    await this.initialize()
+
+    const bank = this.filterBanks[bankName]
+    if (!bank) {
+      throw new Error(`Filter bank '${bankName}' not found`)
+    }
+
+    // Get the metadata key for this filter bank
+    const metadataKey = bank.metadataKey || this.getMetadataKeyForBank(bankName)
+    if (!metadataKey) {
+      console.warn(`No metadata key found for bank '${bankName}', skipping hardware update`)
+      return
+    }
+
+    try {
+      // Clear all existing filters in the bank by writing empty filters
+      const maxFilters = bank.maxFilters
+      for (let i = 0; i < maxFilters; i++) {
+        if (i < filters.length) {
+          // Write the actual filter
+          const filter = filters[i]
+          const dspFilter = this.convertFilterToDSPFormat(filter)
+
+          const biquadRequest: BiquadRequest = {
+            address: metadataKey,
+            offset: i,
+            sampleRate: this.metadata?._system?.sampleRate || 48000,
+            filter: dspFilter
+          }
+
+          await setBiquadFilter(biquadRequest)
+          console.log(`DSP Hardware: Wrote ${filter.type} filter to ${metadataKey}[${i}]`, {
+            frequency: filter.frequency,
+            gain: filter.gain,
+            q: filter.q
+          })
+        } else {
+          // Clear unused filter slots with a transparent filter
+          const transparentFilter: FilterCoefficients = {
+            a0: 1.0, a1: 0.0, a2: 0.0,
+            b0: 1.0, b1: 0.0, b2: 0.0
+          }
+
+          const biquadRequest: BiquadRequest = {
+            address: metadataKey,
+            offset: i,
+            sampleRate: this.metadata?._system?.sampleRate || 48000,
+            filter: transparentFilter
+          }
+
+          await setBiquadFilter(biquadRequest)
+        }
+      }
+
+      // Store filters in the DSP filter store for persistence
+      await this.storeFiltersInDSP(bankName, filters)
+
+      console.log(`DSP Hardware: Successfully updated ${filters.length} filters in ${bankName} bank`)
+    } catch (error) {
+      console.error(`DSP Hardware: Failed to update ${bankName} bank:`, error)
+      throw new Error(`Failed to update DSP hardware for ${bankName}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
+   * Convert our internal Filter format to DSP API format
+   */
+  private convertFilterToDSPFormat(filter: Filter): DSPFilter {
+    // Convert our internal filter representation to the DSP API format
+    switch (filter.type) {
+      case 'peak':
+        return {
+          type: 'PeakingEq',
+          f: filter.frequency,
+          db: filter.gain || 0,
+          q: filter.q || 1.0
+        }
+      case 'highpass':
+        return {
+          type: 'HighPass',
+          f: filter.frequency,
+          db: filter.gain || 0,
+          q: filter.q || 0.707
+        }
+      case 'lowpass':
+        return {
+          type: 'LowPass',
+          f: filter.frequency,
+          db: filter.gain || 0,
+          q: filter.q || 0.707
+        }
+      case 'shelf-high':
+        return {
+          type: 'HighShelf',
+          f: filter.frequency,
+          db: filter.gain || 0,
+          slope: 1.0,
+          gain: filter.gain || 0
+        }
+      case 'shelf-low':
+        return {
+          type: 'LowShelf',
+          f: filter.frequency,
+          db: filter.gain || 0,
+          slope: 1.0,
+          gain: filter.gain || 0
+        }
+      case 'bandpass':
+      case 'bandstop':
+      case 'allpass':
+        // For unsupported filter types, create a transparent volume filter
+        console.warn(`Filter type '${filter.type}' not directly supported by DSP API, using transparent filter`)
+        return {
+          type: 'Volume',
+          db: 0
+        }
+      default:
+        // Fallback to a transparent filter for unknown types
+        console.warn(`Unknown filter type: ${filter.type}, using transparent filter`)
+        return {
+          type: 'Volume',
+          db: 0
+        }
+    }
+  }
+
+  /**
+   * Get the metadata key for a given filter bank name
+   */
+  private getMetadataKeyForBank(bankName: string): string | null {
+    // First check the mapping
+    const mappedKey = FILTER_BANK_MAPPING[bankName]
+    if (mappedKey) {
+      return mappedKey
+    }
+
+    // For IIR banks, convert back to original format (iir_a -> IIR_A)
+    if (bankName.startsWith('iir_')) {
+      return bankName.toUpperCase()
+    }
+
+    return null
+  }
+
+  /**
+   * Store filters in the DSP filter store for persistence
+   */
+  private async storeFiltersInDSP(bankName: string, filters: Filter[]): Promise<void> {
+    try {
+      // Get current DSP program checksum for filter store identification
+      const checksumResponse = await getDSPProgramChecksum()
+      const checksum = checksumResponse.checksum
+
+      const metadataKey = this.getMetadataKeyForBank(bankName)
+      if (!metadataKey) {
+        console.warn(`Cannot store filters for ${bankName}: no metadata key found`)
+        return
+      }
+
+      // Convert filters to the format expected by the filter store
+      const filtersToStore = filters.map((filter, index) => ({
+        address: metadataKey,
+        offset: index,
+        filter: this.convertFilterToDSPFormat(filter)
+      }))
+
+      if (filtersToStore.length > 0) {
+        await storeFilters({
+          checksum,
+          filters: filtersToStore
+        })
+
+        console.log(`DSP Filter Store: Stored ${filtersToStore.length} filters for ${bankName} (${checksum})`)
+      }
+    } catch (error) {
+      // Don't throw error if filter store fails - hardware update is more important
+      console.warn(`Failed to store filters in DSP filter store:`, error)
+    }
+  }
 }

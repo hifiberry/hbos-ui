@@ -239,6 +239,27 @@ export interface FilterStoreDeleteResponse {
   message: string
 }
 
+// Filter Bypass Types
+export interface FilterBypassSetRequest {
+  address: string
+  bypassed: boolean
+  offset?: number
+  checksum?: string
+  bank?: boolean  // New parameter for bank-level bypass
+}
+
+export interface FilterBypassSetResponse {
+  status: 'success'
+  message: string
+  checksum: string
+  address: string
+  offset?: number
+  bypassed: boolean
+  bank_mode?: boolean     // New field for bank mode response
+  total_filters?: number  // New field for total filters in bank
+  successful?: number     // New field for successful bypass operations
+}
+
 // API Functions
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const appConfigStore = useAppConfigStore()
@@ -522,6 +543,29 @@ export async function deleteStoredFilters(params: {
 
   return apiRequest<FilterStoreDeleteResponse>(endpoint, {
     method: 'DELETE'
+  })
+}
+
+// Filter Bypass API
+export async function setFilterBypassState(request: FilterBypassSetRequest): Promise<FilterBypassSetResponse> {
+  return apiRequest<FilterBypassSetResponse>('/filters/bypass', {
+    method: 'POST',
+    body: JSON.stringify(request)
+  })
+}
+
+// Convenience function for bypassing entire filter banks
+// This is more efficient than bypassing individual filters as it operates on the whole bank at once
+export async function setFilterBankBypassState(
+  bankAddress: string,
+  bypassed: boolean,
+  checksum?: string
+): Promise<FilterBypassSetResponse> {
+  return setFilterBypassState({
+    address: bankAddress,
+    bank: true,
+    bypassed,
+    checksum
   })
 }
 

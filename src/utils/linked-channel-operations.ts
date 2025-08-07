@@ -1,6 +1,6 @@
 /**
  * Utility functions for managing linked channel operations in audio equalizers.
- * 
+ *
  * This module provides reusable functionality for synchronizing filter operations
  * across multiple audio channels when they are linked/grouped together.
  */
@@ -79,7 +79,7 @@ export async function applyToLinkedChannels<T extends Filter>(
       if (filterIndex !== -1) {
         // Apply the update function
         const result = updateFn(filter as T, channelName, filterIndex);
-        
+
         // Handle both sync and async update functions
         const updatePromise = Promise.resolve(result).then(async () => {
           // Update the backend store if callback is provided
@@ -87,7 +87,7 @@ export async function applyToLinkedChannels<T extends Filter>(
             await config.updateStoreCallback(channelName, filterIndex, filter);
           }
         });
-        
+
         updatePromises.push(updatePromise);
       }
     }
@@ -207,7 +207,7 @@ export async function toggleFilterEnabledLinked(
   for (const channelName of channelsToUpdate) {
     const filters = config.channelArrays[channelName];
     const bankAddress = config.bankAddresses[channelName];
-    
+
     if (!filters || !bankAddress) {
       console.warn(`[Linked Channels] Missing filters or bank address for channel: ${channelName}`);
       continue;
@@ -220,13 +220,13 @@ export async function toggleFilterEnabledLinked(
 
       // Get the filter index (offset) within the channel
       const filterOffset = filters.findIndex(f => f.id === filterId);
-      
+
       if (filterOffset !== -1) {
         // Update filter store
         if (config.updateStoreCallback) {
           await config.updateStoreCallback(channelName, filterOffset, filter);
         }
-        
+
         // Call REST API to bypass/enable the individual filter in hardware
         // Note: bypassed = !enabled (when enabled=false, filter should be bypassed=true)
         const bypassPromise = setIndividualFilterBypassState(

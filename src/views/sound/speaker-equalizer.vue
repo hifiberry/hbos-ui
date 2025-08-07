@@ -329,9 +329,19 @@ import {
 
 import {
   setFilterBankBypassState,
-  setIndividualFilterBypassState,
   type FilterBypassSetResponse
 } from '@/api/dsptoolkit';
+
+import {
+  type LinkedChannelConfig,
+  type ChannelMode as LinkedChannelMode,
+  addFilterToLinkedChannels,
+  removeFilterFromLinkedChannels,
+  toggleFilterEnabledLinked,
+  copyFiltersToChannels,
+  updateFilterPropertyLinked,
+  updateGenericCoeffLinked
+} from '@/utils/linked-channel-operations';
 
 import {
   frequencyToX,
@@ -670,55 +680,42 @@ const setCurrentFilterArray = (newFilters: Filter[]) => {
   }
 };
 
-const addFilterToCurrentChannel = async (filter: Filter) => {
-  if (channelMode.value === 'both') {
-    // When in both mode, add to both channels with the same ID
-    leftFilters.value.push({ ...filter });
-    rightFilters.value.push({ ...filter }); // Same ID for both channels
-
-    // Add to filter store for both channels
-    const storeFilter = convertUIFilterToStore(filter);
-    await filterStore.addFilter('left', leftFilters.value.length - 1, storeFilter);
-    await filterStore.addFilter('right', rightFilters.value.length - 1, storeFilter);
-  } else {
-    // When in individual mode, add only to the active channel
-    if (activeChannel.value === 'left') {
-      leftFilters.value.push(filter);
-      await filterStore.addFilter('left', leftFilters.value.length - 1, convertUIFilterToStore(filter));
-    } else {
-      rightFilters.value.push(filter);
-      await filterStore.addFilter('right', rightFilters.value.length - 1, convertUIFilterToStore(filter));
+// Create configuration for linked channel operations
+const createLinkedChannelConfig = (): LinkedChannelConfig => {
+  return {
+    channelMode: channelMode.value as LinkedChannelMode,
+    activeChannel: activeChannel.value,
+    channelArrays: {
+      left: leftFilters.value,
+      right: rightFilters.value
+    },
+    bankAddresses: {
+      left: 'customFilterRegisterBankLeft',
+      right: 'customFilterRegisterBankRight'
+    },
+    updateStoreCallback: async (channelName: string, filterIndex: number, filter: Filter) => {
+      await filterStore.updateFilter(channelName, filterIndex, convertUIFilterToStore(filter));
+    },
+    addStoreCallback: async (channelName: string, filterIndex: number, filter: Filter) => {
+      await filterStore.addFilter(channelName, filterIndex, convertUIFilterToStore(filter));
+    },
+    removeStoreCallback: async (channelName: string, filterIndex: number) => {
+      await filterStore.removeFilter(channelName, filterIndex);
+    },
+    clearStoreCallback: async (channelName: string) => {
+      await filterStore.clearFiltersFromBank(channelName);
     }
-  }
+  };
+};
+
+const addFilterToCurrentChannel = async (filter: Filter) => {
+  const config = createLinkedChannelConfig();
+  await addFilterToLinkedChannels(config, filter);
 };
 
 const removeFilterFromCurrentChannel = async (filterId: number) => {
-  if (channelMode.value === 'both') {
-    // When in both mode, remove from both channels
-    const leftIndex = leftFilters.value.findIndex(f => f.id === filterId);
-    const rightIndex = rightFilters.value.findIndex(f => f.id === filterId);
-    if (leftIndex !== -1) {
-      leftFilters.value.splice(leftIndex, 1);
-      await filterStore.removeFilter('left', leftIndex);
-    }
-    if (rightIndex !== -1) {
-      rightFilters.value.splice(rightIndex, 1);
-      await filterStore.removeFilter('right', rightIndex);
-    }
-  } else {
-    // When in individual mode, remove only from the active channel
-    const currentFilters = getCurrentFilterArray();
-    const indexToRemove = currentFilters.findIndex(f => f.id === filterId);
-    if (indexToRemove !== -1) {
-      if (activeChannel.value === 'left') {
-        leftFilters.value.splice(indexToRemove, 1);
-        await filterStore.removeFilter('left', indexToRemove);
-      } else {
-        rightFilters.value.splice(indexToRemove, 1);
-        await filterStore.removeFilter('right', indexToRemove);
-      }
-    }
-  }
+  const config = createLinkedChannelConfig();
+  await removeFilterFromLinkedChannels(config, filterId);
 };
 
 const currentFilter = computed(() => {
@@ -837,29 +834,14 @@ async function toggleChannelMode() {
 
   // When switching to 'both' mode, copy filters from the currently active channel to the other channel
   if (previousMode === 'individual' && channelMode.value === 'both') {
-    const sourceFilters = activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
-    const targetFilters = activeChannel.value === 'left' ? rightFilters : leftFilters;
+    const sourceChannelName = activeChannel.value;
     const targetChannelName = activeChannel.value === 'left' ? 'right' : 'left';
 
-    // Create deep copies with new IDs to avoid conflicts
-    const copiedFilters = sourceFilters.map((filter, index) => ({
-      ...filter,
-      id: Date.now() + index + 1000 // Ensure unique IDs
-    }));
-
-    targetFilters.value = copiedFilters;
-
-    // Sync the copied filters to the backend
     try {
-      // Clear existing filters in the target channel
-      await filterStore.clearFiltersFromBank(targetChannelName);
-
-      // Add all copied filters to the target channel in the backend
-      for (const [index, filter] of copiedFilters.entries()) {
-        await filterStore.addFilter(targetChannelName, index, convertUIFilterToStore(filter));
-      }
-
-      console.log(`Synced ${copiedFilters.length} filters to ${targetChannelName} channel when linking channels`);
+      const config = createLinkedChannelConfig();
+      await copyFiltersToChannels(config, sourceChannelName, [targetChannelName]);
+      
+      console.log(`Synced filters from ${sourceChannelName} to ${targetChannelName} channel when linking channels`);
     } catch (error) {
       console.error(`Failed to sync filters to ${targetChannelName} channel:`, error);
     }
@@ -1121,58 +1103,9 @@ const saveEQSettings = () => {
 
 // Helper function to apply changes to multiple channels based on current mode
 // Supports future expansion beyond left/right to A,B,C,D,E,F,G,H or C1,C2,C3,C4 etc.
-const applyFilterChangeToMultipleChannels = async (filterId: number, updateFn: (filter: Filter) => void, targetChannels?: string[]) => {
-  // Determine which channels to update
-  let channelsToUpdate: string[] = [];
-
-  if (targetChannels) {
-    // Use explicitly provided channels
-    channelsToUpdate = targetChannels;
-  } else if (channelMode.value === 'both') {
-    // Apply to both left and right channels
-    channelsToUpdate = ['left', 'right'];
-  } else {
-    // Apply to current channel only
-    channelsToUpdate = [activeChannel.value];
-  }
-
-  // Apply updates to each specified channel
-  for (const channelName of channelsToUpdate) {
-    let filters: Filter[] = [];
-
-    // Get the filter array for this channel (expandable for future channels)
-    switch (channelName) {
-      case 'left':
-        filters = leftFilters.value;
-        break;
-      case 'right':
-        filters = rightFilters.value;
-        break;
-      // Future channels can be added here:
-      // case 'A': case 'B': case 'C': case 'D':
-      // case 'E': case 'F': case 'G': case 'H':
-      //   filters = getChannelFilters(channelName); break;
-      // case 'C1': case 'C2': case 'C3': case 'C4':
-      //   filters = getNumericChannelFilters(channelName); break;
-      default:
-        console.warn(`[Filter Store] Unknown channel: ${channelName}`);
-        continue;
-    }
-
-    const filter = filters.find(f => f.id === filterId);
-    if (filter) {
-      updateFn(filter);
-      // Update filter store for this channel
-      const filterIndex = filters.findIndex(f => f.id === filterId);
-      if (filterIndex !== -1) {
-        await filterStore.updateFilter(channelName, filterIndex, convertUIFilterToStore(filter));
-      }
-    }
-  }
-};
-
 function incrementFilterFrequency(filter: Filter) {
-  const updateFn = (f: Filter) => {
+  const config = createLinkedChannelConfig();
+  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
     // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
     const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
     const currentLog = Math.log2(f.frequency);
@@ -1180,13 +1113,12 @@ function incrementFilterFrequency(filter: Filter) {
     const newFreq = Math.pow(2, newLog);
 
     f.frequency = Math.min(DEFAULT_FREQ_RANGE.max, Math.round(newFreq));
-  };
-
-  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+  });
 }
 
 function decrementFilterFrequency(filter: Filter) {
-  const updateFn = (f: Filter) => {
+  const config = createLinkedChannelConfig();
+  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
     // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
     const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
     const currentLog = Math.log2(f.frequency);
@@ -1194,47 +1126,41 @@ function decrementFilterFrequency(filter: Filter) {
     const newFreq = Math.pow(2, newLog);
 
     f.frequency = Math.max(DEFAULT_FREQ_RANGE.min, Math.round(newFreq));
-  };
-
-  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+  });
 }
 
 function incrementFilterGain(filter: Filter) {
-  const updateFn = (f: Filter) => {
+  const config = createLinkedChannelConfig();
+  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
     f.gain = Math.min(DEFAULT_GAIN_RANGE.max, f.gain + 0.5);
-  };
-
-  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+  });
 }
 
 function decrementFilterGain(filter: Filter) {
-  const updateFn = (f: Filter) => {
+  const config = createLinkedChannelConfig();
+  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
     f.gain = Math.max(DEFAULT_GAIN_RANGE.min, f.gain - 0.5);
-  };
-
-  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+  });
 }
 
 function widenFilterBand(filter: Filter) {
-  const updateFn = (f: Filter) => {
+  const config = createLinkedChannelConfig();
+  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
     if (typeof f.Q === 'number') {
       // Widening the band means DECREASING the Q value using logarithmic scaling
       f.Q = Math.max(0.1, f.Q / CONFIG_Q_STEP_FACTOR);
     }
-  };
-
-  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+  });
 }
 
 function narrowFilterBand(filter: Filter) {
-  const updateFn = (f: Filter) => {
+  const config = createLinkedChannelConfig();
+  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
     if (typeof f.Q === 'number') {
       // Narrowing the band means INCREASING the Q value using logarithmic scaling
       f.Q = Math.min(25.0, f.Q * CONFIG_Q_STEP_FACTOR);
     }
-  };
-
-  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+  });
 }
 
 function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
@@ -1246,100 +1172,14 @@ function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
     return;
   }
 
-  const updateFn = (f: Filter) => {
-    // Initialize genericCoeffs if it doesn't exist
-    if (!f.genericCoeffs) {
-      f.genericCoeffs = { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 };
-    }
-
-    // Update the specific coefficient
-    switch (coeffName) {
-      case 'b0': f.genericCoeffs.b0 = value; break;
-      case 'b1': f.genericCoeffs.b1 = value; break;
-      case 'b2': f.genericCoeffs.b2 = value; break;
-      case 'a1': f.genericCoeffs.a1 = value; break;
-      case 'a2': f.genericCoeffs.a2 = value; break;
-    }
-  };
-
-  applyFilterChangeToMultipleChannels(filter.id, updateFn);
+  const config = createLinkedChannelConfig();
+  updateGenericCoeffLinked(config, filter.id, coeffName, value);
 }
 
 async function toggleFilterEnabled(filter: Filter) {
   try {
-    // Determine which channels to update
-    let channelsToUpdate: string[] = [];
-    
-    if (channelMode.value === 'both') {
-      // Apply to both left and right channels
-      channelsToUpdate = ['left', 'right'];
-    } else {
-      // Apply to current channel only
-      channelsToUpdate = [activeChannel.value];
-    }
-
-    // Toggle the enabled state
-    const newEnabledState = !filter.enabled;
-
-    // Update UI and backend for each channel
-    const bypassPromises: Promise<void>[] = [];
-
-    for (const channelName of channelsToUpdate) {
-      let filters: Filter[] = [];
-      let bankAddress: string = '';
-
-      // Get the filter array and bank address for this channel
-      switch (channelName) {
-        case 'left':
-          filters = leftFilters.value;
-          bankAddress = 'customFilterRegisterBankLeft';
-          break;
-        case 'right':
-          filters = rightFilters.value;
-          bankAddress = 'customFilterRegisterBankRight';
-          break;
-        default:
-          console.warn(`[Filter Toggle] Unknown channel: ${channelName}`);
-          continue;
-      }
-
-      const targetFilter = filters.find(f => f.id === filter.id);
-      if (targetFilter) {
-        // Update UI state
-        targetFilter.enabled = newEnabledState;
-
-        // Get the filter index (offset) within the channel
-        const filterOffset = filters.findIndex(f => f.id === filter.id);
-        
-        if (filterOffset !== -1) {
-          // Update filter store
-          await filterStore.updateFilter(channelName, filterOffset, convertUIFilterToStore(targetFilter));
-          
-          // Call REST API to bypass/enable the individual filter in hardware
-          // Note: bypassed = !enabled (when enabled=false, filter should be bypassed=true)
-          const bypassPromise = setIndividualFilterBypassState(
-            bankAddress,
-            filterOffset,
-            !newEnabledState, // bypassed is opposite of enabled
-          ).then(response => {
-            console.log(`Filter ${channelName}[${filterOffset}] ${newEnabledState ? 'enabled' : 'bypassed'} - ${response.message}`);
-          }).catch(error => {
-            console.error(`Failed to ${newEnabledState ? 'enable' : 'bypass'} filter ${channelName}[${filterOffset}]:`, error);
-            // Revert UI state on error
-            if (targetFilter) {
-              targetFilter.enabled = !newEnabledState;
-            }
-            throw error;
-          });
-
-          bypassPromises.push(bypassPromise);
-        }
-      }
-    }
-
-    // Wait for all bypass operations to complete
-    await Promise.all(bypassPromises);
-
+    const config = createLinkedChannelConfig();
+    await toggleFilterEnabledLinked(config, filter.id);
   } catch (error) {
     console.error('Failed to toggle filter enabled state:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -1515,21 +1355,19 @@ const updateCursor = (xInPlot: number, yInPlot: number) => {
 const handleMouseUp = () => {
   // If we were dragging a filter, update the store with the final values
   if (isDragging.value && selectedBand.value) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    applyFilterChangeToMultipleChannels(selectedBand.value.id, (filter: Filter) => {
+    const config = createLinkedChannelConfig();
+    updateFilterPropertyLinked(config, selectedBand.value.id, () => {
       // The filter has already been updated in handleMouseMove,
       // this just triggers the store update with current values
-      // No additional changes needed here, just trigger store sync
     });
   }
 
   // If we were dragging bandwidth, update the store with the final Q value
   if (isDraggingBandwidth.value && draggingFilter.value) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    applyFilterChangeToMultipleChannels(draggingFilter.value.id, (filter: Filter) => {
+    const config = createLinkedChannelConfig();
+    updateFilterPropertyLinked(config, draggingFilter.value.id, () => {
       // The filter Q has already been updated in handleMouseMove,
       // this just triggers the store update with current values
-      // No additional changes needed here, just trigger store sync
     });
   }
 

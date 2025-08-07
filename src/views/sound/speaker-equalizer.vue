@@ -328,6 +328,11 @@ import {
 } from '@/utils/biquad';
 
 import {
+  setFilterBankBypassState,
+  type FilterBypassSetResponse
+} from '@/api/dsptoolkit';
+
+import {
   frequencyToX,
   xToFrequency,
   gainToY,
@@ -396,20 +401,20 @@ const loadFiltersFromBackend = async () => {
   try {
     // Sync from backend to get the current filter configuration
     await filterStore.syncFromBackend();
-    
+
     // Convert backend filters to UI format
     const backendFilters = filterStore.filterBanks;
-    
+
     // Update left channel filters
     if (backendFilters.left?.filters) {
       leftFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `left_${index + 1}`));
     }
-    
+
     // Update right channel filters
     if (backendFilters.right?.filters) {
       rightFilters.value = backendFilters.right.filters.map((filter, index) => convertStoreFilterToUI(filter, `right_${index + 1}`));
     }
-    
+
     console.log('Loaded filters from backend:', { leftCount: leftFilters.value.length, rightCount: rightFilters.value.length });
   } catch (error) {
     console.error('Failed to load filters from backend:', error);
@@ -825,7 +830,7 @@ function setActiveChannel(channel: Channel) {
   }
 }
 
-function toggleChannelMode() {
+async function toggleChannelMode() {
   const previousMode = channelMode.value;
   channelMode.value = channelMode.value === 'individual' ? 'both' : 'individual';
 
@@ -833,6 +838,7 @@ function toggleChannelMode() {
   if (previousMode === 'individual' && channelMode.value === 'both') {
     const sourceFilters = activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
     const targetFilters = activeChannel.value === 'left' ? rightFilters : leftFilters;
+    const targetChannelName = activeChannel.value === 'left' ? 'right' : 'left';
 
     // Create deep copies with new IDs to avoid conflicts
     const copiedFilters = sourceFilters.map((filter, index) => ({
@@ -841,50 +847,123 @@ function toggleChannelMode() {
     }));
 
     targetFilters.value = copiedFilters;
+
+    // Sync the copied filters to the backend
+    try {
+      // Clear existing filters in the target channel
+      await filterStore.clearFiltersFromBank(targetChannelName);
+
+      // Add all copied filters to the target channel in the backend
+      for (const [index, filter] of copiedFilters.entries()) {
+        await filterStore.addFilter(targetChannelName, index, convertUIFilterToStore(filter));
+      }
+
+      console.log(`Synced ${copiedFilters.length} filters to ${targetChannelName} channel when linking channels`);
+    } catch (error) {
+      console.error(`Failed to sync filters to ${targetChannelName} channel:`, error);
+    }
   }
 }
 
-// Bypass functionality - temporarily disable all filters while pressed
-function startBypass() {
-  if (isBypassed.value || isDragging.value || isDraggingBandwidth.value) return; // Already bypassed or dragging
+// Bypass functionality using REST API - bypass entire filter banks while pressed
+async function startBypass() {
+  if (isBypassed.value || isDragging.value || isDraggingBandwidth.value) return;
 
   isBypassed.value = true;
 
-  // Store current filter states for both channels
-  previousFilterStates.value.clear();
+  try {
+    // Determine which filter banks to bypass based on channel mode
+    const banksToBypass: string[] = [];
 
-  leftFilters.value.forEach(filter => {
-    previousFilterStates.value.set(`left-${filter.id}`, filter.enabled);
-    filter.enabled = false; // Disable all filters
-  });
+    if (channelMode.value === 'both') {
+      // Bypass both left and right filter banks
+      banksToBypass.push('customFilterRegisterBankLeft', 'customFilterRegisterBankRight');
+    } else {
+      // Bypass only the active channel's filter bank
+      const bankName = activeChannel.value === 'left'
+        ? 'customFilterRegisterBankLeft'
+        : 'customFilterRegisterBankRight';
+      banksToBypass.push(bankName);
+    }
 
-  rightFilters.value.forEach(filter => {
-    previousFilterStates.value.set(`right-${filter.id}`, filter.enabled);
-    filter.enabled = false; // Disable all filters
-  });
+    // Store the previous bypass states (assuming all banks are currently enabled)
+    previousFilterStates.value.clear();
+    for (const bankName of banksToBypass) {
+      previousFilterStates.value.set(bankName, false); // false = not previously bypassed
+    }
+
+    // Bypass all filter banks using the REST API
+    const bypassPromises: Promise<FilterBypassSetResponse>[] = banksToBypass.map(bankName =>
+      setFilterBankBypassState(bankName, true).catch((error: Error) => {
+        console.error(`Failed to bypass filter bank ${bankName}:`, error);
+        throw error;
+      })
+    );
+
+    // Wait for all bypass operations to complete
+    const results = await Promise.all(bypassPromises);
+
+    let totalFilters = 0;
+    let successfulOperations = 0;
+    results.forEach(result => {
+      totalFilters += result.total_filters || 0;
+      successfulOperations += result.successful || 0;
+    });
+
+    console.log(`Successfully bypassed ${successfulOperations}/${totalFilters} filters across ${banksToBypass.length} banks`);
+
+  } catch (error) {
+    console.error('Failed to start bypass:', error);
+    // Reset bypass state if something went wrong
+    isBypassed.value = false;
+  }
 }
 
-function endBypass() {
-  if (!isBypassed.value) return; // Not bypassed
+async function endBypass() {
+  if (!isBypassed.value) return;
 
   isBypassed.value = false;
 
-  // Restore previous filter states for both channels
-  leftFilters.value.forEach(filter => {
-    const previousState = previousFilterStates.value.get(`left-${filter.id}`);
-    if (previousState !== undefined) {
-      filter.enabled = previousState;
-    }
-  });
+  // If there were no filter banks to restore, just return
+  if (previousFilterStates.value.size === 0) {
+    console.log('No filter banks to restore from bypass');
+    return;
+  }
 
-  rightFilters.value.forEach(filter => {
-    const previousState = previousFilterStates.value.get(`right-${filter.id}`);
-    if (previousState !== undefined) {
-      filter.enabled = previousState;
-    }
-  });
+  try {
+    // Restore all filter banks from bypass using the REST API
+    const restorePromises: Promise<FilterBypassSetResponse>[] = [];
 
-  previousFilterStates.value.clear();
+    for (const [bankName, wasPreviouslyBypassed] of previousFilterStates.value.entries()) {
+      // Only restore banks that were not originally bypassed
+      if (wasPreviouslyBypassed === false) {
+        restorePromises.push(
+          setFilterBankBypassState(bankName, false).catch((error: Error) => {
+            console.error(`Failed to restore filter bank ${bankName}:`, error);
+            throw error;
+          })
+        );
+      }
+    }
+
+    // Wait for all restore operations to complete
+    const results = await Promise.all(restorePromises);
+
+    let totalFilters = 0;
+    let successfulOperations = 0;
+    results.forEach(result => {
+      totalFilters += result.total_filters || 0;
+      successfulOperations += result.successful || 0;
+    });
+
+    console.log(`Successfully restored ${successfulOperations}/${totalFilters} filters across ${restorePromises.length} banks`);
+
+    // Clear the stored states
+    previousFilterStates.value.clear();
+
+  } catch (error) {
+    console.error('Failed to end bypass:', error);
+  }
 }
 
 function setActiveFilter(id: number) {

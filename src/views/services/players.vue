@@ -226,15 +226,18 @@ const loadServiceStatus = async () => {
     if (toslinkPlayer) {
       const toslinkStatus = await getTOSLinkStatus();
       toslinkPlayer.exists = toslinkStatus.available;
-      // Status reflects signal detection: active if signal detected, inactive if no signal, not available if hardware unavailable
-      if (!toslinkStatus.available) {
-        toslinkPlayer.status = 'failed'; // Use 'failed' to indicate "not available"
-      } else {
-        toslinkPlayer.status = toslinkStatus.signalDetected ? 'active' : 'inactive';
-      }
-      toslinkPlayer.enabled = toslinkStatus.enabled;
       toslinkPlayer.allow_change = toslinkStatus.allowChange;
       toslinkPlayer.error = toslinkStatus.error;
+      
+      // If DSP is not available, make the whole box inactive
+      if (!toslinkStatus.available) {
+        toslinkPlayer.status = 'inactive';
+        toslinkPlayer.enabled = false;
+      } else {
+        // Status reflects signal detection: active if signal detected, inactive if no signal
+        toslinkPlayer.status = toslinkStatus.signalDetected ? 'active' : 'inactive';
+        toslinkPlayer.enabled = toslinkStatus.enabled;
+      }
     }
 
     // Handle other services normally
@@ -309,15 +312,18 @@ const refreshSingleServiceStatus = async (serviceName: string, playerIndex: numb
       console.log('[refreshSingleServiceStatus] TOSLink status received:', toslinkStatus);
 
       player.exists = toslinkStatus.available;
-      // Status reflects signal detection: active if signal detected, inactive if no signal, not available if hardware unavailable
-      if (!toslinkStatus.available) {
-        player.status = 'failed'; // Use 'failed' to indicate "not available"
-      } else {
-        player.status = toslinkStatus.signalDetected ? 'active' : 'inactive';
-      }
-      player.enabled = toslinkStatus.enabled;
       player.allow_change = toslinkStatus.allowChange;
       player.error = toslinkStatus.error;
+      
+      // If DSP is not available, make the whole box inactive
+      if (!toslinkStatus.available) {
+        player.status = 'inactive';
+        player.enabled = false;
+      } else {
+        // Status reflects signal detection: active if signal detected, inactive if no signal
+        player.status = toslinkStatus.signalDetected ? 'active' : 'inactive';
+        player.enabled = toslinkStatus.enabled;
+      }
 
       console.log('[refreshSingleServiceStatus] TOSLink player updated:', {
         exists: player.exists,

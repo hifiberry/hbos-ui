@@ -110,6 +110,11 @@ import {
   disableService,
   checkSystemdServiceExists
 } from '@/api/config'
+import {
+  getTOSLinkStatus,
+  enableTOSLink,
+  disableTOSLink
+} from '@/services/toslink'
 
 interface Player {
   name: string
@@ -190,6 +195,19 @@ const players = ref<Player[]>([
     error: undefined,
     allow_change: true,
     exists: true
+  },
+  {
+    name: 'TOSLink',
+    providedBy: 'DSP',
+    systemdService: 'alsa-toslink',
+    config: 'none',
+    status: 'inactive',
+    icon: 'toslink',
+    enabled: false,
+    loading: false,
+    error: undefined,
+    allow_change: false,
+    exists: false
   }
 ])
 
@@ -203,7 +221,25 @@ onMounted(async () => {
 
 const loadServiceStatus = async () => {
   try {
-    const serviceNames = players.value.map(p => p.systemdService)
+    // Handle TOSLink separately
+    const toslinkPlayer = players.value.find(p => p.name === 'TOSLink');
+    if (toslinkPlayer) {
+      const toslinkStatus = await getTOSLinkStatus();
+      toslinkPlayer.exists = toslinkStatus.available;
+      // Status reflects signal detection: active if signal detected, inactive if no signal, not available if hardware unavailable
+      if (!toslinkStatus.available) {
+        toslinkPlayer.status = 'failed'; // Use 'failed' to indicate "not available"
+      } else {
+        toslinkPlayer.status = toslinkStatus.signalDetected ? 'active' : 'inactive';
+      }
+      toslinkPlayer.enabled = toslinkStatus.enabled;
+      toslinkPlayer.allow_change = toslinkStatus.allowChange;
+      toslinkPlayer.error = toslinkStatus.error;
+    }
+
+    // Handle other services normally
+    const regularPlayers = players.value.filter(p => p.name !== 'TOSLink');
+    const serviceNames = regularPlayers.map(p => p.systemdService);
 
     // Check service existence first
     const existencePromises = serviceNames.map(async (serviceName) => {
@@ -225,7 +261,7 @@ const loadServiceStatus = async () => {
       await getMultipleServiceStatus(existingServices) :
       new Map()
 
-    players.value.forEach(player => {
+    regularPlayers.forEach(player => {
       const exists = existenceMap.get(player.systemdService) || false
       player.exists = exists
 
@@ -266,6 +302,34 @@ const refreshSingleServiceStatus = async (serviceName: string, playerIndex: numb
   try {
     const player = players.value[playerIndex]
 
+    // Handle TOSLink separately
+    if (player.name === 'TOSLink') {
+      console.log('[refreshSingleServiceStatus] Refreshing TOSLink status...');
+      const toslinkStatus = await getTOSLinkStatus();
+      console.log('[refreshSingleServiceStatus] TOSLink status received:', toslinkStatus);
+
+      player.exists = toslinkStatus.available;
+      // Status reflects signal detection: active if signal detected, inactive if no signal, not available if hardware unavailable
+      if (!toslinkStatus.available) {
+        player.status = 'failed'; // Use 'failed' to indicate "not available"
+      } else {
+        player.status = toslinkStatus.signalDetected ? 'active' : 'inactive';
+      }
+      player.enabled = toslinkStatus.enabled;
+      player.allow_change = toslinkStatus.allowChange;
+      player.error = toslinkStatus.error;
+
+      console.log('[refreshSingleServiceStatus] TOSLink player updated:', {
+        exists: player.exists,
+        status: player.status,
+        enabled: player.enabled,
+        allow_change: player.allow_change,
+        error: player.error
+      });
+      return;
+    }
+
+    // Handle other services normally
     // Check if service exists first
     const existenceResponse = await checkSystemdServiceExists(serviceName)
     const exists = existenceResponse.data?.exists || false
@@ -308,6 +372,46 @@ const handleToggleClick = async (event: Event, playerIndex: number) => {
   const player = players.value[playerIndex]
   if (player.loading) return
 
+  // Special handling for TOSLink
+  if (player.name === 'TOSLink') {
+    // Check if changes are allowed for TOSLink
+    if (player.allow_change === false) {
+      // The error message should already be set by the status check
+      return
+    }
+
+    player.loading = true
+    player.error = undefined // Clear any previous error
+    const wasEnabled = player.enabled
+
+    try {
+      if (wasEnabled) {
+        await disableTOSLink()
+      } else {
+        await enableTOSLink()
+      }
+
+      console.log(`TOSLink ${!wasEnabled ? 'enabled' : 'disabled'}`)
+    } catch (error) {
+      console.error(`Failed to toggle TOSLink:`, error)
+      player.error = error instanceof Error ? error.message : 'Failed to change TOSLink state'
+    } finally {
+      // Small delay to ensure DSP memory write has taken effect
+      if (player.name === 'TOSLink') {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // Always refresh the service status after any operation
+      // For TOSLink, refresh using the player index directly since refreshSingleServiceStatus
+      // identifies TOSLink by player.name, not by systemdService
+      console.log(`[handleToggleClick] Refreshing status for TOSLink (index: ${playerIndex})`);
+      await refreshSingleServiceStatus(player.systemdService, playerIndex)
+      player.loading = false
+    }
+    return
+  }
+
+  // Handle regular services
   // Check if service exists
   if (player.exists === false) {
     player.error = 'Service is not installed'

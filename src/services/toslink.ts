@@ -7,6 +7,7 @@ export interface TOSLinkStatus {
   allowChange: boolean;
   error?: string;
   requiresDSP: boolean;
+  sensitivity?: 'low' | 'medium' | 'high';
 }
 
 export interface TOSLinkConfig {
@@ -37,6 +38,20 @@ const TOSLINK_CONFIG: TOSLinkConfig = {
     sensitivity: 'sensitivitySPDIFRegister' // Metadata property name for sensitivity memory address
   }
 };
+
+// Sensitivity level mapping to float values
+const SENSITIVITY_LEVELS = {
+  low: 0.01,      // Low sensitivity
+  medium: 0.001,  // Medium sensitivity (default)
+  high: 0.00005   // High sensitivity
+} as const;
+
+// Reverse mapping from float values to sensitivity levels (sorted by value descending for matching)
+const SENSITIVITY_VALUES = [
+  { value: 0.01, level: 'low' },
+  { value: 0.001, level: 'medium' },
+  { value: 0.00005, level: 'high' }
+] as const;
 
 /**
  * Check DSP availability
@@ -150,6 +165,16 @@ export async function getTOSLinkStatus(): Promise<TOSLinkStatus> {
       status.signalDetected = false;
     }
 
+        // Check current sensitivity level by reading the sensitivity memory address
+    try {
+      const currentSensitivity = await getTOSLinkSensitivity();
+      status.sensitivity = currentSensitivity;
+      console.log('[TOSLink getTOSLinkStatus] Current sensitivity level:', status.sensitivity);
+    } catch (error) {
+      console.warn('[TOSLink getTOSLinkStatus] Failed to read SPDIF sensitivity memory address:', error);
+      status.sensitivity = 'medium'; // Default to medium if read fails
+    }
+
   } catch (error) {
     console.error('Failed to get TOSLink status:', error);
     status.error = 'Failed to check TOSLink status';
@@ -188,7 +213,8 @@ export async function enableTOSLink(): Promise<void> {
 
     const writeRequest = {
       address: enableAddress,
-      value: 1
+      value: 1,
+      store: true // Store this memory setting for auto-loading on startup
     };
     console.log('[TOSLink enableTOSLink] writeMemory request object:', writeRequest);
 
@@ -228,7 +254,8 @@ export async function disableTOSLink(): Promise<void> {
 
     const writeRequest = {
       address: enableAddress,
-      value: 0
+      value: 0,
+      store: true // Store this memory setting for auto-loading on startup
     };
     console.log('[TOSLink disableTOSLink] writeMemory request object:', writeRequest);
 
@@ -237,6 +264,94 @@ export async function disableTOSLink(): Promise<void> {
   } catch (error) {
     console.error('[TOSLink disableTOSLink] Failed to disable TOSLink:', error);
     throw new Error(`Failed to disable TOSLink: ${error}`);
+  }
+}
+
+/**
+ * Get current TOSLink input sensitivity level
+ */
+export async function getTOSLinkSensitivity(): Promise<'low' | 'medium' | 'high'> {
+  try {
+    const metadata = await getMetadata();
+    if (!metadata.sensitivitySPDIFRegister) {
+      throw new Error('Sensitivity SPDIF memory address not found in metadata');
+    }
+
+    // Read sensitivity as float value
+    const sensitivityAddress = metadata.sensitivitySPDIFRegister as string;
+    console.log('[TOSLink getTOSLinkSensitivity] Reading sensitivity address:', sensitivityAddress, 'as float');
+
+    const sensitivityResponse = await readMemory(sensitivityAddress, undefined, 'float');
+    console.log('[TOSLink getTOSLinkSensitivity] readMemory response for sensitivity:', sensitivityResponse);
+
+    if (sensitivityResponse && sensitivityResponse.values && sensitivityResponse.values.length > 0) {
+      const floatValue = parseFloat(sensitivityResponse.values[0] as string);
+      console.log('[TOSLink getTOSLinkSensitivity] Float value:', floatValue);
+
+      // Find the closest sensitivity level by calculating absolute differences
+      let closestLevel: 'low' | 'medium' | 'high' = 'medium';
+      let smallestDifference = Infinity;
+      
+      for (const { value, level } of SENSITIVITY_VALUES) {
+        const difference = Math.abs(floatValue - value);
+        console.log('[TOSLink getTOSLinkSensitivity] Comparing', floatValue, 'with', level, '(', value, ') - difference:', difference);
+        
+        if (difference < smallestDifference) {
+          smallestDifference = difference;
+          closestLevel = level;
+        }
+      }
+      
+      console.log('[TOSLink getTOSLinkSensitivity] Closest sensitivity level:', closestLevel, 'with difference:', smallestDifference);
+      return closestLevel;
+    }
+
+    throw new Error('No sensitivity value returned from memory read');
+  } catch (error) {
+    console.error('[TOSLink getTOSLinkSensitivity] Failed to get TOSLink sensitivity:', error);
+    return 'medium'; // Default fallback
+  }
+}
+
+/**
+ * Set TOSLink input sensitivity level
+ */
+export async function setTOSLinkSensitivity(sensitivity: 'low' | 'medium' | 'high'): Promise<void> {
+  const status = await getTOSLinkStatus();
+
+  if (!status.available) {
+    throw new Error(status.error || 'TOSLink is not available');
+  }
+
+  if (!status.allowChange) {
+    throw new Error('Not allowed to change TOSLink state');
+  }
+
+  try {
+    const metadata = await getMetadata();
+    console.log('[TOSLink setTOSLinkSensitivity] Metadata received:', metadata);
+    console.log('[TOSLink setTOSLinkSensitivity] sensitivitySPDIFRegister:', metadata.sensitivitySPDIFRegister, typeof metadata.sensitivitySPDIFRegister);
+    if (!metadata.sensitivitySPDIFRegister) {
+      throw new Error('Sensitivity SPDIF memory address not found in metadata');
+    }
+
+    // Get the float value for the sensitivity level
+    const sensitivityValue = SENSITIVITY_LEVELS[sensitivity];
+    const sensitivityAddress = metadata.sensitivitySPDIFRegister as string;
+    console.log('[TOSLink setTOSLinkSensitivity] Writing to address:', sensitivityAddress, typeof sensitivityAddress, 'value:', sensitivityValue, 'sensitivity:', sensitivity);
+
+    const writeRequest = {
+      address: sensitivityAddress,
+      value: sensitivityValue, // Float value (0.01, 0.001, or 0.00005)
+      store: true // Store this memory setting for auto-loading on startup
+    };
+    console.log('[TOSLink setTOSLinkSensitivity] writeMemory request object:', writeRequest);
+
+    await writeMemory(writeRequest);
+    console.log('[TOSLink setTOSLinkSensitivity] writeMemory completed successfully');
+  } catch (error) {
+    console.error('[TOSLink setTOSLinkSensitivity] Failed to set TOSLink sensitivity:', error);
+    throw new Error(`Failed to set TOSLink sensitivity: ${error}`);
   }
 }
 

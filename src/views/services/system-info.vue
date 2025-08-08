@@ -91,6 +91,57 @@
           </table>
         </div>
 
+        <!-- Network Configuration -->
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="network" class="card-icon" />
+            <h2>Network</h2>
+          </div>
+          <div v-if="networkLoading" class="loading-message">
+            Loading network configuration...
+          </div>
+          <div v-else-if="networkError" class="error-message">
+            {{ networkError }}
+          </div>
+          <table v-else-if="networkConfig" class="info-table">
+            <tbody>
+              <tr v-if="networkConfig.hostname">
+                <td class="label">Hostname</td>
+                <td class="value">{{ networkConfig.hostname }}</td>
+              </tr>
+              <tr v-if="networkConfig.default_gateway">
+                <td class="label">Gateway</td>
+                <td class="value">{{ networkConfig.default_gateway }}</td>
+              </tr>
+              <tr v-if="networkConfig.dns_servers && networkConfig.dns_servers.length > 0">
+                <td class="label">DNS Servers</td>
+                <td class="value">{{ networkConfig.dns_servers.join(', ') }}</td>
+              </tr>
+              <tr v-if="networkConfig.interfaces && networkConfig.interfaces.length > 0">
+                <td class="label">Interfaces</td>
+                <td class="value">
+                  <div v-for="iface in networkConfig.interfaces" :key="iface.name" class="interface-info">
+                    <div class="interface-header">
+                      <strong>{{ iface.name }}</strong>
+                      <span class="interface-type">({{ iface.type }})</span>
+                      <span class="interface-state" :class="`state-${iface.state}`">
+                        {{ iface.state }}
+                      </span>
+                    </div>
+                    <div v-if="iface.ipv4" class="interface-details">
+                      IP: {{ iface.ipv4 }}
+                      <span v-if="iface.netmask"> / {{ iface.netmask }}</span>
+                    </div>
+                    <div v-if="iface.mac" class="interface-details">
+                      MAC: {{ iface.mac }}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- HAT Information -->
         <div class="info-card">
           <div class="card-header">
@@ -358,6 +409,48 @@
             </tbody>
           </table>
         </div>
+
+        <!-- I2C Devices -->
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="binary" class="card-icon" />
+            <h2>I2C Devices</h2>
+          </div>
+          <div v-if="i2cLoading" class="loading-message">
+            Loading I2C devices...
+          </div>
+          <div v-else-if="i2cError" class="error-message">
+            {{ i2cError }}
+          </div>
+          <table v-else-if="i2cDevices" class="info-table">
+            <tbody>
+              <tr v-if="i2cDevices.kernel_used && i2cDevices.kernel_used.length > 0">
+                <td class="label">Kernel</td>
+                <td class="value">
+                  <div class="i2c-addresses">
+                    <span v-for="addr in i2cDevices.kernel_used" :key="addr" class="i2c-address kernel-used">
+                      {{ addr }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="i2cDevices.detected_devices && i2cDevices.detected_devices.length > 0">
+                <td class="label">Other</td>
+                <td class="value">
+                  <div class="i2c-addresses">
+                    <span v-for="addr in i2cDevices.detected_devices" :key="addr" class="i2c-address detected">
+                      {{ addr }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              <tr v-else-if="i2cDevices.bus_exists !== false">
+                <td class="label">Other</td>
+                <td class="value">No devices detected</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -454,6 +547,7 @@ import {
   type BackgroundJobsResponse,
   type BackgroundJob
 } from '@/api/system'
+import { getNetworkConfiguration, scanI2CDevices, type NetworkConfiguration, type I2CDeviceInfo } from '@/api/config'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
@@ -496,6 +590,16 @@ const cacheStats = ref<CacheStatsResponse | null>(null)
 const jobsLoading = ref(true)
 const jobsError = ref('')
 const backgroundJobs = ref<BackgroundJobsResponse | null>(null)
+
+// Network configuration state
+const networkLoading = ref(true)
+const networkError = ref('')
+const networkConfig = ref<NetworkConfiguration | null>(null)
+
+// I2C devices state
+const i2cLoading = ref(true)
+const i2cError = ref('')
+const i2cDevices = ref<I2CDeviceInfo | null>(null)
 
 // Computed ref for hostname
 const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
@@ -885,6 +989,67 @@ const fetchBackgroundJobs = async () => {
   }
 }
 
+const fetchNetworkConfiguration = async () => {
+  console.log('fetchNetworkConfiguration: Starting...')
+  networkLoading.value = true
+  networkError.value = ''
+
+  try {
+    console.log('fetchNetworkConfiguration: Calling getNetworkConfiguration API...')
+
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Network configuration request timeout after 10 seconds')), 10000)
+    )
+
+    const response = await Promise.race([getNetworkConfiguration(), timeoutPromise])
+    console.log('fetchNetworkConfiguration: API call completed, response:', response)
+
+    if (response.status === 'success' && response.data) {
+      networkConfig.value = response.data
+    } else {
+      throw new Error(response.message || 'Failed to retrieve network configuration')
+    }
+  } catch (err) {
+    console.error('fetchNetworkConfiguration: Error occurred:', err)
+    networkError.value = err instanceof Error ? err.message : 'Failed to retrieve network configuration'
+  } finally {
+    networkLoading.value = false
+    console.log('fetchNetworkConfiguration: Completed')
+  }
+}
+
+const fetchI2CDevices = async () => {
+  console.log('fetchI2CDevices: Starting...')
+  i2cLoading.value = true
+  i2cError.value = ''
+
+  try {
+    console.log('fetchI2CDevices: Calling scanI2CDevices API...')
+
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('I2C devices scan timeout after 10 seconds')), 10000)
+    )
+
+    const response = await Promise.race([scanI2CDevices(), timeoutPromise])
+    console.log('fetchI2CDevices: API call completed, response:', response)
+
+    if (response.status === 'success' && response.data) {
+      i2cDevices.value = response.data
+      console.log('fetchI2CDevices: Successfully set i2cDevices to:', i2cDevices.value)
+    } else {
+      throw new Error(response.message || 'Failed to scan I2C devices')
+    }
+  } catch (err) {
+    console.error('fetchI2CDevices: Error occurred:', err)
+    i2cError.value = err instanceof Error ? err.message : 'Failed to scan I2C devices'
+  } finally {
+    i2cLoading.value = false
+    console.log('fetchI2CDevices: Completed')
+  }
+}
+
 // Auto-update state
 const autoUpdateInterval = ref<number | null>(null)
 const countdownInterval = ref<number | null>(null)
@@ -912,9 +1077,11 @@ const refreshData = async () => {
     getFavouritesInfo(),
     fetchCoverArtMethods(),
     fetchCacheStats(),
-    fetchBackgroundJobs()
+    fetchBackgroundJobs(),
+    fetchNetworkConfiguration(),
+    fetchI2CDevices()
   ]).then(results => {
-    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs']
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices']
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
@@ -963,10 +1130,18 @@ onMounted(async () => {
     fetchBackgroundJobs().then(result => {
       console.log('fetchBackgroundJobs result:', result)
       return result
+    }),
+    fetchNetworkConfiguration().then(result => {
+      console.log('fetchNetworkConfiguration result:', result)
+      return result
+    }),
+    fetchI2CDevices().then(result => {
+      console.log('fetchI2CDevices result:', result)
+      return result
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {
@@ -1473,6 +1648,98 @@ onUnmounted(() => {
       color: var(--color-body-secondary);
     }
   }
+}
+
+// Network interface styles
+.interface-info {
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .interface-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+
+    .interface-type {
+      font-size: 0.85em;
+      color: var(--color-text-muted);
+    }
+
+    .interface-state {
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+
+      &.state-up {
+        background-color: rgba(34, 197, 94, 0.1);
+        color: #16a34a;
+      }
+
+      &.state-down {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+      }
+
+      &.state-unknown {
+        background-color: rgba(156, 163, 175, 0.1);
+        color: #6b7280;
+      }
+    }
+  }
+
+  .interface-details {
+    font-size: 0.9em;
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// I2C address styles
+.i2c-addresses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  .i2c-address {
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-family: var(--font-mono, 'Monaco', 'Consolas', 'Courier New', monospace);
+    font-weight: 500;
+
+    &.kernel-used {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    &.detected {
+      background-color: rgba(34, 197, 94, 0.1);
+      color: #16a34a;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+  }
+}
+
+// Status indicator styles
+.status-enabled {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.status-disabled {
+  color: #dc2626;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {

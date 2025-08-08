@@ -1,3 +1,18 @@
+hifiberry-webui (0.9) stable; urgency=medium
+
+  * Implemented comprehensive TOSLink digital audio input module
+  * Added DSP-based TOSLink control with signal detection and sensitivity management
+  * Integrated float-based sensitivity levels (low, medium, high) with DSP memory API
+  * Added expandable TOSLink configuration UI with sensitivity dropdown
+  * Implemented automatic TOSLink settings persistence using DSP filter store
+  * Enhanced HiFiBerry DSP REST API integration with memory store functionality
+  * Added robust floating-point precision handling for DSP register values
+  * Integrated TOSLink status monitoring with real-time signal detection
+  * Added comprehensive error handling and status feedback for TOSLink operations
+  * Enhanced players interface with expandable configuration sections
+
+ -- HiFiBerry <info@hifiberry.com>  Thu, 08 Aug 2025 12:00:00 +0000
+
 hifiberry-webui (0.8) stable; urgency=medium
 
   * Enhanced artist management with custom image selection and upload

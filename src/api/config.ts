@@ -53,6 +53,35 @@ export interface SystemdServiceExists {
   exists: boolean
 }
 
+// Network configuration types
+export interface NetworkInterface {
+  name: string
+  mac: string
+  ipv4: string | null
+  netmask: string | null
+  state: 'up' | 'down' | 'unknown'
+  type: 'wired' | 'wireless'
+}
+
+export interface NetworkConfiguration {
+  hostname: string
+  default_gateway: string | null
+  dns_servers: string[]
+  interfaces: NetworkInterface[]
+}
+
+// I2C device types
+export interface I2CDeviceInfo {
+  bus_number: number
+  bus_path: string
+  bus_exists: boolean
+  smbus2_available: boolean
+  detected_devices: string[]
+  kernel_used: string[]
+  scan_range: string
+  error?: string
+}
+
 /**
  * Get all configuration key-value pairs
  * @param prefix - Optional prefix to filter keys
@@ -433,4 +462,44 @@ export const getMultipleServiceStatus = async (services: string[]): Promise<Map<
 
   await Promise.all(promises)
   return statusMap
+}
+
+// Network configuration functions
+
+/**
+ * Get network configuration including interfaces, DNS, and gateway
+ */
+export const getNetworkConfiguration = async (): Promise<ConfigApiResponse<NetworkConfiguration>> => {
+  const configStore = useAppConfigStore()
+  const baseUrl = configStore.getConfigApiBaseUrl()
+  const url = `${baseUrl}/network`
+
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error(`Failed to get network configuration: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+// I2C device management functions
+
+/**
+ * Scan I2C bus for connected devices
+ * @param busNumber - I2C bus number to scan (default: 1, range: 0-10)
+ */
+export const scanI2CDevices = async (busNumber?: number): Promise<ConfigApiResponse<I2CDeviceInfo>> => {
+  const configStore = useAppConfigStore()
+  const baseUrl = configStore.getConfigApiBaseUrl()
+  const params = busNumber !== undefined ? `?bus=${busNumber}` : ''
+  const url = `${baseUrl}/i2c/devices${params}`
+
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error(`Failed to scan I2C devices: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
 }

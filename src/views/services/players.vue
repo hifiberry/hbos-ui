@@ -50,7 +50,7 @@
                 </div>
                 <!-- Caret column for expandable services -->
                 <div class="player-expand">
-                  <div v-if="player.name === 'Airplay' && typeof player.config === 'object'"
+                  <div v-if="(player.name === 'Airplay' || player.name === 'TOSLink') && typeof player.config === 'object'"
                        class="expand-caret"
                        @click="toggleConfigExpanded(index)">
                     <AppIcon :icon="'caret-down'" class="config-caret" :class="{ expanded: isConfigExpanded(index) }" />
@@ -93,6 +93,42 @@
                 </div>
               </div>
             </div>
+
+            <!-- TOSLink Configuration section that expands the whole card -->
+            <div v-if="player.name === 'TOSLink' && typeof player.config === 'object'" class="config-section">
+              <div v-if="isConfigExpanded(index)" class="config-content">
+                <div class="config-form">
+                  <label class="config-option">
+                    Input sensitivity:
+                    <select
+                      :value="(player.config as Record<string, string>).inputSensitivity"
+                      @change="updateTOSLinkSensitivity(index, ($event.target as HTMLSelectElement).value)"
+                      class="version-select"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="config-actions">
+                  <button
+                    class="config-btn config-btn--cancel"
+                    @click="cancelConfig(index)"
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    class="config-btn config-btn--save"
+                    @click="saveConfig(index)"
+                    type="button"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -113,7 +149,9 @@ import {
 import {
   getTOSLinkStatus,
   enableTOSLink,
-  disableTOSLink
+  disableTOSLink,
+  getTOSLinkSensitivity,
+  setTOSLinkSensitivity
 } from '@/services/toslink'
 
 interface Player {
@@ -200,7 +238,7 @@ const players = ref<Player[]>([
     name: 'TOSLink',
     providedBy: 'DSP',
     systemdService: 'alsa-toslink',
-    config: 'none',
+    config: { inputSensitivity: 'medium' },
     status: 'inactive',
     icon: 'toslink',
     enabled: false,
@@ -228,7 +266,12 @@ const loadServiceStatus = async () => {
       toslinkPlayer.exists = toslinkStatus.available;
       toslinkPlayer.allow_change = toslinkStatus.allowChange;
       toslinkPlayer.error = toslinkStatus.error;
-      
+
+      // Sync sensitivity setting from hardware to UI config
+      if (toslinkStatus.sensitivity && typeof toslinkPlayer.config === 'object') {
+        (toslinkPlayer.config as Record<string, string>).inputSensitivity = toslinkStatus.sensitivity;
+      }
+
       // If DSP is not available, make the whole box inactive
       if (!toslinkStatus.available) {
         toslinkPlayer.status = 'inactive';
@@ -314,7 +357,12 @@ const refreshSingleServiceStatus = async (serviceName: string, playerIndex: numb
       player.exists = toslinkStatus.available;
       player.allow_change = toslinkStatus.allowChange;
       player.error = toslinkStatus.error;
-      
+
+      // Sync sensitivity setting from hardware to UI config
+      if (toslinkStatus.sensitivity && typeof player.config === 'object') {
+        (player.config as Record<string, string>).inputSensitivity = toslinkStatus.sensitivity;
+      }
+
       // If DSP is not available, make the whole box inactive
       if (!toslinkStatus.available) {
         player.status = 'inactive';
@@ -469,6 +517,14 @@ const updateAirplayVersion = (playerIndex: number, version: number) => {
   }
 }
 
+const updateTOSLinkSensitivity = (playerIndex: number, sensitivity: string) => {
+  const player = players.value[playerIndex]
+  if (player.name === 'TOSLink' && typeof player.config === 'object') {
+    (player.config as Record<string, string>).inputSensitivity = sensitivity
+    console.log(`TOSLink input sensitivity updated to ${sensitivity}`)
+  }
+}
+
 const toggleConfigExpanded = (playerIndex: number) => {
   if (expandedConfigs.value.has(playerIndex)) {
     expandedConfigs.value.delete(playerIndex)
@@ -488,12 +544,25 @@ const cancelConfig = (playerIndex: number) => {
   console.log(`Configuration cancelled for ${player.name}`)
 }
 
-const saveConfig = (playerIndex: number) => {
+const saveConfig = async (playerIndex: number) => {
   // Save the configuration and close the section
   expandedConfigs.value.delete(playerIndex)
   const player = players.value[playerIndex]
   console.log(`Configuration saved for ${player.name}`)
-  // Here you would typically make an API call to save the configuration
+
+  try {
+    // Handle TOSLink sensitivity configuration
+    if (player.name === 'TOSLink' && typeof player.config === 'object') {
+      const sensitivity = (player.config as Record<string, string>).inputSensitivity as 'low' | 'medium' | 'high';
+      console.log(`Saving TOSLink sensitivity: ${sensitivity}`);
+      await setTOSLinkSensitivity(sensitivity);
+      console.log(`TOSLink sensitivity saved successfully: ${sensitivity}`);
+    }
+    // Here you would add other configuration saving logic for other services
+  } catch (error) {
+    console.error(`Failed to save configuration for ${player.name}:`, error);
+    // You might want to show an error message to the user here
+  }
 }
 </script>
 

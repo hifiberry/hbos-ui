@@ -35,12 +35,14 @@ export interface MemoryReadResponse {
 export interface MemoryWriteRequest {
   address: string
   value: string | number | (string | number)[]
+  store?: boolean
 }
 
 export interface MemoryWriteResponse {
   address: string
   values: (string | number)[]
   status: 'success'
+  stored?: boolean
 }
 
 // Filter Types

@@ -31,84 +31,18 @@
         </div>
       </div>
       <div class="card">
-        <div class="graph" ref="graphContainer" @mousemove="handleMouseMove" @mouseup="handleMouseUp"
-          @mouseleave="handleMouseUp" @dragstart.prevent>
-          <svg ref="svgElement" :width="svgWidth" :height="svgHeight" @dragstart.prevent>
-            <defs>
-              <clipPath id="plotClipPath">
-                <rect :x="0" :y="0" :width="plotWidth" :height="plotHeight" />
-              </clipPath>
-            </defs>
-            <g :transform="`translate(${margin.left},${margin.top})`">
-              <g stroke="#444" stroke-width="0.5">
-                <line v-for="y in gainGridLines" :key="'gain-grid-' + y" :y1="gainToYLocal(y)" :y2="gainToYLocal(y)" :x1="0"
-                  :x2="plotWidth" />
-                <line v-for="f in freqGridLines" :key="'freq-grid-' + f" :x1="frequencyToXLocal(f)" :x2="frequencyToXLocal(f)"
-                  :y1="0" :y2="plotHeight" />
-              </g>
-
-                            <g clip-path="url(#plotClipPath)">
-                <!-- Bandwidth indicator area and lines -->
-                <template v-if="SHOW_BANDWIDTH_LINES && activeFilterBandwidthStart !== null && activeFilterBandwidthEnd !== null">
-                  <!-- Light shaded area between bandwidth lines -->
-                  <rect :x="frequencyToXLocal(activeFilterBandwidthStart)" :y="0"
-                        :width="frequencyToXLocal(activeFilterBandwidthEnd) - frequencyToXLocal(activeFilterBandwidthStart)"
-                        :height="plotHeight"
-                        fill="rgba(0, 184, 255, 0.03)" stroke="none" />
-                  <!-- Draggable bandwidth indicator lines -->
-                  <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
-                    :y1="0" :y2="plotHeight" stroke="#00b8ff" stroke-width="1" stroke-dasharray="4 2" />
-                  <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
-                    :y2="plotHeight" stroke="#00b8ff" stroke-width="1" stroke-dasharray="4 2" />
-
-                  <!-- Invisible wider hit areas for easier dragging -->
-                  <line :x1="frequencyToXLocal(activeFilterBandwidthStart)" :x2="frequencyToXLocal(activeFilterBandwidthStart)"
-                    :y1="0" :y2="plotHeight" stroke="transparent" stroke-width="16"
-                    @mousedown.prevent="startBandwidthDrag($event, 'start')" @dragstart.prevent
-                    style="cursor: ew-resize;" />
-                  <line :x1="frequencyToXLocal(activeFilterBandwidthEnd)" :x2="frequencyToXLocal(activeFilterBandwidthEnd)" :y1="0"
-                    :y2="plotHeight" stroke="transparent" stroke-width="16"
-                    @mousedown.prevent="startBandwidthDrag($event, 'end')" @dragstart.prevent
-                    style="cursor: ew-resize;" />
-                </template>
-
-                <path v-if="allFiltersCombinedGraphData" :d="allFiltersCombinedGraphData.linePath"
-                  stroke="#e11e4a" fill="none" stroke-width="2.5" />
-
-                <template v-if="activeFilterGraphData">
-                  <path :d="activeFilterGraphData.areaPath" fill="rgba(0, 184, 255, 0.1)" stroke="none" />
-                  <path :d="activeFilterGraphData.linePath" stroke="#00b8ff" fill="none" stroke-width="2" />
-                </template>
-                <template v-else>
-                  <line :x1="0" :y1="gainToYLocal(0)" :x2="plotWidth" :y2="gainToYLocal(0)" stroke="#999" stroke-width="1"
-                    stroke-dasharray="2 2" />
-                </template>
-              </g>
-
-              <circle v-for="band in filters.filter(f => f.icon !== 'generic_normalized')" :key="'node-' + band.id" :cx="frequencyToXLocal(band.frequency)"
-                :cy="gainToYLocal(band.gain)" r="6" :fill="band.id === activeFilterId ? '#00b8ff' : '#999'" />
-
-              <!-- Invisible larger hit areas for filter nodes -->
-              <circle v-for="band in filters.filter(f => f.icon !== 'generic_normalized')" :key="'hit-area-' + band.id" :cx="frequencyToXLocal(band.frequency)"
-                :cy="gainToYLocal(band.gain)" r="12" fill="transparent"
-                @mousedown.prevent="startDrag($event, band)" @dragstart.prevent
-                style="cursor: grab;" />
-            </g>
-
-            <g class="x-axis-labels" :transform="`translate(${margin.left}, ${svgHeight - margin.bottom + 20})`">
-              <text v-for="f in freqGridLabels" :key="'x-label-' + f" :x="frequencyToXLocal(f)" y="0" text-anchor="middle"
-                fill="#aaa" font-size="10">
-                {{ formatHzForSVG(f) }}
-              </text>
-            </g>
-
-            <g class="y-axis-labels" :transform="`translate(${margin.left - 5}, ${margin.top})`">
-              <text v-for="g in gainGridLabels" :key="'y-label-' + g" x="0" :y="gainToYLocal(g)" text-anchor="end"
-                dominant-baseline="middle" fill="#aaa" font-size="10">
-                {{ g }} dB
-              </text>
-            </g>
-          </svg>
+        <div class="graph">
+          <FilterGraph
+            :filters="filters"
+            :active-filter-id="activeFilterId"
+            :show-bandwidth-lines="true"
+            :sample-rate="SAMPLE_RATE"
+            @set-active-filter="setActiveFilter"
+            @update:freq-gain="onGraphUpdateFreqGain"
+            @update:q="onGraphUpdateQ"
+            @drag-start="onGraphDragStart"
+            @drag-end="onGraphDragEnd"
+          />
         </div>
       </div>
 
@@ -313,19 +247,15 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import AppIcon from '@/components/app-icon.vue';
-import { useFilterStore, type Filter as StoreFilter, type BackendCapabilities } from '@/stores/filter_connector';
-import {
-  type Filter,
-  calculateFilterGain
-} from '@/utils/filtercalc';
+import FilterGraph from '@/components/filter-graph.vue';
+import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
+import { type Filter } from '@/utils/filtercalc';
 
 import {
   type BiquadFilterType,
-  calculateBiquadBandwidth,
-  createBiquadFilter,
-  FILTER_TYPES,
-  bandwidthToQ
+  
 } from '@/utils/biquad';
+import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
 
 import {
   setFilterBankBypassState,
@@ -343,48 +273,20 @@ import {
   updateGenericCoeffLinked
 } from '@/utils/linked-channel-operations';
 
-import {
-  frequencyToX,
-  xToFrequency,
-  gainToY,
-  yToGain,
-  generateFrequencyGridLines,
-  generateFrequencyLabels,
-  generateGainGridLines,
-  DEFAULT_FREQ_RANGE,
-  DEFAULT_GAIN_RANGE
-} from '@/utils/filtergraph';
+import { DEFAULT_FREQ_RANGE, DEFAULT_GAIN_RANGE } from '@/utils/filtergraph';
+
+import { convertUIFilterToStore, convertStoreFilterToUI } from '@/utils/filter-conversions';
 
 // Constants
 const SAMPLE_RATE = 48000; // Default sample rate for biquad calculations
 const CONFIG_STEPS_PER_OCTAVE = 10; // Number of frequency steps per octave for logarithmic scaling
 const CONFIG_Q_STEP_FACTOR = 1.07; // Logarithmic step factor for Q value changes
 const EQ_FILE_PREFIX = 'speaker-eq'; // File prefix for save/load functionality
-const SHOW_BANDWIDTH_LINES = true; // Global setting to enable/disable bandwidth indicator lines
+// const SHOW_BANDWIDTH_LINES = true; // handled inside FilterGraph
 
 // Available filter types for the UI
 const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf', 'generic_normalized'];
 
-// Helper functions for filter type display
-const getFilterIconName = (type: BiquadFilterType): string => {
-  switch (type) {
-    case 'lowshelf': return 'filter-low-shelf';
-    case 'peaking': return 'filter-peak';
-    case 'highshelf': return 'filter-high-shelf';
-    case 'generic_normalized': return 'filter-peak'; // Using same icon as peaking for now
-    default: return 'filter-peak';
-  }
-};
-
-const formatFilterTypeName = (type: BiquadFilterType): string => {
-  switch (type) {
-    case 'lowshelf': return 'Low\nShelf';
-    case 'peaking': return 'Peaking\nEQ';
-    case 'highshelf': return 'High\nShelf';
-    case 'generic_normalized': return 'Generic\nBiquad';
-    default: return type;
-  }
-};
 
 type Channel = 'left' | 'right';
 type ChannelMode = 'individual' | 'both';
@@ -458,52 +360,6 @@ const currentChannelFilterInfo = computed(() => {
   return bankInfo;
 });
 
-// Helper functions to convert between UI Filter and Store Filter types
-const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
-  // Map UI filter types to store filter types
-  const typeMapping: Record<string, StoreFilter['type']> = {
-    'lowshelf': 'shelf-low',
-    'peaking': 'peak',
-    'highshelf': 'shelf-high',
-    'highpass': 'highpass',
-    'lowpass': 'lowpass',
-    'bandpass': 'bandpass',
-    'bandstop': 'bandstop',
-    'allpass': 'allpass'
-  };
-
-  return {
-    type: typeMapping[uiFilter.icon] || 'peak',
-    frequency: uiFilter.frequency,
-    gain: uiFilter.gain,
-    q: uiFilter.Q,
-    enabled: uiFilter.enabled
-  };
-};
-
-const convertStoreFilterToUI = (storeFilter: StoreFilter, id: string): Filter => {
-  // Map store filter types to UI filter icons (using only supported BiquadFilterType values)
-  const iconMapping: Record<StoreFilter['type'], BiquadFilterType> = {
-    'shelf-low': 'lowshelf',
-    'peak': 'peaking',
-    'shelf-high': 'highshelf',
-    'highpass': 'highpass',
-    'lowpass': 'lowpass',
-    'bandpass': 'peaking', // Fallback to peaking for unsupported types
-    'bandstop': 'peaking', // Fallback to peaking for unsupported types
-    'allpass': 'peaking'   // Fallback to peaking for unsupported types
-  };
-
-  return {
-    id: parseInt(id.split('_')[1]) || 0,
-    icon: iconMapping[storeFilter.type] || 'peaking',
-    text: storeFilter.frequency.toString(),
-    frequency: storeFilter.frequency,
-    gain: storeFilter.gain || 0,
-    Q: storeFilter.q || 0.71,
-    enabled: storeFilter.enabled
-  };
-};
 
 // Initialize filter banks in the store
 onMounted(async () => {
@@ -552,113 +408,6 @@ const previousFilterStates = ref<Map<string, boolean>>(new Map());
 const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
 
 const isDragging = ref(false);
-const svgElement = ref<SVGSVGElement | null>(null);
-const selectedBand = ref<Filter | null>(null);
-
-// Bandwidth dragging state
-const isDraggingBandwidth = ref(false);
-const bandwidthDragSide = ref<'start' | 'end' | null>(null);
-const draggingFilter = ref<Filter | null>(null);
-
-const graphContainer = ref<HTMLDivElement | null>(null);
-
-// **MODIFICATION 1: Initial svgHeight set to a smaller fixed value**
-const svgWidth = ref(900);
-const svgHeight = ref(100); // Set a smaller initial height, e.g., 100px
-
-const margin = { top: 10, right: 30, bottom: 30, left: 50 };
-const plotWidth = computed(() => svgWidth.value - margin.left - margin.right);
-const plotHeight = computed(() => svgHeight.value - margin.top - margin.bottom);
-
-const gainGridLines = generateGainGridLines();
-const gainGridLabels = generateGainGridLines();
-
-// MODIFIED: Computed properties for dynamic bandwidth lines using biquad calculations
-const activeFilterBandwidthStart = computed(() => {
-  const filter = currentFilter.value;
-
-  // Generic filters don't have bandwidth
-  if (filter.icon === 'generic_normalized') {
-    return null;
-  }
-
-  // Convert our Filter type to BiquadFilter type for the bandwidth calculation
-  if (typeof filter.Q === 'number' && filter.Q > 0 && filter.frequency > 0) {
-    // Map filter icon to biquad filter type
-    let biquadType: BiquadFilterType;
-    switch (filter.icon) {
-      case 'peaking':
-        biquadType = FILTER_TYPES.PEAKING;
-        break;
-      case 'lowshelf':
-        biquadType = FILTER_TYPES.LOWSHELF;
-        break;
-      case 'highshelf':
-        biquadType = FILTER_TYPES.HIGHSHELF;
-        break;
-      default:
-        biquadType = FILTER_TYPES.PEAKING;
-    }
-
-    const biquadFilter = createBiquadFilter(
-      biquadType,
-      filter.frequency,
-      filter.gain || 0,
-      filter.Q,
-      SAMPLE_RATE
-    );
-
-    const bandwidth = calculateBiquadBandwidth(biquadFilter);
-    return bandwidth ? bandwidth.lowerFreq : null;
-  }
-  return null;
-});
-
-const activeFilterBandwidthEnd = computed(() => {
-  const filter = currentFilter.value;
-
-  // Generic filters don't have bandwidth
-  if (filter.icon === 'generic_normalized') {
-    return null;
-  }
-
-  // Convert our Filter type to BiquadFilter type for the bandwidth calculation
-  if (typeof filter.Q === 'number' && filter.Q > 0 && filter.frequency > 0) {
-    // Map filter icon to biquad filter type
-    let biquadType: BiquadFilterType;
-    switch (filter.icon) {
-      case 'peaking':
-        biquadType = FILTER_TYPES.PEAKING;
-        break;
-      case 'lowshelf':
-        biquadType = FILTER_TYPES.LOWSHELF;
-        break;
-      case 'highshelf':
-        biquadType = FILTER_TYPES.HIGHSHELF;
-        break;
-      default:
-        biquadType = FILTER_TYPES.PEAKING;
-    }
-
-    const biquadFilter = createBiquadFilter(
-      biquadType,
-      filter.frequency,
-      filter.gain || 0,
-      filter.Q,
-      SAMPLE_RATE
-    );
-
-    const bandwidth = calculateBiquadBandwidth(biquadFilter);
-    return bandwidth ? bandwidth.upperFreq : null;
-  }
-  return null;
-});
-
-// Wrapper functions to maintain compatibility with existing template code
-const frequencyToXLocal = (freq: number) => frequencyToX(freq, plotWidth.value);
-const xToFrequencyLocal = (x: number) => xToFrequency(x, plotWidth.value);
-const gainToYLocal = (gain: number) => gainToY(gain, plotHeight.value);
-const yToGainLocal = (y: number) => yToGain(y, plotHeight.value);
 
 // Helper functions for managing channel-specific filters
 const getCurrentFilterArray = () => {
@@ -718,99 +467,40 @@ const removeFilterFromCurrentChannel = async (filterId: number) => {
   await removeFilterFromLinkedChannels(config, filterId);
 };
 
-const currentFilter = computed(() => {
-  // Ensure that if no filter is active, it defaults to something that won't cause errors
-  // but also won't display bandwidth lines (unless you want default lines)
-  return filters.value.find((f) => f.id === activeFilterId.value) || {
-    id: 0,
-    icon: 'none', // Default to 'none' or a type that won't trigger lines if you don't want them on startup
-    text: '',
-    frequency: 1000,
-    gain: 0,
-    Q: 1.0, // Default Q, ensuring it's a number
-    enabled: true,
-  };
-});
-
-const freqGridLines = computed(() => {
-  return generateFrequencyGridLines();
-});
-
-const freqGridLabels = computed(() => {
-  return generateFrequencyLabels();
-});
-
-const activeFilterGraphData = computed(() => {
-  if (!activeFilterId.value) {
-    return null;
+// Graph handlers from reusable FilterGraph
+const onGraphUpdateFreqGain = ({ id, frequency, gain }: { id: number, frequency: number, gain: number }) => {
+  if (channelMode.value === 'both') {
+    const lf = leftFilters.value.find(f => f.id === id)
+    const rf = rightFilters.value.find(f => f.id === id)
+    if (lf) { lf.frequency = frequency; lf.gain = gain }
+    if (rf) { rf.frequency = frequency; rf.gain = gain }
+  } else {
+    const f = getCurrentFilterArray().find(f => f.id === id)
+    if (f) { f.frequency = frequency; f.gain = gain }
   }
+}
 
-  const band = filters.value.find(f => f.id === activeFilterId.value);
-  if (!band || !band.enabled) {
-    return null;
+const onGraphUpdateQ = ({ id, Q }: { id: number, Q: number }) => {
+  if (channelMode.value === 'both') {
+    const lf = leftFilters.value.find(f => f.id === id)
+    const rf = rightFilters.value.find(f => f.id === id)
+    if (lf && typeof lf.Q === 'number') lf.Q = Q
+    if (rf && typeof rf.Q === 'number') rf.Q = Q
+  } else {
+    const f = getCurrentFilterArray().find(f => f.id === id)
+    if (f && typeof f.Q === 'number') f.Q = Q
   }
+}
 
-  const linePoints: string[] = [];
-  const areaPoints: string[] = [];
-  const baselineY = gainToYLocal(0);
+const onGraphDragStart = () => {
+  isDragging.value = true
+}
 
-  areaPoints.push(`${frequencyToXLocal(DEFAULT_FREQ_RANGE.min)},${baselineY}`);
-
-  const minFreq = DEFAULT_FREQ_RANGE.min;
-  const maxFreq = DEFAULT_FREQ_RANGE.max;
-  const numPoints = 200;
-
-  for (let i = 0; i <= numPoints; i++) {
-    const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
-    const freq = Math.pow(10, logFreq);
-
-    const x = frequencyToXLocal(freq);
-    const gainVal = calculateFilterGain(freq, band, SAMPLE_RATE);
-    const y = gainToYLocal(gainVal);
-
-    linePoints.push(`${x},${y}`);
-    areaPoints.push(`${x},${y}`);
-  }
-
-  areaPoints.push(`${frequencyToXLocal(DEFAULT_FREQ_RANGE.max)},${baselineY}`);
-  areaPoints.push(`${frequencyToXLocal(DEFAULT_FREQ_RANGE.min)},${baselineY}`);
-
-  return {
-    linePath: `M ${linePoints.join(' L ')}`,
-    areaPath: `M ${areaPoints.join(' L ')}`
-  };
-});
-
-const allFiltersCombinedGraphData = computed(() => {
-  if (filters.value.length === 0) {
-    return null;
-  }
-
-  const linePoints: string[] = [];
-  const minFreq = DEFAULT_FREQ_RANGE.min;
-  const maxFreq = DEFAULT_FREQ_RANGE.max;
-  const numPoints = 200;
-
-  for (let i = 0; i <= numPoints; i++) {
-    const logFreq = Math.log10(minFreq) + (i / numPoints) * (Math.log10(maxFreq) - Math.log10(minFreq));
-    const freq = Math.pow(10, logFreq);
-    let totalCombinedGain_db = 0.0;
-
-    filters.value.forEach(band => {
-      if (band.enabled) {
-        totalCombinedGain_db += calculateFilterGain(freq, band, SAMPLE_RATE);
-      }
-    });
-
-    const x = frequencyToXLocal(freq);
-    const y = gainToYLocal(totalCombinedGain_db);
-    linePoints.push(`${x},${y}`);
-  }
-
-  return {
-    linePath: `M ${linePoints.join(' L ')}`,
-  };
-});
+const onGraphDragEnd = async (id: number) => {
+  const config = createLinkedChannelConfig();
+  await updateFilterPropertyLinked(config, id, () => { /* persist current values */ })
+  isDragging.value = false
+}
 
 function setActiveChannel(channel: Channel) {
   if (channelMode.value === 'both') {
@@ -850,7 +540,7 @@ async function toggleChannelMode() {
 
 // Bypass functionality using REST API - bypass entire filter banks while pressed
 async function startBypass() {
-  if (isBypassed.value || isDragging.value || isDraggingBandwidth.value) return;
+  if (isBypassed.value || isDragging.value) return;
 
   isBypassed.value = true;
 
@@ -1187,239 +877,7 @@ async function toggleFilterEnabled(filter: Filter) {
   }
 }
 
-const startDrag = (e: MouseEvent, band: Filter) => {
-  e.preventDefault();
-  e.stopPropagation();
-
-  selectedBand.value = band;
-  isDragging.value = true;
-  setActiveFilter(band.id);
-
-  if (svgElement.value) {
-    svgElement.value.style.cursor = 'grabbing';
-  }
-
-  // Add global event listeners for more reliable dragging
-  document.addEventListener('mousemove', handleGlobalMouseMove);
-  document.addEventListener('mouseup', handleGlobalMouseUp);
-
-  // Prevent text selection during drag
-  document.body.style.userSelect = 'none';
-};
-
-const startBandwidthDrag = (e: MouseEvent, side: 'start' | 'end') => {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const activeFilter = filters.value.find(f => f.id === activeFilterId.value);
-  if (!activeFilter) return;
-
-  isDraggingBandwidth.value = true;
-  bandwidthDragSide.value = side;
-  draggingFilter.value = activeFilter;
-
-  if (svgElement.value) {
-    svgElement.value.style.cursor = 'ew-resize';
-  }
-
-  // Add global event listeners for more reliable dragging
-  document.addEventListener('mousemove', handleGlobalMouseMove);
-  document.addEventListener('mouseup', handleGlobalMouseUp);
-
-  // Prevent text selection during drag
-  document.body.style.userSelect = 'none';
-};
-
-const handleMouseMove = (e: MouseEvent) => {
-  if (!svgElement.value) return;
-
-  const rect = svgElement.value.getBoundingClientRect();
-  const xInPlot = e.clientX - rect.left - margin.left;
-  const yInPlot = e.clientY - rect.top - margin.top;
-
-  if (isDraggingBandwidth.value && draggingFilter.value && bandwidthDragSide.value) {
-    // Handle bandwidth line dragging
-    const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot));
-    const newFreq = xToFrequencyLocal(clampedX);
-
-    const filter = draggingFilter.value;
-    const centerFreq = filter.frequency;
-
-    // Calculate the new bandwidth based on the dragged frequency
-    let newBandwidthOctaves: number;
-
-    if (bandwidthDragSide.value === 'start') {
-      // Dragging the lower frequency line
-      const upperFreq = activeFilterBandwidthEnd.value || centerFreq * Math.sqrt(2);
-      newBandwidthOctaves = Math.log2(upperFreq / Math.max(newFreq, 1));
-    } else {
-      // Dragging the upper frequency line
-      const lowerFreq = activeFilterBandwidthStart.value || centerFreq / Math.sqrt(2);
-      newBandwidthOctaves = Math.log2(Math.max(newFreq, 1) / lowerFreq);
-    }
-
-    // Clamp bandwidth to reasonable values
-    newBandwidthOctaves = Math.max(0.1, Math.min(10, newBandwidthOctaves));
-
-    // Convert bandwidth to Q using the Audio EQ Cookbook formula
-    const omega0 = 2 * Math.PI * centerFreq / SAMPLE_RATE;
-    const newQ = bandwidthToQ(newBandwidthOctaves, omega0);
-
-    // Clamp Q to reasonable values
-    const clampedQ = Math.max(0.1, Math.min(25.0, newQ));
-
-    // Apply Q change to both channels if in 'both' mode
-    if (channelMode.value === 'both') {
-      const leftFilter = leftFilters.value.find(f => f.id === filter.id);
-      const rightFilter = rightFilters.value.find(f => f.id === filter.id);
-      if (leftFilter) leftFilter.Q = clampedQ;
-      if (rightFilter) rightFilter.Q = clampedQ;
-    } else {
-      filter.Q = clampedQ;
-    }
-
-  } else if (isDragging.value && selectedBand.value) {
-    // Handle filter point dragging (existing functionality)
-    const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot));
-    const clampedY = Math.max(0, Math.min(plotHeight.value, yInPlot));
-
-    const newFreq = Math.round(xToFrequencyLocal(clampedX) / 10) * 10;
-    const newGain = Math.max(DEFAULT_GAIN_RANGE.min, Math.min(DEFAULT_GAIN_RANGE.max, Math.round(yToGainLocal(clampedY))));
-
-    // Apply frequency and gain changes to both channels if in 'both' mode
-    if (channelMode.value === 'both') {
-      const leftFilter = leftFilters.value.find(f => f.id === selectedBand.value!.id);
-      const rightFilter = rightFilters.value.find(f => f.id === selectedBand.value!.id);
-      if (leftFilter) {
-        leftFilter.frequency = newFreq;
-        leftFilter.gain = newGain;
-      }
-      if (rightFilter) {
-        rightFilter.frequency = newFreq;
-        rightFilter.gain = newGain;
-      }
-    } else {
-      selectedBand.value.frequency = newFreq;
-      selectedBand.value.gain = newGain;
-    }
-  } else {
-    // Update cursor based on mouse position when not dragging
-    updateCursor(xInPlot, yInPlot);
-  }
-};
-
-// Function to update cursor based on mouse position
-const updateCursor = (xInPlot: number, yInPlot: number) => {
-  if (!svgElement.value) return;
-
-  const BANDWIDTH_LINE_TOLERANCE = 16; // pixels - increased to match hit area
-  const FILTER_NODE_TOLERANCE = 12; // pixels
-
-  let newCursor = 'default';
-
-  // Check if we're near any filter nodes first (highest priority)
-  for (const filter of filters.value) {
-    const filterX = frequencyToXLocal(filter.frequency);
-    const filterY = gainToYLocal(filter.gain);
-
-    const distanceToNode = Math.sqrt(
-      Math.pow(xInPlot - filterX, 2) + Math.pow(yInPlot - filterY, 2)
-    );
-
-    if (distanceToNode <= FILTER_NODE_TOLERANCE) {
-      newCursor = 'grab';
-      break;
-    }
-  }
-
-  // If not near a filter node, check if we're near bandwidth lines
-  if (newCursor === 'default' && SHOW_BANDWIDTH_LINES &&
-      activeFilterBandwidthStart.value !== null && activeFilterBandwidthEnd.value !== null) {
-
-    const startLineX = frequencyToXLocal(activeFilterBandwidthStart.value);
-    const endLineX = frequencyToXLocal(activeFilterBandwidthEnd.value);
-
-    // Check if mouse is near the start bandwidth line
-    if (Math.abs(xInPlot - startLineX) <= BANDWIDTH_LINE_TOLERANCE) {
-      newCursor = 'ew-resize';
-    }
-    // Check if mouse is near the end bandwidth line
-    else if (Math.abs(xInPlot - endLineX) <= BANDWIDTH_LINE_TOLERANCE) {
-      newCursor = 'ew-resize';
-    }
-  }
-
-  svgElement.value.style.cursor = newCursor;
-};
-
-const handleMouseUp = () => {
-  // If we were dragging a filter, update the store with the final values
-  if (isDragging.value && selectedBand.value) {
-    const config = createLinkedChannelConfig();
-    updateFilterPropertyLinked(config, selectedBand.value.id, () => {
-      // The filter has already been updated in handleMouseMove,
-      // this just triggers the store update with current values
-    });
-  }
-
-  // If we were dragging bandwidth, update the store with the final Q value
-  if (isDraggingBandwidth.value && draggingFilter.value) {
-    const config = createLinkedChannelConfig();
-    updateFilterPropertyLinked(config, draggingFilter.value.id, () => {
-      // The filter Q has already been updated in handleMouseMove,
-      // this just triggers the store update with current values
-    });
-  }
-
-  isDragging.value = false;
-  selectedBand.value = null;
-
-  // Reset bandwidth dragging state
-  isDraggingBandwidth.value = false;
-  bandwidthDragSide.value = null;
-  draggingFilter.value = null;
-
-  // Reset cursor to default - it will be updated on next mouse move
-  if (svgElement.value) {
-    svgElement.value.style.cursor = 'default';
-  }
-};
-
-// Global mouse event handlers for more reliable dragging
-const handleGlobalMouseMove = (e: MouseEvent) => {
-  if (!isDragging.value && !isDraggingBandwidth.value) return;
-  handleMouseMove(e);
-};
-
-const handleGlobalMouseUp = () => {
-  if (isDragging.value || isDraggingBandwidth.value) {
-    handleMouseUp();
-
-    // Remove global event listeners
-    document.removeEventListener('mousemove', handleGlobalMouseMove);
-    document.removeEventListener('mouseup', handleGlobalMouseUp);
-
-    // Restore text selection
-    document.body.style.userSelect = '';
-  }
-};
-
-const formatHzForSVG = (val: number) => {
-  if (val >= 1000) {
-    return `${val / 1000} kHz`;
-  }
-  return `${val} Hz`;
-};
-
-// **MODIFICATION 2: Updated updateSvgDimensions to set a fixed height**
-const updateSvgDimensions = () => {
-  if (graphContainer.value) {
-    svgWidth.value = graphContainer.value.offsetWidth;
-    // Set a fixed height here. This will override the initial ref value.
-    // If you want it responsive but shorter, use Math.max(MIN_HEIGHT, graphContainer.value.offsetWidth / LARGER_DIVISOR);
-    svgHeight.value = 500; // Example: Set to a fixed 100px. Adjust as needed (e.g., 80, 60).
-  }
-};
+// Inline graph code removed in favor of FilterGraph component
 
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
@@ -1446,22 +904,13 @@ const handleKeyup = (e: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  updateSvgDimensions();
-  window.addEventListener('resize', updateSvgDimensions);
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('keyup', handleKeyup);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateSvgDimensions);
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('keyup', handleKeyup);
-
-  // Clean up global mouse event listeners
-  document.removeEventListener('mousemove', handleGlobalMouseMove);
-  document.removeEventListener('mouseup', handleGlobalMouseUp);
-
-  // Restore text selection
   document.body.style.userSelect = '';
 });
 

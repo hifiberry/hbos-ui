@@ -111,6 +111,11 @@ const router = createRouter({
           component: () => import('@/views/router-view.vue'),
           children: [
             {
+              path: 'general',
+              name: 'general-sound',
+              component: () => import('@/views/sound/general-sound.vue'),
+            },
+            {
               path: '',
               name: 'sound',
               component: () => import('@/views/sound/index.vue'),

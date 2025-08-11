@@ -101,6 +101,11 @@ const routes = computed(() => {
       icon: 'music-note-simple-light',
       children: [
         {
+          name: 'general-sound',
+          title: 'General',
+          icon: 'tabler/adjustments',
+        },
+        {
           name: 'speaker-equalizer',
           title: 'Speaker Eq',
           icon: 'tabler/speaker',

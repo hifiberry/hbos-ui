@@ -18,7 +18,7 @@
                 :min="0"
                 :max="100"
                 :step="1"
-                :disabled="false"
+                :disabled="!volumeAvailable"
                 :has-thumb="true"
                 :is-draggable="true"
                 :is-on-header="false"
@@ -67,23 +67,46 @@
 <script setup lang="ts">
 import AppIcon from '@/components/app-icon.vue'
 import AppProgressSlider from '@/components/app-progress-slider.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData } from '@/api/pipewire'
 
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
+const volumeLimitDb = ref<number | null>(null)
+const volumeAvailable = ref<boolean>(true)
 
 // Convert percentage to attenuation in dB (0% => -∞ dB, otherwise 20*log10(p))
 const displayDb = computed(() => {
-  const p = volumeLimitPercent.value / 100
-  if (p <= 0) return '- ∞ dB'
-  const db = 20 * Math.log10(p)
-  const rounded = Math.round(db * 10) / 10 // 0.1 dB precision
+  if (volumeLimitDb.value === null) {
+    const p = volumeLimitPercent.value / 100
+    if (p <= 0) return '- ∞ dB'
+    const db = 20 * Math.log10(p)
+    const rounded = Math.round(db * 10) / 10 // 0.1 dB precision
+    return `${rounded.toFixed(1)} dB`
+  }
+  const rounded = Math.round(volumeLimitDb.value * 10) / 10
   return `${rounded.toFixed(1)} dB`
 })
 
 // Update local state when the slider changes (click or drag end)
-function onSliderChange(newVal: number) {
-  volumeLimitPercent.value = Math.round(newVal)
+async function onSliderChange(newVal: number) {
+  const pct = Math.round(newVal)
+  volumeLimitPercent.value = pct
+  // PipeWire expects linear 0.0-1.0; API handles curve conversion and returns dB
+  try {
+    const linear = Math.max(0, Math.min(1, pct / 100))
+    const res = await setPipewireVolume('default', { volume: linear })
+    if (res.status === 'success' && res.data) {
+      // Reflect authoritative values from backend
+      const data = res.data as PipewireVolumeData
+      volumeLimitPercent.value = Math.round((data.volume ?? linear) * 100)
+      volumeLimitDb.value = data.volume_db
+      volumeAvailable.value = true
+    }
+  } catch (e) {
+    console.error('Failed to set PipeWire default volume:', e)
+    volumeAvailable.value = false
+  }
 }
 
 // Balance (0..100) where 50 = center
@@ -101,6 +124,22 @@ const balanceLabel = computed(() => {
 function onBalanceChange(newVal: number) {
   balancePercent.value = Math.round(newVal)
 }
+
+// Initialize from default sink volume
+onMounted(async () => {
+  try {
+    const res = await getPipewireVolume('default')
+    if (res.status === 'success' && res.data) {
+      const data = res.data as PipewireVolumeData
+      volumeLimitPercent.value = Math.round((data.volume ?? 1) * 100)
+      volumeLimitDb.value = data.volume_db
+      volumeAvailable.value = true
+    }
+  } catch (e) {
+    console.warn('PipeWire volume not available:', e)
+    volumeAvailable.value = false
+  }
+})
 </script>
 
 <style scoped lang="scss">
@@ -121,7 +160,7 @@ function onBalanceChange(newVal: number) {
         border-top: none;
 
       /* add spacing only between subsequent settings */
-      .setting-item + .setting-item {
+      & + .setting-item {
         margin-top: 15px;
       }
         .setting-header {
@@ -183,6 +222,24 @@ function onBalanceChange(newVal: number) {
         }
       }
     }
+  }
+}
+
+/* Responsive: stack into one column on small screens */
+@media (max-width: 800px) {
+  .settings {
+    .settings-overview { grid-template-columns: 1fr; }
+    .settings-overview .service-card .setting-item .setting-header {
+          /* Force vertical stacking on small screens */
+      display: flex !important;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+    }
+    .settings-overview .service-card .setting-item .setting-header .setting-label { align-items: center; }
+    .settings-overview .service-card .setting-item .setting-header .setting-progress { min-width: 0; }
+    .settings-overview .service-card .setting-item .setting-header .setting-progress :deep(.app-progress-slider) { width: 100%; }
+    .settings-overview .service-card .setting-item .setting-header .setting-value { align-self: flex-start; }
   }
 }
 </style>

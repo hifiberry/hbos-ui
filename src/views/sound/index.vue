@@ -3,6 +3,19 @@
     <h1>Sound</h1>
 
     <div class="settings-overview">
+      <router-link :to="{ name: 'general-sound' }" class="service-card">
+        <div class="service-header">
+          <AppIcon icon="tabler/adjustments" class="service-icon" />
+          <h2>General sound settings</h2>
+        </div>
+        <p class="service-description">
+          Configure global sound options and defaults for your system
+        </p>
+        <span class="service-link">
+          Open General Settings
+        </span>
+      </router-link>
+
       <router-link :to="{ name: 'speaker-equalizer' }" class="service-card">
         <div class="service-header">
           <AppIcon icon="tabler/speaker" class="service-icon" />

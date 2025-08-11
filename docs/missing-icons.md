@@ -41,6 +41,13 @@ This document tracks icons that need to be created or sourced for various servic
 - **Usage**: DSP programs page, profile listings
 - **Notes**: Should represent DSP software/programming concept, possibly showing signal processing or audio programming
 
+### Mono/Stereo
+
+- **Current Status**: Missing specific icon
+- **Needed**: Mono/Stereo configuration icon
+- **Usage**: Audio settings, mono/stereo mode selection
+- **Notes**: Add an icon that clearly conveys mono vs stereo channels; keep in Tabler outline style, 24x24 viewBox
+
 ## Hardware Icons
 
 ### Beocreate 4CA

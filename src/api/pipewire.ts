@@ -25,6 +25,17 @@ export interface PipewireVolumeData {
   volume_db: number // dB, 0 dB = max, negative values reduce volume
 }
 
+export interface PipewireMixerAnalysis {
+  mode: 'mono' | 'stereo' | 'left' | 'right' | 'balance' | 'unknown'
+  balance: number // -1.0 (full left) to +1.0 (full right), 0.0 = center
+  gains: Record<string, number>
+}
+
+export interface PipewireMixerBalance {
+  balance: number
+  gains: Record<string, number>
+}
+
 const getBaseUrls = (): { primary: string; fallback: string } => {
   const configStore = useAppConfigStore()
   const base = configStore.getConfigApiBaseUrl() // e.g. /api/config/v1
@@ -80,4 +91,12 @@ export const setPipewireVolume = async (
 
 export const savePipewireDefaultVolume = async (): Promise<ConfigApiEnvelope<{ setting: string; saved: boolean }>> => {
   return requestWithFallback(`/save-default-volume`, { method: 'POST' })
+}
+
+export const getPipewireMixerAnalysis = async (): Promise<ConfigApiEnvelope<PipewireMixerAnalysis>> => {
+  return requestWithFallback(`/mixer/analysis`)
+}
+
+export const setPipewireBalance = async (balance: number): Promise<ConfigApiEnvelope<PipewireMixerBalance>> => {
+  return requestWithFallback(`/mixer/balance/${balance}`, { method: 'POST' })
 }

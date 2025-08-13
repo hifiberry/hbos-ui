@@ -42,20 +42,20 @@
             </div>
             <div class="setting-progress">
               <AppProgressSlider
-                :value="balancePercent"
+                :value="balanceSliderPercent"
                 :min="0"
                 :max="100"
                 :step="1"
-                :disabled="false"
+                :disabled="!balanceAvailable"
                 :has-thumb="true"
                 :is-draggable="true"
                 :is-on-header="false"
+                :center-mark="50"
                 @click:progress="onBalanceChange"
               />
             </div>
             <div class="setting-value">
-              <span class="percent">{{ balancePercent }}%</span>
-              <span class="db">{{ balanceLabel }}</span>
+              <span class="percent">{{ balanceLabel }}</span>
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@
 import AppIcon from '@/components/app-icon.vue'
 import AppProgressSlider from '@/components/app-progress-slider.vue'
 import { ref, computed, onMounted } from 'vue'
-import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData } from '@/api/pipewire'
+import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, setPipewireBalance, type PipewireMixerAnalysis, type PipewireMixerBalance } from '@/api/pipewire'
 
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
@@ -109,24 +109,56 @@ async function onSliderChange(newVal: number) {
   }
 }
 
-// Balance (0..100) where 50 = center
-const balancePercent = ref<number>(50)
+// Balance state - connected to PipeWire mixer (-1 to +1 scale)
+const balanceValue = ref<number>(0) // -1 (full left) to +1 (full right), 0 = center
+const balanceAvailable = ref<boolean>(true)
+
+// Convert PipeWire balance (-1 to +1) to slider percentage for AppProgressSlider (0-100)
+const balanceToSliderPercent = (balance: number): number => {
+  // -1 -> 0%, 0 -> 50%, +1 -> 100%
+  return (balance + 1) * 50
+}
+
+// Convert slider percentage (0-100) to PipeWire balance (-1 to +1)
+const sliderPercentToBalance = (percent: number): number => {
+  // 0% -> -1, 50% -> 0, 100% -> +1
+  return (percent / 50) - 1
+}
+
+// UI display value for the slider
+const balanceSliderPercent = computed(() => balanceToSliderPercent(balanceValue.value))
 
 // Human-readable label: Left/Right/Center with bias amount
 const balanceLabel = computed(() => {
-  const p = balancePercent.value
-  const delta = Math.abs(p - 50) * 2 // 0..100 bias amount
-  const amt = Math.round(delta)
-  if (amt === 0) return 'Center'
-  return p < 50 ? `Left +${amt}%` : `Right +${amt}%`
+  const balance = balanceValue.value
+  if (Math.abs(balance) < 0.01) return 'Center' // Show center only when within 1%
+  const percentage = Math.round(Math.abs(balance) * 100)
+  return balance < 0 ? `${percentage}% Left` : `${percentage}% Right`
 })
 
-function onBalanceChange(newVal: number) {
-  balancePercent.value = Math.round(newVal)
+async function onBalanceChange(newVal: number) {
+  const balance = sliderPercentToBalance(newVal)
+  balanceValue.value = Math.round(balance * 100) / 100 // Round to 2 decimal places
+
+  try {
+    const res = await setPipewireBalance(balanceValue.value)
+
+    if (res.status === 'success' && res.data) {
+      // Update local state with actual value from backend
+      const data = res.data as PipewireMixerBalance
+      balanceValue.value = Math.round(data.balance * 100) / 100
+      balanceAvailable.value = true
+    }
+  } catch (e) {
+    console.error('Failed to set PipeWire balance:', e)
+    balanceAvailable.value = false
+    // Keep the UI value as user selected it even if API failed
+  }
 }
 
-// Initialize from default sink volume
+// Initialize from default sink volume and balance
 onMounted(async () => {
+  // Load volume
   try {
     const res = await getPipewireVolume('default')
     if (res.status === 'success' && res.data) {
@@ -138,6 +170,19 @@ onMounted(async () => {
   } catch (e) {
     console.warn('PipeWire volume not available:', e)
     volumeAvailable.value = false
+  }
+
+  // Load balance
+  try {
+    const res = await getPipewireMixerAnalysis()
+    if (res.status === 'success' && res.data) {
+      const data = res.data as PipewireMixerAnalysis
+      balanceValue.value = Math.round(data.balance * 100) / 100
+      balanceAvailable.value = true
+    }
+  } catch (e) {
+    console.warn('PipeWire balance not available:', e)
+    balanceAvailable.value = false
   }
 })
 </script>
@@ -203,6 +248,7 @@ onMounted(async () => {
             display: flex;
             align-items: center;
             min-width: 180px;
+            gap: 8px;
           }
 
           .setting-value {
@@ -237,7 +283,9 @@ onMounted(async () => {
           gap: 8px;
     }
     .settings-overview .service-card .setting-item .setting-header .setting-label { align-items: center; }
-    .settings-overview .service-card .setting-item .setting-header .setting-progress { min-width: 0; }
+    .settings-overview .service-card .setting-item .setting-header .setting-progress {
+      min-width: 0;
+    }
     .settings-overview .service-card .setting-item .setting-header .setting-progress :deep(.app-progress-slider) { width: 100%; }
     .settings-overview .service-card .setting-item .setting-header .setting-value { align-self: flex-start; }
   }

@@ -9,6 +9,11 @@
   >
     <div class="app-progress-slider__track">
       <div class="app-progress-slider__progress" :style="{ width: displayPercent + '%' }" />
+      <div
+        v-if="centerMark !== undefined"
+        class="app-progress-slider__center-mark"
+        :style="{ left: centerMarkPercent + '%' }"
+      />
     </div>
     <div
       v-if="hasThumb && !isOnHeader"
@@ -30,6 +35,7 @@ interface AppProgressSliderProps {
   hasThumb?: boolean
   isDraggable?: boolean
   isOnHeader?: boolean
+  centerMark?: number // Value at which to show center mark (optional)
 }
 
 const {
@@ -41,6 +47,7 @@ const {
   hasThumb = true,
   isDraggable = false,
   isOnHeader = false,
+  centerMark = undefined,
 } = defineProps<AppProgressSliderProps>()
 
 const emit = defineEmits<{
@@ -62,8 +69,16 @@ watch(
 )
 
 const displayPercent = computed(() => {
-  const clamped = Math.min(Math.max(internalValue.value, min), max)
-  return ((clamped - min) / (max - min)) * 100
+  const range = max - min
+  if (range === 0) return 0
+  return Math.max(0, Math.min(100, ((value - min) / range) * 100))
+})
+
+const centerMarkPercent = computed(() => {
+  if (centerMark === undefined) return 50
+  const range = max - min
+  if (range === 0) return 50
+  return Math.max(0, Math.min(100, ((centerMark - min) / range) * 100))
 })
 
 function getValueFromMouse(event: MouseEvent): number | null {
@@ -269,6 +284,21 @@ onBeforeUnmount(() => {
     }
   }
 
+  &__center-mark {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 120%;
+    background-color: var(--color-border, #d1d5db);
+    z-index: 1;
+    pointer-events: none;
+
+    @include media-down(md) {
+      height: 140%;
+    }
+  }
+
   &__thumb {
     position: absolute;
     top: 50%;
@@ -279,6 +309,7 @@ onBeforeUnmount(() => {
     border-radius: 50%;
     pointer-events: none;
     transition: left 0.1s linear;
+    z-index: 2;
   }
 
   &.is-on-header {

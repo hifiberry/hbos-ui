@@ -451,6 +451,18 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pipewire Filter Chain -->
+        <div class="info-card clickable" @click="$router.push({ name: 'pipewire-filter-chain' })">
+          <div class="card-header">
+            <AppIcon icon="tabler/schema" class="card-icon" />
+            <h2>Pipewire Filter Chain</h2>
+            <AppIcon icon="chevron-right" class="chevron-icon" />
+          </div>
+          <div class="card-description">
+            <p>Show filter chain</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1303,6 +1315,18 @@ onUnmounted(() => {
           border-radius: 8px;
           padding: 24px;
 
+          &.clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background: var(--background-card-hover);
+              border-color: var(--color-primary);
+              transform: translateY(-1px);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+          }
+
           .card-header {
             display: flex;
             align-items: center;
@@ -1320,6 +1344,28 @@ onUnmounted(() => {
               color: var(--color-head);
               font-size: 1.25rem;
               font-weight: 600;
+              flex: 1;
+            }
+
+            .chevron-icon {
+              width: 16px;
+              height: 16px;
+              color: var(--color-body-secondary);
+              transition: transform 0.2s ease;
+            }
+          }
+
+          &.clickable:hover .chevron-icon {
+            transform: translateX(2px);
+            color: var(--color-primary);
+          }
+
+          .card-description {
+            p {
+              margin: 0;
+              color: var(--color-body-secondary);
+              font-size: 0.95rem;
+              line-height: 1.4;
             }
           }        .info-table {
           width: 100%;

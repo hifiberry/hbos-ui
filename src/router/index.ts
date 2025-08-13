@@ -94,6 +94,11 @@ const router = createRouter({
               name: 'system-tools',
               component: () => import('@/views/services/system-tools.vue'),
             },
+            {
+              path: 'pipewire-filter-chain',
+              name: 'pipewire-filter-chain',
+              component: () => import('@/views/services/pipewire-filter-chain.vue'),
+            },
           ],
         },
         {

@@ -21,7 +21,7 @@ export const getFilterChain = async (): Promise<FilterChainResponse> => {
   }
 
   const contentType = response.headers.get('content-type')
-  
+
   if (contentType?.includes('text/plain')) {
     // Success case - raw DOT content
     const dotContent = await response.text()

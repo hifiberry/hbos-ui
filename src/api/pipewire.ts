@@ -26,7 +26,7 @@ export interface PipewireVolumeData {
 }
 
 export interface PipewireMixerAnalysis {
-  mode: 'mono' | 'stereo' | 'left' | 'right' | 'balance' | 'unknown'
+  mode: 'mono' | 'stereo' | 'swapped' | 'left' | 'right' | 'balance' | 'unknown'
   balance: number // -1.0 (full left) to +1.0 (full right), 0.0 = center
   gains: Record<string, number>
 }
@@ -40,29 +40,38 @@ const getBaseUrls = (): { primary: string; fallback: string } => {
   const configStore = useAppConfigStore()
   const base = configStore.getConfigApiBaseUrl() // e.g. /api/config/v1
   const primary = `${base}/pipewire`
-  // If base ends with /v<digit>, strip version for fallback (e.g. /api/config)
-  const fallbackBase = base.replace(/\/v\d+$/i, '')
-  const fallback = `${fallbackBase}/pipewire`
+  // Config API requires the version, so use the same base for fallback
+  const fallback = `${base}/pipewire`
   return { primary, fallback }
 }
 
 async function requestWithFallback<T = unknown>(path: string, init?: RequestInit): Promise<T> {
-  const { primary, fallback } = getBaseUrls()
+  const { primary } = getBaseUrls()
+  const fullUrl = `${primary}${path}`
 
-  // Try primary
-  const res1 = await fetch(`${primary}${path}`, init)
-  if (res1.ok) return res1.json()
-  if (res1.status !== 404) {
-    throw new Error(`PipeWire API request failed: ${res1.status} ${res1.statusText}`)
+  console.log('PipeWire API request:', {
+    method: init?.method || 'GET',
+    url: fullUrl,
+    body: init?.body || 'none'
+  })
+
+  // Try the primary URL
+  const res = await fetch(fullUrl, init)
+
+  console.log('PipeWire API response:', {
+    status: res.status,
+    statusText: res.statusText,
+    ok: res.ok
+  })
+
+  if (res.ok) {
+    const data = await res.json()
+    console.log('PipeWire API response data:', data)
+    return data
   }
 
-  // Try fallback without version
-  const res2 = await fetch(`${fallback}${path}`, init)
-  if (res2.ok) return res2.json()
-  throw new Error(`PipeWire API fallback failed: ${res2.status} ${res2.statusText}`)
-}
-
-export const listPipewireControls = async (): Promise<ConfigApiEnvelope<PipewireControlList>> => {
+  throw new Error(`PipeWire API request failed: ${res.status} ${res.statusText}`)
+}export const listPipewireControls = async (): Promise<ConfigApiEnvelope<PipewireControlList>> => {
   return requestWithFallback(`/controls`)
 }
 
@@ -97,6 +106,83 @@ export const getPipewireMixerAnalysis = async (): Promise<ConfigApiEnvelope<Pipe
   return requestWithFallback(`/mixer/analysis`)
 }
 
-export const setPipewireBalance = async (balance: number): Promise<ConfigApiEnvelope<PipewireMixerBalance>> => {
-  return requestWithFallback(`/mixer/balance/${balance}`, { method: 'POST' })
+export const getPipewireMonoStereo = async (): Promise<ConfigApiEnvelope<{ monostereo_mode: string }>> => {
+  return requestWithFallback(`/monostereo`)
+}
+
+export const getPipewireBalance = async (): Promise<ConfigApiEnvelope<{ balance: number }>> => {
+  return requestWithFallback(`/balance`)
+}
+
+export const setPipewireBalance = async (balance: number): Promise<ConfigApiEnvelope<{ monostereo_mode: string; balance: number }>> => {
+  console.log('=== setPipewireBalance API call ===')
+  console.log('Balance:', balance)
+
+  const payload = { balance }
+  console.log('Request payload:', JSON.stringify(payload))
+
+  const result = await requestWithFallback<ConfigApiEnvelope<{ monostereo_mode: string; balance: number }>>(`/balance`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  console.log('API response:', result)
+  console.log('=== setPipewireBalance API call END ===')
+  return result
+}
+
+export const setPipewireMixerMode = async (mode: 'mono' | 'stereo' | 'left' | 'right' | 'swapped'): Promise<ConfigApiEnvelope<{ monostereo_mode: string; balance: number }>> => {
+  console.log('=== setPipewireMixerMode API call ===')
+  console.log('Mode:', mode)
+
+  const payload = { mode }
+  console.log('Request payload:', JSON.stringify(payload))
+
+  const result = await requestWithFallback<ConfigApiEnvelope<{ monostereo_mode: string; balance: number }>>(`/monostereo`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  console.log('API response:', result)
+  console.log('=== setPipewireMixerMode API call END ===')
+  return result
+}
+
+export const setPipewireModeAndBalance = async (
+  mode: 'mono' | 'stereo' | 'left' | 'right' | 'swapped',
+  balance: number
+): Promise<ConfigApiEnvelope<PipewireMixerAnalysis>> => {
+  console.log('=== setPipewireModeAndBalance API call ===')
+  console.log('Mode:', mode, 'Balance:', balance)
+
+  // The new API separates mode and balance, so we need to call both endpoints
+  try {
+    // First set the mode
+    const modeResult = await setPipewireMixerMode(mode)
+    console.log('Mode set result:', modeResult)
+
+    // Then set the balance
+    const balanceResult = await setPipewireBalance(balance)
+    console.log('Balance set result:', balanceResult)
+
+    // Convert the response to match the expected PipewireMixerAnalysis format
+    const result: ConfigApiEnvelope<PipewireMixerAnalysis> = {
+      status: 'success',
+      data: {
+        mode: balanceResult.data?.monostereo_mode as 'mono' | 'stereo' | 'left' | 'right' | 'balance' | 'unknown' || mode,
+        balance: balanceResult.data?.balance || balance,
+        gains: {} // The new API doesn't return gains, but we need this for compatibility
+      }
+    }
+
+    console.log('Combined result:', result)
+    console.log('=== setPipewireModeAndBalance API call END ===')
+    return result
+
+  } catch (error) {
+    console.error('Error in setPipewireModeAndBalance:', error)
+    throw error
+  }
 }

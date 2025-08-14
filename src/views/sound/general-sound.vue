@@ -7,7 +7,7 @@
         <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/speaker" class="setting-icon" />
+              <AppIcon icon="tabler/volume" class="setting-icon" />
               <div class="setting-title">
                 <h3>Volume limit</h3>
               </div>
@@ -32,10 +32,36 @@
           </div>
         </div>
 
+        <div class="setting-item" title="Your sound card doesn't support headphones">
+          <div class="setting-header">
+            <div class="setting-label">
+              <AppIcon icon="tabler/headphones" class="setting-icon" />
+              <div class="setting-title">
+                <h3>Headphone volume</h3>
+              </div>
+            </div>
+            <div class="setting-progress">
+              <AppProgressSlider
+                :value="0"
+                :min="0"
+                :max="100"
+                :step="1"
+                :disabled="true"
+                :has-thumb="false"
+                :is-draggable="false"
+                :is-on-header="false"
+              />
+            </div>
+            <div class="setting-value">
+              <!-- No values displayed when inactive -->
+            </div>
+          </div>
+        </div>
+
         <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/speaker" class="setting-icon" />
+              <AppIcon icon="tabler/caret-left-right" class="setting-icon" />
               <div class="setting-title">
                 <h3>Balance</h3>
               </div>
@@ -59,6 +85,61 @@
             </div>
           </div>
         </div>
+
+        <div class="setting-item">
+          <div class="setting-header">
+            <div class="setting-label">
+              <AppIcon icon="tabler/speaker" class="setting-icon" />
+              <div class="setting-title">
+                <h3>Mode</h3>
+              </div>
+            </div>
+            <div class="setting-control">
+              <div class="mode-button-bar">
+                <button
+                  :class="['mode-btn', { active: audioMode === 'stereo' }]"
+                  :disabled="!modeAvailable"
+                  title="Standard stereo (L→L, R→R)"
+                  @click="setAudioMode('stereo')"
+                >
+                  Stereo
+                </button>
+                <button
+                  :class="['mode-btn', { active: audioMode === 'swapped' }]"
+                  :disabled="!modeAvailable"
+                  title="Swap left/right channels (L→R, R→L)"
+                  @click="setAudioMode('swapped')"
+                >
+                  Swapped
+                </button>
+                <button
+                  :class="['mode-btn', { active: audioMode === 'mono' }]"
+                  :disabled="!modeAvailable"
+                  title="Mix L+R channels equally to both outputs"
+                  @click="setAudioMode('mono')"
+                >
+                  Mono
+                </button>
+                <button
+                  :class="['mode-btn', { active: audioMode === 'left' }]"
+                  :disabled="!modeAvailable"
+                  title="Send left channel to both outputs"
+                  @click="setAudioMode('left')"
+                >
+                  Left
+                </button>
+                <button
+                  :class="['mode-btn', { active: audioMode === 'right' }]"
+                  :disabled="!modeAvailable"
+                  title="Send right channel to both outputs"
+                  @click="setAudioMode('right')"
+                >
+                  Right
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -68,7 +149,7 @@
 import AppIcon from '@/components/app-icon.vue'
 import AppProgressSlider from '@/components/app-progress-slider.vue'
 import { ref, computed, onMounted } from 'vue'
-import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, setPipewireBalance, type PipewireMixerAnalysis, type PipewireMixerBalance } from '@/api/pipewire'
+import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
 
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
@@ -110,17 +191,26 @@ async function onSliderChange(newVal: number) {
 }
 
 // Balance state - connected to PipeWire mixer (-1 to +1 scale)
-const balanceValue = ref<number>(0) // -1 (full left) to +1 (full right), 0 = center
+const balanceValue = ref<number>(0) // -1 (full left) to +1 (full right), 0 = center, always a valid number
 const balanceAvailable = ref<boolean>(true)
 
 // Convert PipeWire balance (-1 to +1) to slider percentage for AppProgressSlider (0-100)
 const balanceToSliderPercent = (balance: number): number => {
+  // Handle invalid balance values
+  if (typeof balance !== 'number' || isNaN(balance)) {
+    return 50 // Default to center (50%) if balance is invalid
+  }
   // -1 -> 0%, 0 -> 50%, +1 -> 100%
   return (balance + 1) * 50
 }
 
 // Convert slider percentage (0-100) to PipeWire balance (-1 to +1)
 const sliderPercentToBalance = (percent: number): number => {
+  // Handle invalid input
+  if (typeof percent !== 'number' || isNaN(percent) || !isFinite(percent)) {
+    console.error('Invalid percent input to sliderPercentToBalance:', percent)
+    return 0 // Default to center balance
+  }
   // 0% -> -1, 50% -> 0, 100% -> +1
   return (percent / 50) - 1
 }
@@ -131,22 +221,107 @@ const balanceSliderPercent = computed(() => balanceToSliderPercent(balanceValue.
 // Human-readable label: Left/Right/Center with bias amount
 const balanceLabel = computed(() => {
   const balance = balanceValue.value
+
+  // Handle invalid balance values
+  if (typeof balance !== 'number' || isNaN(balance)) {
+    return 'Center' // Default to center if balance is invalid
+  }
+
   if (Math.abs(balance) < 0.01) return 'Center' // Show center only when within 1%
   const percentage = Math.round(Math.abs(balance) * 100)
   return balance < 0 ? `${percentage}% Left` : `${percentage}% Right`
 })
 
+// Audio mode state
+type AudioMode = 'stereo' | 'swapped' | 'mono' | 'left' | 'right'
+const audioMode = ref<AudioMode>('stereo')
+const modeAvailable = ref<boolean>(true)
+
+async function setAudioMode(mode: AudioMode) {
+  console.log('=== setAudioMode START ===')
+  console.log('Setting audio mode to:', mode)
+  console.log('Current balance value:', balanceValue.value)
+
+  try {
+    // Since API requires mode and balance to be set together, pass current balance
+    const currentBalance = balanceValue.value
+    console.log('Calling setPipewireModeAndBalance with:', { mode, balance: currentBalance })
+
+    const res = await setPipewireModeAndBalance(mode, currentBalance)
+    console.log('Raw API response for setAudioMode:', res)
+
+    if (res.status === 'success' && res.data) {
+      const data = res.data as PipewireMixerAnalysis
+      console.log('Parsed mixer analysis data:', data)
+      console.log('API returned mode:', data.mode, 'requested mode:', mode)
+      console.log('API returned balance:', data.balance, 'type:', typeof data.balance)
+
+      // Validate that the returned mode is one of our supported modes
+      if (data.mode === 'stereo' || data.mode === 'swapped' || data.mode === 'mono' || data.mode === 'left' || data.mode === 'right') {
+        console.log('Setting UI mode from API response:', data.mode)
+        audioMode.value = data.mode
+        modeAvailable.value = true
+        console.log('Audio mode successfully changed to:', data.mode)
+      } else {
+        // If the API returns "balance" or other non-mode values,
+        // it might indicate the backend is mixing concepts.
+        // Default to stereo since balance is a separate setting.
+        console.warn('PipeWire returned non-mode value after mode change:', data.mode, '- this may indicate API confusion between mode and balance')
+        console.log('Keeping requested mode in UI:', mode)
+        audioMode.value = mode // Use the requested mode instead of API response
+        modeAvailable.value = true
+      }
+
+      // Always try to update balance regardless of mode
+      if (typeof data.balance === 'number' && !isNaN(data.balance) && isFinite(data.balance)) {
+        const roundedBalance = Math.round(data.balance * 100) / 100
+        console.log('Updated balance from mode change:', data.balance, '→', roundedBalance)
+        balanceValue.value = roundedBalance
+      } else {
+        console.warn('Invalid balance value from API:', {
+          value: data.balance,
+          type: typeof data.balance,
+          isNaN: typeof data.balance === 'number' ? isNaN(data.balance) : 'N/A',
+          isFinite: typeof data.balance === 'number' ? isFinite(data.balance) : 'N/A'
+        }, '- keeping current balance:', balanceValue.value)
+      }
+    } else {
+      console.warn('API returned unsuccessful status or no data:', res)
+    }
+  } catch (e) {
+    console.error('Failed to set PipeWire audio mode:', e)
+    modeAvailable.value = false
+    // Revert the UI to the previous state if API call failed
+  }
+  console.log('=== setAudioMode END ===')
+}
+
 async function onBalanceChange(newVal: number) {
+  console.log('onBalanceChange called with:', newVal, 'type:', typeof newVal) // Debug log
+
   const balance = sliderPercentToBalance(newVal)
-  balanceValue.value = Math.round(balance * 100) / 100 // Round to 2 decimal places
+  console.log('Calculated balance from slider:', balance) // Debug log
+
+  if (typeof balance === 'number' && !isNaN(balance) && isFinite(balance)) {
+    balanceValue.value = Math.round(balance * 100) / 100 // Round to 2 decimal places
+    console.log('Set local balance to:', balanceValue.value) // Debug log
+  } else {
+    console.error('Invalid balance calculated from slider:', balance, 'from input:', newVal)
+    return // Don't proceed with invalid values
+  }
 
   try {
     const res = await setPipewireBalance(balanceValue.value)
 
     if (res.status === 'success' && res.data) {
       // Update local state with actual value from backend
-      const data = res.data as PipewireMixerBalance
-      balanceValue.value = Math.round(data.balance * 100) / 100
+      const data = res.data as { monostereo_mode: string; balance: number }
+      if (typeof data.balance === 'number' && !isNaN(data.balance) && isFinite(data.balance)) {
+        balanceValue.value = Math.round(data.balance * 100) / 100
+        console.log('Updated balance from API response:', balanceValue.value) // Debug log
+      } else {
+        console.warn('Invalid balance in API response:', data.balance)
+      }
       balanceAvailable.value = true
     }
   } catch (e) {
@@ -172,17 +347,73 @@ onMounted(async () => {
     volumeAvailable.value = false
   }
 
-  // Load balance
+  // Load balance and mode using new separate endpoints
   try {
-    const res = await getPipewireMixerAnalysis()
-    if (res.status === 'success' && res.data) {
-      const data = res.data as PipewireMixerAnalysis
-      balanceValue.value = Math.round(data.balance * 100) / 100
+    // Get current monostereo mode
+    const modeRes = await getPipewireMonoStereo()
+    if (modeRes.status === 'success' && modeRes.data) {
+      const modeData = modeRes.data as { monostereo_mode: string }
+      if (modeData.monostereo_mode === 'stereo' || modeData.monostereo_mode === 'swapped' || modeData.monostereo_mode === 'mono' ||
+          modeData.monostereo_mode === 'left' || modeData.monostereo_mode === 'right') {
+        audioMode.value = modeData.monostereo_mode as AudioMode
+        console.log('Initialized audio mode to:', modeData.monostereo_mode)
+      } else {
+        console.log('Unknown mode from API:', modeData.monostereo_mode, '- defaulting to stereo')
+        audioMode.value = 'stereo'
+      }
+      modeAvailable.value = true
+    }
+
+    // Get current balance
+    const balanceRes = await getPipewireBalance()
+    if (balanceRes.status === 'success' && balanceRes.data) {
+      const balanceData = balanceRes.data as { balance: number }
+      if (typeof balanceData.balance === 'number' && !isNaN(balanceData.balance) && isFinite(balanceData.balance)) {
+        const roundedBalance = Math.round(balanceData.balance * 100) / 100
+        balanceValue.value = roundedBalance
+        console.log('Initialized balance to:', balanceValue.value)
+      } else {
+        console.warn('Invalid initial balance value from API:', balanceData.balance, '- defaulting to 0')
+        balanceValue.value = 0
+      }
       balanceAvailable.value = true
     }
   } catch (e) {
-    console.warn('PipeWire balance not available:', e)
-    balanceAvailable.value = false
+    console.warn('PipeWire balance/mode not available:', e)
+    // Fallback to mixer analysis if new endpoints fail
+    try {
+      const res = await getPipewireMixerAnalysis()
+      if (res.status === 'success' && res.data) {
+        const data = res.data as PipewireMixerAnalysis
+        console.log('Fallback mixer analysis data:', data)
+
+        // Initialize balance with proper validation
+        if (typeof data.balance === 'number' && !isNaN(data.balance) && isFinite(data.balance)) {
+          const roundedBalance = Math.round(data.balance * 100) / 100
+          balanceValue.value = roundedBalance
+          console.log('Fallback: Initialized balance to:', balanceValue.value)
+        } else {
+          console.warn('Invalid fallback balance value from API:', data.balance, '- defaulting to 0')
+          balanceValue.value = 0
+        }
+
+        // Initialize audio mode from API
+        if (data.mode === 'stereo' || data.mode === 'swapped' || data.mode === 'mono' || data.mode === 'left' || data.mode === 'right') {
+          audioMode.value = data.mode
+          console.log('Fallback: Initialized audio mode to:', data.mode)
+        } else {
+          console.log('Fallback: Unknown mode value:', data.mode, '- defaulting to stereo')
+          audioMode.value = 'stereo'
+        }
+
+        balanceAvailable.value = true
+        modeAvailable.value = true
+      }
+    } catch (fallbackError) {
+      console.warn('Fallback mixer analysis also failed:', fallbackError)
+      balanceAvailable.value = false
+      modeAvailable.value = false
+    }
   }
 })
 </script>
@@ -234,6 +465,7 @@ onMounted(async () => {
             width: 28px;
             height: 28px;
             object-fit: contain;
+            stroke-width: 1px;
           }
 
           .setting-title {
@@ -264,6 +496,48 @@ onMounted(async () => {
         .setting-control {
           input[type='range'] {
             width: 100%;
+          }
+
+          .mode-button-bar {
+            display: flex;
+            flex-wrap: nowrap;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--color-border, #333);
+
+            .mode-btn {
+              flex: 1;
+              padding: 12px 16px;
+              cursor: pointer;
+              font-family: 'Metropolis', sans-serif;
+              font-size: 14px;
+              font-weight: 500;
+              border: none;
+              border-right: 1px solid var(--color-border, #333);
+              transition: all 0.2s ease-in-out;
+              background-color: transparent;
+              color: var(--color-body, #707070);
+
+              &:last-child {
+                border-right: none;
+              }
+
+              &.active {
+                background: var(--color-primary, #e11e4a);
+                color: white;
+              }
+
+              &:hover:not(:disabled):not(.active) {
+                background: var(--background-button-secondary-hover, rgba(225, 30, 74, 0.1));
+                color: var(--color-primary, #e11e4a);
+              }
+
+              &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                background: var(--background-input-disabled, #f8f9fa);
+              }
+            }
           }
         }
       }

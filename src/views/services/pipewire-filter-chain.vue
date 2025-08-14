@@ -21,15 +21,15 @@
         <div class="card-header">
           <h2>PipeWire Graph Visualization</h2>
           <div class="view-controls">
-            <button 
-              @click="activeView = 'graph'" 
+            <button
+              @click="activeView = 'graph'"
               :class="{ active: activeView === 'graph' }"
               class="view-button"
             >
               Graph View
             </button>
-            <button 
-              @click="activeView = 'raw'" 
+            <button
+              @click="activeView = 'raw'"
               :class="{ active: activeView === 'raw' }"
               class="view-button"
             >
@@ -37,7 +37,7 @@
             </button>
           </div>
         </div>
-        
+
         <div v-if="activeView === 'graph'" class="graph-container">
           <div v-if="graphLoading" class="graph-loading">
             <p>Rendering graph...</p>
@@ -52,7 +52,7 @@
             <div ref="graphContainer" class="graph-svg-container"></div>
           </div>
         </div>
-        
+
         <div v-else class="filter-chain-text">
           <pre>{{ filterChain }}</pre>
         </div>

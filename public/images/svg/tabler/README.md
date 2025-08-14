@@ -28,6 +28,7 @@ Tabler Icons is a set of 4,000+ free SVG icons designed specifically for web int
 - `chevron-up.svg` - **Tabler ID**: `chevron-up` - Collapse arrow
 - `chevron-left.svg` - **Tabler ID**: `chevron-left` - Back arrow
 - `chevron-right.svg` - **Tabler ID**: `chevron-right` - Forward arrow
+- `caret-left-right.svg` - **Tabler ID**: `caret-left-right` - Balance/left-right adjustment control
 - `x.svg` - **Tabler ID**: `x` - Close/clear button
 - `plus.svg` - **Tabler ID**: `plus` - Add button
 - `refresh.svg` - **Tabler ID**: `refresh` - Refresh button
@@ -101,6 +102,7 @@ All icons sourced from [Tabler Icons](https://tabler-icons.io/) with direct link
 - Chevron Up: <https://tabler-icons.io/icon/chevron-up>
 - Chevron Left: <https://tabler-icons.io/icon/chevron-left>
 - Chevron Right: <https://tabler-icons.io/icon/chevron-right>
+- Caret Left Right: <https://tabler-icons.io/icon/caret-left-right>
 - X: <https://tabler-icons.io/icon/x>
 - Plus: <https://tabler-icons.io/icon/plus>
 - Refresh: <https://tabler-icons.io/icon/refresh>

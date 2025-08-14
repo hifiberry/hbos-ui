@@ -1,3 +1,18 @@
+hifiberry-webui (0.11) stable; urgency=medium
+
+  * Enhanced PipeWire mixer API integration with modern separated endpoints
+  * Updated audio mode controls with new "swapped" stereo channel option
+  * Added comprehensive tooltips for all audio mode buttons (stereo, swapped, mono, left, right)
+  * Implemented balance control with dedicated left-right caret icon
+  * Added headphone volume control placeholder with proper disabled state styling
+  * Enhanced sound settings UI with semantic volume and headphones icons
+  * Improved icon consistency with 1px stroke-width standardization
+  * Updated API proxy configuration for correct HiFiBerry config server integration
+  * Enhanced debugging and error handling for PipeWire mixer operations
+  * Added proper tooltips for inactive controls explaining hardware limitations
+
+ -- HiFiBerry <info@hifiberry.com>  Wed, 14 Aug 2025 16:00:00 +0000
+
 hifiberry-webui (0.10) stable; urgency=medium
 
   * Enhanced system information display with dedicated Network and I2C blocks

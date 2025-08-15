@@ -98,6 +98,92 @@
           </div>
         </div>
 
+        <!-- Step 3: Audio Level -->
+        <div v-if="currentStep === 3" class="step-content">
+          <div class="step-header">
+            <AppIcon icon="tabler/volume-2" class="step-icon" />
+            <div class="step-info">
+              <h3>Step 3: Audio Level</h3>
+              <p>Adjust your audio system to the appropriate level for room measurement.</p>
+            </div>
+          </div>
+
+          <div class="audio-level-instructions">
+            <div class="level-guidance">
+              <h4>Volume Guidelines:</h4>
+              <p>Set your amplifier to normal listening volume. The measurement uses white noise at controlled levels. Ensure the room is quiet with doors and windows closed to minimize background noise. Start with moderate volume levels to protect your hearing and equipment.</p>
+            </div>
+
+            <div class="noise-controls" data-component="room-wizard">
+              <h4 :style="{ marginTop: '10px', marginBottom: '10px' }">Test Audio Level:</h4>
+              <div class="controls-section">
+                <div class="noise-button-container">
+                  <button
+                    @click="toggleNoise"
+                    :class="['nav-button', isNoiseePlaying ? 'danger' : 'primary']"
+                  >
+                    <AppIcon :icon="isNoiseePlaying ? 'tabler/player-stop' : 'tabler/player-play'" />
+                    {{ isNoiseePlaying ? 'Stop Noise' : 'Play Noise' }}
+                  </button>
+                </div>
+
+                <div class="volume-control">
+                  <div class="volume-header" :style="{ marginTop: '10px', marginBottom: '10px' }">
+                    <span class="volume-label">Volume</span>
+                  </div>
+                  <div class="volume-slider-container">
+                    <AppProgressSlider
+                      :value="displayVolume"
+                      :min="0"
+                      :max="100"
+                      :step="1"
+                      :disabled="false"
+                      :has-thumb="true"
+                      :is-draggable="true"
+                      :is-on-header="false"
+                      @click:progress="updateSystemVolume"
+                    />
+                  </div>
+                </div>
+
+                <div class="measured-level-control">
+                  <div class="measured-level-header" :style="{ marginTop: '10px', marginBottom: '10px' }">
+                    <span class="measured-level-label">Measured level</span>
+                    <span class="measured-level-value">{{ currentSPL.toFixed(1) }}dB</span>
+                  </div>
+                  <div class="measured-level-meter-container">
+                    <div class="vu-meter">
+                      <div class="spl-meter-bar">
+                        <div class="spl-meter-track">
+                          <div 
+                            class="spl-meter-fill" 
+                            :style="{ 
+                              width: `${getSPLPercentage(currentSPL)}%`,
+                              backgroundColor: getSPLColor(currentSPL)
+                            }"
+                          ></div>
+                        </div>
+                        <div class="spl-scale">
+                          <span
+                            v-for="tick in splTicks"
+                            :key="tick"
+                            class="scale-mark"
+                            :class="{ optimal: tick >= 70 && tick <= 90 }"
+                            :style="{ left: `${getSPLPercentage(tick)}%` }"
+                          >{{ tick }}</span>
+                        </div>
+                      </div>
+                      <div class="optimal-range-indicator">
+                        <span class="range-label">Optimal: 70-90dB</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Future steps will be added here -->
       </div>
 
@@ -130,9 +216,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
-import { getRoomEQMicrophones, type RoomEQMicrophone } from '@/api/roomeq'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import AppIcon from './app-icon.vue'
+import AppProgressSlider from './app-progress-slider.vue'
+import { measureRoomEQSPL } from '@/api/roomeq'
+import { getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying } from '@/api/roomeq'
+import { pauseAllPlayers } from '@/api/player'
+import { usePlayerStore } from '@/stores/player'
+import { storeToRefs } from 'pinia'
 
 // Props
 interface Props {
@@ -147,13 +238,22 @@ const emit = defineEmits<{
   measurementCompleted: []
 }>()
 
+// Stores
+const playerStore = usePlayerStore()
+const { currentVolume } = storeToRefs(playerStore)
+
 // State
 const currentStep = ref(1)
-const totalSteps = ref(2) // Step 1: Microphone Detection, Step 2: Microphone Positioning
+const totalSteps = ref(3) // Step 1: Microphone Detection, Step 2: Microphone Positioning, Step 3: Audio Level
 const loadingMicrophones = ref(false)
 const microphoneError = ref('')
 const detectedMicrophones = ref<RoomEQMicrophone[]>([])
 const selectedMicrophone = ref<RoomEQMicrophone | null>(null)
+
+// Audio level step state
+const noiseAmplitude = ref(1.0) // Maximum amplitude for noise
+const isNoiseePlaying = ref(false)
+const keepAliveInterval = ref<number | null>(null)
 
 // Computed
 const canProceedToNextStep = computed(() => {
@@ -163,7 +263,132 @@ const canProceedToNextStep = computed(() => {
   if (currentStep.value === 2) {
     return true // User can proceed after reading positioning instructions
   }
+  if (currentStep.value === 3) {
+    return true // User can proceed after reading audio level instructions
+  }
   return true
+})
+
+const displayVolume = computed(() => {
+  return Math.round(currentVolume.value)
+})
+
+// Dummy audio context and source for the VU meter display (will be replaced with real audio measurement later)
+const dummyAudioContext = ref<AudioContext | null>(null)
+const dummyAudioSource = ref<AudioNode | null>(null)
+
+// SPL Measurement
+const currentSPL = ref(-80) // Start with a low baseline
+const splMeasurementInterval = ref<number | null>(null)
+const isMeasuring = ref(false)
+
+// SPL meter helper functions
+const SPL_MIN = 40
+const SPL_MAX = 100
+
+const splTicks = computed(() => {
+  const ticks: number[] = []
+  for (let v = SPL_MIN; v <= SPL_MAX; v += 10) ticks.push(v)
+  return ticks
+})
+
+const getSPLPercentage = (spl: number): number => {
+  // Map SPL from SPL_MIN-SPL_MAX dB range to 0-100%
+  const percentage = Math.max(0, Math.min(100, ((spl - SPL_MIN) / (SPL_MAX - SPL_MIN)) * 100))
+  return percentage
+}
+
+const getSPLColor = (spl: number): string => {
+  // Inside optimal range (70–90 dB): green, otherwise: yellow
+  return spl >= 70 && spl <= 90 ? '#28a745' : '#ffc107'
+}
+
+// Measure SPL using the RoomEQ API
+const measureSPL = async () => {
+  try {
+    const response = await measureRoomEQSPL()
+    if (response.success && response.data) {
+      // Update current SPL value
+      const newSPL = response.data.spl_db
+      currentSPL.value = newSPL
+      console.log('SPL measurement:', newSPL, 'dB')
+    } else {
+      console.warn('SPL measurement failed:', response.detail)
+    }
+  } catch (error) {
+    console.error('Error measuring SPL:', error)
+  }
+}
+
+// Start continuous SPL measurement
+const startSPLMeasurement = () => {
+  if (isMeasuring.value) return
+  
+  console.log('Starting SPL measurement every 0.5 seconds')
+  isMeasuring.value = true
+  
+  // Initial measurement
+  measureSPL()
+  
+  // Set up interval for continuous measurement
+  splMeasurementInterval.value = window.setInterval(measureSPL, 500)
+}
+
+// Stop continuous SPL measurement  
+const stopSPLMeasurement = () => {
+  if (!isMeasuring.value) return
+  
+  console.log('Stopping SPL measurement')
+  isMeasuring.value = false
+  
+  if (splMeasurementInterval.value) {
+    clearInterval(splMeasurementInterval.value)
+    splMeasurementInterval.value = null
+  }
+}
+
+// Create dummy audio context for the meter display with SPL value updates
+onMounted(() => {
+  try {
+    // Create a dummy audio context with an oscillator for display purposes
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const audioContext = new AudioContextClass()
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+    
+    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime) // 1kHz tone
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime) // Low volume
+    
+    oscillator.connect(gainNode)
+    gainNode.connect(audioContext.destination)
+    
+    // Don't start the oscillator, just set up the nodes for the meter
+    dummyAudioContext.value = audioContext
+    dummyAudioSource.value = gainNode
+    
+  } catch (error) {
+    console.warn('Could not create audio context for VU meter display:', error)
+  }
+})
+
+// Watch current step and start/stop SPL measurement accordingly
+watch(currentStep, (newStep) => {
+  if (newStep === 3) {
+    // Start SPL measurement when entering step 3 (Test Audio Level)
+    startSPLMeasurement()
+  } else {
+    // Stop SPL measurement when leaving step 3
+    stopSPLMeasurement()
+  }
+})
+
+// Cleanup when component unmounts
+onBeforeUnmount(() => {
+  stopSPLMeasurement()
+  
+  if (dummyAudioContext.value) {
+    dummyAudioContext.value.close()
+  }
 })
 
 // Methods
@@ -184,6 +409,17 @@ const resetWizard = () => {
   microphoneError.value = ''
   detectedMicrophones.value = []
   selectedMicrophone.value = null
+
+  // Stop noise if playing
+  if (isNoiseePlaying.value) {
+    stopNoise()
+  }
+
+  // Clear keep-alive interval
+  if (keepAliveInterval.value) {
+    clearInterval(keepAliveInterval.value)
+    keepAliveInterval.value = null
+  }
 }
 
 const detectMicrophones = async () => {
@@ -222,14 +458,99 @@ const selectMicrophone = (microphone: RoomEQMicrophone) => {
 
 const nextStep = () => {
   if (canProceedToNextStep.value && currentStep.value < totalSteps.value) {
+    // Pause all players when entering step 3 (Audio Level)
+    if (currentStep.value === 2) {
+      pausePlayers()
+    }
     currentStep.value++
   }
 }
 
 const previousStep = () => {
   if (currentStep.value > 1) {
+    // Stop noise when leaving step 3
+    if (currentStep.value === 3 && isNoiseePlaying.value) {
+      stopNoise()
+    }
     currentStep.value--
   }
+}
+
+const pausePlayers = async () => {
+  try {
+    console.log('Pausing all players for room measurement')
+    await pauseAllPlayers()
+  } catch (error) {
+    console.error('Error pausing players:', error)
+  }
+}
+
+const toggleNoise = async () => {
+  if (isNoiseePlaying.value) {
+    await stopNoise()
+  } else {
+    await startNoise()
+  }
+}
+
+const startNoise = async () => {
+  try {
+    console.log('Starting white noise for room measurement')
+    const response = await startRoomEQNoise(noiseAmplitude.value, 3.0)
+    if (response.success) {
+      isNoiseePlaying.value = true
+
+      // Start keep-alive mechanism - send request every 2 seconds
+      keepAliveInterval.value = window.setInterval(async () => {
+        try {
+          console.log('Extending noise playback (keep-alive)')
+          await keepRoomEQNoisePlaying(3.0)
+        } catch (error) {
+          console.error('Keep-alive failed:', error)
+          // If keep-alive fails, stop the noise
+          isNoiseePlaying.value = false
+          if (keepAliveInterval.value) {
+            clearInterval(keepAliveInterval.value)
+            keepAliveInterval.value = null
+          }
+        }
+      }, 2000)
+    } else {
+      console.error('Failed to start noise:', response.detail)
+    }
+  } catch (error) {
+    console.error('Error starting noise:', error)
+  }
+}
+
+const stopNoise = async () => {
+  try {
+    console.log('Stopping white noise')
+
+    // Clear keep-alive interval first
+    if (keepAliveInterval.value) {
+      clearInterval(keepAliveInterval.value)
+      keepAliveInterval.value = null
+    }
+
+    const response = await stopRoomEQNoise()
+    if (response.success) {
+      isNoiseePlaying.value = false
+    } else {
+      console.error('Failed to stop noise:', response.detail)
+      // Still set to false even if API call failed
+      isNoiseePlaying.value = false
+    }
+  } catch (error) {
+    console.error('Error stopping noise:', error)
+    // Still set to false even if there's an error
+    isNoiseePlaying.value = false
+  }
+}
+
+const updateSystemVolume = async (newVolume: number) => {
+  console.log('Setting system volume to:', newVolume)
+  await playerStore.setVolume(newVolume)
 }
 
 const completeMeasurement = () => {
@@ -276,6 +597,58 @@ watch(() => props.isOpen, (newValue) => {
   display: flex;
   flex-direction: column;
   position: relative;
+
+  .nav-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &.secondary {
+      background: var(--color-bg-secondary);
+      color: var(--color-body);
+      border: 1px solid var(--color-border);
+
+      &:hover:not(:disabled) {
+        background: var(--color-border);
+      }
+    }
+
+    &.primary {
+      background: var(--primary);
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: var(--primary-dark, var(--primary));
+        opacity: 0.9;
+      }
+    }
+
+    &.danger {
+      background: #dc3545;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: #c82333;
+      }
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 .modal-header {
@@ -639,6 +1012,155 @@ watch(() => props.isOpen, (newValue) => {
         border-radius: 8px;
       }
     }
+
+    .audio-level-instructions {
+      .level-guidance {
+        margin-bottom: 24px;
+
+        h4 {
+          margin: 0 0 16px 0;
+          color: var(--color-head);
+          font-size: 1.125rem;
+          font-weight: 600;
+        }
+
+        p {
+          margin: 0;
+          color: var(--color-body);
+          line-height: 1.5;
+        }
+      }
+
+      .noise-controls[data-component="room-wizard"] {
+        margin-bottom: 24px;
+        margin-top: 32px;
+
+        > h4 {
+          color: var(--color-head);
+          font-size: 1.125rem;
+          font-weight: 600;
+        }
+
+        .controls-section {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+
+          .noise-button-container {
+            display: flex;
+            justify-content: center;
+          }
+
+          .volume-control {
+            .volume-header {
+              .volume-label {
+                color: var(--color-head);
+                font-weight: 500;
+                font-size: 1rem;
+              }
+            }
+
+            .volume-slider-container {
+              width: 100%;
+            }
+          }
+
+          .measured-level-control {
+            .measured-level-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+
+              .measured-level-label {
+                color: var(--color-head);
+                font-weight: 500;
+                font-size: 1rem;
+              }
+              
+              .measured-level-value {
+                color: var(--color-body);
+                font-weight: 600;
+                font-size: 0.9rem;
+                background: var(--color-bg-secondary);
+                padding: 4px 8px;
+                border-radius: 4px;
+                border: 1px solid var(--color-border);
+                font-family: monospace;
+                min-width: 6ch;
+                text-align: center;
+              }
+            }
+
+            .measured-level-meter-container {
+              width: 100%;
+              
+              .vu-meter {
+                width: 100%;
+                
+                .spl-meter-bar {
+                  width: 100%;
+                  margin-bottom: 12px;
+                  
+                  .spl-meter-track {
+                    width: 100%;
+                    height: 20px;
+                    background: var(--color-bg-secondary);
+                    border: 1px solid var(--color-border);
+                    border-radius: 6px;
+                    position: relative;
+                    overflow: hidden;
+                    margin-bottom: 8px;
+                    
+                    .spl-meter-fill {
+                      position: absolute;
+                      top: 0;
+                      left: 0;
+                      bottom: 0;
+                      height: 100%;
+                      transition: width 0.2s ease, background-color 0.2s ease;
+                      border-radius: 5px 0 0 5px;
+                    }
+                  }
+                  
+                  .spl-scale {
+                    width: 100%;
+                    padding: 0 4px;
+                    font-size: 0.7rem;
+                    color: var(--color-body-secondary);
+                    font-weight: 500;
+                    display: grid;
+                    grid-template-columns: repeat(5, 1fr);
+                    text-align: center;
+                    
+                    .scale-mark {
+                      &.optimal {
+                        color: #28a745; /* green */
+                        font-weight: 600;
+                      }
+                    }
+                  }
+                }
+
+                .optimal-range-indicator {
+                  text-align: center;
+                  margin-top: 12px;
+                  
+                  .range-label {
+                    font-size: 0.75rem;
+                    color: white;
+                    background: var(--primary);
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    font-weight: 500;
+                    display: inline-block;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -651,52 +1173,198 @@ watch(() => props.isOpen, (newValue) => {
     align-items: center;
     justify-content: space-between;
 
-    .nav-button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s ease;
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      &.secondary {
-        background: var(--color-bg-secondary);
-        color: var(--color-body);
-        border: 1px solid var(--color-border);
-
-        &:hover:not(:disabled) {
-          background: var(--color-border);
-        }
-      }
-
-      &.primary {
-        background: var(--primary);
-        color: white;
-
-        &:hover:not(:disabled) {
-          background: var(--primary-dark, var(--primary));
-          opacity: 0.9;
-        }
-      }
-
-      svg {
-        width: 16px;
-        height: 16px;
-      }
-    }
-
     .step-indicator {
       font-size: 0.875rem;
       color: var(--color-body-secondary);
       font-weight: 500;
+    }
+  }
+}
+
+/* Ensure SPL meter styles apply outside of .microphones-section scope */
+.positioning-instructions {
+  p {
+    margin: 0;
+    color: var(--color-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: center;
+    padding: 24px 32px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+}
+
+.audio-level-instructions {
+  .level-guidance {
+    margin-bottom: 24px;
+
+    h4 {
+      margin: 0 0 16px 0;
+      color: var(--color-head);
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: var(--color-body);
+      line-height: 1.5;
+    }
+  }
+
+  .noise-controls[data-component="room-wizard"] {
+    margin-bottom: 24px;
+    margin-top: 32px;
+
+    > h4 {
+      color: var(--color-head);
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .controls-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+
+      .noise-button-container {
+        display: flex;
+        justify-content: center;
+      }
+
+      .volume-control {
+        .volume-header {
+          .volume-label {
+            color: var(--color-head);
+            font-weight: 500;
+            font-size: 1rem;
+          }
+        }
+
+        .volume-slider-container {
+          width: 100%;
+        }
+      }
+
+      .measured-level-control {
+        .measured-level-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .measured-level-label {
+            color: var(--color-head);
+            font-weight: 500;
+            font-size: 1rem;
+          }
+          
+          .measured-level-value {
+            color: var(--color-body);
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: var(--color-bg-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--color-border);
+            font-family: monospace;
+            min-width: 6ch;
+            text-align: center;
+          }
+        }
+
+        .measured-level-meter-container {
+          width: 100%;
+          
+          .vu-meter {
+            width: 100%;
+            
+            .spl-meter-bar {
+              width: 100%;
+              margin-bottom: 12px;
+              
+              .spl-meter-track {
+                width: 100%;
+                height: 20px; /* Fix collapse */
+                background: var(--color-bg-secondary);
+                border: 1px solid var(--color-border);
+                border-radius: 6px;
+                position: relative;
+                overflow: hidden;
+                margin-bottom: 8px;
+                
+                .spl-meter-fill {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  bottom: 0;
+                  height: 100%;
+                  transition: width 0.2s ease, background-color 0.2s ease;
+                  border-radius: 5px 0 0 5px;
+                }
+              }
+              
+              .spl-scale {
+                position: relative;
+                width: 100%;
+                height: 20px; /* room for labels */
+                margin-top: 2px;
+                font-size: 0.7rem;
+                color: var(--color-body-secondary);
+                font-weight: 500;
+
+                .scale-mark {
+                  position: absolute;
+                  transform: translateX(-50%);
+                  bottom: 0;
+                  white-space: nowrap;
+
+                  &::before {
+                    content: "";
+                    position: absolute;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    top: -10px; /* tick above label */
+                    width: 1px;
+                    height: 8px;
+                    background: var(--color-border);
+                  }
+
+                  &:first-child {
+                    transform: none; /* align 40 at the left edge */
+                  }
+
+                  &:last-child {
+                    transform: translateX(-100%); /* align 100 at the right edge */
+                  }
+
+                  &.optimal {
+                    color: #28a745; /* green */
+                    font-weight: 600;
+                  }
+                }
+              }
+            }
+
+            .optimal-range-indicator {
+              text-align: center;
+              margin-top: 12px;
+              
+              .range-label {
+                font-size: 0.75rem;
+                color: #0f5132;
+                background: #d1e7dd; /* green-ish badge */
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-weight: 600;
+                display: inline-block;
+                border: 1px solid #badbcc;
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -728,9 +1396,8 @@ watch(() => props.isOpen, (newValue) => {
     padding: 16px 24px;
 
     .step-navigation {
-      .nav-button {
-        padding: 8px 16px;
-        font-size: 0.875rem;
+      .step-indicator {
+        font-size: 0.8125rem;
       }
     }
   }
@@ -744,6 +1411,36 @@ watch(() => props.isOpen, (newValue) => {
       p {
         padding: 20px 24px;
         font-size: 0.875rem;
+      }
+    }
+
+    .audio-level-instructions {
+      .level-guidance {
+        h4 {
+          font-size: 1rem;
+        }
+
+        p {
+          font-size: 0.875rem;
+        }
+      }
+
+      .noise-controls {
+        h4 {
+          font-size: 1rem;
+        }
+
+        .controls-section {
+          gap: 16px;
+
+          .volume-control {
+            .volume-header {
+              .volume-label {
+                font-size: 0.875rem;
+              }
+            }
+          }
+        }
       }
     }
 

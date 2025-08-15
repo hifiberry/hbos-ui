@@ -112,26 +112,60 @@ export const pauseAllPlayers = async (): Promise<boolean> => {
     const configStore = useAppConfigStore()
     const apiBaseUrl = configStore.getApiBaseUrl()
 
+    // Primary (documented) endpoint
     const url = `${apiBaseUrl}/players/pause-all`
-    console.log('Pausing all players:', url)
+    console.log('Pausing all players (bulk endpoint):', url)
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
 
-    if (!response.ok) {
-      throw new Error(`Failed to pause all players: ${response.status} ${response.statusText}`)
+    if (response.ok) {
+      const result = await response.json().catch(() => ({}))
+      console.log('Pause all players response:', result)
+      return true
     }
 
-    const result = await response.json()
-    console.log('Pause all players response:', result)
-    return true
+    // Fall-through to per-player fallback on non-OK
+    console.warn('Bulk pause-all failed, attempting per-player fallback:', response.status, response.statusText)
+    throw new Error(`pause-all failed: ${response.status} ${response.statusText}`)
 
   } catch (error) {
-    console.error('Error pausing all players:', error)
-    throw error
+    console.error('Error pausing all players (will try fallback):', error)
+
+    // Fallback: enumerate players and send pause/stop to each
+    try {
+      const configStore = useAppConfigStore()
+      const apiBaseUrl = configStore.getApiBaseUrl()
+
+      const listResp = await fetch(`${apiBaseUrl}/players`)
+      if (!listResp.ok) {
+        throw new Error(`Failed to list players: ${listResp.status} ${listResp.statusText}`)
+      }
+      const listJson = await listResp.json()
+      const players: Array<{ name: string }> = listJson?.players || []
+
+      let succeeded = 0
+      for (const p of players) {
+        const pauseUrl = `${apiBaseUrl}/player/${encodeURIComponent(p.name)}/command/pause`
+        const stopUrl = `${apiBaseUrl}/player/${encodeURIComponent(p.name)}/command/stop`
+        try {
+          const r = await fetch(pauseUrl, { method: 'POST' })
+          if (r.ok) {
+            succeeded++
+            continue
+          }
+          // Try stop if pause not supported
+          const s = await fetch(stopUrl, { method: 'POST' })
+          if (s.ok) succeeded++
+        } catch (e) {
+          console.warn(`Failed to pause/stop player '${p.name}':`, e)
+        }
+      }
+
+      console.log(`Per-player pause/stop succeeded for ${succeeded}/${players.length} players`)
+      return succeeded > 0
+    } catch (fallbackErr) {
+      console.error('Fallback pause-all failed:', fallbackErr)
+      return false
+    }
   }
 }

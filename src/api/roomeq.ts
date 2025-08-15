@@ -50,10 +50,18 @@ export interface RoomEQVersionInfo {
 
 export interface RoomEQNoiseStatus {
   active: boolean
+  signal_type?: 'noise' | 'sine_sweep'
   amplitude: number
   device: string
   remaining_seconds: number
   stop_time: string
+  // Sweep-specific optional fields
+  start_freq?: number
+  end_freq?: number
+  sweeps?: number
+  duration?: number
+  sweep_duration?: number
+  total_duration?: number
 }
 
 export interface RoomEQSignalResponse {
@@ -72,6 +80,86 @@ export interface RoomEQSPLMeasurement {
   timestamp: string
   microphone?: string
   status: string
+}
+
+export interface RoomEQSweepStartResponse {
+  status: string
+  signal_type: 'sine_sweep'
+  start_freq: number
+  end_freq: number
+  duration: number
+  sweeps: number
+  total_duration: number
+  amplitude: number
+  device: string
+  stop_time: string
+  message?: string
+}
+
+// Recording types
+export interface RoomEQRecordingStartResponse {
+  status: string
+  recording_id: string | number
+  filename: string
+  duration: number
+  device?: string
+  message?: string
+}
+
+export interface RoomEQRecordingStatusResponse {
+  status: string
+  recording_id: string | number
+  state: 'idle' | 'recording' | 'completed' | 'error'
+  remaining_seconds?: number
+  stop_time?: string
+  filename?: string
+  message?: string
+}
+
+// FFT analysis types
+export interface RoomEQFFTResponse {
+  status: string
+  recording_info?: {
+    recording_id: string
+    filename: string
+    original_duration: number
+    original_device: string
+    original_sample_rate: number
+    timestamp: string
+  }
+  analysis_info?: {
+    analyzed_duration: number
+    analyzed_samples: number
+    start_time: number
+  }
+  fft_analysis: {
+    fft_size: number
+    window_type: string
+    sample_rate: number
+    frequency_resolution: number
+    frequencies: number[]
+    magnitudes: number[]
+    phases: number[]
+    peak_frequency: number
+    peak_magnitude: number
+    spectral_centroid: number
+    frequency_bands: {
+      sub_bass: { range: string; avg_magnitude: number; peak_frequency: number }
+      bass: { range: string; avg_magnitude: number; peak_frequency: number }
+      low_midrange: { range: string; avg_magnitude: number; peak_frequency: number }
+      midrange: { range: string; avg_magnitude: number; peak_frequency: number }
+      upper_midrange: { range: string; avg_magnitude: number; peak_frequency: number }
+      presence: { range: string; avg_magnitude: number; peak_frequency: number }
+      brilliance: { range: string; avg_magnitude: number; peak_frequency: number }
+    }
+    normalization: {
+      applied: boolean
+      requested_freq?: number
+      actual_freq?: number
+      reference_level_db?: number
+    }
+  }
+  analysis_timestamp: string
 }
 
 /**
@@ -465,6 +553,135 @@ export const getRoomEQNoiseStatus = async (): Promise<RoomEQApiEnvelope<RoomEQNo
 }
 
 /**
+ * Start logarithmic sine sweep(s)
+ */
+export const startRoomEQSweep = async (
+  options?: {
+    startFreq?: number
+    endFreq?: number
+    duration?: number
+    sweeps?: number
+    amplitude?: number
+    device?: string
+  }
+): Promise<RoomEQApiEnvelope<RoomEQSweepStartResponse>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const params = new URLSearchParams()
+    if (options?.startFreq != null) params.set('start_freq', String(options.startFreq))
+    if (options?.endFreq != null) params.set('end_freq', String(options.endFreq))
+    if (options?.duration != null) params.set('duration', String(options.duration))
+    if (options?.sweeps != null) params.set('sweeps', String(options.sweeps))
+    if (options?.amplitude != null) params.set('amplitude', String(options.amplitude))
+    if (options?.device) params.set('device', options.device)
+    const url = `${apiBaseUrl}/audio/sweep/start?${params.toString()}`
+
+    console.log('Starting RoomEQ sine sweep(s):', url)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to start sine sweeps: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log('RoomEQ sine sweep start response:', data)
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error starting RoomEQ sine sweeps:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Start a recording job
+ */
+export const startRoomEQRecording = async (
+  options: {
+    duration: number
+    sampleRate?: number
+    device?: string
+    filenameHint?: string
+  }
+): Promise<RoomEQApiEnvelope<RoomEQRecordingStartResponse>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const params = new URLSearchParams()
+    params.set('duration', String(options.duration))
+    if (options.sampleRate != null) params.set('sample_rate', String(options.sampleRate))
+    if (options.device) params.set('device', options.device)
+    if (options.filenameHint) params.set('filename', options.filenameHint)
+    const url = `${apiBaseUrl}/audio/record/start?${params.toString()}`
+
+    console.log('Starting RoomEQ recording:', url)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to start recording: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log('RoomEQ recording start response:', data)
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error starting RoomEQ recording:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Get recording status by ID
+ */
+export const getRoomEQRecordingStatus = async (
+  recordingId: string | number
+): Promise<RoomEQApiEnvelope<RoomEQRecordingStatusResponse>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const url = `${apiBaseUrl}/audio/record/status/${encodeURIComponent(String(recordingId))}`
+
+    console.log('Getting RoomEQ recording status:', url)
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to get recording status: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log('RoomEQ recording status response:', data)
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error getting RoomEQ recording status:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
  * Set pink noise volume (deprecated - use amplitude in start call)
  */
 export const setRoomEQNoiseVolume = async (volume: number): Promise<RoomEQApiEnvelope<RoomEQSignalResponse>> => {
@@ -536,6 +753,47 @@ export const measureRoomEQSPL = async (): Promise<RoomEQApiEnvelope<RoomEQSPLMea
 
   } catch (error) {
     console.error('Error measuring RoomEQ SPL:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Perform FFT analysis on a recorded wave file by recording ID
+ */
+export const analyzeRoomEQFFTRecording = async (
+  recordingId: string | number,
+  normalize?: number,
+  fftSize?: number
+): Promise<RoomEQApiEnvelope<RoomEQFFTResponse>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const params = new URLSearchParams()
+    params.set('window', 'hann')
+    if (normalize != null) params.set('normalize', String(normalize))
+    if (fftSize != null) params.set('fft_size', String(fftSize))
+    const url = `${apiBaseUrl}/audio/analyze/fft-recording/${encodeURIComponent(String(recordingId))}?${params.toString()}`
+
+    console.log('Performing RoomEQ FFT analysis on recording:', url)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to perform FFT analysis: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log('RoomEQ FFT analysis response:', data)
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error performing RoomEQ FFT analysis:', error)
     return {
       success: false,
       detail: error instanceof Error ? error.message : 'Unknown error occurred'

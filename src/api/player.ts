@@ -102,3 +102,36 @@ export const sendPlayerCommand = async (playerName: string, command: string): Pr
     throw error
   }
 }
+
+/**
+ * Pause all available players. If a player does not support pause, it will be stopped instead.
+ * @returns Promise<boolean> - Success or failure
+ */
+export const pauseAllPlayers = async (): Promise<boolean> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getApiBaseUrl()
+
+    const url = `${apiBaseUrl}/players/pause-all`
+    console.log('Pausing all players:', url)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to pause all players: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    console.log('Pause all players response:', result)
+    return true
+
+  } catch (error) {
+    console.error('Error pausing all players:', error)
+    throw error
+  }
+}

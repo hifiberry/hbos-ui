@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { usePlayerPosition } from '@/composables/usePlayerPosition'
+import { pauseAllPlayers } from '@/api/player'
 
 import { formatTime } from '@/helpers/formatTime'
 
@@ -73,13 +74,22 @@ export const useAudioControls = defineStore('audio-controls', () => {
   )
 
   // Actions
-  const togglePlayPause = () => {
-    const command = isPlaying.value ? 'pause' : 'play'
-
+  const togglePlayPause = async () => {
     stopAutoProgress()
 
-    // Playback commands go to active player
-    sendCommand(command)
+    if (isPlaying.value) {
+      // When pausing, pause all players
+      try {
+        await pauseAllPlayers()
+      } catch (error) {
+        console.error('Failed to pause all players, falling back to single player pause:', error)
+        // Fallback to single player command if pause-all fails
+        sendCommand('pause')
+      }
+    } else {
+      // When playing, send play command to active player
+      sendCommand('play')
+    }
   }
 
   const playNextOrPrev = (nextOrPrev: string) => {

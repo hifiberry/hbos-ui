@@ -64,6 +64,7 @@ def setup_webui():
     audiocontrol_include = Path("/etc/nginx/hifiberry-audiocontrol.nginx")
     config_include = Path("/etc/nginx/hifiberry-config.nginx")
     sigmatcp_include = Path("/etc/nginx/hifiberry-sigmatcp.nginx")
+    roomeq_include = Path("/etc/nginx/hifiberry-roomeq.nginx")
     webui_dir = Path("/usr/share/hifiberry/webui")
     nginx_conf = Path("/etc/nginx/nginx.conf")
     
@@ -82,6 +83,10 @@ def setup_webui():
     if not sigmatcp_include.exists():
         print(f"Warning: DSP Toolkit nginx include file not found at {sigmatcp_include}")
         print("DSP Toolkit API will not be available")
+    
+    if not roomeq_include.exists():
+        print(f"Warning: RoomEQ nginx include file not found at {roomeq_include}")
+        print("RoomEQ API will not be available")
     
     if not webui_dir.exists():
         print(f"Error: Web UI files not found at {webui_dir}")
@@ -122,6 +127,13 @@ server {{
     include {sigmatcp_include};
 '''
             
+            # Add RoomEQ include if available
+            if roomeq_include.exists():
+                config_content += f'''    
+    # Include HiFiBerry RoomEQ API proxy configuration
+    include {roomeq_include};
+'''
+            
             config_content += f'''    
     # Include HiFiBerry Web UI configuration
     include {webui_include};
@@ -146,7 +158,7 @@ server {{
     else:
         # Fallback: modify main nginx.conf directly
         print("Warning: sites-available not found, manual configuration required")
-        print(f"Please add 'include {audiocontrol_include};', 'include {config_include};' and 'include {webui_include};' to your nginx server block")
+        print(f"Please add 'include {audiocontrol_include};', 'include {config_include};', 'include {sigmatcp_include};', 'include {roomeq_include};' and 'include {webui_include};' to your nginx server block")
         return 1
     
     # Test nginx configuration

@@ -3,21 +3,48 @@
     <div class="room-acoustics">
       <div class="page-header">
         <h1>Room Acoustics Correction</h1>
+        <button @click="startMeasurement" class="measure-button" title="Start Room Measurement">
+          <AppIcon icon="tabler/microphone" />
+          Measure Room
+        </button>
       </div>
 
       <div class="card">
         <div class="empty-state">
           <AppIcon icon="tabler/armchair" class="empty-icon" />
           <h3>Room Acoustics Correction</h3>
-          <p>Intelligent room correction tools coming soon. Automatically analyze and correct room acoustics for optimal sound reproduction.</p>
+          <p>Use the "Measure Room" button above to start the acoustic measurement wizard. This will help you analyze and correct room acoustics for optimal sound reproduction.</p>
         </div>
       </div>
     </div>
+
+    <!-- Room Measurement Wizard -->
+    <AppRoomMeasurementWizard
+      :is-open="showMeasurementWizard"
+      @close="showMeasurementWizard = false"
+      @measurement-completed="handleMeasurementCompleted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/app-icon.vue';
+import { ref } from 'vue'
+import AppIcon from '@/components/app-icon.vue'
+import AppRoomMeasurementWizard from '@/components/app-room-measurement-wizard.vue'
+
+// State
+const showMeasurementWizard = ref(false)
+
+// Methods
+const startMeasurement = () => {
+  showMeasurementWizard.value = true
+}
+
+const handleMeasurementCompleted = () => {
+  // Handle measurement completion
+  console.log('Room measurement completed')
+  showMeasurementWizard.value = false
+}
 </script>
 
 <style scoped lang="scss">
@@ -40,6 +67,31 @@ import AppIcon from '@/components/app-icon.vue';
       font-family: 'Metropolis', sans-serif;
       font-weight: 500;
       font-size: 28px;
+    }
+
+    .measure-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 1rem;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background: var(--primary-dark, var(--primary));
+        opacity: 0.9;
+      }
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
     }
   }
 

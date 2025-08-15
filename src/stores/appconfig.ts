@@ -21,6 +21,12 @@ export interface AppConfig {
     apiPrefix: string
     useProxy: boolean
   }
+  roomeq_api: {
+    deviceIP: string
+    devicePort: number
+    apiPrefix: string
+    useProxy: boolean
+  }
 }
 
 export const useAppConfigStore = defineStore('appconfig', () => {
@@ -43,6 +49,12 @@ export const useAppConfigStore = defineStore('appconfig', () => {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
       devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
       apiPrefix: import.meta.env.VITE_APP_DSPTOOLKIT_API_PREFIX || '/api/dsptoolkit',
+      useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
+    },
+    roomeq_api: {
+      deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
+      devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
+      apiPrefix: import.meta.env.VITE_APP_ROOMEQ_API_PREFIX || '/api/roomeq',
       useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
     }
   })
@@ -146,6 +158,23 @@ export const useAppConfigStore = defineStore('appconfig', () => {
     return dspToolkitApiUrl
   }
 
+  const getRoomEQApiBaseUrl = (): string => {
+    const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.roomeq_api
+
+    let roomEQApiUrl: string
+    if (useProxy) {
+      // Use current host and port for proxy in development
+      const currentUrl = window.location.origin
+      roomEQApiUrl = `${currentUrl}${apiPrefix}`
+    } else {
+      // Don't include port 80 in the URL as it's the default HTTP port
+      const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
+      roomEQApiUrl = `http://${deviceIP}${portSuffix}${apiPrefix}`
+    }
+
+    return roomEQApiUrl
+  }
+
   return {
     // State
     config,
@@ -162,6 +191,7 @@ export const useAppConfigStore = defineStore('appconfig', () => {
     getWsBaseUrl,
     getConfigApiBaseUrl,
     getDSPToolkitApiBaseUrl,
+    getRoomEQApiBaseUrl,
 
     // Getters
     radioPlayer: () => config.value.radioPlayer,

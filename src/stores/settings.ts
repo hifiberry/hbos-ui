@@ -12,6 +12,15 @@ export interface ServiceSettings {
   }
 }
 
+export interface RoomMeasurement {
+  id: number
+  name: string
+  timestamp: string
+  frequencies: number[]
+  magnitudes: number[]
+  sample_rate: number
+}
+
 export interface UISettings {
   service: ServiceSettings
   // Add other UI settings here as needed
@@ -119,6 +128,72 @@ export const useSettingsStore = defineStore('settings', () => {
     await saveSettings()
   }
 
+  // Room measurement functions
+  const saveRoomMeasurement = async (name: string, frequencies: number[], magnitudes: number[], sample_rate: number): Promise<number> => {
+    try {
+      // Get existing measurements
+      const existingMeasurements = await getRoomMeasurements()
+      
+      // Find next ID
+      const nextId = existingMeasurements.length > 0 
+        ? Math.max(...existingMeasurements.map(m => m.id)) + 1 
+        : 1
+      
+      // Create new measurement
+      const newMeasurement: RoomMeasurement = {
+        id: nextId,
+        name,
+        timestamp: new Date().toISOString(),
+        frequencies,
+        magnitudes,
+        sample_rate
+      }
+      
+      // Save to localStorage
+      localStorage.setItem(`roomeq.measurement.${nextId}`, JSON.stringify(newMeasurement))
+      
+      console.log('Room measurement saved:', newMeasurement)
+      return nextId
+    } catch (error) {
+      console.error('Failed to save room measurement:', error)
+      throw error
+    }
+  }
+
+  const getRoomMeasurements = async (): Promise<RoomMeasurement[]> => {
+    try {
+      const measurements: RoomMeasurement[] = []
+      
+      // Scan localStorage for roomeq.measurement.* keys
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key?.startsWith('roomeq.measurement.')) {
+          const data = localStorage.getItem(key)
+          if (data) {
+            const measurement = JSON.parse(data) as RoomMeasurement
+            measurements.push(measurement)
+          }
+        }
+      }
+      
+      // Sort by ID
+      return measurements.sort((a, b) => a.id - b.id)
+    } catch (error) {
+      console.error('Failed to load room measurements:', error)
+      return []
+    }
+  }
+
+  const deleteRoomMeasurement = async (id: number): Promise<void> => {
+    try {
+      localStorage.removeItem(`roomeq.measurement.${id}`)
+      console.log(`Room measurement ${id} deleted`)
+    } catch (error) {
+      console.error('Failed to delete room measurement:', error)
+      throw error
+    }
+  }
+
   return {
     // State
     settings: computed(() => settings.value),
@@ -136,6 +211,11 @@ export const useSettingsStore = defineStore('settings', () => {
     updateSpotifySettings,
     saveSettings,
     loadSettings,
-    resetSettings
+    resetSettings,
+
+    // Room measurement actions
+    saveRoomMeasurement,
+    getRoomMeasurements,
+    deleteRoomMeasurement
   }
 })

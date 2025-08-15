@@ -155,9 +155,9 @@
                     <div class="vu-meter">
                       <div class="spl-meter-bar">
                         <div class="spl-meter-track">
-                          <div 
-                            class="spl-meter-fill" 
-                            :style="{ 
+                          <div
+                            class="spl-meter-fill"
+                            :style="{
                               width: `${getSPLPercentage(currentSPL)}%`,
                               backgroundColor: getSPLColor(currentSPL)
                             }"
@@ -184,7 +184,152 @@
           </div>
         </div>
 
-        <!-- Future steps will be added here -->
+        <!-- Step 4: Measure Room -->
+        <div v-if="currentStep === 4" class="step-content">
+          <div class="step-header">
+            <AppIcon icon="tabler/wave-sine" class="step-icon" />
+            <div class="step-info">
+              <h3>Step 4: Measure Room</h3>
+              <p>Select the number of sweeps and start the measurement. We'll play test signals and capture data.</p>
+            </div>
+          </div>
+
+          <div class="measure-settings">
+            <div class="setting-row">
+              <label class="setting-label">Number of sweeps</label>
+              <div class="segmented">
+                <button
+                  v-for="n in sweepOptions"
+                  :key="n"
+                  type="button"
+                  class="segmented-btn"
+                  :class="{ active: sweepCount === n }"
+                  :disabled="isMeasuringRoom"
+                  @click="sweepCount = n"
+                >{{ n }}</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="measure-actions">
+            <button
+              class="nav-button primary"
+              :disabled="isMeasuringRoom"
+              @click="startRoomMeasurement"
+            >
+              <AppIcon icon="tabler/player-play" />
+              {{ isMeasuringRoom ? 'Measuring…' : 'Start measurement' }}
+            </button>
+          </div>
+          <div v-if="recordingFilename" class="recording-file">
+            <AppIcon icon="tabler/file-music" />
+            Recording file: <span class="mono">{{ recordingFilename }}</span>
+          </div>
+
+          <div v-if="isMeasuringRoom" class="progress-info">
+            <div class="progress-text">Sweep {{ currentSweepIndex + 1 }} of {{ sweepCount }}</div>
+            <div class="progress-bar"><div class="fill" :style="{ width: `${Math.min(100, Math.max(0, ((currentSweepIndex + 1) / sweepCount) * 100))}%` }"></div></div>
+          </div>
+        </div>
+
+        <!-- Step 5: Save Measurement -->
+        <div v-if="currentStep === 5" class="step-content">
+          <div class="step-header">
+            <AppIcon icon="tabler/device-floppy" class="step-icon" />
+            <div class="step-info">
+              <h3>Step 5: Save Measurement</h3>
+              <p>Your room measurement has been recorded and is ready to be used.</p>
+            </div>
+          </div>
+
+          <div class="measurement-summary">
+            <h4>Measurement Complete</h4>
+            <p>The following recording has been saved and can now be used for creating correction filters:</p>
+            <div class="recording-file-final">
+              <AppIcon icon="tabler/file-music" />
+              <span class="mono">{{ recordingFilename }}</span>
+            </div>
+          </div>
+
+          <!-- Measurement Name Input -->
+          <div class="measurement-name-section">
+            <h4>Save Measurement</h4>
+            <div class="name-input-group">
+              <label for="measurementName">Measurement Name:</label>
+              <input 
+                id="measurementName"
+                v-model="measurementName" 
+                type="text" 
+                class="measurement-name-input"
+                placeholder="Enter measurement name"
+              />
+            </div>
+          </div>
+
+          <!-- FFT Analysis Results -->
+          <div class="fft-analysis">
+            <h4>Frequency Response</h4>
+            <div v-if="isAnalyzingFFT" class="fft-loading">
+              <AppIcon icon="tabler/loader-2" class="fft-loading-icon" />
+              <span>Analyzing frequency response...</span>
+            </div>
+            <div v-else-if="fftError" class="fft-error">
+              <AppIcon icon="tabler/alert-circle" />
+              <span>Error: {{ fftError }}</span>
+            </div>
+            <div v-else-if="fftData" class="fft-chart">
+              <p>Frequency response normalized to 1kHz ({{ fftData.normalization.applied ? fftData.normalization.actual_freq?.toFixed(1) || '1000.0' : '1000.0' }}Hz):</p>
+              <div class="frequency-response-chart">
+                <svg viewBox="0 0 800 300" class="response-svg">
+                  <!-- Grid lines -->
+                  <defs>
+                    <pattern id="grid" width="40" height="30" patternUnits="userSpaceOnUse">
+                      <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
+                    </pattern>
+                  </defs>
+                  <rect width="800" height="300" fill="url(#grid)" />
+                  
+                  <!-- Frequency axis (log scale) -->
+                  <g class="frequency-axis">
+                    <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
+                    <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
+                    <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
+                    <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
+                    <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
+                  </g>
+                  
+                  <!-- Magnitude axis -->
+                  <g class="magnitude-axis">
+                    <text x="20" y="250" text-anchor="middle" class="axis-label">-20</text>
+                    <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
+                    <text x="20" y="50" text-anchor="middle" class="axis-label">+20</text>
+                  </g>
+                  
+                  <!-- Frequency response curve -->
+                  <path 
+                    :d="generateFrequencyResponsePath(fftData)" 
+                    fill="none" 
+                    stroke="#4CAF50" 
+                    stroke-width="2"
+                  />
+                  
+                  <!-- 0 dB reference line -->
+                  <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
+                </svg>
+              </div>
+              
+              <!-- Frequency bands summary -->
+              <!-- <div class="frequency-bands">
+                <div v-for="(band, key) in fftData.frequency_bands" :key="key" class="band-info">
+                  <span class="band-name">{{ getBandDisplayName(key) }}</span>
+                  <span class="band-range">{{ band.range }}</span>
+                  <span class="band-level">{{ band.avg_magnitude.toFixed(1) }}dB</span>
+                </div>
+              </div> -->
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="modal-footer">
@@ -197,7 +342,7 @@
             Step {{ currentStep }} of {{ totalSteps }}
           </div>
           <button
-            v-if="canProceedToNextStep"
+            v-if="canProceedToNextStep && currentStep < totalSteps"
             @click="nextStep"
             class="nav-button primary"
             :disabled="!canProceedToNextStep"
@@ -205,8 +350,8 @@
             Next
             <AppIcon icon="arrow-right" />
           </button>
-          <button v-else-if="currentStep === totalSteps" @click="completeMeasurement" class="nav-button primary">
-            Complete
+          <button v-else-if="currentStep === totalSteps" @click="saveMeasurement" class="nav-button primary">
+            Save
             <AppIcon icon="checkmark" />
           </button>
         </div>
@@ -219,10 +364,10 @@
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import AppIcon from './app-icon.vue'
 import AppProgressSlider from './app-progress-slider.vue'
-import { measureRoomEQSPL } from '@/api/roomeq'
-import { getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying } from '@/api/roomeq'
+import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, startRoomEQSweep, getRoomEQNoiseStatus, startRoomEQRecording, analyzeRoomEQFFTRecording } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'
 import { usePlayerStore } from '@/stores/player'
+import { useSettingsStore } from '@/stores/settings'
 import { storeToRefs } from 'pinia'
 
 // Props
@@ -244,7 +389,7 @@ const { currentVolume } = storeToRefs(playerStore)
 
 // State
 const currentStep = ref(1)
-const totalSteps = ref(3) // Step 1: Microphone Detection, Step 2: Microphone Positioning, Step 3: Audio Level
+const totalSteps = ref(5) // 1: Microphone, 2: Positioning, 3: Audio Level, 4: Measure Room, 5: Save
 const loadingMicrophones = ref(false)
 const microphoneError = ref('')
 const detectedMicrophones = ref<RoomEQMicrophone[]>([])
@@ -266,6 +411,13 @@ const canProceedToNextStep = computed(() => {
   if (currentStep.value === 3) {
     return true // User can proceed after reading audio level instructions
   }
+  if (currentStep.value === 4) {
+    // Disable navigation while measuring or if no measurement has been completed
+    return !isMeasuringRoom.value && recordingFilename.value !== ''
+  }
+  if (currentStep.value === 5) {
+    return true // User can proceed after viewing measurement results
+  }
   return true
 })
 
@@ -281,6 +433,166 @@ const dummyAudioSource = ref<AudioNode | null>(null)
 const currentSPL = ref(-80) // Start with a low baseline
 const splMeasurementInterval = ref<number | null>(null)
 const isMeasuring = ref(false)
+
+// Step 4: Room measurement state
+const sweepOptions = [1, 2, 4]
+const sweepCount = ref<number>(2)
+const isMeasuringRoom = ref(false)
+const currentSweepIndex = ref(0)
+const sweepStatusInterval = ref<number | null>(null)
+const totalSweepCount = computed(() => sweepCount.value)
+const totalSweepDuration = ref<number | null>(null)
+const recordingId = ref<string | number | null>(null)
+const recordingFilename = ref<string>('')
+
+// FFT analysis state
+// FFT analysis state
+interface FFTData {
+  frequencies: number[]
+  magnitude: number[]
+  phase: number[]
+  sample_rate: number
+  peak_frequency: number
+  peak_magnitude: number
+  frequency_bands: {
+    sub_bass: { range: string; avg_magnitude: number; peak_frequency: number }
+    bass: { range: string; avg_magnitude: number; peak_frequency: number }
+    low_midrange: { range: string; avg_magnitude: number; peak_frequency: number }
+    midrange: { range: string; avg_magnitude: number; peak_frequency: number }
+    upper_midrange: { range: string; avg_magnitude: number; peak_frequency: number }
+    presence: { range: string; avg_magnitude: number; peak_frequency: number }
+    brilliance: { range: string; avg_magnitude: number; peak_frequency: number }
+  }
+  normalization: {
+    applied: boolean
+    requested_freq?: number
+    actual_freq?: number
+    reference_level_db?: number
+  }
+}
+
+const fftData = ref<FFTData | null>(null)
+const isAnalyzingFFT = ref(false)
+const fftError = ref<string>('')
+
+// Measurement name with default value
+const measurementName = ref<string>('')
+
+// Set default measurement name
+const setDefaultMeasurementName = () => {
+  const now = new Date()
+  const dateStr = now.toISOString().slice(0, 16).replace('T', ' ')
+  measurementName.value = `Room measurement ${dateStr}`
+}
+
+
+// Start room measurement: start recording (pre-roll), then trigger sine sweeps, then wait post-roll
+const startRoomMeasurement = async () => {
+  if (isMeasuringRoom.value) return
+  try {
+    isMeasuringRoom.value = true
+    currentSweepIndex.value = 0
+    totalSweepDuration.value = null
+    recordingId.value = null
+    recordingFilename.value = ''
+
+    // Ensure no noise is playing
+    if (isNoiseePlaying.value) {
+      await stopNoise()
+    }
+
+    // Calculate total durations
+    const perSweepDuration = 5.0
+    const preRoll = 1.0
+    const postRoll = 1.0
+    const sweepsTotal = perSweepDuration * sweepCount.value
+    const totalRecording = preRoll + sweepsTotal + postRoll
+
+    // Start recording first
+    const recResp = await startRoomEQRecording({
+      duration: totalRecording,
+      // sampleRate: 48000, // leave default if API chooses
+      // filenameHint: undefined,
+    })
+    if (!recResp.success || !recResp.data) {
+      throw new Error(recResp.detail || 'Failed to start recording')
+    }
+    recordingId.value = recResp.data.recording_id
+    recordingFilename.value = recResp.data.filename
+
+    // Pre-roll wait
+    await new Promise((resolve) => setTimeout(resolve, preRoll * 1000))
+
+    // Start sweeps
+    const startResp = await startRoomEQSweep({
+      sweeps: sweepCount.value,
+      duration: perSweepDuration,
+      startFreq: 20,
+      endFreq: 20000,
+      amplitude: noiseAmplitude.value,
+    })
+    if (!startResp.success || !startResp.data) {
+      throw new Error(startResp.detail || 'Failed to start sine sweeps')
+    }
+
+    totalSweepDuration.value = startResp.data.total_duration
+
+    // Poll status once per second to estimate progress
+    sweepStatusInterval.value = window.setInterval(async () => {
+      try {
+        const status = await getRoomEQNoiseStatus()
+        console.log('Sweep status poll:', status)
+        if (status.success && status.data) {
+          console.log('Sweep status data:', status.data)
+          // When sweeps are active, signal_type should be 'sine_sweep'
+          if (!status.data.active || status.data.signal_type !== 'sine_sweep') {
+              // Sweeps finished; stop sweep polling (recording may still be running)
+            console.log('Sweeps finished, clearing sweep status interval')
+            if (sweepStatusInterval.value) {
+              clearInterval(sweepStatusInterval.value)
+              sweepStatusInterval.value = null
+            }
+          } else if (status.data.sweeps && status.data.duration) {
+            // Rough index estimate from remaining_seconds
+            const remaining = status.data.remaining_seconds || 0
+            const total = status.data.total_duration || (status.data.sweeps * status.data.duration)
+            const elapsed = Math.max(0, total - remaining)
+            const per = status.data.duration
+            const newSweepIndex = Math.min(totalSweepCount.value - 1, Math.floor(elapsed / per))
+            console.log(`Sweep progress: ${elapsed}s elapsed of ${total}s total, sweep ${newSweepIndex + 1}/${totalSweepCount.value}`)
+            currentSweepIndex.value = newSweepIndex
+          }
+        }
+      } catch (e) {
+        console.warn('Sweep status poll failed:', e)
+      }
+    }, 1000)
+
+    // After recording and sweeps are complete, auto-advance
+    if (recordingId.value != null) {
+      console.log('Setting up auto-advance timer for', totalRecording, 'seconds')
+      setTimeout(() => {
+        console.log('Auto-advance timer expired, finishing measurement...')
+        // Clear any remaining intervals
+        if (sweepStatusInterval.value) {
+          clearInterval(sweepStatusInterval.value)
+          sweepStatusInterval.value = null
+        }
+        isMeasuringRoom.value = false
+        // Auto-advance to next step
+        if (currentStep.value < totalSteps.value) currentStep.value++
+        else completeMeasurement()
+      }, totalRecording * 1000)
+    }
+  } catch (error) {
+    console.error('Room measurement failed:', error)
+  } finally {
+    // Don't flip off immediately if polling will mark completion; let poller clear state
+    if (!sweepStatusInterval.value) {
+      isMeasuringRoom.value = false
+    }
+  }
+}
 
 // SPL meter helper functions
 const SPL_MIN = 40
@@ -323,24 +635,24 @@ const measureSPL = async () => {
 // Start continuous SPL measurement
 const startSPLMeasurement = () => {
   if (isMeasuring.value) return
-  
+
   console.log('Starting SPL measurement every 0.5 seconds')
   isMeasuring.value = true
-  
+
   // Initial measurement
   measureSPL()
-  
+
   // Set up interval for continuous measurement
   splMeasurementInterval.value = window.setInterval(measureSPL, 500)
 }
 
-// Stop continuous SPL measurement  
+// Stop continuous SPL measurement
 const stopSPLMeasurement = () => {
   if (!isMeasuring.value) return
-  
+
   console.log('Stopping SPL measurement')
   isMeasuring.value = false
-  
+
   if (splMeasurementInterval.value) {
     clearInterval(splMeasurementInterval.value)
     splMeasurementInterval.value = null
@@ -355,17 +667,17 @@ onMounted(() => {
     const audioContext = new AudioContextClass()
     const oscillator = audioContext.createOscillator()
     const gainNode = audioContext.createGain()
-    
+
     oscillator.frequency.setValueAtTime(1000, audioContext.currentTime) // 1kHz tone
     gainNode.gain.setValueAtTime(0.1, audioContext.currentTime) // Low volume
-    
+
     oscillator.connect(gainNode)
     gainNode.connect(audioContext.destination)
-    
+
     // Don't start the oscillator, just set up the nodes for the meter
     dummyAudioContext.value = audioContext
     dummyAudioSource.value = gainNode
-    
+
   } catch (error) {
     console.warn('Could not create audio context for VU meter display:', error)
   }
@@ -380,14 +692,25 @@ watch(currentStep, (newStep) => {
     // Stop SPL measurement when leaving step 3
     stopSPLMeasurement()
   }
+  
+  if (newStep === 5 && recordingId.value) {
+    // Perform FFT analysis when entering step 5
+    performFFTAnalysis()
+  }
 })
 
 // Cleanup when component unmounts
 onBeforeUnmount(() => {
   stopSPLMeasurement()
-  
+
   if (dummyAudioContext.value) {
     dummyAudioContext.value.close()
+  }
+
+  // Clear measurement intervals
+  if (sweepStatusInterval.value) {
+    clearInterval(sweepStatusInterval.value)
+    sweepStatusInterval.value = null
   }
 })
 
@@ -419,6 +742,12 @@ const resetWizard = () => {
   if (keepAliveInterval.value) {
     clearInterval(keepAliveInterval.value)
     keepAliveInterval.value = null
+  }
+
+  // Clear measurement intervals
+  if (sweepStatusInterval.value) {
+    clearInterval(sweepStatusInterval.value)
+    sweepStatusInterval.value = null
   }
 }
 
@@ -461,6 +790,10 @@ const nextStep = () => {
     // Pause all players when entering step 3 (Audio Level)
     if (currentStep.value === 2) {
       pausePlayers()
+    }
+    // Stop noise when leaving step 3
+    if (currentStep.value === 3 && isNoiseePlaying.value) {
+      stopNoise()
     }
     currentStep.value++
   }
@@ -553,9 +886,114 @@ const updateSystemVolume = async (newVolume: number) => {
   await playerStore.setVolume(newVolume)
 }
 
+// Perform FFT analysis on the recorded file
+const performFFTAnalysis = async () => {
+  if (!recordingId.value || isAnalyzingFFT.value) return
+  
+  try {
+    isAnalyzingFFT.value = true
+    fftError.value = ''
+    console.log('Starting FFT analysis for recording ID:', recordingId.value)
+    
+    const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, 256)
+    if (response.success && response.data) {
+      // Extract FFT data from the new API response structure
+      const analysisData = response.data
+      console.log('FFT analysis completed:', analysisData)
+      
+      // Store the FFT data (API already normalized to 1kHz if requested)
+      fftData.value = {
+        frequencies: analysisData.fft_analysis.frequencies,
+        magnitude: analysisData.fft_analysis.magnitudes,
+        phase: analysisData.fft_analysis.phases,
+        sample_rate: analysisData.fft_analysis.sample_rate,
+        peak_frequency: analysisData.fft_analysis.peak_frequency,
+        peak_magnitude: analysisData.fft_analysis.peak_magnitude,
+        frequency_bands: analysisData.fft_analysis.frequency_bands,
+        normalization: analysisData.fft_analysis.normalization
+      }
+      
+      console.log('FFT data stored:', fftData.value)
+    } else {
+      throw new Error(response.detail || 'FFT analysis failed')
+    }
+  } catch (error) {
+    console.error('FFT analysis error:', error)
+    fftError.value = error instanceof Error ? error.message : 'Unknown error occurred'
+  } finally {
+    isAnalyzingFFT.value = false
+  }
+}
+
 const completeMeasurement = () => {
   console.log('Completing measurement with microphone:', selectedMicrophone.value)
   emit('measurementCompleted')
+}
+
+const saveMeasurement = async () => {
+  if (!fftData.value) {
+    console.error('No FFT data available to save')
+    return
+  }
+
+  if (!measurementName.value.trim()) {
+    console.error('Measurement name is required')
+    return
+  }
+
+  try {
+    const settingsStore = useSettingsStore()
+    const measurementId = await settingsStore.saveRoomMeasurement(
+      measurementName.value.trim(),
+      fftData.value.frequencies,
+      fftData.value.magnitude,
+      fftData.value.sample_rate
+    )
+    
+    console.log(`Measurement saved with ID: ${measurementId}`)
+    emit('measurementCompleted')
+  } catch (error) {
+    console.error('Failed to save measurement:', error)
+  }
+}
+
+// Helper function to generate SVG path for frequency response curve
+const generateFrequencyResponsePath = (data: FFTData): string => {
+  if (!data.frequencies || !data.magnitude) return ''
+  
+  const minFreq = 20
+  const maxFreq = 20000
+  const minMag = -30 // -30 dB
+  const maxMag = 30  // +30 dB
+  const width = 760 - 40 // Chart width minus margins
+  const height = 280 - 20 // Chart height minus margins
+  
+  const logScale = (freq: number) => {
+    return 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
+  }
+  
+  const magScale = (mag: number) => {
+    return 20 + (maxMag - mag) / (maxMag - minMag) * height
+  }
+  
+  let path = ''
+  for (let i = 0; i < data.frequencies.length; i++) {
+    const freq = data.frequencies[i]
+    const mag = data.magnitude[i]
+    
+    if (freq >= minFreq && freq <= maxFreq) {
+      const x = logScale(freq)
+      const y = magScale(mag)
+      
+      if (path === '') {
+        path = `M ${x} ${y}`
+      } else {
+        path += ` L ${x} ${y}`
+      }
+    }
+  }
+  
+  return path
 }
 
 // Lifecycle
@@ -563,12 +1001,14 @@ onMounted(() => {
   if (props.isOpen) {
     detectMicrophones()
   }
+  setDefaultMeasurementName()
 })
 
 // Watch for prop changes to auto-detect when wizard opens
 watch(() => props.isOpen, (newValue) => {
   if (newValue) {
     detectMicrophones()
+    setDefaultMeasurementName()
   }
 })
 </script>
@@ -747,6 +1187,137 @@ watch(() => props.isOpen, (newValue) => {
       height: 100%;
       object-fit: contain;
       object-position: center;
+    }
+  }
+
+  /* Step 4 styles */
+  .measure-settings {
+    margin: 16px 0 24px 0;
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+
+      .setting-label {
+        color: var(--color-head);
+        font-weight: 500;
+      }
+
+      .segmented {
+        display: inline-flex;
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        overflow: hidden;
+
+        .segmented-btn {
+          padding: 6px 10px;
+          background: transparent;
+          border: none;
+          color: var(--color-body);
+          cursor: pointer;
+          font-weight: 500;
+
+          &.active {
+            background: var(--primary);
+            color: white;
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+        }
+      }
+    }
+  }
+
+  .measure-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+
+  .recording-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-body-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+
+    .mono {
+      font-family: monospace;
+      color: var(--color-head);
+    }
+  }
+
+  .progress-info {
+    .progress-text {
+      text-align: center;
+      color: var(--color-body-secondary);
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      overflow: hidden;
+
+      .fill {
+        height: 100%;
+        width: 0%;
+        background: var(--primary);
+        transition: width 0.25s ease;
+      }
+    }
+  }
+
+  /* Step 5 styles */
+  .measurement-summary {
+    margin: 24px 0;
+
+    h4 {
+      margin: 0 0 16px 0;
+      color: var(--color-head);
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 20px 0;
+      color: var(--color-body);
+      line-height: 1.5;
+    }
+
+    .recording-file-final {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      color: var(--color-head);
+      font-size: 1rem;
+
+      .mono {
+        font-family: monospace;
+        font-weight: 600;
+        color: var(--primary);
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+        color: var(--primary);
+      }
     }
   }
 
@@ -1076,7 +1647,7 @@ watch(() => props.isOpen, (newValue) => {
                 font-weight: 500;
                 font-size: 1rem;
               }
-              
+
               .measured-level-value {
                 color: var(--color-body);
                 font-weight: 600;
@@ -1093,14 +1664,14 @@ watch(() => props.isOpen, (newValue) => {
 
             .measured-level-meter-container {
               width: 100%;
-              
+
               .vu-meter {
                 width: 100%;
-                
+
                 .spl-meter-bar {
                   width: 100%;
                   margin-bottom: 12px;
-                  
+
                   .spl-meter-track {
                     width: 100%;
                     height: 20px;
@@ -1110,7 +1681,7 @@ watch(() => props.isOpen, (newValue) => {
                     position: relative;
                     overflow: hidden;
                     margin-bottom: 8px;
-                    
+
                     .spl-meter-fill {
                       position: absolute;
                       top: 0;
@@ -1121,7 +1692,7 @@ watch(() => props.isOpen, (newValue) => {
                       border-radius: 5px 0 0 5px;
                     }
                   }
-                  
+
                   .spl-scale {
                     width: 100%;
                     padding: 0 4px;
@@ -1131,7 +1702,7 @@ watch(() => props.isOpen, (newValue) => {
                     display: grid;
                     grid-template-columns: repeat(5, 1fr);
                     text-align: center;
-                    
+
                     .scale-mark {
                       &.optimal {
                         color: #28a745; /* green */
@@ -1144,7 +1715,7 @@ watch(() => props.isOpen, (newValue) => {
                 .optimal-range-indicator {
                   text-align: center;
                   margin-top: 12px;
-                  
+
                   .range-label {
                     font-size: 0.75rem;
                     color: white;
@@ -1259,7 +1830,7 @@ watch(() => props.isOpen, (newValue) => {
             font-weight: 500;
             font-size: 1rem;
           }
-          
+
           .measured-level-value {
             color: var(--color-body);
             font-weight: 600;
@@ -1276,14 +1847,14 @@ watch(() => props.isOpen, (newValue) => {
 
         .measured-level-meter-container {
           width: 100%;
-          
+
           .vu-meter {
             width: 100%;
-            
+
             .spl-meter-bar {
               width: 100%;
               margin-bottom: 12px;
-              
+
               .spl-meter-track {
                 width: 100%;
                 height: 20px; /* Fix collapse */
@@ -1293,7 +1864,7 @@ watch(() => props.isOpen, (newValue) => {
                 position: relative;
                 overflow: hidden;
                 margin-bottom: 8px;
-                
+
                 .spl-meter-fill {
                   position: absolute;
                   top: 0;
@@ -1304,7 +1875,7 @@ watch(() => props.isOpen, (newValue) => {
                   border-radius: 5px 0 0 5px;
                 }
               }
-              
+
               .spl-scale {
                 position: relative;
                 width: 100%;
@@ -1350,7 +1921,7 @@ watch(() => props.isOpen, (newValue) => {
             .optimal-range-indicator {
               text-align: center;
               margin-top: 12px;
-              
+
               .range-label {
                 font-size: 0.75rem;
                 color: #0f5132;
@@ -1456,6 +2027,140 @@ watch(() => props.isOpen, (newValue) => {
               }
             }
           }
+        }
+      }
+    }
+  }
+}
+
+// Measurement name input styles
+.measurement-name-section {
+  margin-top: 24px;
+  
+  h4 {
+    color: #2c3e50;
+    margin-bottom: 16px;
+  }
+  
+  .name-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    
+    label {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .measurement-name-input {
+      padding: 12px 16px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease;
+      
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+      }
+      
+      &::placeholder {
+        color: #6c757d;
+      }
+    }
+  }
+}
+
+// FFT Analysis styles
+.fft-analysis {
+  margin-top: 24px;
+
+  h4 {
+    color: #2c3e50;
+    margin-bottom: 16px;
+  }
+
+  .fft-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+
+    .fft-loading-icon {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  .fft-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #dc3545;
+    padding: 16px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+  }
+
+  .fft-chart {
+    p {
+      margin-bottom: 16px;
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    .frequency-response-chart {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+
+      .response-svg {
+        width: 100%;
+        height: auto;
+        max-height: 300px;
+
+        .axis-label {
+          fill: #ccc;
+          font-size: 12px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+      }
+    }
+
+    .frequency-bands {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+
+      .band-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #e9ecef;
+
+        .band-name {
+          font-weight: 600;
+          color: #2c3e50;
+        }
+
+        .band-range {
+          font-size: 0.75rem;
+          color: #666;
+        }
+
+        .band-level {
+          font-weight: 600;
+          color: #28a745;
+          font-family: 'Courier New', monospace;
         }
       }
     }

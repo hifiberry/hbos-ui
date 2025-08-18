@@ -19,6 +19,9 @@ export interface RoomMeasurement {
   frequencies: number[]
   magnitudes: number[]
   sample_rate: number
+  frequency_type?: 'log_summary' | 'fft' // Indicates if data is logarithmic frequency summary or regular FFT
+  points_per_octave?: number // Only present for log_summary data
+  frequency_range?: [number, number] // Frequency range for log_summary data
 }
 
 export interface UISettings {
@@ -129,16 +132,26 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   // Room measurement functions
-  const saveRoomMeasurement = async (name: string, frequencies: number[], magnitudes: number[], sample_rate: number): Promise<number> => {
+  const saveRoomMeasurement = async (
+    name: string,
+    frequencies: number[],
+    magnitudes: number[],
+    sample_rate: number,
+    metadata?: {
+      frequency_type?: 'log_summary' | 'fft'
+      points_per_octave?: number
+      frequency_range?: [number, number]
+    }
+  ): Promise<number> => {
     try {
       // Get existing measurements
       const existingMeasurements = await getRoomMeasurements()
-      
+
       // Find next ID
-      const nextId = existingMeasurements.length > 0 
-        ? Math.max(...existingMeasurements.map(m => m.id)) + 1 
+      const nextId = existingMeasurements.length > 0
+        ? Math.max(...existingMeasurements.map(m => m.id)) + 1
         : 1
-      
+
       // Create new measurement
       const newMeasurement: RoomMeasurement = {
         id: nextId,
@@ -146,12 +159,13 @@ export const useSettingsStore = defineStore('settings', () => {
         timestamp: new Date().toISOString(),
         frequencies,
         magnitudes,
-        sample_rate
+        sample_rate,
+        ...metadata
       }
-      
+
       // Save to localStorage
       localStorage.setItem(`roomeq.measurement.${nextId}`, JSON.stringify(newMeasurement))
-      
+
       console.log('Room measurement saved:', newMeasurement)
       return nextId
     } catch (error) {
@@ -163,7 +177,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const getRoomMeasurements = async (): Promise<RoomMeasurement[]> => {
     try {
       const measurements: RoomMeasurement[] = []
-      
+
       // Scan localStorage for roomeq.measurement.* keys
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
@@ -175,7 +189,7 @@ export const useSettingsStore = defineStore('settings', () => {
           }
         }
       }
-      
+
       // Sort by ID
       return measurements.sort((a, b) => a.id - b.id)
     } catch (error) {

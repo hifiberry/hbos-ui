@@ -195,11 +195,11 @@
           </div>
 
           <div class="measure-settings">
-            <div class="setting-row">
+            <div v-if="isExpertMode" class="setting-row">
               <label class="setting-label">Signal Type</label>
               <div class="signal-type-options">
                 <div
-                  v-for="option in signalTypeOptions"
+                  v-for="option in availableSignalTypes"
                   :key="option.value"
                   class="signal-option"
                   :class="{ active: signalType === option.value, disabled: isMeasuringRoom }"
@@ -246,7 +246,7 @@
               {{ isMeasuringRoom ? 'Measuring…' : 'Start measurement' }}
             </button>
           </div>
-          <div v-if="recordingFilename" class="recording-file">
+          <div v-if="recordingFilename && isExpertMode" class="recording-file">
             <AppIcon icon="tabler/file-music" />
             Recording file: <span class="mono">{{ recordingFilename }}</span>
           </div>
@@ -292,7 +292,7 @@
           <div class="fft-analysis">
             <div class="analysis-header">
               <h4>Frequency Response</h4>
-              <div class="smoothing-selection">
+              <div v-if="shouldShowSmoothingSelector" class="smoothing-selection">
                 <label for="smoothingType">Smoothing:</label>
                 <select id="smoothingType" v-model="smoothingType" class="smoothing-dropdown">
                   <option value="1/3_octave">1/3 Octave</option>
@@ -416,7 +416,22 @@ const emit = defineEmits<{
 
 // Stores
 const playerStore = usePlayerStore()
+const settingsStore = useSettingsStore()
 const { currentVolume } = storeToRefs(playerStore)
+const { getExpertMode } = storeToRefs(settingsStore)
+
+// Expert mode computed properties
+const isExpertMode = computed(() => getExpertMode.value)
+const availableSignalTypes = computed(() => {
+  if (isExpertMode.value) {
+    return signalTypeOptions
+  } else {
+    // In non-expert mode, only show built-in sweep
+    return signalTypeOptions.filter(option => option.value === 'sine_sweep')
+  }
+})
+
+const shouldShowSmoothingSelector = computed(() => isExpertMode.value)
 
 // State
 const currentStep = ref(1)
@@ -851,13 +866,16 @@ const resetWizard = () => {
   recordingId.value = null
   recordingFilename.value = ''
   sweepCount.value = 2
-  signalType.value = null // Force explicit selection on step 4
+  // Set signal type based on expert mode
+  signalType.value = isExpertMode.value ? null : 'sine_sweep'
   step4Error.value = ''
 
   // Reset FFT analysis state
   fftData.value = null
   isAnalyzingFFT.value = false
   fftError.value = ''
+  // Set smoothing type based on expert mode (always defaults to 1/3 octave)
+  smoothingType.value = '1/3_octave'
 
   // Stop noise if playing
   if (isNoiseePlaying.value) {

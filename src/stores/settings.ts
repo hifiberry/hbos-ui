@@ -26,6 +26,7 @@ export interface RoomMeasurement {
 
 export interface UISettings {
   service: ServiceSettings
+  expertMode: boolean
   // Add other UI settings here as needed
 }
 
@@ -41,7 +42,8 @@ export const useSettingsStore = defineStore('settings', () => {
         controlPlayer: true,
         manageFavourites: true
       }
-    }
+    },
+    expertMode: false
   })
 
   const loading = ref(false)
@@ -54,6 +56,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const getLastfmSettings = computed(() => settings.value.service.lastfm)
   const getSpotifySettings = computed(() => settings.value.service.spotify)
+  const getExpertMode = computed(() => settings.value.expertMode)
 
   // Actions
   const updateServiceSettings = async <T extends keyof ServiceSettings>(
@@ -76,13 +79,19 @@ export const useSettingsStore = defineStore('settings', () => {
     await updateServiceSettings('spotify', newSettings)
   }
 
+  const updateExpertMode = async (expertMode: boolean) => {
+    settings.value.expertMode = expertMode
+    await saveSettings()
+  }
+
   const saveSettings = async () => {
     loading.value = true
     try {
       // Store settings in localStorage for persistence
       // TODO: Replace with API call when backend is ready
       localStorage.setItem('ui.service.settings', JSON.stringify(settings.value.service))
-      console.log('Settings saved:', settings.value.service)
+      localStorage.setItem('ui.expertMode', JSON.stringify(settings.value.expertMode))
+      console.log('Settings saved:', settings.value)
     } catch (error) {
       console.error('Failed to save settings:', error)
       throw error
@@ -103,8 +112,14 @@ export const useSettingsStore = defineStore('settings', () => {
           ...settings.value.service,
           ...parsedSettings
         }
-        console.log('Settings loaded:', settings.value.service)
       }
+
+      const savedExpertMode = localStorage.getItem('ui.expertMode')
+      if (savedExpertMode) {
+        settings.value.expertMode = JSON.parse(savedExpertMode)
+      }
+
+      console.log('Settings loaded:', settings.value)
       loaded.value = true
     } catch (error) {
       console.error('Failed to load settings:', error)
@@ -218,11 +233,13 @@ export const useSettingsStore = defineStore('settings', () => {
     getServiceSettings,
     getLastfmSettings,
     getSpotifySettings,
+    getExpertMode,
 
     // Actions
     updateServiceSettings,
     updateLastfmSettings,
     updateSpotifySettings,
+    updateExpertMode,
     saveSettings,
     loadSettings,
     resetSettings,

@@ -141,7 +141,8 @@ export const useSettingsStore = defineStore('settings', () => {
           controlPlayer: true,
           manageFavourites: true
         }
-      }
+  },
+  expertMode: false
     }
     await saveSettings()
   }

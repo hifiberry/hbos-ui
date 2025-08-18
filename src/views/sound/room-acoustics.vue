@@ -13,7 +13,13 @@
       <div v-if="measurements.length > 0" class="measurements-section">
         <h2>Saved Measurements</h2>
         <div class="measurements-grid">
-          <div v-for="measurement in measurements" :key="measurement.id" class="measurement-card">
+          <div
+            v-for="measurement in measurements"
+            :key="measurement.id"
+            class="measurement-card"
+            @click="openEqualisation(measurement)"
+            title="Open equalisation wizard"
+          >
             <div class="measurement-header">
               <div class="measurement-info">
                 <h3>{{ measurement.name }}</h3>
@@ -22,7 +28,7 @@
                   {{ measurement.frequencies.length }} frequency points • {{ measurement.sample_rate }} Hz
                 </p>
               </div>
-              <button @click="deleteMeasurement(measurement.id)" class="delete-button" title="Delete Measurement">
+              <button @click.stop="deleteMeasurement(measurement.id)" class="delete-button" title="Delete Measurement">
                 <AppIcon icon="close" />
               </button>
             </div>
@@ -56,6 +62,14 @@
       @close="showMeasurementWizard = false"
       @measurement-completed="handleMeasurementCompleted"
     />
+
+    <!-- Room Equalisation Wizard -->
+    <AppRoomEqualisationWizard
+      :is-open="showEqualisationWizard"
+      :measurement="selectedMeasurement"
+      @close="showEqualisationWizard = false"
+      @equalisation-setup="handleEqualisationSetup"
+    />
   </div>
 </template>
 
@@ -63,10 +77,13 @@
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/app-icon.vue'
 import AppRoomMeasurementWizard from '@/components/app-room-measurement-wizard.vue'
+import AppRoomEqualisationWizard from '@/components/app-room-equalisation-wizard.vue'
 import { useSettingsStore, type RoomMeasurement } from '@/stores/settings'
 
 // State
 const showMeasurementWizard = ref(false)
+const showEqualisationWizard = ref(false)
+const selectedMeasurement = ref<RoomMeasurement | null>(null)
 const measurements = ref<RoomMeasurement[]>([])
 const settingsStore = useSettingsStore()
 
@@ -75,10 +92,20 @@ const startMeasurement = () => {
   showMeasurementWizard.value = true
 }
 
+const openEqualisation = (measurement: RoomMeasurement) => {
+  selectedMeasurement.value = measurement
+  showEqualisationWizard.value = true
+}
+
 const handleMeasurementCompleted = async () => {
   console.log('Room measurement completed')
   showMeasurementWizard.value = false
   await loadMeasurements() // Refresh the measurements list
+}
+
+const handleEqualisationSetup = (setup: unknown) => {
+  console.log('Equalisation setup selected:', setup)
+  // TODO: Wire to backend when API is available
 }
 
 const loadMeasurements = async () => {

@@ -49,6 +49,34 @@
           </div>
         </div>
       </div>
+
+      <!-- Expert Mode Toggle Tool -->
+      <div class="tool-section">
+        <div class="tool-card expert-tool">
+          <div class="tool-info">
+            <AppIcon icon="tabler/user-star" class="tool-icon" />
+            <div class="tool-details">
+              <h3>Expert Mode</h3>
+              <p class="tool-description">
+                Enable expert mode to access advanced options
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions">
+            <div class="expert-toggle">
+              <label class="toggle-switch" :class="{ disabled: updatingExpertMode }">
+                <input
+                  type="checkbox"
+                  :checked="getExpertMode"
+                  :disabled="updatingExpertMode"
+                  @change="toggleExpertMode"
+                >
+                <span class="toggle-slider" :class="{ loading: updatingExpertMode }"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Reset System Confirmation Dialog -->
@@ -103,15 +131,18 @@ Would you like to reboot now?"
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppConfirmationDialog from '@/components/app-confirmation-dialog.vue'
 import { useToastStore } from '@/stores/toast'
+import { useSettingsStore } from '@/stores/settings'
 import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay } from '@/api/system'
 
 // State
 const resetting = ref(false)
 const detectingSoundCard = ref(false)
+const updatingExpertMode = ref(false)
 const showResetConfirmation = ref(false)
 const showDetectConfirmation = ref(false)
 const showRebootConfirmation = ref(false)
@@ -120,6 +151,8 @@ const detectedDtoverlay = ref<string | null>(null)
 
 // Stores
 const toastStore = useToastStore()
+const settingsStore = useSettingsStore()
+const { getExpertMode } = storeToRefs(settingsStore)
 
 // Methods
 const executeReset = async () => {
@@ -240,6 +273,23 @@ const handleRebootLater = () => {
   showRebootConfirmation.value = false
   toastStore.showInfoToast('Please reboot the system manually for changes to take effect.')
 }
+
+const toggleExpertMode = async () => {
+  updatingExpertMode.value = true
+
+  try {
+    const newMode = !getExpertMode.value
+    await settingsStore.updateExpertMode(newMode)
+
+    const modeText = newMode ? 'enabled' : 'disabled'
+    toastStore.showSuccessToast(`Expert mode ${modeText}`)
+  } catch (err) {
+    console.error('Error updating expert mode:', err)
+    toastStore.showErrorToast('Failed to update expert mode')
+  } finally {
+    updatingExpertMode.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -318,6 +368,10 @@ const handleRebootLater = () => {
         color: var(--color-primary);
       }
 
+      &.expert-tool .tool-info .tool-icon {
+        color: var(--color-icon);
+      }
+
       .tool-actions {
         flex-shrink: 0;
 
@@ -358,6 +412,83 @@ const handleRebootLater = () => {
 
           &:hover:not(:disabled) {
             background: var(--color-error-dark, #dc2626);
+          }
+        }
+      }
+
+      .expert-toggle {
+        .toggle-switch {
+          position: relative;
+          display: inline-block;
+          width: 44px;
+          height: 24px;
+          cursor: pointer;
+
+          input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+          }
+
+          .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--color-body-secondary);
+            transition: 0.3s;
+            border-radius: 24px;
+
+            &.loading {
+              opacity: 0.6;
+            }
+
+            &:before {
+              position: absolute;
+              content: "";
+              height: 18px;
+              width: 18px;
+              left: 3px;
+              bottom: 3px;
+              background-color: white;
+              transition: 0.3s;
+              border-radius: 50%;
+            }
+          }
+
+          input:checked + .toggle-slider {
+            background-color: var(--primary);
+          }
+
+          input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+          }
+
+          input:focus + .toggle-slider {
+            box-shadow: 0 0 1px var(--primary);
+          }
+
+          &.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+
+            .toggle-slider {
+              background-color: #e5e5e5;
+              cursor: not-allowed;
+
+              &:before {
+                background-color: #d0d0d0;
+              }
+            }
+
+            input:checked + .toggle-slider {
+              background-color: #c0c0c0;
+
+              &:before {
+                background-color: #a0a0a0;
+              }
+            }
           }
         }
       }

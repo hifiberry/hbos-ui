@@ -178,6 +178,186 @@ export interface RoomEQFFTResponse {
   analysis_timestamp: string
 }
 
+// EQ target presets
+export type RoomEQTargetWeight = number | [number, number]
+export type RoomEQTargetPoint = [number, number] | [number, number, RoomEQTargetWeight]
+export type RoomEQTargetPresets = Record<string, RoomEQTargetPoint[]>
+
+// Optimisation types
+export interface RoomEQOptimizationRequest {
+  measurement: {
+    frequencies: number[]
+    magnitudes: number[]
+    sample_rate: number
+  }
+  target_curve?: RoomEQTargetPoint[]
+  range?: { min: number; max: number }
+  limits?: { maxBoost: number; maxCut: number }
+  optimizer_preset?: string
+}
+
+export interface RoomEQOptimizationResult {
+  status: string
+  message?: string
+  filters?: unknown
+  details?: unknown
+}
+
+// Optimizer presets
+export type RoomEQOptimizerPresets = string[]
+
+/**
+ * Fetch optimizer presets if available
+ */
+export const getRoomEQOptimizerPresets = async (): Promise<RoomEQApiEnvelope<RoomEQOptimizerPresets>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const candidates = ['/eq/presets/optimizers', '/eq/presets/optimizer', '/eq/presets/optimization']
+    let lastDetail = ''
+    for (const path of candidates) {
+      const url = `${apiBaseUrl}${path}`
+      try {
+        const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
+        if (!response.ok) {
+          lastDetail = `HTTP ${response.status}`
+          continue
+        }
+        const json: unknown = await response.json()
+        let names: string[] = []
+        if (Array.isArray(json)) {
+          names = json.map((v) => (typeof v === 'string' ? v : (typeof v === 'object' && v && 'name' in v ? String((v as { name: unknown }).name) : ''))).filter(Boolean)
+        } else if (json && typeof json === 'object') {
+          const j = json as Record<string, unknown>
+          const list1 = Array.isArray(j.optimizers) ? j.optimizers as unknown[] : undefined
+          const list2 = j.presets && typeof j.presets === 'object' && Array.isArray((j.presets as Record<string, unknown>).optimizers)
+            ? (j.presets as Record<string, unknown>).optimizers as unknown[]
+            : undefined
+          const list = list1 ?? list2
+          if (Array.isArray(list)) {
+            names = list.map((o) => (typeof o === 'string' ? o : (typeof o === 'object' && o && 'name' in o ? String((o as { name: unknown }).name) : ''))).filter(Boolean)
+          }
+        }
+        if (names.length) return { success: true, data: names }
+      } catch (err) {
+        lastDetail = err instanceof Error ? err.message : 'Unknown error'
+      }
+    }
+    // Fallback to Default only
+    return { success: true, data: ['Default'], detail: lastDetail }
+  } catch {
+    return { success: true, data: ['Default'] }
+  }
+}
+
+/**
+ * Run EQ optimisation against a measurement and target curve.
+ * Tries both '/eq/optimise' and '/eq/optimize' endpoints.
+ */
+export const runRoomEQOptimization = async (
+  payload: RoomEQOptimizationRequest
+): Promise<RoomEQApiEnvelope<RoomEQOptimizationResult>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const endpoints = ['/eq/optimise', '/eq/optimize']
+
+    let lastError: Error | undefined
+    for (const ep of endpoints) {
+      const url = `${apiBaseUrl}${ep}`
+      console.log('Running RoomEQ optimisation:', url)
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          // If endpoint not found, try the next spelling
+          if (response.status === 404) {
+            lastError = new Error(`Endpoint not found: ${url}`)
+            continue
+          }
+          throw new Error(`Failed to run optimisation: ${response.status} ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        console.log('RoomEQ optimisation response:', data)
+        return { success: true, data }
+      } catch (err) {
+        lastError = err as Error
+        // Try next endpoint
+      }
+    }
+
+    return { success: false, detail: lastError?.message || 'Optimisation endpoint not available' }
+  } catch (error) {
+    console.error('Error running RoomEQ optimisation:', error)
+    return { success: false, detail: error instanceof Error ? error.message : 'Unknown error occurred' }
+  }
+}
+
+/**
+ * Fetch equalisation target presets
+ */
+export const getRoomEQTargetPresets = async (): Promise<RoomEQApiEnvelope<RoomEQTargetPresets>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const url = `${apiBaseUrl}/eq/presets/targets`
+
+    console.log('Getting RoomEQ target presets:', url)
+    console.log('Config store roomeq_api:', configStore.config.roomeq_api)
+    console.log('useProxy:', configStore.config.roomeq_api.useProxy)
+    console.log('import.meta.env.PROD:', import.meta.env.PROD)
+
+    // Test the root endpoint to see what's available
+    console.log('Testing root /api/roomeq/ endpoint...')
+    try {
+      const testResponse = await fetch('/api/roomeq/', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      console.log('Root endpoint status:', testResponse.status)
+      if (testResponse.ok) {
+        const testText = await testResponse.text()
+        console.log('Root endpoint response:', testText.substring(0, 300))
+      }
+    } catch (e) {
+      console.log('Root endpoint test failed:', e)
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    console.log('Response status:', response.status)
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (!response.ok) {
+      throw new Error(`Failed to get target presets: ${response.status} ${response.statusText}`)
+    }
+
+    const responseText = await response.text()
+    console.log('Response text (first 200 chars):', responseText.substring(0, 200))
+    console.log('Response is HTML?', responseText.startsWith('<!DOCTYPE'))
+
+    if (responseText.startsWith('<!DOCTYPE')) {
+      throw new Error('Received HTML instead of JSON - proxy not working')
+    }
+
+    const data = JSON.parse(responseText)
+    console.log('RoomEQ target presets response:', data)
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error getting RoomEQ target presets:', error)
+    return { success: false, detail: error instanceof Error ? error.message : 'Unknown error occurred' }
+  }
+}
+
 /**
  * Get RoomEQ API information and endpoint overview
  */

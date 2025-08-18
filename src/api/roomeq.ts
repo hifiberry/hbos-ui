@@ -152,6 +152,22 @@ export interface RoomEQFFTResponse {
       presence: { range: string; avg_magnitude: number; peak_frequency: number }
       brilliance: { range: string; avg_magnitude: number; peak_frequency: number }
     }
+    log_frequency_summary?: {
+      frequencies: number[]
+      magnitudes: number[]
+      points_per_octave: number
+      frequency_range: [number, number]
+      n_octaves: number
+      n_points: number
+      bin_details?: Array<{
+        center_freq: number
+        freq_range: [number, number]
+        n_samples: number
+        mean_magnitude: number
+        min_magnitude: number
+        max_magnitude: number
+      }>
+    }
     normalization: {
       applied: boolean
       requested_freq?: number
@@ -602,6 +618,55 @@ export const startRoomEQSweep = async (
 }
 
 /**
+ * Start logarithmic sine sweep(s) using SoX-based generator (if supported by the server)
+ */
+export const startRoomEQSweepSox = async (
+  options?: {
+    startFreq?: number
+    endFreq?: number
+    duration?: number
+    sweeps?: number
+    amplitude?: number
+    device?: string
+  }
+): Promise<RoomEQApiEnvelope<RoomEQSweepStartResponse>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const params = new URLSearchParams()
+    if (options?.startFreq != null) params.set('start_freq', String(options.startFreq))
+    if (options?.endFreq != null) params.set('end_freq', String(options.endFreq))
+    if (options?.duration != null) params.set('duration', String(options.duration))
+    if (options?.sweeps != null) params.set('sweeps', String(options.sweeps))
+    if (options?.amplitude != null) params.set('amplitude', String(options.amplitude))
+    if (options?.device) params.set('device', options.device)
+    const url = `${apiBaseUrl}/audio/sweep/sox/start?${params.toString()}`
+
+    console.log('Starting RoomEQ SoX sine sweep(s):', url)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to start SoX sine sweeps: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log('RoomEQ SoX sine sweep start response:', data)
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error starting RoomEQ SoX sine sweeps:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
  * Start a recording job
  */
 export const startRoomEQRecording = async (
@@ -766,7 +831,9 @@ export const measureRoomEQSPL = async (): Promise<RoomEQApiEnvelope<RoomEQSPLMea
 export const analyzeRoomEQFFTRecording = async (
   recordingId: string | number,
   normalize?: number,
-  fftSize?: number
+  fftSize?: number,
+  pointsPerOctave?: number,
+  psychoacousticSmoothing?: number
 ): Promise<RoomEQApiEnvelope<RoomEQFFTResponse>> => {
   try {
     const configStore = useAppConfigStore()
@@ -775,6 +842,8 @@ export const analyzeRoomEQFFTRecording = async (
     params.set('window', 'hann')
     if (normalize != null) params.set('normalize', String(normalize))
     if (fftSize != null) params.set('fft_size', String(fftSize))
+    if (pointsPerOctave != null) params.set('points_per_octave', String(pointsPerOctave))
+    if (psychoacousticSmoothing != null) params.set('psychoacoustic_smoothing', String(psychoacousticSmoothing))
     const url = `${apiBaseUrl}/audio/analyze/fft-recording/${encodeURIComponent(String(recordingId))}?${params.toString()}`
 
     console.log('Performing RoomEQ FFT analysis on recording:', url)

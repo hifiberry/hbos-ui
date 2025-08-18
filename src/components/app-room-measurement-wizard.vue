@@ -196,6 +196,31 @@
 
           <div class="measure-settings">
             <div class="setting-row">
+              <label class="setting-label">Signal Type</label>
+              <div class="signal-type-options">
+                <div
+                  v-for="option in signalTypeOptions"
+                  :key="option.value"
+                  class="signal-option"
+                  :class="{ active: signalType === option.value, disabled: isMeasuringRoom }"
+                  @click="
+                    !isMeasuringRoom && (
+                      signalType = option.value as 'sine_sweep' | 'sox_sine_sweep' | 'white_noise',
+                      step4Error = ''
+                    )
+                  "
+                >
+                  <div class="signal-option-header">
+                    <AppIcon :icon="option.icon" />
+                    <span class="signal-option-label">{{ option.label }}</span>
+                  </div>
+                  <div class="signal-option-description">{{ option.description }}</div>
+                </div>
+              </div>
+              <div v-if="step4Error" class="setting-error">{{ step4Error }}</div>
+            </div>
+
+            <div class="setting-row" v-if="signalType === 'sine_sweep' || signalType === 'sox_sine_sweep'">
               <label class="setting-label">Number of sweeps</label>
               <div class="segmented">
                 <button
@@ -214,7 +239,7 @@
           <div class="measure-actions">
             <button
               class="nav-button primary"
-              :disabled="isMeasuringRoom"
+              :disabled="isMeasuringRoom || !signalType"
               @click="startRoomMeasurement"
             >
               <AppIcon icon="tabler/player-play" />
@@ -227,8 +252,15 @@
           </div>
 
           <div v-if="isMeasuringRoom" class="progress-info">
-            <div class="progress-text">Sweep {{ currentSweepIndex + 1 }} of {{ sweepCount }}</div>
-            <div class="progress-bar"><div class="fill" :style="{ width: `${Math.min(100, Math.max(0, ((currentSweepIndex + 1) / sweepCount) * 100))}%` }"></div></div>
+            <div class="progress-text" v-if="signalType === 'sine_sweep' || signalType === 'sox_sine_sweep'">
+              Sweep {{ currentSweepIndex + 1 }} of {{ sweepCount }}
+            </div>
+            <div class="progress-text" v-else>
+              Playing white noise signal...
+            </div>
+            <div class="progress-bar" v-if="signalType === 'sine_sweep' || signalType === 'sox_sine_sweep'">
+              <div class="fill" :style="{ width: `${Math.min(100, Math.max(0, ((currentSweepIndex + 1) / sweepCount) * 100))}%` }"></div>
+            </div>
           </div>
         </div>
 
@@ -242,24 +274,14 @@
             </div>
           </div>
 
-          <div class="measurement-summary">
-            <h4>Measurement Complete</h4>
-            <p>The following recording has been saved and can now be used for creating correction filters:</p>
-            <div class="recording-file-final">
-              <AppIcon icon="tabler/file-music" />
-              <span class="mono">{{ recordingFilename }}</span>
-            </div>
-          </div>
-
           <!-- Measurement Name Input -->
           <div class="measurement-name-section">
-            <h4>Save Measurement</h4>
             <div class="name-input-group">
               <label for="measurementName">Measurement Name:</label>
-              <input 
+              <input
                 id="measurementName"
-                v-model="measurementName" 
-                type="text" 
+                v-model="measurementName"
+                type="text"
                 class="measurement-name-input"
                 placeholder="Enter measurement name"
               />
@@ -268,7 +290,17 @@
 
           <!-- FFT Analysis Results -->
           <div class="fft-analysis">
-            <h4>Frequency Response</h4>
+            <div class="analysis-header">
+              <h4>Frequency Response</h4>
+              <div class="smoothing-selection">
+                <label for="smoothingType">Smoothing:</label>
+                <select id="smoothingType" v-model="smoothingType" class="smoothing-dropdown">
+                  <option value="1/3_octave">1/3 Octave</option>
+                  <option value="1/6_octave">1/6 Octave</option>
+                  <option value="psychoacoustic">Psychoacoustic</option>
+                </select>
+              </div>
+            </div>
             <div v-if="isAnalyzingFFT" class="fft-loading">
               <AppIcon icon="tabler/loader-2" class="fft-loading-icon" />
               <span>Analyzing frequency response...</span>
@@ -278,7 +310,6 @@
               <span>Error: {{ fftError }}</span>
             </div>
             <div v-else-if="fftData" class="fft-chart">
-              <p>Frequency response normalized to 1kHz ({{ fftData.normalization.applied ? fftData.normalization.actual_freq?.toFixed(1) || '1000.0' : '1000.0' }}Hz):</p>
               <div class="frequency-response-chart">
                 <svg viewBox="0 0 800 300" class="response-svg">
                   <!-- Grid lines -->
@@ -288,7 +319,7 @@
                     </pattern>
                   </defs>
                   <rect width="800" height="300" fill="url(#grid)" />
-                  
+
                   <!-- Frequency axis (log scale) -->
                   <g class="frequency-axis">
                     <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
@@ -297,27 +328,27 @@
                     <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
                     <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
                   </g>
-                  
+
                   <!-- Magnitude axis -->
                   <g class="magnitude-axis">
                     <text x="20" y="250" text-anchor="middle" class="axis-label">-20</text>
                     <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
                     <text x="20" y="50" text-anchor="middle" class="axis-label">+20</text>
                   </g>
-                  
+
                   <!-- Frequency response curve -->
-                  <path 
-                    :d="generateFrequencyResponsePath(fftData)" 
-                    fill="none" 
-                    stroke="#4CAF50" 
+                  <path
+                    :d="generateFrequencyResponsePath(fftData)"
+                    fill="none"
+                    stroke="#4CAF50"
                     stroke-width="2"
                   />
-                  
+
                   <!-- 0 dB reference line -->
                   <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
                 </svg>
               </div>
-              
+
               <!-- Frequency bands summary -->
               <!-- <div class="frequency-bands">
                 <div v-for="(band, key) in fftData.frequency_bands" :key="key" class="band-info">
@@ -364,7 +395,7 @@
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import AppIcon from './app-icon.vue'
 import AppProgressSlider from './app-progress-slider.vue'
-import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, startRoomEQSweep, getRoomEQNoiseStatus, startRoomEQRecording, analyzeRoomEQFFTRecording } from '@/api/roomeq'
+import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, startRoomEQSweep, startRoomEQSweepSox, startRoomEQRecording, analyzeRoomEQFFTRecording } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'
 import { usePlayerStore } from '@/stores/player'
 import { useSettingsStore } from '@/stores/settings'
@@ -431,19 +462,25 @@ const dummyAudioSource = ref<AudioNode | null>(null)
 
 // SPL Measurement
 const currentSPL = ref(-80) // Start with a low baseline
-const splMeasurementInterval = ref<number | null>(null)
 const isMeasuring = ref(false)
+const isMeasuringSPL = ref(false) // Flag to prevent concurrent SPL API calls
 
 // Step 4: Room measurement state
 const sweepOptions = [1, 2, 4]
 const sweepCount = ref<number>(2)
+const signalTypeOptions = [
+  { value: 'sine_sweep', label: 'Built-in Sweep', icon: 'tabler/wave-sine', description: 'Logarithmic frequency sweep (recommended for room analysis)' },
+  { value: 'sox_sine_sweep', label: 'SoX Sine Sweep', icon: 'tabler/wave-sine', description: 'SoX-generated logarithmic sweep (alternative generator)' },
+  { value: 'white_noise', label: 'White Noise', icon: 'tabler/volume', description: 'Broadband noise signal (good for quick measurements)' }
+]
+const signalType = ref<'sine_sweep' | 'sox_sine_sweep' | 'white_noise' | null>(null)
 const isMeasuringRoom = ref(false)
 const currentSweepIndex = ref(0)
 const sweepStatusInterval = ref<number | null>(null)
-const totalSweepCount = computed(() => sweepCount.value)
 const totalSweepDuration = ref<number | null>(null)
 const recordingId = ref<string | number | null>(null)
 const recordingFilename = ref<string>('')
+const step4Error = ref<string>('')
 
 // FFT analysis state
 // FFT analysis state
@@ -463,6 +500,14 @@ interface FFTData {
     presence: { range: string; avg_magnitude: number; peak_frequency: number }
     brilliance: { range: string; avg_magnitude: number; peak_frequency: number }
   }
+  log_frequency_summary?: {
+    frequencies: number[]
+    magnitudes: number[]
+    points_per_octave: number
+    frequency_range: [number, number]
+    n_octaves: number
+    n_points: number
+  }
   normalization: {
     applied: boolean
     requested_freq?: number
@@ -474,6 +519,9 @@ interface FFTData {
 const fftData = ref<FFTData | null>(null)
 const isAnalyzingFFT = ref(false)
 const fftError = ref<string>('')
+
+// Smoothing selection
+const smoothingType = ref<'1/3_octave' | '1/6_octave' | 'psychoacoustic'>('1/3_octave')
 
 // Measurement name with default value
 const measurementName = ref<string>('')
@@ -490,6 +538,12 @@ const setDefaultMeasurementName = () => {
 const startRoomMeasurement = async () => {
   if (isMeasuringRoom.value) return
   try {
+    // Require explicit selection of measurement type
+    if (!signalType.value) {
+      step4Error.value = 'Please select a signal type before starting the measurement.'
+      return
+    }
+    step4Error.value = ''
     isMeasuringRoom.value = true
     currentSweepIndex.value = 0
     totalSweepDuration.value = null
@@ -501,12 +555,21 @@ const startRoomMeasurement = async () => {
       await stopNoise()
     }
 
-    // Calculate total durations
-    const perSweepDuration = 5.0
+    // Calculate total durations based on signal type
     const preRoll = 1.0
     const postRoll = 1.0
-    const sweepsTotal = perSweepDuration * sweepCount.value
-    const totalRecording = preRoll + sweepsTotal + postRoll
+    let signalDuration: number
+    let totalRecording: number
+
+  if (signalType.value === 'sine_sweep' || signalType.value === 'sox_sine_sweep') {
+      const perSweepDuration = 5.0
+      signalDuration = perSweepDuration * sweepCount.value
+      totalRecording = preRoll + signalDuration + postRoll
+    } else {
+      // White noise - use a fixed duration
+      signalDuration = 10.0 // 10 seconds of white noise
+      totalRecording = preRoll + signalDuration + postRoll
+    }
 
     // Start recording first
     const recResp = await startRoomEQRecording({
@@ -523,50 +586,77 @@ const startRoomMeasurement = async () => {
     // Pre-roll wait
     await new Promise((resolve) => setTimeout(resolve, preRoll * 1000))
 
-    // Start sweeps
-    const startResp = await startRoomEQSweep({
-      sweeps: sweepCount.value,
-      duration: perSweepDuration,
-      startFreq: 20,
-      endFreq: 20000,
-      amplitude: noiseAmplitude.value,
-    })
-    if (!startResp.success || !startResp.data) {
-      throw new Error(startResp.detail || 'Failed to start sine sweeps')
+    // Start signal generation based on type
+  if (signalType.value === 'sine_sweep' || signalType.value === 'sox_sine_sweep') {
+      let startResp = signalType.value === 'sox_sine_sweep'
+        ? await startRoomEQSweepSox({
+            sweeps: sweepCount.value,
+            duration: 5.0,
+            startFreq: 20,
+            endFreq: 20000,
+            amplitude: noiseAmplitude.value,
+          })
+        : await startRoomEQSweep({
+        sweeps: sweepCount.value,
+        duration: 5.0,
+        startFreq: 20,
+        endFreq: 20000,
+        amplitude: noiseAmplitude.value,
+        })
+      if (!startResp.success || !startResp.data) {
+        // If SoX fails, fall back to built-in sweep automatically
+        if (signalType.value === 'sox_sine_sweep') {
+          console.warn('SoX sweep failed, falling back to built-in sweep:', startResp.detail)
+          const fallback = await startRoomEQSweep({
+            sweeps: sweepCount.value,
+            duration: 5.0,
+            startFreq: 20,
+            endFreq: 20000,
+            amplitude: noiseAmplitude.value,
+          })
+          if (!fallback.success || !fallback.data) {
+            throw new Error(fallback.detail || 'Failed to start sine sweeps')
+          }
+          startResp = fallback
+        } else {
+          throw new Error(startResp.detail || 'Failed to start sine sweeps')
+        }
+      }
+  // At this point we know startResp.success && startResp.data are truthy from the checks above
+  totalSweepDuration.value = (startResp.data!).total_duration
+    } else {
+      // White noise
+      const startResp = await startRoomEQNoise(noiseAmplitude.value, signalDuration)
+      if (!startResp.success || !startResp.data) {
+        throw new Error(startResp.detail || 'Failed to start white noise')
+      }
+      totalSweepDuration.value = signalDuration
     }
 
-    totalSweepDuration.value = startResp.data.total_duration
+  // Store start time for progress calculation (right after signal start)
+  const sweepStartTime = Date.now()
 
-    // Poll status once per second to estimate progress
-    sweepStatusInterval.value = window.setInterval(async () => {
-      try {
-        const status = await getRoomEQNoiseStatus()
-        console.log('Sweep status poll:', status)
-        if (status.success && status.data) {
-          console.log('Sweep status data:', status.data)
-          // When sweeps are active, signal_type should be 'sine_sweep'
-          if (!status.data.active || status.data.signal_type !== 'sine_sweep') {
-              // Sweeps finished; stop sweep polling (recording may still be running)
-            console.log('Sweeps finished, clearing sweep status interval')
-            if (sweepStatusInterval.value) {
-              clearInterval(sweepStatusInterval.value)
-              sweepStatusInterval.value = null
-            }
-          } else if (status.data.sweeps && status.data.duration) {
-            // Rough index estimate from remaining_seconds
-            const remaining = status.data.remaining_seconds || 0
-            const total = status.data.total_duration || (status.data.sweeps * status.data.duration)
-            const elapsed = Math.max(0, total - remaining)
-            const per = status.data.duration
-            const newSweepIndex = Math.min(totalSweepCount.value - 1, Math.floor(elapsed / per))
-            console.log(`Sweep progress: ${elapsed}s elapsed of ${total}s total, sweep ${newSweepIndex + 1}/${totalSweepCount.value}`)
-            currentSweepIndex.value = newSweepIndex
-          }
+    // Set up progress tracking for sine sweeps using known timing
+  if (signalType.value === 'sine_sweep' || signalType.value === 'sox_sine_sweep') {
+      const perSweepDuration = 5.0
+      sweepStatusInterval.value = window.setInterval(() => {
+    const elapsed = (Date.now() - sweepStartTime) / 1000
+        if (elapsed > 0 && elapsed < signalDuration) {
+          const newSweepIndex = Math.min(sweepCount.value - 1, Math.floor(elapsed / perSweepDuration))
+          currentSweepIndex.value = newSweepIndex
         }
-      } catch (e) {
-        console.warn('Sweep status poll failed:', e)
-      }
-    }, 1000)
+      }, 500)
+
+      // Clear progress tracking when signal should be finished
+      setTimeout(() => {
+        if (sweepStatusInterval.value) {
+          clearInterval(sweepStatusInterval.value)
+          sweepStatusInterval.value = null
+        }
+      }, (preRoll + signalDuration + 1) * 1000) // +1 second buffer
+    }
+
+  // start time already stored above
 
     // After recording and sweeps are complete, auto-advance
     if (recordingId.value != null) {
@@ -617,6 +707,13 @@ const getSPLColor = (spl: number): string => {
 
 // Measure SPL using the RoomEQ API
 const measureSPL = async () => {
+  // Prevent concurrent SPL measurements
+  if (isMeasuringSPL.value) return
+
+  // Only measure SPL when in step 3 and measurement is active
+  if (currentStep.value !== 3 || !isMeasuring.value) return
+
+  isMeasuringSPL.value = true
   try {
     const response = await measureRoomEQSPL()
     if (response.success && response.data) {
@@ -629,6 +726,18 @@ const measureSPL = async () => {
     }
   } catch (error) {
     console.error('Error measuring SPL:', error)
+  } finally {
+    isMeasuringSPL.value = false
+
+    // Start next measurement if we're still in measuring mode AND in step 3
+    if (isMeasuring.value && currentStep.value === 3) {
+      // Small delay to prevent overwhelming the API
+      setTimeout(() => {
+        if (isMeasuring.value && currentStep.value === 3) {
+          measureSPL()
+        }
+      }, 100)
+    }
   }
 }
 
@@ -636,14 +745,11 @@ const measureSPL = async () => {
 const startSPLMeasurement = () => {
   if (isMeasuring.value) return
 
-  console.log('Starting SPL measurement every 0.5 seconds')
+  console.log('Starting continuous SPL measurement')
   isMeasuring.value = true
 
-  // Initial measurement
+  // Start the measurement loop
   measureSPL()
-
-  // Set up interval for continuous measurement
-  splMeasurementInterval.value = window.setInterval(measureSPL, 500)
 }
 
 // Stop continuous SPL measurement
@@ -652,11 +758,7 @@ const stopSPLMeasurement = () => {
 
   console.log('Stopping SPL measurement')
   isMeasuring.value = false
-
-  if (splMeasurementInterval.value) {
-    clearInterval(splMeasurementInterval.value)
-    splMeasurementInterval.value = null
-  }
+  isMeasuringSPL.value = false // Reset concurrent measurement flag
 }
 
 // Create dummy audio context for the meter display with SPL value updates
@@ -692,7 +794,7 @@ watch(currentStep, (newStep) => {
     // Stop SPL measurement when leaving step 3
     stopSPLMeasurement()
   }
-  
+
   if (newStep === 5 && recordingId.value) {
     // Perform FFT analysis when entering step 5
     performFFTAnalysis()
@@ -722,6 +824,10 @@ const handleOverlayClick = (event: MouseEvent) => {
 }
 
 const closeWizard = () => {
+  // Stop any ongoing SPL measurements before closing
+  if (isMeasuring.value) {
+    stopSPLMeasurement()
+  }
   emit('close')
   resetWizard()
 }
@@ -733,9 +839,34 @@ const resetWizard = () => {
   detectedMicrophones.value = []
   selectedMicrophone.value = null
 
+  // Reset SPL measurement state
+  currentSPL.value = -80
+  isMeasuring.value = false
+  isMeasuringSPL.value = false
+
+  // Reset room measurement state
+  isMeasuringRoom.value = false
+  currentSweepIndex.value = 0
+  totalSweepDuration.value = null
+  recordingId.value = null
+  recordingFilename.value = ''
+  sweepCount.value = 2
+  signalType.value = null // Force explicit selection on step 4
+  step4Error.value = ''
+
+  // Reset FFT analysis state
+  fftData.value = null
+  isAnalyzingFFT.value = false
+  fftError.value = ''
+
   // Stop noise if playing
   if (isNoiseePlaying.value) {
     stopNoise()
+  }
+
+  // Stop SPL measurements if active
+  if (isMeasuring.value) {
+    stopSPLMeasurement()
   }
 
   // Clear keep-alive interval
@@ -749,6 +880,17 @@ const resetWizard = () => {
     clearInterval(sweepStatusInterval.value)
     sweepStatusInterval.value = null
   }
+}
+
+const initializeWizard = () => {
+  // Always start fresh - reset everything to initial state
+  resetWizard()
+
+  // Set default measurement name
+  setDefaultMeasurementName()
+
+  // Detect microphones for step 1
+  detectMicrophones()
 }
 
 const detectMicrophones = async () => {
@@ -791,9 +933,14 @@ const nextStep = () => {
     if (currentStep.value === 2) {
       pausePlayers()
     }
-    // Stop noise when leaving step 3
-    if (currentStep.value === 3 && isNoiseePlaying.value) {
-      stopNoise()
+    // Stop noise and SPL measurements when leaving step 3
+    if (currentStep.value === 3) {
+      if (isNoiseePlaying.value) {
+        stopNoise()
+      }
+      if (isMeasuring.value) {
+        stopSPLMeasurement()
+      }
     }
     currentStep.value++
   }
@@ -801,9 +948,14 @@ const nextStep = () => {
 
 const previousStep = () => {
   if (currentStep.value > 1) {
-    // Stop noise when leaving step 3
-    if (currentStep.value === 3 && isNoiseePlaying.value) {
-      stopNoise()
+    // Stop noise and SPL measurements when leaving step 3
+    if (currentStep.value === 3) {
+      if (isNoiseePlaying.value) {
+        stopNoise()
+      }
+      if (isMeasuring.value) {
+        stopSPLMeasurement()
+      }
     }
     currentStep.value--
   }
@@ -889,18 +1041,31 @@ const updateSystemVolume = async (newVolume: number) => {
 // Perform FFT analysis on the recorded file
 const performFFTAnalysis = async () => {
   if (!recordingId.value || isAnalyzingFFT.value) return
-  
+
   try {
     isAnalyzingFFT.value = true
     fftError.value = ''
-    console.log('Starting FFT analysis for recording ID:', recordingId.value)
-    
-    const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, 256)
+    console.log('Starting FFT analysis for recording ID:', recordingId.value, 'with smoothing:', smoothingType.value)
+
+    // Calculate parameters based on smoothing type
+    let pointsPerOctave: number | undefined = undefined
+    let psychoacousticSmoothing: number | undefined = undefined
+
+    if (smoothingType.value === '1/3_octave') {
+      pointsPerOctave = 12 // 1/3 octave spacing
+    } else if (smoothingType.value === '1/6_octave') {
+      pointsPerOctave = 24 // 1/6 octave spacing
+    } else if (smoothingType.value === 'psychoacoustic') {
+      pointsPerOctave = 16 // Default octave spacing
+      psychoacousticSmoothing = 1.0 // Enable psychoacoustic smoothing
+    }
+
+    const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, undefined, pointsPerOctave, psychoacousticSmoothing)
     if (response.success && response.data) {
       // Extract FFT data from the new API response structure
       const analysisData = response.data
       console.log('FFT analysis completed:', analysisData)
-      
+
       // Store the FFT data (API already normalized to 1kHz if requested)
       fftData.value = {
         frequencies: analysisData.fft_analysis.frequencies,
@@ -910,9 +1075,10 @@ const performFFTAnalysis = async () => {
         peak_frequency: analysisData.fft_analysis.peak_frequency,
         peak_magnitude: analysisData.fft_analysis.peak_magnitude,
         frequency_bands: analysisData.fft_analysis.frequency_bands,
+        log_frequency_summary: analysisData.fft_analysis.log_frequency_summary,
         normalization: analysisData.fft_analysis.normalization
       }
-      
+
       console.log('FFT data stored:', fftData.value)
     } else {
       throw new Error(response.detail || 'FFT analysis failed')
@@ -943,13 +1109,42 @@ const saveMeasurement = async () => {
 
   try {
     const settingsStore = useSettingsStore()
+
+    // Prefer logarithmic frequency summary if available (this matches what's displayed in step 5)
+    let frequencies: number[]
+    let magnitudes: number[]
+    let metadata: {
+      frequency_type?: 'log_summary' | 'fft'
+      points_per_octave?: number
+      frequency_range?: [number, number]
+    } = {}
+
+    if (fftData.value.log_frequency_summary?.frequencies && fftData.value.log_frequency_summary?.magnitudes) {
+      console.log('Saving logarithmic frequency summary data (16 points per octave)')
+      frequencies = fftData.value.log_frequency_summary.frequencies
+      magnitudes = fftData.value.log_frequency_summary.magnitudes
+      metadata = {
+        frequency_type: 'log_summary' as const,
+        points_per_octave: fftData.value.log_frequency_summary.points_per_octave,
+        frequency_range: fftData.value.log_frequency_summary.frequency_range
+      }
+    } else {
+      console.log('Saving regular FFT frequency data')
+      frequencies = fftData.value.frequencies
+      magnitudes = fftData.value.magnitude
+      metadata = {
+        frequency_type: 'fft' as const
+      }
+    }
+
     const measurementId = await settingsStore.saveRoomMeasurement(
       measurementName.value.trim(),
-      fftData.value.frequencies,
-      fftData.value.magnitude,
-      fftData.value.sample_rate
+      frequencies,
+      magnitudes,
+      fftData.value.sample_rate,
+      metadata
     )
-    
+
     console.log(`Measurement saved with ID: ${measurementId}`)
     emit('measurementCompleted')
   } catch (error) {
@@ -959,32 +1154,44 @@ const saveMeasurement = async () => {
 
 // Helper function to generate SVG path for frequency response curve
 const generateFrequencyResponsePath = (data: FFTData): string => {
-  if (!data.frequencies || !data.magnitude) return ''
-  
+  // Prefer logarithmic frequency summary if available (better for acoustic visualization)
+  let frequencies: number[]
+  let magnitudes: number[]
+
+  if (data.log_frequency_summary?.frequencies && data.log_frequency_summary?.magnitudes) {
+    frequencies = data.log_frequency_summary.frequencies
+    magnitudes = data.log_frequency_summary.magnitudes
+  } else if (data.frequencies && data.magnitude) {
+    frequencies = data.frequencies
+    magnitudes = data.magnitude
+  } else {
+    return ''
+  }
+
   const minFreq = 20
   const maxFreq = 20000
   const minMag = -30 // -30 dB
   const maxMag = 30  // +30 dB
   const width = 760 - 40 // Chart width minus margins
   const height = 280 - 20 // Chart height minus margins
-  
+
   const logScale = (freq: number) => {
     return 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
   }
-  
+
   const magScale = (mag: number) => {
     return 20 + (maxMag - mag) / (maxMag - minMag) * height
   }
-  
+
   let path = ''
-  for (let i = 0; i < data.frequencies.length; i++) {
-    const freq = data.frequencies[i]
-    const mag = data.magnitude[i]
-    
+  for (let i = 0; i < frequencies.length; i++) {
+    const freq = frequencies[i]
+    const mag = magnitudes[i]
+
     if (freq >= minFreq && freq <= maxFreq) {
       const x = logScale(freq)
       const y = magScale(mag)
-      
+
       if (path === '') {
         path = `M ${x} ${y}`
       } else {
@@ -992,23 +1199,31 @@ const generateFrequencyResponsePath = (data: FFTData): string => {
       }
     }
   }
-  
+
   return path
 }
 
 // Lifecycle
 onMounted(() => {
-  if (props.isOpen) {
-    detectMicrophones()
-  }
+  // Set default measurement name initially
   setDefaultMeasurementName()
+
+  if (props.isOpen) {
+    initializeWizard()
+  }
 })
 
 // Watch for prop changes to auto-detect when wizard opens
 watch(() => props.isOpen, (newValue) => {
   if (newValue) {
-    detectMicrophones()
-    setDefaultMeasurementName()
+    initializeWizard()
+  }
+})
+
+// Watch for smoothing type changes and recalculate FFT
+watch(smoothingType, () => {
+  if (recordingId.value && currentStep.value === 5) {
+    performFFTAnalysis()
   }
 })
 </script>
@@ -1230,6 +1445,60 @@ watch(() => props.isOpen, (newValue) => {
             cursor: not-allowed;
           }
         }
+      }
+
+      .signal-type-options {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+
+        .signal-option {
+          flex: 1;
+          padding: 12px;
+          border: 2px solid var(--color-border);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          background: var(--color-bg);
+
+          &:hover:not(.disabled) {
+            border-color: var(--primary);
+            background: var(--color-bg-secondary);
+          }
+
+          &.active {
+            border-color: var(--primary);
+            background: var(--primary-alpha-10);
+          }
+
+          &.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+
+          .signal-option-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+
+            .signal-option-label {
+              font-weight: 600;
+              color: var(--color-head);
+            }
+          }
+
+          .signal-option-description {
+            font-size: 0.9em;
+            color: var(--color-body);
+            line-height: 1.4;
+          }
+        }
+      }
+      .setting-error {
+        color: var(--color-error, #dc3545);
+        font-size: 0.875rem;
+        margin-top: 8px;
       }
     }
   }
@@ -2036,22 +2305,22 @@ watch(() => props.isOpen, (newValue) => {
 // Measurement name input styles
 .measurement-name-section {
   margin-top: 24px;
-  
+
   h4 {
     color: #2c3e50;
     margin-bottom: 16px;
   }
-  
+
   .name-input-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    
+
     label {
       font-weight: 600;
       color: #495057;
     }
-    
+
     .measurement-name-input {
       padding: 12px 16px;
       border: 2px solid #e9ecef;
@@ -2059,13 +2328,13 @@ watch(() => props.isOpen, (newValue) => {
       font-size: 1rem;
       font-family: inherit;
       transition: border-color 0.2s ease;
-      
+
       &:focus {
         outline: none;
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
       }
-      
+
       &::placeholder {
         color: #6c757d;
       }
@@ -2076,6 +2345,50 @@ watch(() => props.isOpen, (newValue) => {
 // FFT Analysis styles
 .fft-analysis {
   margin-top: 24px;
+
+  .analysis-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+
+    h4 {
+      color: #2c3e50;
+      margin: 0;
+    }
+
+    .smoothing-selection {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      label {
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+      }
+
+      .smoothing-dropdown {
+        padding: 6px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: white;
+        font-size: 14px;
+        min-width: 140px;
+        cursor: pointer;
+
+        &:hover {
+          border-color: #007bff;
+        }
+
+        &:focus {
+          outline: none;
+          border-color: #007bff;
+          box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+        }
+      }
+    }
+  }
 
   h4 {
     color: #2c3e50;

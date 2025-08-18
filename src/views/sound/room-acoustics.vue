@@ -23,15 +23,15 @@
                 </p>
               </div>
               <button @click="deleteMeasurement(measurement.id)" class="delete-button" title="Delete Measurement">
-                <AppIcon icon="tabler/trash" />
+                <AppIcon icon="close" />
               </button>
             </div>
             <div class="measurement-preview">
               <svg viewBox="0 0 300 100" class="preview-svg">
-                <path 
-                  :d="generatePreviewPath(measurement)" 
-                  fill="none" 
-                  stroke="#4CAF50" 
+                <path
+                  :d="generatePreviewPath(measurement)"
+                  fill="none"
+                  stroke="#4CAF50"
                   stroke-width="1"
                 />
               </svg>
@@ -108,31 +108,31 @@ const formatDate = (timestamp: string): string => {
 
 const generatePreviewPath = (measurement: RoomMeasurement): string => {
   if (!measurement.frequencies || !measurement.magnitudes) return ''
-  
+
   const minFreq = 20
   const maxFreq = 20000
   const minMag = Math.min(...measurement.magnitudes)
   const maxMag = Math.max(...measurement.magnitudes)
   const width = 300
   const height = 100
-  
+
   const logScale = (freq: number) => {
     return (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
   }
-  
+
   const magScale = (mag: number) => {
     return height - ((mag - minMag) / (maxMag - minMag)) * height
   }
-  
+
   let path = ''
   for (let i = 0; i < measurement.frequencies.length; i++) {
     const freq = measurement.frequencies[i]
     const mag = measurement.magnitudes[i]
-    
+
     if (freq >= minFreq && freq <= maxFreq) {
       const x = logScale(freq)
       const y = magScale(mag)
-      
+
       if (path === '') {
         path = `M ${x} ${y}`
       } else {
@@ -140,7 +140,7 @@ const generatePreviewPath = (measurement: RoomMeasurement): string => {
       }
     }
   }
-  
+
   return path
 }
 
@@ -151,6 +151,7 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/scss/mixins' as *;
 .room-acoustics-page {
   width: 100%;
   height: 100%;
@@ -200,80 +201,65 @@ onMounted(() => {
 
   .measurements-section {
     margin-bottom: 20px;
-    
+
     h2 {
       font-size: 22px;
       font-weight: 500;
       margin-bottom: 20px;
       color: #333;
     }
-    
+
     .measurements-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
       gap: 20px;
     }
-    
+
     .measurement-card {
       background: var(--card-background, #fff);
       border: 1px solid var(--border-color, #e5e5e5);
       border-radius: 8px;
       padding: 20px;
+      position: relative;
       transition: box-shadow 0.2s ease;
-      
+
       &:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
-      
+
+      .delete-button {
+        @include delete-button(24px, 14px);
+        position: absolute;
+        top: 16px;
+        right: 16px;
+      }
+
       .measurement-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
         margin-bottom: 15px;
-        
+        padding-right: 40px; // Leave space for delete button
+
         .measurement-info {
-          flex: 1;
-          
           h3 {
             font-size: 18px;
             font-weight: 600;
             margin: 0 0 8px 0;
             color: #333;
           }
-          
+
           .measurement-date {
             font-size: 14px;
             color: #666;
             margin: 0 0 4px 0;
           }
-          
+
           .measurement-details {
             font-size: 12px;
             color: #888;
             margin: 0;
           }
         }
-        
-        .delete-button {
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 8px;
-          border-radius: 4px;
-          color: #dc3545;
-          transition: background-color 0.2s ease;
-          
-          &:hover {
-            background-color: #f5f5f5;
-          }
-          
-          svg {
-            width: 16px;
-            height: 16px;
-          }
-        }
       }
-      
+
       .measurement-preview {
         .preview-svg {
           width: 100%;
@@ -325,12 +311,12 @@ onMounted(() => {
 @media (max-width: 768px) {
   .room-acoustics {
     padding: 10px;
-    
+
     .page-header {
       flex-direction: column;
       gap: 15px;
       align-items: stretch;
-      
+
       .measure-button {
         justify-content: center;
       }
@@ -341,26 +327,33 @@ onMounted(() => {
         grid-template-columns: 1fr;
         gap: 15px;
       }
-      
+
       .measurement-card {
         padding: 15px;
-        
+
+        .delete-button {
+          top: 12px;
+          right: 12px;
+        }
+
         .measurement-header {
+          padding-right: 36px; // Adjust for smaller delete button spacing
+
           .measurement-info {
             h3 {
               font-size: 16px;
             }
-            
+
             .measurement-date {
               font-size: 12px;
             }
-            
+
             .measurement-details {
               font-size: 11px;
             }
           }
         }
-        
+
         .measurement-preview {
           .preview-svg {
             height: 60px;

@@ -1061,10 +1061,18 @@ const performFFTAnalysis = async () => {
     }
 
     const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, undefined, pointsPerOctave, psychoacousticSmoothing)
+
     if (response.success && response.data) {
       // Extract FFT data from the new API response structure
       const analysisData = response.data
-      console.log('FFT analysis completed:', analysisData)
+
+      // Log only the smoothed/logarithmic frequency data
+      if (analysisData.fft_analysis.log_frequency_summary) {
+        console.log('=== SMOOTHED FREQUENCY DATA ===')
+        console.log('Log frequency summary:', analysisData.fft_analysis.log_frequency_summary)
+        console.log('Normalization:', analysisData.fft_analysis.normalization)
+        console.log('=== END SMOOTHED DATA ===')
+      }
 
       // Store the FFT data (API already normalized to 1kHz if requested)
       fftData.value = {
@@ -1080,6 +1088,7 @@ const performFFTAnalysis = async () => {
       }
 
       console.log('FFT data stored:', fftData.value)
+      console.log('Normalization info:', fftData.value.normalization)
     } else {
       throw new Error(response.detail || 'FFT analysis failed')
     }

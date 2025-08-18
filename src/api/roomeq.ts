@@ -640,7 +640,8 @@ export const startRoomEQSweepSox = async (
     if (options?.sweeps != null) params.set('sweeps', String(options.sweeps))
     if (options?.amplitude != null) params.set('amplitude', String(options.amplitude))
     if (options?.device) params.set('device', options.device)
-    const url = `${apiBaseUrl}/audio/sweep/sox/start?${params.toString()}`
+    params.set('generator', 'sine_sox') // Use SoX-based sine generator
+    const url = `${apiBaseUrl}/audio/sweep/start?${params.toString()}`
 
     console.log('Starting RoomEQ SoX sine sweep(s):', url)
 

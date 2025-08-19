@@ -1253,6 +1253,14 @@ watch(smoothingType, () => {
     performFFTAnalysis()
   }
 })
+
+// Enforce allowed signal types when expert mode is disabled
+watch(isExpertMode, (enabled) => {
+  if (!enabled) {
+    // When leaving expert mode, restrict to built-in sweep
+    signalType.value = 'sine_sweep'
+  }
+})
 </script>
 
 <style scoped lang="scss">

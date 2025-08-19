@@ -212,7 +212,7 @@ export interface RoomEQOptimizerPresets {
   optimizer_presets: RoomEQOptimizerPreset[]
 }
 
-// EQ Optimization types (updated for new API)
+// EQ Optimization types (updated for streaming API)
 export interface RoomEQOptimizationRequest {
   // Option 1: From Recording (Recommended)
   recording_id?: string
@@ -224,8 +224,31 @@ export interface RoomEQOptimizationRequest {
   target_curve: string
   optimizer_preset?: string
   filter_count?: number
+  intermediate_results_interval?: number
   window?: string
   points_per_octave?: number
+}
+
+// Server-Sent Event types for streaming optimization
+export interface RoomEQOptimizationFilter {
+  type: string
+  frequency: number
+  gain: number
+  q: number
+}
+
+export interface RoomEQOptimizationEvent {
+  status: 'started' | 'optimizing' | 'intermediate' | 'complete' | 'error'
+  message?: string
+  progress?: number
+  current_step?: string
+  elapsed_time?: number
+  optimization_time?: number
+  filter_count?: number
+  target_curve?: string
+  optimizer_preset?: string
+  filters?: RoomEQOptimizationFilter[]
+  error?: string
 }
 
 export interface RoomEQOptimizationStartResponse {
@@ -292,6 +315,91 @@ export interface RoomEQOptimizationResult {
     target_response: number[]
   }
   timestamp: string
+}
+
+/**
+ * Start EQ optimization using streaming Server-Sent Events API
+ */
+export const startRoomEQOptimizationStream = async (
+  payload: RoomEQOptimizationRequest,
+  onEvent: (event: RoomEQOptimizationEvent) => void,
+  onError: (error: string) => void,
+  onComplete: () => void
+): Promise<{ success: boolean; detail?: string }> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const url = `${apiBaseUrl}/eq/optimize`
+
+    console.log('Starting streaming RoomEQ optimization:', url, payload)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to start optimization: ${response.status} ${response.statusText}`)
+    }
+
+    if (!response.body) {
+      throw new Error('No response body for streaming')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        
+        if (done) {
+          console.log('Optimization stream completed')
+          onComplete()
+          break
+        }
+
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const eventData = JSON.parse(line.substring(6)) as RoomEQOptimizationEvent
+              console.log('Optimization event:', eventData)
+              
+              if (eventData.status === 'error') {
+                onError(eventData.error || eventData.message || 'Unknown optimization error')
+                return { success: false, detail: eventData.error || eventData.message }
+              }
+              
+              onEvent(eventData)
+              
+              if (eventData.status === 'complete') {
+                onComplete()
+                return { success: true }
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse optimization event:', line, parseError)
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+
+    return { success: true }
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error starting streaming optimization:', error)
+    onError(errorMsg)
+    return { success: false, detail: errorMsg }
+  }
 }
 
 /**

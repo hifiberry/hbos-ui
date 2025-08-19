@@ -554,15 +554,15 @@ const generateOptimisationPath = (data: { frequencies: number[]; magnitudes: num
   return path
 }
 
-// Optimisation step - Updated for new API
+// Optimisation step - Updated for streaming API
 import {
-  startRoomEQOptimization,
-  getRoomEQOptimizationStatus,
-  getRoomEQOptimizationResult,
+  startRoomEQOptimizationStream,
   getRoomEQOptimizerPresets,
   checkRoomEQVersionRequirement,
   ROOMEQ_MINIMUM_VERSION,
-  type RoomEQOptimizationRequest
+  type RoomEQOptimizationRequest,
+  type RoomEQOptimizationEvent,
+  type RoomEQOptimizationFilter
 } from '@/api/roomeq'
 
 const optimising = ref(false)
@@ -582,6 +582,8 @@ const optEstimatedRemaining = ref(0)
 const optCurrentFilter = ref<{ frequency: number; gain_db: number; q: number; filter_type: string } | null>(null)
 const optFinalRmsError = ref(0)
 const optImprovementDb = ref(0)
+const optimizedFilters = ref<RoomEQOptimizationFilter[]>([])
+const optimizationTime = ref(0)
 const loadOptimizerPresets = async () => {
   try {
     if (!exportMode.value) {
@@ -620,6 +622,8 @@ const runOptimisation = async () => {
   optTotalSteps.value = 0
   optFinalRmsError.value = 0
   optImprovementDb.value = 0
+  optimizedFilters.value = []
+  optimizationTime.value = 0
 
   try {
     // Check API version first
@@ -651,82 +655,68 @@ const runOptimisation = async () => {
       target_curve: targetCurve.value, // Now this is already the correct API key
       optimizer_preset: optimizerPreset.value,
       filter_count: 8,
+      intermediate_results_interval: 2, // Get results every 2 filters
       points_per_octave: 12
     }
 
-    // Start optimization
-    const startResp = await startRoomEQOptimization(payload)
-
-    if (!startResp.success || !startResp.data) {
-      throw new Error(startResp.detail || 'Failed to start optimization')
-    }
-
-    currentOptimizationId.value = startResp.data.optimization_id
-    optStatus.value = startResp.data.message
-    optTotalSteps.value = 20 // Typical optimization steps
-
-    // Poll for progress updates
-    const pollInterval = setInterval(async () => {
-      if (!currentOptimizationId.value) {
-        clearInterval(pollInterval)
-        return
-      }
-
-      try {
-        const statusResp = await getRoomEQOptimizationStatus(currentOptimizationId.value)
-
-        if (statusResp.success && statusResp.data) {
-          const status = statusResp.data
-          optimisationProgress.value = status.progress
-          optCurrentStep.value = status.current_step
-          optStepsCompleted.value = status.steps_completed
-          optTotalSteps.value = status.total_steps
-          optElapsedTime.value = status.elapsed_time
-          optEstimatedRemaining.value = status.estimated_remaining || 0
-
-          if (status.current_filter) {
-            optCurrentFilter.value = status.current_filter
-          }
-
-          if (status.intermediate_rms_error) {
-            optFinalRmsError.value = status.intermediate_rms_error
-          }
-
-          if (status.status === 'completed') {
-            clearInterval(pollInterval)
-            optimisationProgress.value = 100
-            optStatus.value = status.message || 'Optimization completed!'
-            optFinalRmsError.value = status.final_rms_error || 0
-            optImprovementDb.value = status.improvement_db || 0
-
-            // Get the final results with frequency response
-            const resultResp = await getRoomEQOptimizationResult(currentOptimizationId.value)
-            if (resultResp.success && resultResp.data?.frequency_response) {
-              optimizedResponse.value = {
-                frequencies: resultResp.data.frequency_response.frequencies,
-                magnitudes: resultResp.data.frequency_response.corrected_response
-              }
+    // Start streaming optimization
+    const streamResult = await startRoomEQOptimizationStream(
+      payload,
+      // onEvent callback
+      (event: RoomEQOptimizationEvent) => {
+        switch (event.status) {
+          case 'started':
+            optStatus.value = event.message || 'Optimization started'
+            optTotalSteps.value = event.filter_count || 8
+            optimisationProgress.value = 0
+            break
+            
+          case 'optimizing':
+            optimisationProgress.value = event.progress || 0
+            optCurrentStep.value = event.current_step || ''
+            optElapsedTime.value = event.elapsed_time || 0
+            break
+            
+          case 'intermediate':
+            optimisationProgress.value = event.progress || 0
+            optCurrentStep.value = event.current_step || ''
+            optElapsedTime.value = event.elapsed_time || 0
+            if (event.filters) {
+              optimizedFilters.value = event.filters
             }
-
-          } else if (status.status === 'error' || status.status === 'failed') {
-            clearInterval(pollInterval)
-            throw new Error(status.message || 'Optimization failed')
-          }
+            break
+            
+          case 'complete':
+            optimisationProgress.value = 100
+            optStatus.value = 'Optimization completed!'
+            optimizationTime.value = event.optimization_time || 0
+            if (event.filters) {
+              optimizedFilters.value = event.filters
+              // Convert filters to frequency response for display
+              // This is a simplified approach - in reality you'd need proper DSP processing
+              optStatus.value = `Optimization completed! Generated ${event.filters.length} filters`
+            }
+            optimising.value = false
+            break
         }
-      } catch (pollError) {
-        console.error('Error polling optimization status:', pollError)
-        // Continue polling - don't stop on temporary errors
-      }
-    }, 1000) // Poll every second
-
-    // Cleanup timeout after 5 minutes
-    setTimeout(() => {
-      clearInterval(pollInterval)
-      if (optimising.value) {
-        optStatus.value = 'Optimization timed out'
+      },
+      // onError callback
+      (error: string) => {
+        apiVersionError.value = ''
+        optStatus.value = `Optimization error: ${error}`
         optimising.value = false
+      },
+      // onComplete callback
+      () => {
+        if (optimising.value) {
+          optimising.value = false
+        }
       }
-    }, 300000)
+    )
+
+    if (!streamResult.success) {
+      throw new Error(streamResult.detail || 'Failed to start streaming optimization')
+    }
 
   } catch (e) {
     optimisationProgress.value = 0

@@ -199,7 +199,7 @@
                 <path :d="generateOptimisationPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="2" />
 
                 <!-- Target curve -->
-                <path v-if="selectedTargetPoints.length" :d="generateOptimisationPath({ frequencies: selectedTargetPoints.map(p => p[0]), magnitudes: selectedTargetPoints.map(p => p[1]) })" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
+                <path v-if="selectedTargetPoints.length" :d="generateOptimisationPath({ frequencies: selectedTargetPoints.map(p => p.frequency), magnitudes: selectedTargetPoints.map(p => p.target_db) })" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
 
                 <!-- Optimized curve (shown during/after optimization) -->
                 <path v-if="optimizedResponse" :d="generateOptimisationPath(optimizedResponse)" fill="none" stroke="#ff6b35" stroke-width="2" />
@@ -213,7 +213,7 @@
             <div class="chart-legend">
               <div class="legend-item">
                 <div class="legend-line" style="background: #4CAF50;"></div>
-                <span>Initial Response</span>
+                <span>Before (Original)</span>
               </div>
               <div class="legend-item" v-if="selectedTargetPoints.length">
                 <div class="legend-line dashed" style="background: #58a6ff;"></div>
@@ -221,15 +221,12 @@
               </div>
               <div class="legend-item" v-if="optimizedResponse">
                 <div class="legend-line" style="background: #ff6b35;"></div>
-                <span>Optimized Response</span>
+                <span>After (Optimized)</span>
               </div>
             </div>
           </div>
 
           <div class="optimisation">
-            <button class="nav-button primary" :disabled="optimising || !canOptimise" @click="runOptimisation">
-              {{ optimising ? 'Optimising…' : 'Run optimisation' }}
-            </button>
             <div class="opt-status" v-if="optStatus">{{ optStatus }}</div>
             <div class="api-version-error" v-if="apiVersionError">
               <div class="error-header">⚠️ API Version Compatibility Issue</div>
@@ -276,7 +273,9 @@
             Previous
           </button>
           <div class="step-indicator">Step {{ currentStep }} of {{ totalSteps }}</div>
-          <button v-if="currentStep < totalSteps" @click="nextStep" class="nav-button primary">Next <AppIcon icon="arrow-right" /></button>
+          <button v-if="currentStep < totalSteps" @click="nextStep" class="nav-button primary">
+            {{ currentStep === 3 ? 'Start' : 'Next' }} <AppIcon icon="arrow-right" />
+          </button>
           <button v-else @click="finish" class="nav-button primary">Done <AppIcon icon="checkmark" /></button>
         </div>
       </div>
@@ -354,8 +353,14 @@ const reset = () => {
   optimizerPreset.value = 'Default'
 }
 
-const nextStep = () => {
-  if (currentStep.value < totalSteps) currentStep.value++
+const nextStep = async () => {
+  if (currentStep.value < totalSteps) {
+    currentStep.value++
+    // Auto-start optimization when reaching step 4
+    if (currentStep.value === 4) {
+      await runOptimisation()
+    }
+  }
 }
 const previousStep = () => {
   if (currentStep.value > 1) currentStep.value--
@@ -382,7 +387,7 @@ const loadTargets = async () => {
       const descs: Record<string, string> = {}
       const displayNames: Record<string, string> = {}
 
-      // Handle the new API format with target_curves array
+      // Handle the documented API format where target_curves is an array
       if (data.target_curves && Array.isArray(data.target_curves)) {
         for (const targetCurve of data.target_curves) {
           if (targetCurve && typeof targetCurve === 'object') {
@@ -407,8 +412,10 @@ const loadTargets = async () => {
         }
 
         if (Object.keys(dict).length === 0) {
-          throw new Error('No valid target curves found - all curves are missing required "key" field')
+          console.error('No valid target curves found')
         }
+      } else {
+        console.error('target_curves is not in expected array format:', data.target_curves)
       }
 
       targets.value = dict
@@ -456,8 +463,27 @@ onMounted(() => {
 // Reload targets when the modal opens (in case base URL or server changed)
 watch(() => props.isOpen, (open) => {
   if (open) {
+    // Clear any previous optimization data when opening the wizard
+    optimising.value = false
+    optStatus.value = ''
+    apiVersionError.value = ''
+    optimizedResponse.value = null
+    optimisationProgress.value = 0
+    currentOptimizationId.value = null
+    optCurrentStep.value = ''
+    optStepsCompleted.value = 0
+    optTotalSteps.value = 0
+    optElapsedTime.value = 0
+    optEstimatedRemaining.value = 0
+    optCurrentFilter.value = null
+    optFinalRmsError.value = 0
+    optImprovementDb.value = 0
+    optimizedFilters.value = []
+    optimizationTime.value = 0
+    
+    // Load fresh data
     loadTargets()
-  loadOptimizerPresets()
+    loadOptimizerPresets()
   }
 })
 
@@ -502,15 +528,16 @@ const generateTargetPath = (pts: RoomEQTargetPoint[]): string => {
   const magScale = (mag: number) => 10 + (maxMag - mag) / (maxMag - minMag) * height
   let path = ''
   for (const p of pts) {
-    // Add defensive checks to ensure p is an array or has the expected structure
-    if (!p || !Array.isArray(p) || p.length < 2) {
+    // Handle the new API format where each point is an object with frequency and target_db
+    if (!p || typeof p !== 'object') {
       console.warn('Invalid target curve point:', p)
       continue
     }
-    const [f, mag] = p as [number, number]
-    if (f >= minFreq && f <= maxFreq) {
-      const x = logScale(f)
-      const y = magScale(mag)
+    const frequency = p.frequency
+    const targetDb = p.target_db
+    if (frequency >= minFreq && frequency <= maxFreq) {
+      const x = logScale(frequency)
+      const y = magScale(targetDb)
       path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
     }
   }
@@ -568,7 +595,6 @@ import {
 const optimising = ref(false)
 const optStatus = ref('')
 const apiVersionError = ref('')
-const canOptimise = computed(() => !!measurement.value && selectedTargetPoints.value.length > 0)
 const optimizerPreset = ref('default')
 const optimizerPresetOptions = ref<string[]>(['default'])
 const optimizedResponse = ref<{ frequencies: number[]; magnitudes: number[] } | null>(null)
@@ -664,38 +690,58 @@ const runOptimisation = async () => {
       payload,
       // onEvent callback
       (event: RoomEQOptimizationEvent) => {
-        switch (event.status) {
+        console.log('Processing optimization event:', event)
+
+        switch (event.type) {
           case 'started':
             optStatus.value = event.message || 'Optimization started'
-            optTotalSteps.value = event.filter_count || 8
+            optTotalSteps.value = event.parameters?.filter_count || 8
             optimisationProgress.value = 0
+            currentOptimizationId.value = event.optimization_id || null
             break
-            
-          case 'optimizing':
-            optimisationProgress.value = event.progress || 0
-            optCurrentStep.value = event.current_step || ''
-            optElapsedTime.value = event.elapsed_time || 0
-            break
-            
-          case 'intermediate':
-            optimisationProgress.value = event.progress || 0
-            optCurrentStep.value = event.current_step || ''
-            optElapsedTime.value = event.elapsed_time || 0
-            if (event.filters) {
-              optimizedFilters.value = event.filters
+
+          case 'filter_added':
+            const progress = event.progress || 0
+            optimisationProgress.value = progress
+            optCurrentStep.value = event.message || `Filter ${event.step || 0}`
+            optStepsCompleted.value = event.step || 0
+
+            // Update filter list
+            if (event.current_filter_set) {
+              optimizedFilters.value = event.current_filter_set
+            }
+
+            // Update real-time frequency response display
+            if (event.frequency_response) {
+              optimizedResponse.value = {
+                frequencies: event.frequency_response.frequencies,
+                magnitudes: event.frequency_response.magnitude_db
+              }
             }
             break
-            
-          case 'complete':
+
+          case 'completed':
             optimisationProgress.value = 100
             optStatus.value = 'Optimization completed!'
-            optimizationTime.value = event.optimization_time || 0
-            if (event.filters) {
-              optimizedFilters.value = event.filters
-              // Convert filters to frequency response for display
-              // This is a simplified approach - in reality you'd need proper DSP processing
-              optStatus.value = `Optimization completed! Generated ${event.filters.length} filters`
+
+            if (event.current_filter_set) {
+              optimizedFilters.value = event.current_filter_set
+              optStatus.value = `Optimization completed! Generated ${event.current_filter_set.length} filters`
             }
+
+            // Final frequency response
+            if (event.frequency_response) {
+              optimizedResponse.value = {
+                frequencies: event.frequency_response.frequencies,
+                magnitudes: event.frequency_response.magnitude_db
+              }
+            }
+
+            optimising.value = false
+            break
+
+          case 'error':
+            optStatus.value = event.message || 'Optimization error occurred'
             optimising.value = false
             break
         }

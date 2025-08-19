@@ -181,9 +181,12 @@ export interface RoomEQFFTResponse {
   analysis_timestamp: string
 }
 
-// EQ target presets
-export type RoomEQTargetWeight = number | [number, number]
-export type RoomEQTargetPoint = [number, number] | [number, number, RoomEQTargetWeight]
+// EQ target presets - Updated format
+export interface RoomEQTargetPoint {
+  frequency: number
+  target_db: number
+  weight: number | [number, number] | null
+}
 
 export interface RoomEQTargetCurve {
   key: string
@@ -194,6 +197,8 @@ export interface RoomEQTargetCurve {
 }
 
 export interface RoomEQTargetPresets {
+  count: number
+  success: true
   target_curves: RoomEQTargetCurve[]
 }
 
@@ -209,7 +214,9 @@ export interface RoomEQOptimizerPreset {
 }
 
 export interface RoomEQOptimizerPresets {
+  count: number
   optimizer_presets: RoomEQOptimizerPreset[]
+  success: true
 }
 
 // EQ Optimization types (updated for streaming API)
@@ -231,23 +238,39 @@ export interface RoomEQOptimizationRequest {
 
 // Server-Sent Event types for streaming optimization
 export interface RoomEQOptimizationFilter {
-  type: string
+  filter_type: string
   frequency: number
-  gain: number
+  gain_db: number
   q: number
+  description: string
+  coefficients: {
+    a: number[]
+    b: number[]
+  }
 }
 
 export interface RoomEQOptimizationEvent {
-  status: 'started' | 'optimizing' | 'intermediate' | 'complete' | 'error'
+  type: 'started' | 'filter_added' | 'completed' | 'error'
   message?: string
+  optimization_id?: string
+  step?: number
   progress?: number
-  current_step?: string
-  elapsed_time?: number
-  optimization_time?: number
-  filter_count?: number
-  target_curve?: string
-  optimizer_preset?: string
-  filters?: RoomEQOptimizationFilter[]
+  timestamp?: number
+  parameters?: {
+    target_curve: string
+    optimizer_preset: string
+    filter_count: number
+    sample_rate: number
+    add_highpass: boolean
+  }
+  filter?: RoomEQOptimizationFilter
+  total_filters?: number
+  current_filter_set?: RoomEQOptimizationFilter[]
+  frequency_response?: {
+    frequencies: number[]
+    magnitude_db: number[]
+    phase_degrees?: number[]
+  }
   error?: string
 }
 
@@ -352,39 +375,48 @@ export const startRoomEQOptimizationStream = async (
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+    let buffer = '' // Buffer for incomplete data
 
     try {
       while (true) {
         const { done, value } = await reader.read()
-        
+
         if (done) {
           console.log('Optimization stream completed')
           onComplete()
           break
         }
 
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
+        // Append new chunk to buffer
+        buffer += decoder.decode(value, { stream: true })
+        
+        // Process complete lines
+        const lines = buffer.split('\n')
+        // Keep the last potentially incomplete line in buffer
+        buffer = lines.pop() || ''
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const eventData = JSON.parse(line.substring(6)) as RoomEQOptimizationEvent
-              console.log('Optimization event:', eventData)
-              
-              if (eventData.status === 'error') {
-                onError(eventData.error || eventData.message || 'Unknown optimization error')
-                return { success: false, detail: eventData.error || eventData.message }
-              }
-              
-              onEvent(eventData)
-              
-              if (eventData.status === 'complete') {
-                onComplete()
-                return { success: true }
+              const jsonData = line.substring(6).trim()
+              if (jsonData) {
+                const eventData = JSON.parse(jsonData) as RoomEQOptimizationEvent
+                console.log('Optimization event:', eventData)
+
+                if (eventData.type === 'error') {
+                  onError(eventData.error || eventData.message || 'Unknown optimization error')
+                  return { success: false, detail: eventData.error || eventData.message }
+                }
+
+                onEvent(eventData)
+
+                if (eventData.type === 'completed') {
+                  onComplete()
+                  return { success: true }
+                }
               }
             } catch (parseError) {
-              console.warn('Failed to parse optimization event:', line, parseError)
+              console.warn('Failed to parse optimization event:', line.substring(0, 200) + '...', parseError)
             }
           }
         }
@@ -428,7 +460,9 @@ export const getRoomEQOptimizerPresets = async (): Promise<RoomEQApiEnvelope<Roo
         return {
           success: true,
           data: {
-            optimizer_presets: data.optimizer_presets as RoomEQOptimizerPreset[]
+            count: data.optimizer_presets.length,
+            optimizer_presets: data.optimizer_presets as RoomEQOptimizerPreset[],
+            success: true
           }
         }
       }
@@ -438,6 +472,7 @@ export const getRoomEQOptimizerPresets = async (): Promise<RoomEQApiEnvelope<Roo
     return {
       success: true,
       data: {
+        count: 1,
         optimizer_presets: [{
           key: 'default',
           preset: 'default',
@@ -447,13 +482,15 @@ export const getRoomEQOptimizerPresets = async (): Promise<RoomEQApiEnvelope<Roo
           mindb: -10,
           maxdb: 3,
           add_highpass: true
-        }]
+        }],
+        success: true
       }
     }
   } catch (error) {
     return {
       success: false,
       data: {
+        count: 1,
         optimizer_presets: [{
           key: 'default',
           preset: 'default',
@@ -463,7 +500,8 @@ export const getRoomEQOptimizerPresets = async (): Promise<RoomEQApiEnvelope<Roo
           mindb: -10,
           maxdb: 3,
           add_highpass: true
-        }]
+        }],
+        success: true
       },
       detail: error instanceof Error ? error.message : 'Unknown error'
     }
@@ -688,12 +726,17 @@ export const getRoomEQTargetPresets = async (): Promise<RoomEQApiEnvelope<RoomEQ
     return {
       success: true,
       data: {
+        count: 1,
+        success: true,
         target_curves: [{
           key: 'flat',
           name: 'Flat Response',
           description: 'Flat frequency response across all frequencies',
           expert: false,
-          curve: [[20, 0], [25000, 0]]
+          curve: [
+            { frequency: 20, target_db: 0, weight: null },
+            { frequency: 25000, target_db: 0, weight: null }
+          ]
         }]
       }
     }
@@ -702,12 +745,17 @@ export const getRoomEQTargetPresets = async (): Promise<RoomEQApiEnvelope<RoomEQ
     return {
       success: false,
       data: {
+        count: 1,
+        success: true,
         target_curves: [{
           key: 'flat',
           name: 'Flat Response',
           description: 'Flat frequency response across all frequencies',
           expert: false,
-          curve: [[20, 0], [25000, 0]]
+          curve: [
+            { frequency: 20, target_db: 0, weight: null },
+            { frequency: 25000, target_db: 0, weight: null }
+          ]
         }]
       },
       detail: error instanceof Error ? error.message : 'Unknown error occurred'

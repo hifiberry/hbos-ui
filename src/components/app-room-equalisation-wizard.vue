@@ -208,26 +208,9 @@
                 <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="3,3"/>
               </svg>
             </div>
-
-            <!-- Legend -->
-            <div class="chart-legend">
-              <div class="legend-item">
-                <div class="legend-line" style="background: #4CAF50;"></div>
-                <span>Before (Original)</span>
-              </div>
-              <div class="legend-item" v-if="selectedTargetPoints.length">
-                <div class="legend-line dashed" style="background: #58a6ff;"></div>
-                <span>Target Curve</span>
-              </div>
-              <div class="legend-item" v-if="optimizedResponse">
-                <div class="legend-line" style="background: #ff6b35;"></div>
-                <span>After (Optimized)</span>
-              </div>
-            </div>
           </div>
 
           <div class="optimisation">
-            <div class="opt-status" v-if="optStatus">{{ optStatus }}</div>
             <div class="api-version-error" v-if="apiVersionError">
               <div class="error-header">⚠️ API Version Compatibility Issue</div>
               <div class="error-message">{{ apiVersionError }}</div>
@@ -680,7 +663,7 @@ const runOptimisation = async () => {
       sample_rate: measurement.value.sample_rate || 48000,
       target_curve: targetCurve.value, // Now this is already the correct API key
       optimizer_preset: optimizerPreset.value,
-      filter_count: 8,
+      filter_count: 16,
       intermediate_results_interval: 2, // Get results every 2 filters
       points_per_octave: 12
     }
@@ -695,7 +678,7 @@ const runOptimisation = async () => {
         switch (event.type) {
           case 'started':
             optStatus.value = event.message || 'Optimization started'
-            optTotalSteps.value = event.parameters?.filter_count || 8
+            optTotalSteps.value = event.parameters?.filter_count || 16
             optimisationProgress.value = 0
             currentOptimizationId.value = event.optimization_id || null
             break

@@ -463,7 +463,7 @@ watch(() => props.isOpen, (open) => {
     optImprovementDb.value = 0
     optimizedFilters.value = []
     optimizationTime.value = 0
-    
+
     // Load fresh data
     loadTargets()
     loadOptimizerPresets()

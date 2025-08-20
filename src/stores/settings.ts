@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { getConfigKeys, getConfigValue, setConfigValue, deleteConfigValue } from '@/api/config'
 
 export interface ServiceSettings {
   lastfm: {
@@ -160,13 +161,17 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   ): Promise<number> => {
     try {
-      // Get existing measurements
-      const existingMeasurements = await getRoomMeasurements()
-
-      // Find next ID
-      const nextId = existingMeasurements.length > 0
-        ? Math.max(...existingMeasurements.map(m => m.id)) + 1
-        : 1
+      // Get existing measurements to determine next ID
+      // If this fails, we'll start with ID 1
+      let nextId = 1
+      try {
+        const existingMeasurements = await getRoomMeasurements()
+        if (existingMeasurements.length > 0) {
+          nextId = Math.max(...existingMeasurements.map(m => m.id)) + 1
+        }
+      } catch {
+        console.log('Could not load existing measurements for ID generation, starting with ID 1')
+      }
 
       // Create new measurement
       const newMeasurement: RoomMeasurement = {
@@ -179,10 +184,10 @@ export const useSettingsStore = defineStore('settings', () => {
         ...metadata
       }
 
-      // Save to localStorage
-      localStorage.setItem(`roomeq.measurement.${nextId}`, JSON.stringify(newMeasurement))
+      // Save to backend config store
+      await setConfigValue(`roomeq.measurement.${nextId}`, JSON.stringify(newMeasurement))
 
-      console.log('Room measurement saved:', newMeasurement)
+      console.log('Room measurement saved to backend:', newMeasurement)
       return nextId
     } catch (error) {
       console.error('Failed to save room measurement:', error)
@@ -194,14 +199,22 @@ export const useSettingsStore = defineStore('settings', () => {
     try {
       const measurements: RoomMeasurement[] = []
 
-      // Scan localStorage for roomeq.measurement.* keys
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key?.startsWith('roomeq.measurement.')) {
-          const data = localStorage.getItem(key)
-          if (data) {
-            const measurement = JSON.parse(data) as RoomMeasurement
-            measurements.push(measurement)
+      // First get all config keys with the roomeq.measurement prefix
+      const keysResponse = await getConfigKeys('roomeq.measurement.')
+      
+      if (keysResponse.status === 'success' && keysResponse.data && Array.isArray(keysResponse.data)) {
+        // For each key, get the actual value
+        for (const key of keysResponse.data) {
+          if (key.startsWith('roomeq.measurement.')) {
+            try {
+              const valueResponse = await getConfigValue(key)
+              if (valueResponse.status === 'success' && valueResponse.data?.value) {
+                const measurement = JSON.parse(valueResponse.data.value) as RoomMeasurement
+                measurements.push(measurement)
+              }
+            } catch (parseError) {
+              console.error(`Failed to parse measurement ${key}:`, parseError)
+            }
           }
         }
       }
@@ -209,17 +222,24 @@ export const useSettingsStore = defineStore('settings', () => {
       // Sort by ID
       return measurements.sort((a, b) => a.id - b.id)
     } catch (error) {
-      console.error('Failed to load room measurements:', error)
+      // If we get a 404 or other error, it likely means no measurements exist yet
+      // This is normal for a fresh installation, so we'll just return an empty array
+      if (error instanceof Error && error.message.includes('404')) {
+        console.log('No measurements found in backend (404) - this is normal for a fresh installation')
+        return []
+      }
+
+      console.error('Failed to load room measurements from backend:', error)
       return []
     }
   }
 
   const deleteRoomMeasurement = async (id: number): Promise<void> => {
     try {
-      localStorage.removeItem(`roomeq.measurement.${id}`)
-      console.log(`Room measurement ${id} deleted`)
+      await deleteConfigValue(`roomeq.measurement.${id}`)
+      console.log(`Room measurement ${id} deleted from backend`)
     } catch (error) {
-      console.error('Failed to delete room measurement:', error)
+      console.error('Failed to delete room measurement from backend:', error)
       throw error
     }
   }

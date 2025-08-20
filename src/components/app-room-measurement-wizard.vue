@@ -195,32 +195,7 @@
           </div>
 
           <div class="measure-settings">
-            <div v-if="isExpertMode" class="setting-row">
-              <label class="setting-label">Signal Type</label>
-              <div class="signal-type-options">
-                <div
-                  v-for="option in availableSignalTypes"
-                  :key="option.value"
-                  class="signal-option"
-                  :class="{ active: signalType === option.value, disabled: isMeasuringRoom }"
-                  @click="
-                    !isMeasuringRoom && (
-                      signalType = option.value as 'sine_sweep' | 'white_noise',
-                      step4Error = ''
-                    )
-                  "
-                >
-                  <div class="signal-option-header">
-                    <AppIcon :icon="option.icon" />
-                    <span class="signal-option-label">{{ option.label }}</span>
-                  </div>
-                  <div class="signal-option-description">{{ option.description }}</div>
-                </div>
-              </div>
-              <div v-if="step4Error" class="setting-error">{{ step4Error }}</div>
-            </div>
-
-            <div class="setting-row" v-if="signalType === 'sine_sweep'">
+            <div class="setting-row">
               <label class="setting-label">Number of sweeps</label>
               <div class="segmented">
                 <button
@@ -239,7 +214,7 @@
           <div class="measure-actions">
             <button
               class="nav-button primary"
-              :disabled="isMeasuringRoom || !signalType"
+              :disabled="isMeasuringRoom"
               @click="startRoomMeasurement"
             >
               <AppIcon icon="tabler/player-play" />
@@ -252,13 +227,10 @@
           </div>
 
           <div v-if="isMeasuringRoom" class="progress-info">
-            <div class="progress-text" v-if="signalType === 'sine_sweep'">
+            <div class="progress-text">
               Sweep {{ currentSweepIndex + 1 }} of {{ sweepCount }}
             </div>
-            <div class="progress-text" v-else>
-              Playing white noise signal...
-            </div>
-            <div class="progress-bar" v-if="signalType === 'sine_sweep'">
+            <div class="progress-bar">
               <div class="fill" :style="{ width: `${Math.min(100, Math.max(0, ((currentSweepIndex + 1) / sweepCount) * 100))}%` }"></div>
             </div>
           </div>
@@ -394,7 +366,7 @@
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import AppIcon from './app-icon.vue'
 import AppProgressSlider from './app-progress-slider.vue'
-import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, startRoomEQSweep, startRoomEQRecording, analyzeRoomEQFFTRecording, completeRoomMeasurement } from '@/api/roomeq'
+import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, startRoomEQRecording, analyzeRoomEQFFTRecording, completeRoomMeasurement, startRoomEQPrerecordedSignal, PRERECORDED_SWEEP_SIGNAL } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'
 import { usePlayerStore } from '@/stores/player'
 import { useSettingsStore } from '@/stores/settings'
@@ -421,14 +393,6 @@ const { getExpertMode } = storeToRefs(settingsStore)
 
 // Expert mode computed properties
 const isExpertMode = computed(() => getExpertMode.value)
-const availableSignalTypes = computed(() => {
-  if (isExpertMode.value) {
-    return signalTypeOptions
-  } else {
-    // In non-expert mode, only show built-in sweep
-    return signalTypeOptions.filter(option => option.value === 'sine_sweep')
-  }
-})
 
 const shouldShowSmoothingSelector = computed(() => isExpertMode.value)
 
@@ -482,11 +446,6 @@ const isMeasuringSPL = ref(false) // Flag to prevent concurrent SPL API calls
 // Step 4: Room measurement state
 const sweepOptions = [1, 2, 4]
 const sweepCount = ref<number>(2)
-const signalTypeOptions = [
-  { value: 'sine_sweep', label: 'Built-in Sweep', icon: 'tabler/wave-sine', description: 'Logarithmic frequency sweep (recommended for room analysis)' },
-  { value: 'white_noise', label: 'White Noise', icon: 'tabler/volume', description: 'Broadband noise signal (good for quick measurements)' }
-]
-const signalType = ref<'sine_sweep' | 'white_noise' | null>(null)
 const isMeasuringRoom = ref(false)
 const currentSweepIndex = ref(0)
 const sweepStatusInterval = ref<number | null>(null)
@@ -553,11 +512,6 @@ const setDefaultMeasurementName = () => {
 const startRoomMeasurement = async () => {
   if (isMeasuringRoom.value) return
   try {
-    // Require explicit selection of measurement type
-    if (!signalType.value) {
-      step4Error.value = 'Please select a signal type before starting the measurement.'
-      return
-    }
     step4Error.value = ''
     isMeasuringRoom.value = true
     currentSweepIndex.value = 0
@@ -575,18 +529,10 @@ const startRoomMeasurement = async () => {
     // Calculate total durations based on signal type
     const preRoll = 1.0
     const postRoll = 1.0
-    let signalDuration: number
-    let totalRecording: number
-
-  if (signalType.value === 'sine_sweep') {
-      const perSweepDuration = 10.0
-      signalDuration = perSweepDuration * sweepCount.value
-      totalRecording = preRoll + signalDuration + postRoll
-    } else {
-      // White noise - use a fixed duration
-      signalDuration = 10.0 // 10 seconds of white noise
-      totalRecording = preRoll + signalDuration + postRoll
-    }
+    // Using pre-recorded sweep signal (10 seconds)
+    const perSweepDuration = 10.0
+    const signalDuration = perSweepDuration * sweepCount.value
+    const totalRecording = preRoll + signalDuration + postRoll
 
     // Store total recording duration for later use
     totalRecordingDuration.value = totalRecording
@@ -606,58 +552,37 @@ const startRoomMeasurement = async () => {
     // Pre-roll wait
     await new Promise((resolve) => setTimeout(resolve, preRoll * 1000))
 
-    // Start signal generation based on type
-  if (signalType.value === 'sine_sweep') {
-      const startResp = await startRoomEQSweep({
-        sweeps: sweepCount.value,
-        duration: 10.0,
-        startFreq: 10,
-        endFreq: 22000,
-        amplitude: noiseAmplitude.value,
-      })
-      if (!startResp.success || !startResp.data) {
-        throw new Error(startResp.detail || 'Failed to start sine sweeps')
-      }
-      
-      // At this point we know startResp.success && startResp.data are truthy from the checks above
-      totalSweepDuration.value = (startResp.data!).total_duration
-      // Store source signal filename for FFT difference analysis
-      sourceSignalFilename.value = (startResp.data!).filename || ''
-    } else {
-      // White noise
-      const startResp = await startRoomEQNoise(noiseAmplitude.value, signalDuration)
-      if (!startResp.success || !startResp.data) {
-        throw new Error(startResp.detail || 'Failed to start white noise')
-      }
-      totalSweepDuration.value = signalDuration
-      // Store source signal filename for FFT difference analysis
-      sourceSignalFilename.value = startResp.data.filename || ''
+    // Start pre-recorded signal playback
+    const startResp = await startRoomEQPrerecordedSignal(PRERECORDED_SWEEP_SIGNAL, noiseAmplitude.value, sweepCount.value)
+    if (!startResp.success || !startResp.data) {
+      throw new Error(startResp.detail || 'Failed to start pre-recorded signal playback')
     }
+    
+    // At this point we know startResp.success && startResp.data are truthy from the checks above
+      // Use the signal duration from the response or default to calculated duration
+      totalSweepDuration.value = (startResp.data!).duration || signalDuration
+      // Store source signal filename for FFT difference analysis
+      sourceSignalFilename.value = (startResp.data!).filename || PRERECORDED_SWEEP_SIGNAL
 
-  // Store start time for progress calculation (right after signal start)
-  const sweepStartTime = Date.now()
+    // Store start time for progress calculation (right after signal start)
+    const sweepStartTime = Date.now()
 
-    // Set up progress tracking for sine sweeps using known timing
-  if (signalType.value === 'sine_sweep') {
-      const perSweepDuration = 10.0
-      sweepStatusInterval.value = window.setInterval(() => {
-    const elapsed = (Date.now() - sweepStartTime) / 1000
-        if (elapsed > 0 && elapsed < signalDuration) {
-          const newSweepIndex = Math.min(sweepCount.value - 1, Math.floor(elapsed / perSweepDuration))
-          currentSweepIndex.value = newSweepIndex
-        }
-      }, 500)
+    // Set up progress tracking for pre-recorded sweep using known timing
+    sweepStatusInterval.value = window.setInterval(() => {
+      const elapsed = (Date.now() - sweepStartTime) / 1000
+      if (elapsed > 0 && elapsed < signalDuration) {
+        const newSweepIndex = Math.min(sweepCount.value - 1, Math.floor(elapsed / perSweepDuration))
+        currentSweepIndex.value = newSweepIndex
+      }
+    }, 500)
 
-      // Clear progress tracking when signal should be finished
-      setTimeout(() => {
-        if (sweepStatusInterval.value) {
+    // Clear progress tracking when signal should be finished
+    setTimeout(() => {
+      if (sweepStatusInterval.value) {
           clearInterval(sweepStatusInterval.value)
           sweepStatusInterval.value = null
         }
       }, (preRoll + signalDuration + 1) * 1000) // +1 second buffer
-    }
-
-  // start time already stored above
 
     // After recording and sweeps are complete, auto-advance
     if (recordingId.value != null) {
@@ -854,8 +779,6 @@ const resetWizard = () => {
   sourceSignalFilename.value = ''  // Reset source signal filename
   totalRecordingDuration.value = 0  // Reset recording duration
   sweepCount.value = 2
-  // Set signal type based on expert mode
-  signalType.value = isExpertMode.value ? null : 'sine_sweep'
   step4Error.value = ''
 
   // Reset FFT analysis state
@@ -1288,13 +1211,6 @@ watch(smoothingType, () => {
   }
 })
 
-// Enforce allowed signal types when expert mode is disabled
-watch(isExpertMode, (enabled) => {
-  if (!enabled) {
-    // When leaving expert mode, restrict to built-in sweep
-    signalType.value = 'sine_sweep'
-  }
-})
 </script>
 
 <style scoped lang="scss">

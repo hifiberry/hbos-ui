@@ -297,7 +297,6 @@
                 <select id="smoothingType" v-model="smoothingType" class="smoothing-dropdown">
                   <option value="1/3_octave">1/3 Octave</option>
                   <option value="1/6_octave">1/6 Octave</option>
-                  <option value="psychoacoustic">Psychoacoustic</option>
                 </select>
               </div>
             </div>
@@ -537,7 +536,7 @@ const isAnalyzingFFT = ref(false)
 const fftError = ref<string>('')
 
 // Smoothing selection
-const smoothingType = ref<'1/3_octave' | '1/6_octave' | 'psychoacoustic'>('1/3_octave')
+const smoothingType = ref<'1/3_octave' | '1/6_octave'>('1/3_octave')
 
 // Measurement name with default value
 const measurementName = ref<string>('')
@@ -1055,15 +1054,11 @@ const performFFTAnalysis = async () => {
 
     // Calculate parameters based on smoothing type
     let pointsPerOctave: number | undefined = undefined
-    let psychoacousticSmoothing: number | undefined = undefined
 
     if (smoothingType.value === '1/3_octave') {
       pointsPerOctave = 12 // 1/3 octave spacing
     } else if (smoothingType.value === '1/6_octave') {
       pointsPerOctave = 24 // 1/6 octave spacing
-    } else if (smoothingType.value === 'psychoacoustic') {
-      pointsPerOctave = 16 // Default octave spacing
-      psychoacousticSmoothing = 1.0 // Enable psychoacoustic smoothing
     }
 
     // Use FFT difference analysis if we have a source signal filename, otherwise fall back to recording analysis
@@ -1075,7 +1070,6 @@ const performFFTAnalysis = async () => {
         recordingId.value.toString(),
         {
           pointsPerOctave,
-          psychoacousticSmoothing,
           fftSize: 8192
         },
         totalRecordingDuration.value  // Pass the recording duration to avoid status polling
@@ -1116,7 +1110,7 @@ const performFFTAnalysis = async () => {
     } else {
       console.log('Using standard recording analysis for recording ID:', recordingId.value, 'with smoothing:', smoothingType.value)
 
-      const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, 8192, pointsPerOctave, psychoacousticSmoothing)
+      const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, 8192, pointsPerOctave, undefined)
 
       if (response.success && response.data) {
         // Extract FFT data from the new API response structure

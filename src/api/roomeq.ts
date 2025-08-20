@@ -1565,8 +1565,7 @@ export const analyzeRoomEQFFTRecording = async (
   recordingId: string | number,
   normalize?: number,
   fftSize?: number,
-  pointsPerOctave?: number,
-  psychoacousticSmoothing?: number
+  pointsPerOctave?: number
 ): Promise<RoomEQApiEnvelope<RoomEQFFTResponse>> => {
   try {
     const configStore = useAppConfigStore()
@@ -1576,7 +1575,6 @@ export const analyzeRoomEQFFTRecording = async (
     if (normalize != null) params.set('normalize', String(normalize))
     if (fftSize != null) params.set('fft_size', String(fftSize))
     if (pointsPerOctave != null) params.set('points_per_octave', String(pointsPerOctave))
-    if (psychoacousticSmoothing != null) params.set('psychoacoustic_smoothing', String(psychoacousticSmoothing))
     const url = `${apiBaseUrl}/audio/analyze/fft-recording/${encodeURIComponent(String(recordingId))}?${params.toString()}`
 
     console.log('Performing RoomEQ FFT analysis on recording:', url)
@@ -1620,7 +1618,6 @@ export const analyzeRoomEQFFTDifference = async (
     pointsPerOctave?: number
     windowType?: 'hann' | 'hamming' | 'blackman' | 'rectangular'
     normalize?: number
-    psychoacousticSmoothing?: number
     startAt?: number
     duration?: number
     fftSize?: number
@@ -1652,7 +1649,6 @@ export const analyzeRoomEQFFTDifference = async (
     if (options.pointsPerOctave !== undefined) params.append('points_per_octave', options.pointsPerOctave.toString())
     if (options.windowType !== undefined) params.append('window', options.windowType)
     if (options.normalize !== undefined) params.append('normalize', options.normalize.toString())
-    if (options.psychoacousticSmoothing !== undefined) params.append('psychoacoustic_smoothing', options.psychoacousticSmoothing.toString())
     if (options.startAt !== undefined) params.append('start_at', options.startAt.toString())
     if (options.duration !== undefined) params.append('duration', options.duration.toString())
     if (options.fftSize !== undefined) params.append('fft_size', options.fftSize.toString())
@@ -1833,7 +1829,6 @@ export const completeRoomMeasurement = async (
   options: {
     pointsPerOctave?: number
     windowType?: 'hann' | 'hamming' | 'blackman' | 'rectangular'
-    psychoacousticSmoothing?: number
     fftSize?: number
   } = {},
   recordingDuration: number
@@ -1861,7 +1856,6 @@ export const completeRoomMeasurement = async (
       {
         pointsPerOctave: options.pointsPerOctave || 16,
         windowType: options.windowType || 'hann',
-        psychoacousticSmoothing: options.psychoacousticSmoothing,
         fftSize: options.fftSize
       }
     )

@@ -1689,7 +1689,6 @@ export const performRoomMeasurement = async (
     pointsPerOctave?: number
     windowType?: 'hann' | 'hamming' | 'blackman' | 'rectangular'
     normalize?: number
-    psychoacousticSmoothing?: number
   } = {}
 ): Promise<RoomEQApiEnvelope<{
   noiseFilename: string

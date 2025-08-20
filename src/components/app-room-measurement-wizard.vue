@@ -1110,7 +1110,7 @@ const performFFTAnalysis = async () => {
     } else {
       console.log('Using standard recording analysis for recording ID:', recordingId.value, 'with smoothing:', smoothingType.value)
 
-      const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, 8192, pointsPerOctave, undefined)
+      const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, 8192, pointsPerOctave)
 
       if (response.success && response.data) {
         // Extract FFT data from the new API response structure

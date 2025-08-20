@@ -3,6 +3,9 @@ import { useAppConfigStore } from '@/stores/appconfig'
 // RoomEQ API version requirements
 export const ROOMEQ_MINIMUM_VERSION = '0.6.0'
 
+// Pre-recorded signal constants
+export const PRERECORDED_SWEEP_SIGNAL = 'sweep_10hz_22000hz_10s.wav'
+
 export interface RoomEQApiEnvelope<T = unknown> {
   success?: boolean
   detail?: string
@@ -1895,6 +1898,45 @@ export const completeRoomMeasurement = async (
 
   } catch (error) {
     console.error('Error completing room measurement:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Start playing a pre-recorded signal file for room measurement
+ */
+export const startRoomEQPrerecordedSignal = async (filename: string, amplitude: number = 0.5, repeat: number = 1): Promise<RoomEQApiEnvelope<RoomEQSignalResponse>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const url = `${apiBaseUrl}/audio/play/file?filename=${encodeURIComponent(filename)}&amplitude=${amplitude}&repeat=${repeat}`
+
+    console.log('Starting RoomEQ pre-recorded signal:', filename, 'amplitude:', amplitude, 'repeat:', repeat)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to start pre-recorded signal: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log('RoomEQ pre-recorded signal response:', data)
+
+    return {
+      success: true,
+      data
+    }
+
+  } catch (error) {
+    console.error('Error starting RoomEQ pre-recorded signal:', error)
     return {
       success: false,
       detail: error instanceof Error ? error.message : 'Unknown error occurred'

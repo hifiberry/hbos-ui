@@ -389,7 +389,7 @@ export const startRoomEQOptimizationStream = async (
 
         // Append new chunk to buffer
         buffer += decoder.decode(value, { stream: true })
-        
+
         // Process complete lines
         const lines = buffer.split('\n')
         // Keep the last potentially incomplete line in buffer

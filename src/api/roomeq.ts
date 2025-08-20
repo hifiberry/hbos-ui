@@ -1834,6 +1834,7 @@ export const completeRoomMeasurement = async (
     pointsPerOctave?: number
     windowType?: 'hann' | 'hamming' | 'blackman' | 'rectangular'
     psychoacousticSmoothing?: number
+    fftSize?: number
   } = {},
   recordingDuration: number
 ): Promise<RoomEQApiEnvelope<{
@@ -1860,7 +1861,8 @@ export const completeRoomMeasurement = async (
       {
         pointsPerOctave: options.pointsPerOctave || 16,
         windowType: options.windowType || 'hann',
-        psychoacousticSmoothing: options.psychoacousticSmoothing
+        psychoacousticSmoothing: options.psychoacousticSmoothing,
+        fftSize: options.fftSize
       }
     )
 

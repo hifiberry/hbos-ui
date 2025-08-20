@@ -580,7 +580,7 @@ const startRoomMeasurement = async () => {
     let totalRecording: number
 
   if (signalType.value === 'sine_sweep') {
-      const perSweepDuration = 5.0
+      const perSweepDuration = 10.0
       signalDuration = perSweepDuration * sweepCount.value
       totalRecording = preRoll + signalDuration + postRoll
     } else {
@@ -611,9 +611,9 @@ const startRoomMeasurement = async () => {
   if (signalType.value === 'sine_sweep') {
       const startResp = await startRoomEQSweep({
         sweeps: sweepCount.value,
-        duration: 5.0,
-        startFreq: 20,
-        endFreq: 20000,
+        duration: 10.0,
+        startFreq: 10,
+        endFreq: 22000,
         amplitude: noiseAmplitude.value,
       })
       if (!startResp.success || !startResp.data) {
@@ -640,7 +640,7 @@ const startRoomMeasurement = async () => {
 
     // Set up progress tracking for sine sweeps using known timing
   if (signalType.value === 'sine_sweep') {
-      const perSweepDuration = 5.0
+      const perSweepDuration = 10.0
       sweepStatusInterval.value = window.setInterval(() => {
     const elapsed = (Date.now() - sweepStartTime) / 1000
         if (elapsed > 0 && elapsed < signalDuration) {
@@ -1075,7 +1075,8 @@ const performFFTAnalysis = async () => {
         recordingId.value.toString(),
         {
           pointsPerOctave,
-          psychoacousticSmoothing
+          psychoacousticSmoothing,
+          fftSize: 8192
         },
         totalRecordingDuration.value  // Pass the recording duration to avoid status polling
       )
@@ -1115,7 +1116,7 @@ const performFFTAnalysis = async () => {
     } else {
       console.log('Using standard recording analysis for recording ID:', recordingId.value, 'with smoothing:', smoothingType.value)
 
-      const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, undefined, pointsPerOctave, psychoacousticSmoothing)
+      const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, 8192, pointsPerOctave, psychoacousticSmoothing)
 
       if (response.success && response.data) {
         // Extract FFT data from the new API response structure

@@ -76,6 +76,7 @@ export interface RoomEQSignalResponse {
   device?: string
   stop_time?: string
   new_stop_time?: string
+  filename?: string // New: filename for noise files
 }
 
 export interface RoomEQSPLMeasurement {
@@ -96,6 +97,7 @@ export interface RoomEQSweepStartResponse {
   amplitude: number
   device: string
   stop_time: string
+  filename?: string  // Added filename support for FFT difference analysis
   message?: string
 }
 
@@ -179,6 +181,77 @@ export interface RoomEQFFTResponse {
     }
   }
   analysis_timestamp: string
+}
+
+// FFT Difference Analysis Types
+export interface RoomEQFFTDifferenceResponse {
+  status: string
+  comparison_info: {
+    analysis_parameters: {
+      fft_size: number
+      window_type: string
+      normalize: number | null
+      points_per_octave: number
+      psychoacoustic_smoothing: number | null
+      analyzed_duration: number
+      analyzed_samples: number
+      start_time: number
+    }
+    file1: {
+      filename: string
+      peak_frequency: number
+      peak_magnitude: number
+      spectral_centroid: number
+    }
+    file2: {
+      filename: string
+      peak_frequency: number
+      peak_magnitude: number
+      spectral_centroid: number
+    }
+  }
+  difference_analysis: {
+    title: string
+    description: string
+    diff_type: string
+    frequencies: number[]
+    magnitudes: number[]
+    phases: number[]
+    sample_rate: number
+    peak_frequency: number
+    peak_magnitude: number
+    source_info: {
+      result1_title: string
+      result2_title: string
+      result1_peak_freq: number
+      result2_peak_freq: number
+    }
+    spectral_density: {
+      type: string
+      description: string
+      units: string
+      computation: string
+    }
+    statistics: {
+      n_points: number
+      frequency_range: [number, number]
+      mean_difference_db: number
+      rms_difference_db: number
+      max_difference_db: number
+    }
+  }
+  individual_analyses: {
+    file1_fft: {
+      peak_frequency: number
+      peak_magnitude: number
+      spectral_centroid: number
+    }
+    file2_fft: {
+      peak_frequency: number
+      peak_magnitude: number
+      spectral_centroid: number
+    }
+  }
 }
 
 // EQ target presets - Updated format
@@ -1523,6 +1596,310 @@ export const analyzeRoomEQFFTRecording = async (
     return { success: true, data }
   } catch (error) {
     console.error('Error performing RoomEQ FFT analysis:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Analyze FFT difference between two audio sources for room response measurement
+ * @param source1 - First audio source (recording ID, filename, or filepath)
+ * @param source2 - Second audio source (recording ID, filename, or filepath)
+ * @param source1Type - Type of first source: 'recording_id', 'filename', or 'filepath'
+ * @param source2Type - Type of second source: 'recording_id', 'filename', or 'filepath'
+ * @param options - Analysis options
+ */
+export const analyzeRoomEQFFTDifference = async (
+  source1: string,
+  source2: string,
+  source1Type: 'recording_id' | 'filename' | 'filepath' = 'recording_id',
+  source2Type: 'recording_id' | 'filename' | 'filepath' = 'recording_id',
+  options: {
+    pointsPerOctave?: number
+    windowType?: 'hann' | 'hamming' | 'blackman' | 'rectangular'
+    normalize?: number
+    psychoacousticSmoothing?: number
+    startAt?: number
+    duration?: number
+    fftSize?: number
+  } = {}
+): Promise<RoomEQApiEnvelope<RoomEQFFTDifferenceResponse>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+
+    const params = new URLSearchParams()
+
+    // Set the appropriate parameter names based on source types
+    if (source1Type === 'recording_id') {
+      params.append('recording_id1', source1)
+    } else if (source1Type === 'filename') {
+      params.append('filename1', source1)
+    } else if (source1Type === 'filepath') {
+      params.append('filepath1', source1)
+    }
+
+    if (source2Type === 'recording_id') {
+      params.append('recording_id2', source2)
+    } else if (source2Type === 'filename') {
+      params.append('filename2', source2)
+    } else if (source2Type === 'filepath') {
+      params.append('filepath2', source2)
+    }
+
+    if (options.pointsPerOctave !== undefined) params.append('points_per_octave', options.pointsPerOctave.toString())
+    if (options.windowType !== undefined) params.append('window', options.windowType)
+    if (options.normalize !== undefined) params.append('normalize', options.normalize.toString())
+    if (options.psychoacousticSmoothing !== undefined) params.append('psychoacoustic_smoothing', options.psychoacousticSmoothing.toString())
+    if (options.startAt !== undefined) params.append('start_at', options.startAt.toString())
+    if (options.duration !== undefined) params.append('duration', options.duration.toString())
+    if (options.fftSize !== undefined) params.append('fft_size', options.fftSize.toString())
+
+    const url = `${apiBaseUrl}/audio/analyze/fft-diff?${params.toString()}`
+
+    console.log('Performing RoomEQ FFT difference analysis:', url)
+
+    const response = await fetch(url, { method: 'POST' })
+
+    if (!response.ok) {
+      throw new Error(`Failed to perform FFT difference analysis: ${response.status} ${response.statusText}`)
+    }
+
+    const data: RoomEQFFTDifferenceResponse = await response.json()
+    console.log('RoomEQ FFT difference response:', data)
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error performing RoomEQ FFT difference analysis:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Comprehensive room measurement using noise playback, recording, and FFT difference analysis
+ * @param measurementDuration - Duration for both noise and recording in seconds
+ * @param amplitude - Noise amplitude (0.0-1.0)
+ * @param options - Analysis options for FFT difference
+ */
+export const performRoomMeasurement = async (
+  measurementDuration: number = 10,
+  amplitude: number = 0.5,
+  options: {
+    pointsPerOctave?: number
+    windowType?: 'hann' | 'hamming' | 'blackman' | 'rectangular'
+    normalize?: number
+    psychoacousticSmoothing?: number
+  } = {}
+): Promise<RoomEQApiEnvelope<{
+  noiseFilename: string
+  recordingId: string
+  analysisResponse: RoomEQFFTDifferenceResponse
+}>> => {
+  try {
+    console.log(`Starting comprehensive room measurement: ${measurementDuration}s duration, ${amplitude} amplitude`)
+
+    // Step 1: Start noise playback
+    console.log('Step 1: Starting noise playback...')
+    const noiseResult = await startRoomEQNoise(amplitude, measurementDuration)
+    if (!noiseResult.success || !noiseResult.data) {
+      throw new Error('Failed to start noise playback')
+    }
+
+    const noiseFilename = noiseResult.data.filename || ''
+    console.log(`Noise started with filename: ${noiseFilename}`)
+
+    // Step 2: Start recording (should be started almost simultaneously)
+    console.log('Step 2: Starting recording...')
+    const recordingResult = await startRoomEQRecording({ duration: measurementDuration })
+    if (!recordingResult.success || !recordingResult.data) {
+      throw new Error('Failed to start recording')
+    }
+
+    const recordingId = recordingResult.data.recording_id.toString()
+    console.log(`Recording started with ID: ${recordingId}`)
+
+    // Step 3: Wait for recording to complete
+    console.log('Step 3: Waiting for recording to complete...')
+    const maxWaitTime = (measurementDuration + 5) * 1000 // Add 5 seconds buffer
+    const startWait = Date.now()
+
+    while (Date.now() - startWait < maxWaitTime) {
+      const statusResult = await getRoomEQRecordingStatus(recordingId)
+      if (statusResult.success && statusResult.data) {
+        if (statusResult.data.state === 'completed') {
+          console.log('Recording completed successfully')
+          break
+        } else if (statusResult.data.state === 'error') {
+          throw new Error('Recording failed with error state')
+        }
+      }
+
+      // Wait 1 second before checking again
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+
+    // Step 4: Complete the measurement with FFT difference analysis
+    console.log('Step 4: Performing FFT difference analysis...')
+    const measurementResult = await completeRoomMeasurement(noiseFilename, recordingId, options, measurementDuration)
+
+    if (!measurementResult.success || !measurementResult.data) {
+      throw new Error('Failed to complete FFT difference analysis')
+    }
+
+    return {
+      success: true,
+      data: {
+        noiseFilename,
+        recordingId,
+        analysisResponse: measurementResult.data.analysisData
+      }
+    }
+
+  } catch (error) {
+    console.error('Error performing comprehensive room measurement:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Simple room measurement: start noise and recording simultaneously
+ * @param measurementDuration - Duration for both noise and recording in seconds
+ * @param amplitude - Noise amplitude (0.0-1.0)
+ */
+export const startRoomMeasurementSession = async (
+  measurementDuration: number = 10,
+  amplitude: number = 0.5
+): Promise<RoomEQApiEnvelope<{
+  noiseFilename: string
+  recordingId: string
+}>> => {
+  try {
+    console.log(`Starting room measurement session: ${measurementDuration}s duration, ${amplitude} amplitude`)
+
+    // Start noise playback and recording simultaneously
+    const [noiseResult, recordingResult] = await Promise.all([
+      startRoomEQNoise(amplitude, measurementDuration),
+      startRoomEQRecording({ duration: measurementDuration })
+    ])
+
+    if (!noiseResult.success || !noiseResult.data) {
+      throw new Error('Failed to start noise playback')
+    }
+
+    if (!recordingResult.success || !recordingResult.data) {
+      throw new Error('Failed to start recording')
+    }
+
+    const noiseFilename = noiseResult.data.filename || ''
+    const recordingId = recordingResult.data.recording_id.toString()
+
+    console.log(`Measurement session started - Noise: ${noiseFilename}, Recording: ${recordingId}`)
+
+    return {
+      success: true,
+      data: {
+        noiseFilename,
+        recordingId
+      }
+    }
+
+  } catch (error) {
+    console.error('Error starting room measurement session:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Complete room measurement by analyzing FFT difference between noise source and recording
+ * @param noiseFilename - Filename of the noise signal
+ * @param recordingId - Recording ID of the room response  
+ * @param options - Analysis options
+ * @param recordingDuration - Recording duration in seconds
+ */
+export const completeRoomMeasurement = async (
+  noiseFilename: string,
+  recordingId: string,
+  options: {
+    pointsPerOctave?: number
+    windowType?: 'hann' | 'hamming' | 'blackman' | 'rectangular'
+    psychoacousticSmoothing?: number
+  } = {},
+  recordingDuration: number
+): Promise<RoomEQApiEnvelope<{
+  frequencyResponse: {
+    frequencies: number[]
+    magnitudes: number[]
+  }
+  analysisData: RoomEQFFTDifferenceResponse
+}>> => {
+  try {
+    // Wait for the recording to complete based on known duration + buffer
+    const waitTime = (recordingDuration + 1) * 1000 // Add 1 second buffer
+    console.log(`Waiting ${waitTime}ms for recording ${recordingId} to complete (${recordingDuration}s + 1s buffer)`)
+    await new Promise(resolve => setTimeout(resolve, waitTime))
+
+    // Use FFT difference analysis to compare noise source with room recording
+    console.log(`Analyzing room response using FFT difference: noise file "${noiseFilename}" vs recording "${recordingId}"`)
+
+    const fftDifferenceResult = await analyzeRoomEQFFTDifference(
+      noiseFilename,
+      recordingId,
+      'filename',
+      'recording_id',
+      {
+        pointsPerOctave: options.pointsPerOctave || 16,
+        windowType: options.windowType || 'hann',
+        psychoacousticSmoothing: options.psychoacousticSmoothing
+      }
+    )
+
+    if (!fftDifferenceResult.success || !fftDifferenceResult.data) {
+      throw new Error('Failed to analyze FFT difference between noise and recording')
+    }
+
+    // Extract frequency response from FFT difference analysis
+    const fftDiffData = fftDifferenceResult.data
+    console.log('FFT Difference Data structure:', JSON.stringify(fftDiffData, null, 2))
+    
+    // Check if difference_analysis object exists and has required properties
+    if (!fftDiffData.difference_analysis) {
+      throw new Error('FFT difference response missing difference_analysis object')
+    }
+    
+    if (!fftDiffData.difference_analysis.frequencies || !fftDiffData.difference_analysis.magnitudes) {
+      console.error('FFT difference structure:', fftDiffData.difference_analysis)
+      throw new Error('FFT difference response missing frequencies or magnitudes arrays')
+    }
+    
+    const frequencies = fftDiffData.difference_analysis.frequencies
+    const magnitudes = fftDiffData.difference_analysis.magnitudes
+
+    console.log(`Room measurement completed using FFT difference - ${frequencies.length} frequency points analyzed`)
+
+    return {
+      success: true,
+      data: {
+        frequencyResponse: {
+          frequencies,
+          magnitudes
+        },
+        analysisData: fftDifferenceResult.data
+      }
+    }
+
+  } catch (error) {
+    console.error('Error completing room measurement:', error)
     return {
       success: false,
       detail: error instanceof Error ? error.message : 'Unknown error occurred'

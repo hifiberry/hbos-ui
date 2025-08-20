@@ -205,7 +205,7 @@
                   :class="{ active: signalType === option.value, disabled: isMeasuringRoom }"
                   @click="
                     !isMeasuringRoom && (
-                      signalType = option.value as 'sine_sweep' | 'sox_sine_sweep' | 'white_noise',
+                      signalType = option.value as 'sine_sweep' | 'white_noise',
                       step4Error = ''
                     )
                   "
@@ -220,7 +220,7 @@
               <div v-if="step4Error" class="setting-error">{{ step4Error }}</div>
             </div>
 
-            <div class="setting-row" v-if="signalType === 'sine_sweep' || signalType === 'sox_sine_sweep'">
+            <div class="setting-row" v-if="signalType === 'sine_sweep'">
               <label class="setting-label">Number of sweeps</label>
               <div class="segmented">
                 <button
@@ -252,13 +252,13 @@
           </div>
 
           <div v-if="isMeasuringRoom" class="progress-info">
-            <div class="progress-text" v-if="signalType === 'sine_sweep' || signalType === 'sox_sine_sweep'">
+            <div class="progress-text" v-if="signalType === 'sine_sweep'">
               Sweep {{ currentSweepIndex + 1 }} of {{ sweepCount }}
             </div>
             <div class="progress-text" v-else>
               Playing white noise signal...
             </div>
-            <div class="progress-bar" v-if="signalType === 'sine_sweep' || signalType === 'sox_sine_sweep'">
+            <div class="progress-bar" v-if="signalType === 'sine_sweep'">
               <div class="fill" :style="{ width: `${Math.min(100, Math.max(0, ((currentSweepIndex + 1) / sweepCount) * 100))}%` }"></div>
             </div>
           </div>
@@ -395,7 +395,7 @@
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import AppIcon from './app-icon.vue'
 import AppProgressSlider from './app-progress-slider.vue'
-import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, startRoomEQSweep, startRoomEQSweepSox, startRoomEQRecording, analyzeRoomEQFFTRecording } from '@/api/roomeq'
+import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, startRoomEQSweep, startRoomEQRecording, analyzeRoomEQFFTRecording, completeRoomMeasurement } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'
 import { usePlayerStore } from '@/stores/player'
 import { useSettingsStore } from '@/stores/settings'
@@ -485,16 +485,17 @@ const sweepOptions = [1, 2, 4]
 const sweepCount = ref<number>(2)
 const signalTypeOptions = [
   { value: 'sine_sweep', label: 'Built-in Sweep', icon: 'tabler/wave-sine', description: 'Logarithmic frequency sweep (recommended for room analysis)' },
-  { value: 'sox_sine_sweep', label: 'SoX Sine Sweep', icon: 'tabler/wave-sine', description: 'SoX-generated logarithmic sweep (alternative generator)' },
   { value: 'white_noise', label: 'White Noise', icon: 'tabler/volume', description: 'Broadband noise signal (good for quick measurements)' }
 ]
-const signalType = ref<'sine_sweep' | 'sox_sine_sweep' | 'white_noise' | null>(null)
+const signalType = ref<'sine_sweep' | 'white_noise' | null>(null)
 const isMeasuringRoom = ref(false)
 const currentSweepIndex = ref(0)
 const sweepStatusInterval = ref<number | null>(null)
 const totalSweepDuration = ref<number | null>(null)
 const recordingId = ref<string | number | null>(null)
 const recordingFilename = ref<string>('')
+const sourceSignalFilename = ref<string>('')  // Store source signal filename for FFT difference
+const totalRecordingDuration = ref<number>(0)  // Store total recording duration for optimal waiting
 const step4Error = ref<string>('')
 
 // FFT analysis state
@@ -564,6 +565,8 @@ const startRoomMeasurement = async () => {
     totalSweepDuration.value = null
     recordingId.value = null
     recordingFilename.value = ''
+    sourceSignalFilename.value = ''  // Reset source signal filename
+    totalRecordingDuration.value = 0  // Reset recording duration
 
     // Ensure no noise is playing
     if (isNoiseePlaying.value) {
@@ -576,7 +579,7 @@ const startRoomMeasurement = async () => {
     let signalDuration: number
     let totalRecording: number
 
-  if (signalType.value === 'sine_sweep' || signalType.value === 'sox_sine_sweep') {
+  if (signalType.value === 'sine_sweep') {
       const perSweepDuration = 5.0
       signalDuration = perSweepDuration * sweepCount.value
       totalRecording = preRoll + signalDuration + postRoll
@@ -585,6 +588,9 @@ const startRoomMeasurement = async () => {
       signalDuration = 10.0 // 10 seconds of white noise
       totalRecording = preRoll + signalDuration + postRoll
     }
+
+    // Store total recording duration for later use
+    totalRecordingDuration.value = totalRecording
 
     // Start recording first
     const recResp = await startRoomEQRecording({
@@ -602,43 +608,22 @@ const startRoomMeasurement = async () => {
     await new Promise((resolve) => setTimeout(resolve, preRoll * 1000))
 
     // Start signal generation based on type
-  if (signalType.value === 'sine_sweep' || signalType.value === 'sox_sine_sweep') {
-      let startResp = signalType.value === 'sox_sine_sweep'
-        ? await startRoomEQSweepSox({
-            sweeps: sweepCount.value,
-            duration: 5.0,
-            startFreq: 20,
-            endFreq: 20000,
-            amplitude: noiseAmplitude.value,
-          })
-        : await startRoomEQSweep({
+  if (signalType.value === 'sine_sweep') {
+      const startResp = await startRoomEQSweep({
         sweeps: sweepCount.value,
         duration: 5.0,
         startFreq: 20,
         endFreq: 20000,
         amplitude: noiseAmplitude.value,
-        })
+      })
       if (!startResp.success || !startResp.data) {
-        // If SoX fails, fall back to built-in sweep automatically
-        if (signalType.value === 'sox_sine_sweep') {
-          console.warn('SoX sweep failed, falling back to built-in sweep:', startResp.detail)
-          const fallback = await startRoomEQSweep({
-            sweeps: sweepCount.value,
-            duration: 5.0,
-            startFreq: 20,
-            endFreq: 20000,
-            amplitude: noiseAmplitude.value,
-          })
-          if (!fallback.success || !fallback.data) {
-            throw new Error(fallback.detail || 'Failed to start sine sweeps')
-          }
-          startResp = fallback
-        } else {
-          throw new Error(startResp.detail || 'Failed to start sine sweeps')
-        }
+        throw new Error(startResp.detail || 'Failed to start sine sweeps')
       }
-  // At this point we know startResp.success && startResp.data are truthy from the checks above
-  totalSweepDuration.value = (startResp.data!).total_duration
+      
+      // At this point we know startResp.success && startResp.data are truthy from the checks above
+      totalSweepDuration.value = (startResp.data!).total_duration
+      // Store source signal filename for FFT difference analysis
+      sourceSignalFilename.value = (startResp.data!).filename || ''
     } else {
       // White noise
       const startResp = await startRoomEQNoise(noiseAmplitude.value, signalDuration)
@@ -646,13 +631,15 @@ const startRoomMeasurement = async () => {
         throw new Error(startResp.detail || 'Failed to start white noise')
       }
       totalSweepDuration.value = signalDuration
+      // Store source signal filename for FFT difference analysis
+      sourceSignalFilename.value = startResp.data.filename || ''
     }
 
   // Store start time for progress calculation (right after signal start)
   const sweepStartTime = Date.now()
 
     // Set up progress tracking for sine sweeps using known timing
-  if (signalType.value === 'sine_sweep' || signalType.value === 'sox_sine_sweep') {
+  if (signalType.value === 'sine_sweep') {
       const perSweepDuration = 5.0
       sweepStatusInterval.value = window.setInterval(() => {
     const elapsed = (Date.now() - sweepStartTime) / 1000
@@ -865,6 +852,8 @@ const resetWizard = () => {
   totalSweepDuration.value = null
   recordingId.value = null
   recordingFilename.value = ''
+  sourceSignalFilename.value = ''  // Reset source signal filename
+  totalRecordingDuration.value = 0  // Reset recording duration
   sweepCount.value = 2
   // Set signal type based on expert mode
   signalType.value = isExpertMode.value ? null : 'sine_sweep'
@@ -1063,7 +1052,6 @@ const performFFTAnalysis = async () => {
   try {
     isAnalyzingFFT.value = true
     fftError.value = ''
-    console.log('Starting FFT analysis for recording ID:', recordingId.value, 'with smoothing:', smoothingType.value)
 
     // Calculate parameters based on smoothing type
     let pointsPerOctave: number | undefined = undefined
@@ -1078,38 +1066,89 @@ const performFFTAnalysis = async () => {
       psychoacousticSmoothing = 1.0 // Enable psychoacoustic smoothing
     }
 
-    const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, undefined, pointsPerOctave, psychoacousticSmoothing)
+    // Use FFT difference analysis if we have a source signal filename, otherwise fall back to recording analysis
+    if (sourceSignalFilename.value && sourceSignalFilename.value.trim() !== '') {
+      console.log('Using FFT difference analysis between source signal and recording:', sourceSignalFilename.value, 'vs', recordingId.value)
 
-    if (response.success && response.data) {
-      // Extract FFT data from the new API response structure
-      const analysisData = response.data
+      const response = await completeRoomMeasurement(
+        sourceSignalFilename.value,
+        recordingId.value.toString(),
+        {
+          pointsPerOctave,
+          psychoacousticSmoothing
+        },
+        totalRecordingDuration.value  // Pass the recording duration to avoid status polling
+      )
 
-      // Log only the smoothed/logarithmic frequency data
-      if (analysisData.fft_analysis.log_frequency_summary) {
-        console.log('=== SMOOTHED FREQUENCY DATA ===')
-        console.log('Log frequency summary:', analysisData.fft_analysis.log_frequency_summary)
-        console.log('Normalization:', analysisData.fft_analysis.normalization)
-        console.log('=== END SMOOTHED DATA ===')
+      if (response.success && response.data) {
+        const fftDiffData = response.data.analysisData
+
+        console.log('=== FFT DIFFERENCE ANALYSIS ===')
+        console.log('FFT difference data:', fftDiffData)
+        console.log('=== END FFT DIFFERENCE DATA ===')
+
+        // Convert FFT difference data to the expected format
+        fftData.value = {
+          frequencies: fftDiffData.difference_analysis.frequencies,
+          magnitude: fftDiffData.difference_analysis.magnitudes,
+          phase: fftDiffData.difference_analysis.phases,
+          sample_rate: fftDiffData.difference_analysis.sample_rate,
+          peak_frequency: fftDiffData.difference_analysis.peak_frequency,
+          peak_magnitude: fftDiffData.difference_analysis.peak_magnitude,
+          frequency_bands: {
+            sub_bass: { range: '20-60 Hz', avg_magnitude: 0, peak_frequency: 0 },
+            bass: { range: '60-250 Hz', avg_magnitude: 0, peak_frequency: 0 },
+            low_midrange: { range: '250-500 Hz', avg_magnitude: 0, peak_frequency: 0 },
+            midrange: { range: '500-2000 Hz', avg_magnitude: 0, peak_frequency: 0 },
+            upper_midrange: { range: '2000-4000 Hz', avg_magnitude: 0, peak_frequency: 0 },
+            presence: { range: '4000-6000 Hz', avg_magnitude: 0, peak_frequency: 0 },
+            brilliance: { range: '6000-20000 Hz', avg_magnitude: 0, peak_frequency: 0 }
+          }, // Placeholder values for difference analysis
+          log_frequency_summary: undefined, // Not available in difference analysis
+          normalization: { applied: false } // Not available in difference analysis
+        }
+
+        console.log('FFT difference data converted for display:', fftData.value)
+      } else {
+        throw new Error(response.detail || 'FFT difference analysis failed')
       }
-
-      // Store the FFT data (API already normalized to 1kHz if requested)
-      fftData.value = {
-        frequencies: analysisData.fft_analysis.frequencies,
-        magnitude: analysisData.fft_analysis.magnitudes,
-        phase: analysisData.fft_analysis.phases,
-        sample_rate: analysisData.fft_analysis.sample_rate,
-        peak_frequency: analysisData.fft_analysis.peak_frequency,
-        peak_magnitude: analysisData.fft_analysis.peak_magnitude,
-        frequency_bands: analysisData.fft_analysis.frequency_bands,
-        log_frequency_summary: analysisData.fft_analysis.log_frequency_summary,
-        normalization: analysisData.fft_analysis.normalization
-      }
-
-      console.log('FFT data stored:', fftData.value)
-      console.log('Normalization info:', fftData.value.normalization)
     } else {
-      throw new Error(response.detail || 'FFT analysis failed')
+      console.log('Using standard recording analysis for recording ID:', recordingId.value, 'with smoothing:', smoothingType.value)
+
+      const response = await analyzeRoomEQFFTRecording(recordingId.value, 1000, undefined, pointsPerOctave, psychoacousticSmoothing)
+
+      if (response.success && response.data) {
+        // Extract FFT data from the new API response structure
+        const analysisData = response.data
+
+        // Log only the smoothed/logarithmic frequency data
+        if (analysisData.fft_analysis.log_frequency_summary) {
+          console.log('=== SMOOTHED FREQUENCY DATA ===')
+          console.log('Log frequency summary:', analysisData.fft_analysis.log_frequency_summary)
+          console.log('Normalization:', analysisData.fft_analysis.normalization)
+          console.log('=== END SMOOTHED DATA ===')
+        }
+
+        // Store the FFT data (API already normalized to 1kHz if requested)
+        fftData.value = {
+          frequencies: analysisData.fft_analysis.frequencies,
+          magnitude: analysisData.fft_analysis.magnitudes,
+          phase: analysisData.fft_analysis.phases,
+          sample_rate: analysisData.fft_analysis.sample_rate,
+          peak_frequency: analysisData.fft_analysis.peak_frequency,
+          peak_magnitude: analysisData.fft_analysis.peak_magnitude,
+          frequency_bands: analysisData.fft_analysis.frequency_bands,
+          log_frequency_summary: analysisData.fft_analysis.log_frequency_summary,
+          normalization: analysisData.fft_analysis.normalization
+        }
+
+        console.log('FFT data stored:', fftData.value)
+        console.log('Normalization info:', fftData.value.normalization)
+      } else {
+        throw new Error(response.detail || 'FFT recording analysis failed')
+      }
     }
+
   } catch (error) {
     console.error('FFT analysis error:', error)
     fftError.value = error instanceof Error ? error.message : 'Unknown error occurred'

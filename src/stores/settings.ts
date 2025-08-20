@@ -201,7 +201,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       // First get all config keys with the roomeq.measurement prefix
       const keysResponse = await getConfigKeys('roomeq.measurement.')
-      
+
       if (keysResponse.status === 'success' && keysResponse.data && Array.isArray(keysResponse.data)) {
         // For each key, get the actual value
         for (const key of keysResponse.data) {

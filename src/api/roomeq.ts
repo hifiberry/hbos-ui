@@ -437,9 +437,13 @@ export const startRoomEQOptimizationStream = async (
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
+        'Cache-Control': 'no-cache',
       },
       body: JSON.stringify(payload),
     })
+
+    console.log('Response status:', response.status)
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       throw new Error(`Failed to start optimization: ${response.status} ${response.statusText}`)
@@ -452,34 +456,54 @@ export const startRoomEQOptimizationStream = async (
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let buffer = '' // Buffer for incomplete data
+    let eventCount = 0
+    const startTime = Date.now()
 
     try {
       while (true) {
         const { done, value } = await reader.read()
 
         if (done) {
-          console.log('Optimization stream completed')
+          const duration = Date.now() - startTime
+          console.log(`🏁 Stream reader completed - received ${eventCount} total events in ${duration}ms`)
           onComplete()
           break
         }
 
         // Append new chunk to buffer
-        buffer += decoder.decode(value, { stream: true })
+        const chunk = decoder.decode(value, { stream: true })
+        if (chunk.length > 0) {
+          console.log('Received chunk length:', chunk.length, 'content:', chunk.substring(0, 200) + (chunk.length > 200 ? '...' : ''))
+          buffer += chunk
+        } else {
+          console.log('Received empty chunk')
+        }
 
         // Process complete lines
         const lines = buffer.split('\n')
         // Keep the last potentially incomplete line in buffer
         buffer = lines.pop() || ''
 
+        console.log(`Processing ${lines.length} lines from buffer`)
         for (const line of lines) {
+          if (line.trim() === '') {
+            console.log('Processing empty line - skipping')
+            continue
+          }
+          console.log('Processing line length:', line.length, 'content:', line.substring(0, 100) + (line.length > 100 ? '...' : ''))
+
           if (line.startsWith('data: ')) {
             try {
               const jsonData = line.substring(6).trim()
               if (jsonData) {
+                console.log('Parsing JSON:', jsonData.substring(0, 200) + (jsonData.length > 200 ? '...' : ''))
                 const eventData = JSON.parse(jsonData) as RoomEQOptimizationEvent
-                console.log('Optimization event:', eventData)
+                eventCount++
+                console.log(`Optimization event #${eventCount} type:`, eventData.type, 'message:', eventData.message)
+                console.log('Full optimization event:', eventData)
 
                 if (eventData.type === 'error') {
+                  console.log('❌ Received error event:', eventData)
                   onError(eventData.error || eventData.message || 'Unknown optimization error')
                   return { success: false, detail: eventData.error || eventData.message }
                 }
@@ -487,6 +511,7 @@ export const startRoomEQOptimizationStream = async (
                 onEvent(eventData)
 
                 if (eventData.type === 'completed') {
+                  console.log('🎯 Received completed event - calling onComplete and returning')
                   onComplete()
                   return { success: true }
                 }
@@ -494,6 +519,8 @@ export const startRoomEQOptimizationStream = async (
             } catch (parseError) {
               console.warn('Failed to parse optimization event:', line.substring(0, 200) + '...', parseError)
             }
+          } else if (line.trim() !== '' && !line.startsWith(':')) {
+            console.log('Non-data line received:', line.substring(0, 100))
           }
         }
       }
@@ -1821,7 +1848,7 @@ export const startRoomMeasurementSession = async (
 /**
  * Complete room measurement by analyzing FFT difference between noise source and recording
  * @param noiseFilename - Filename of the noise signal
- * @param recordingId - Recording ID of the room response  
+ * @param recordingId - Recording ID of the room response
  * @param options - Analysis options
  * @param recordingDuration - Recording duration in seconds
  */
@@ -1869,17 +1896,17 @@ export const completeRoomMeasurement = async (
     // Extract frequency response from FFT difference analysis
     const fftDiffData = fftDifferenceResult.data
     console.log('FFT Difference Data structure:', JSON.stringify(fftDiffData, null, 2))
-    
+
     // Check if difference_analysis object exists and has required properties
     if (!fftDiffData.difference_analysis) {
       throw new Error('FFT difference response missing difference_analysis object')
     }
-    
+
     if (!fftDiffData.difference_analysis.frequencies || !fftDiffData.difference_analysis.magnitudes) {
       console.error('FFT difference structure:', fftDiffData.difference_analysis)
       throw new Error('FFT difference response missing frequencies or magnitudes arrays')
     }
-    
+
     const frequencies = fftDiffData.difference_analysis.frequencies
     const magnitudes = fftDiffData.difference_analysis.magnitudes
 
@@ -1908,13 +1935,17 @@ export const completeRoomMeasurement = async (
 /**
  * Start playing a pre-recorded signal file for room measurement
  */
-export const startRoomEQPrerecordedSignal = async (filename: string, amplitude: number = 0.5, repeat: number = 1): Promise<RoomEQApiEnvelope<RoomEQSignalResponse>> => {
+export const startRoomEQPrerecordedSignal = async (filename: string, amplitude: number = 0.5, repeat: number = 1, duration?: number): Promise<RoomEQApiEnvelope<RoomEQSignalResponse>> => {
   try {
     const configStore = useAppConfigStore()
     const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
-    const url = `${apiBaseUrl}/audio/play/file?filename=${encodeURIComponent(filename)}&amplitude=${amplitude}&repeat=${repeat}`
 
-    console.log('Starting RoomEQ pre-recorded signal:', filename, 'amplitude:', amplitude, 'repeat:', repeat)
+    let url = `${apiBaseUrl}/audio/play/file?filename=${encodeURIComponent(filename)}&amplitude=${amplitude}&repeat=${repeat}`
+    if (duration !== undefined) {
+      url += `&duration=${duration}`
+    }
+
+    console.log('Starting RoomEQ pre-recorded signal:', filename, 'amplitude:', amplitude, 'repeat:', repeat, 'duration:', duration)
 
     const response = await fetch(url, {
       method: 'POST',

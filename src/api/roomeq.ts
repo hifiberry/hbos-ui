@@ -443,7 +443,7 @@ export const startNewRoomEQOptimizationStream = async (
 
                 if (eventData.type === 'completed') {
                   console.log('🎯 Received completed event - parsing final result')
-                  
+
                   // Check if the completion event contains the final result in the line
                   if (eventData.line) {
                     try {
@@ -456,7 +456,7 @@ export const startNewRoomEQOptimizationStream = async (
                       console.warn('Could not parse final result from completion event:', parseError)
                     }
                   }
-                  
+
                   onComplete(finalResult)
                   return { success: true }
                 }

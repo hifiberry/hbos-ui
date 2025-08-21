@@ -317,6 +317,36 @@ export interface NewRoomEQOptimizerParams {
   maxdb: number
   add_highpass: boolean
   acceptable_error: number
+  min_frequency?: number
+  max_frequency?: number
+}
+
+// Usable frequency range detection types
+export interface RoomEQUsableRangeRequest {
+  measured_curve: NewRoomEQMeasuredCurve
+  optimizer_params?: {
+    min_frequency?: number
+    max_frequency?: number
+  }
+  sample_rate?: number
+}
+
+export interface RoomEQUsableRangeResult {
+  success?: boolean
+  usable_freq_low?: number
+  usable_freq_high?: number
+  recommended_min?: number
+  recommended_max?: number
+  min_frequency?: number
+  max_frequency?: number
+  analysis?: {
+    low_frequency_rolloff?: number
+    high_frequency_rolloff?: number
+    noise_floor_estimate?: number
+    dynamic_range?: number
+  }
+  // Allow any additional fields the server might return
+  [key: string]: unknown
 }
 
 export interface NewRoomEQOptimizationRequest {
@@ -356,6 +386,46 @@ export interface NewRoomEQOptimizationProgress {
   lines_processed?: number
   processing_time?: number
   job_data?: NewRoomEQOptimizationRequest
+}
+
+/**
+ * Detect usable frequency range from measured curve data
+ */
+export const detectUsableFrequencyRange = async (
+  payload: RoomEQUsableRangeRequest
+): Promise<RoomEQApiEnvelope<RoomEQUsableRangeResult>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const url = `${apiBaseUrl}/eq/usable-range`
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log('🔍 DEBUG: Usable range API response:', data)
+
+    return {
+      success: true,
+      data
+    }
+  } catch (error) {
+    console.error('Failed to detect usable frequency range:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
 }
 
 /**

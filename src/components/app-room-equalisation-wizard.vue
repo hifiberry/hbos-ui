@@ -138,7 +138,134 @@
             <AppIcon icon="tabler/settings-cog" class="step-icon" />
             <div class="step-info">
               <h3>Step 3: Optimisation Setup</h3>
-              <p>Configure optimisation settings before running the analysis.</p>
+              <p>Configure optimisation settings and review frequency response.</p>
+            </div>
+          </div>
+
+          <!-- Measured Frequency Response Display -->
+          <div class="frequency-response-section">
+            <h4>Measured Frequency Response</h4>
+            <div class="frequency-response-chart">
+              <svg viewBox="0 0 800 300" class="response-svg">
+                <defs>
+                  <pattern id="grid-step3" width="40" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
+                  </pattern>
+                </defs>
+                <rect width="800" height="300" fill="url(#grid-step3)" />
+
+                <!-- Frequency axis (20Hz - 20kHz) -->
+                <g class="frequency-axis">
+                  <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
+                  <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
+                  <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
+                  <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
+                  <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
+                </g>
+
+                <!-- Magnitude axis (-20dB to +20dB) -->
+                <g class="magnitude-axis">
+                  <text x="20" y="285" text-anchor="middle" class="axis-label">-20</text>
+                  <text x="20" y="235" text-anchor="middle" class="axis-label">-10</text>
+                  <text x="20" y="185" text-anchor="middle" class="axis-label">-5</text>
+                  <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
+                  <text x="20" y="115" text-anchor="middle" class="axis-label">+5</text>
+                  <text x="20" y="65" text-anchor="middle" class="axis-label">+10</text>
+                  <text x="20" y="15" text-anchor="middle" class="axis-label">+20</text>
+                </g>
+
+                <!-- 0 dB reference line -->
+                <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="3,3" />
+
+                <!-- Measured frequency response curve -->
+                <path v-if="measurement"
+                      :d="generateMeasuredPath(measurement)"
+                      fill="none"
+                      stroke="var(--primary)"
+                      stroke-width="2" />
+
+                <!-- Usable frequency range indicators -->
+                <g v-if="userMinFrequency && userMaxFrequency">
+                  <!-- Low frequency limit line -->
+                  <line :x1="frequencyToX(userMinFrequency || 20)"
+                        y1="20"
+                        :x2="frequencyToX(userMinFrequency || 20)"
+                        y2="280"
+                        stroke="#ff6b6b"
+                        stroke-width="2"
+                        stroke-dasharray="5,5" />
+                  <text :x="frequencyToX(userMinFrequency || 20)"
+                        y="12"
+                        text-anchor="middle"
+                        class="range-label"
+                        fill="#ff6b6b">
+                    {{ Math.round(userMinFrequency || 20) }}Hz
+                  </text>
+
+                  <!-- High frequency limit line -->
+      <line :x1="frequencyToX(userMaxFrequency || 20000)"
+                        y1="20"
+        :x2="frequencyToX(userMaxFrequency || 20000)"
+                        y2="280"
+                        stroke="#ff6b6b"
+                        stroke-width="2"
+                        stroke-dasharray="5,5" />
+      <text :x="frequencyToX(userMaxFrequency || 20000)"
+                        y="12"
+                        text-anchor="middle"
+                        class="range-label"
+                        fill="#ff6b6b">
+        {{ Math.round(userMaxFrequency || 20000) }}Hz
+                  </text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Usable Frequency Range Controls -->
+          <div class="usable-range-controls">
+            <div class="range-header">
+              <h4>Usable Frequency Range</h4>
+              <div class="range-status">
+                <span v-if="loadingUsableRange" class="status-loading">
+                  <AppIcon icon="tabler/loader" class="spinning" /> Detecting...
+                </span>
+                <span v-else-if="usableRangeError" class="status-error">
+                  <AppIcon icon="tabler/alert-circle" /> {{ usableRangeError }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Range input controls -->
+            <div class="range-inputs">
+              <div class="input-group">
+                <label>Minimum Frequency</label>
+                <div class="control-inline">
+                  <input class="number-input" type="number"
+                         v-model.number="userMinFrequency"
+                         :min="10"
+                         :max="1000" />
+                  <span class="suffix">Hz</span>
+                </div>
+              </div>
+              <div class="input-group">
+                <label>Maximum Frequency</label>
+                <div class="control-inline">
+                  <input class="number-input" type="number"
+                         v-model.number="userMaxFrequency"
+                         :min="1000"
+                         :max="25000" />
+                  <span class="suffix">Hz</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Range analysis info -->
+            <div v-if="usableRangeResult" class="range-analysis">
+              <div class="analysis-item">
+                <span class="label">Recommended:</span>
+                <span class="value">{{ Math.round(usableRangeResult.recommended_min || 20) }}Hz - {{ Math.round(usableRangeResult.recommended_max || 20000) }}Hz</span>
+              </div>
             </div>
           </div>
 
@@ -270,7 +397,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import AppIcon from './app-icon.vue'
 import type { RoomMeasurement } from '@/stores/settings'
-import { getRoomEQTargetPresets, type RoomEQTargetPoint } from '@/api/roomeq'
+import { getRoomEQTargetPresets, type RoomEQTargetPoint, detectUsableFrequencyRange, type RoomEQUsableRangeResult } from '@/api/roomeq'
 
 interface Props {
   isOpen: boolean
@@ -308,6 +435,13 @@ const maxBoost = ref<number>(6)
 const maxCut = ref<number>(12)
 const exportMode = computed(() => props.exportMode === true)
 const targetDescription = computed(() => targetDescriptions.value[targetCurve.value] || '')
+
+// Usable frequency range detection
+const usableRangeResult = ref<RoomEQUsableRangeResult | null>(null)
+const loadingUsableRange = ref(false)
+const usableRangeError = ref('')
+const userMinFrequency = ref<number>(20)
+const userMaxFrequency = ref<number>(20000)
 
 watch(measurement, (m) => {
   if (m?.frequency_range) {
@@ -432,6 +566,118 @@ const loadTargets = async () => {
 const toLabel = (name: string) => name.replace(/_/g, ' ')
 const selectTarget = (name: string) => { targetCurve.value = name }
 
+// Detect usable frequency range from measurement
+// Define interfaces for the actual server response structure
+interface UsableRangeServerResponse {
+  success: boolean
+  message?: string
+  usable_frequency_range?: {
+    min_frequency?: number
+    max_frequency?: number
+    recommended_min?: number
+    recommended_max?: number
+    dynamic_range?: number
+    low_frequency_rolloff?: number
+    high_frequency_rolloff?: number
+    noise_floor_estimate?: number
+    usable_freq_low?: number
+    usable_freq_high?: number
+  }
+  // Fallback for direct structure
+  usable_freq_low?: number
+  usable_freq_high?: number
+  recommended_min?: number
+  recommended_max?: number
+  dynamic_range?: number
+  low_frequency_rolloff?: number
+  high_frequency_rolloff?: number
+  noise_floor_estimate?: number
+}
+
+const detectUsableRange = async () => {
+  if (!measurement.value) return
+
+  try {
+    loadingUsableRange.value = true
+    usableRangeError.value = ''
+
+    const payload = {
+      measured_curve: {
+        frequencies: measurement.value.frequencies,
+        magnitudes_db: measurement.value.magnitudes
+      },
+      optimizer_params: {
+        min_frequency: userMinFrequency.value,
+        max_frequency: userMaxFrequency.value
+      },
+      sample_rate: measurement.value.sample_rate || 48000
+    }
+
+    const response = await detectUsableFrequencyRange(payload)
+
+    if (response.success && response.data) {
+      const data = response.data as UsableRangeServerResponse
+
+      // Extract usable frequency range from the actual response structure
+      let extractedResult: RoomEQUsableRangeResult
+
+      if (data.usable_frequency_range) {
+        // Server returns nested structure
+        const range = data.usable_frequency_range
+        extractedResult = {
+          success: data.success,
+          usable_freq_low: range.min_frequency || range.usable_freq_low || userMinFrequency.value,
+          usable_freq_high: range.max_frequency || range.usable_freq_high || userMaxFrequency.value,
+          recommended_min: range.recommended_min || range.min_frequency || userMinFrequency.value,
+          recommended_max: range.recommended_max || range.max_frequency || userMaxFrequency.value,
+          message: data.message,
+          analysis: {
+            dynamic_range: range.dynamic_range || 0,
+            low_frequency_rolloff: range.low_frequency_rolloff || 0,
+            high_frequency_rolloff: range.high_frequency_rolloff || 0,
+            noise_floor_estimate: range.noise_floor_estimate || 0
+          }
+        }
+      } else {
+        // Fallback to direct structure
+        extractedResult = {
+          success: data.success,
+          usable_freq_low: data.usable_freq_low || userMinFrequency.value,
+          usable_freq_high: data.usable_freq_high || userMaxFrequency.value,
+          recommended_min: data.recommended_min || data.usable_freq_low || userMinFrequency.value,
+          recommended_max: data.recommended_max || data.usable_freq_high || userMaxFrequency.value,
+          message: data.message,
+          analysis: {
+            dynamic_range: data.dynamic_range || 0,
+            low_frequency_rolloff: data.low_frequency_rolloff || 0,
+            high_frequency_rolloff: data.high_frequency_rolloff || 0,
+            noise_floor_estimate: data.noise_floor_estimate || 0
+          }
+        }
+      }
+
+      usableRangeResult.value = extractedResult
+
+      // Update the range inputs with detected values
+      if (extractedResult.usable_freq_low) {
+        userMinFrequency.value = extractedResult.usable_freq_low
+      }
+      if (extractedResult.usable_freq_high) {
+        userMaxFrequency.value = extractedResult.usable_freq_high
+      }
+    } else {
+      usableRangeError.value = response.detail || 'Failed to detect usable frequency range'
+      usableRangeResult.value = null
+    }
+  } catch (error) {
+    console.error('Error detecting usable frequency range:', error)
+    usableRangeError.value = error instanceof Error ? error.message : 'Unknown error occurred'
+    usableRangeResult.value = null
+  } finally {
+    loadingUsableRange.value = false
+  }
+}
+
 const selectedTargetPoints = computed(() => {
   const points = targets.value[targetCurve.value] || []
   console.log('Selected target points for', targetCurve.value, ':', points)
@@ -467,6 +713,13 @@ watch(() => props.isOpen, (open) => {
     // Load fresh data
     loadTargets()
     loadOptimizerPresets()
+  }
+})
+
+// Auto-detect usable frequency range when entering step 3
+watch(currentStep, (newStep) => {
+  if (newStep === 3 && measurement.value) {
+    detectUsableRange()
   }
 })
 
@@ -562,6 +815,41 @@ const generateOptimisationPath = (data: { frequencies: number[]; magnitudes: num
     }
   }
   return path
+}
+
+// Helper functions for step 3 chart display
+const generateMeasuredPath = (m: RoomMeasurement): string => {
+  if (!m.frequencies || !m.magnitudes) return ''
+
+  const minFreq = 20
+  const maxFreq = 20000
+  const minMag = -20
+  const maxMag = 20
+  const width = 760 - 40
+  const height = 280 - 20
+
+  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
+  const magScale = (mag: number) => 20 + (maxMag - mag) / (maxMag - minMag) * height
+
+  let path = ''
+  for (let i = 0; i < m.frequencies.length; i++) {
+    const f = m.frequencies[i]
+    const mag = m.magnitudes[i]
+    if (f >= minFreq && f <= maxFreq) {
+      const x = logScale(f)
+      const y = magScale(mag)
+      path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
+    }
+  }
+  return path
+}
+
+// Convert frequency to X coordinate on the chart
+const frequencyToX = (freq: number): number => {
+  const minFreq = 20
+  const maxFreq = 20000
+  const width = 760 - 40
+  return 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
 }
 
 // Optimisation step - Updated for new streaming API
@@ -997,4 +1285,99 @@ const runOptimisation = async () => {
     }
   }
 }
+
+// Usable frequency range controls (Step 3)
+.usable-range-controls {
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+
+  .range-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    h4 {
+      margin: 0;
+      color: var(--color-head);
+    }
+
+    .range-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+
+      .status-loading { color: var(--color-text-secondary); }
+      .status-error { color: #ff6b6b; }
+      .status-success { color: var(--primary); }
+      .spinning { animation: spin 1s linear infinite; }
+    }
+  }
+
+  .range-inputs {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+
+    .input-group {
+      flex: 1;
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+        color: var(--color-head);
+        font-weight: 500;
+      }
+
+      .control-inline { display: inline-flex; align-items: center; gap: 8px; width: 100%; }
+
+      .number-input {
+        background: var(--background-card);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        color: var(--color-head);
+        padding: 8px 10px;
+        min-width: 110px;
+        width: 100%;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+        }
+      }
+
+      .suffix { color: var(--color-body-secondary); }
+    }
+  }
+}
+
+.range-analysis {
+  .analysis-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border);
+
+    &:last-child { border-bottom: none; }
+
+    .label { color: var(--color-text-secondary); font-size: 0.9rem; }
+    .value { color: var(--color-head); font-weight: 500; font-family: 'Courier New', monospace; }
+  }
+}
+
+  .range-label {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 </style>

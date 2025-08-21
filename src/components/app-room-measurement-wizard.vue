@@ -557,7 +557,7 @@ const startRoomMeasurement = async () => {
     if (!startResp.success || !startResp.data) {
       throw new Error(startResp.detail || 'Failed to start pre-recorded signal playback')
     }
-    
+
     // At this point we know startResp.success && startResp.data are truthy from the checks above
       // Use the signal duration from the response or default to calculated duration
       totalSweepDuration.value = (startResp.data!).duration || signalDuration

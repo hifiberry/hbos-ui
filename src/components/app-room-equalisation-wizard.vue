@@ -259,7 +259,7 @@
           <button v-if="currentStep < totalSteps" @click="nextStep" class="nav-button primary">
             {{ currentStep === 3 ? 'Start' : 'Next' }} <AppIcon icon="arrow-right" />
           </button>
-          <button v-else @click="finish" class="nav-button primary">Done <AppIcon icon="checkmark" /></button>
+          <button v-else @click="finish" :disabled="optimising" class="nav-button primary">Done <AppIcon icon="checkmark" /></button>
         </div>
       </div>
     </div>
@@ -664,7 +664,7 @@ const runOptimisation = async () => {
       target_curve: targetCurve.value, // Now this is already the correct API key
       optimizer_preset: optimizerPreset.value,
       filter_count: 16,
-      intermediate_results_interval: 2, // Get results every 2 filters
+      intermediate_results_interval: 1, // Get results after every filter
       points_per_octave: 12
     }
 
@@ -673,21 +673,29 @@ const runOptimisation = async () => {
       payload,
       // onEvent callback
       (event: RoomEQOptimizationEvent) => {
-        console.log('Processing optimization event:', event)
+        console.log('🎯 WIZARD: Processing optimization event:', event.type, event.message)
 
         switch (event.type) {
           case 'started':
+            console.log('🚀 WIZARD: Optimization started')
             optStatus.value = event.message || 'Optimization started'
             optTotalSteps.value = event.parameters?.filter_count || 16
             optimisationProgress.value = 0
             currentOptimizationId.value = event.optimization_id || null
+            optCurrentFilter.value = null // Clear current filter when starting
             break
 
           case 'filter_added':
+            console.log('🔧 WIZARD: Filter added, step:', event.step, 'progress:', event.progress)
             const progress = event.progress || 0
             optimisationProgress.value = progress
             optCurrentStep.value = event.message || `Filter ${event.step || 0}`
             optStepsCompleted.value = event.step || 0
+
+            // Update current filter being worked on
+            if (event.filter) {
+              optCurrentFilter.value = event.filter
+            }
 
             // Update filter list
             if (event.current_filter_set) {
@@ -704,8 +712,10 @@ const runOptimisation = async () => {
             break
 
           case 'completed':
+            console.log('✅ WIZARD: Optimization completed')
             optimisationProgress.value = 100
             optStatus.value = 'Optimization completed!'
+            optCurrentFilter.value = null // Clear current filter when completed
 
             if (event.current_filter_set) {
               optimizedFilters.value = event.current_filter_set
@@ -724,19 +734,27 @@ const runOptimisation = async () => {
             break
 
           case 'error':
+            console.log('❌ WIZARD: Optimization error')
             optStatus.value = event.message || 'Optimization error occurred'
+            optCurrentFilter.value = null // Clear current filter on error
             optimising.value = false
             break
+
+          default:
+            console.log('❓ WIZARD: Unknown event type:', event.type)
         }
       },
       // onError callback
       (error: string) => {
+        console.error('Optimization error callback:', error)
         apiVersionError.value = ''
         optStatus.value = `Optimization error: ${error}`
+        optCurrentFilter.value = null // Clear current filter on error
         optimising.value = false
       },
       // onComplete callback
       () => {
+        console.log('📋 WIZARD: Optimization onComplete callback triggered')
         if (optimising.value) {
           optimising.value = false
         }

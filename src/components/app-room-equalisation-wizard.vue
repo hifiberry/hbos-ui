@@ -704,19 +704,19 @@ const runOptimisation = async () => {
               try {
                 const outputData = JSON.parse(event.line)
                 console.log('� WIZARD: Parsed output data:', outputData)
-                
+
                 // Handle different types of output data
                 if (outputData.filters && Array.isArray(outputData.filters)) {
                   // This looks like progress or final result data
                   optimizedFilters.value = outputData.filters
                   optStatus.value = outputData.message || `Generated ${outputData.filters.length} filters`
-                  
+
                   // Calculate progress based on number of filters
                   const filterCount = outputData.filters.length
                   const expectedTotal = 16 // Or parse from payload
                   optimisationProgress.value = Math.min(100, (filterCount / expectedTotal) * 100)
                   optStepsCompleted.value = filterCount
-                  
+
                   // Show current filter being worked on (use the last filter)
                   if (outputData.filters.length > 0) {
                     const lastFilter = outputData.filters[outputData.filters.length - 1]
@@ -727,7 +727,7 @@ const runOptimisation = async () => {
                       filter_type: lastFilter.filter_type
                     }
                   }
-                  
+
                   // Update frequency response if available
                   if (outputData.frequency_response && outputData.frequency_response.resulting_response) {
                     optimizedResponse.value = {
@@ -755,7 +755,7 @@ const runOptimisation = async () => {
             optStatus.value = 'Optimization completed!'
             optCurrentFilter.value = null
             optimising.value = false
-            
+
             // Parse final result if available in the line
             if (event.line) {
               try {

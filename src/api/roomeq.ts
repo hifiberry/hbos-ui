@@ -319,6 +319,7 @@ export interface NewRoomEQOptimizerParams {
   acceptable_error: number
   min_frequency?: number
   max_frequency?: number
+  add_lowpass?: boolean
 }
 
 // Usable frequency range detection types

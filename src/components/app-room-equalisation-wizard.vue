@@ -178,11 +178,11 @@
                 <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="3,3" />
 
                 <!-- Measured frequency response curve -->
-                <path v-if="measurement"
-                      :d="generateMeasuredPath(measurement)"
-                      fill="none"
-                      stroke="var(--primary)"
-                      stroke-width="2" />
+        <path v-if="measurement"
+          :d="generateMeasuredPath(measurement)"
+          fill="none"
+          stroke="#4CAF50"
+          stroke-width="2" />
 
                 <!-- Usable frequency range indicators -->
                 <g v-if="userMinFrequency && userMaxFrequency">
@@ -241,20 +241,38 @@
               <div class="input-group">
                 <label>Minimum Frequency</label>
                 <div class="control-inline">
-                  <input class="number-input" type="number"
+        <input class="number-input" type="number" step="any"
                          v-model.number="userMinFrequency"
                          :min="10"
-                         :max="1000" />
+          :max="1000"
+          @keydown="onLogStepKeydown('min', $event)" />
+                  <div class="stepper" aria-hidden="true">
+                    <button type="button" class="step-btn" @click.prevent="stepLog('min','up')" title="Increase (1/6 octave)">
+                      <AppIcon icon="caret-up" :width="14" :height="14" />
+                    </button>
+                    <button type="button" class="step-btn" @click.prevent="stepLog('min','down')" title="Decrease (1/6 octave)">
+                      <AppIcon icon="caret-down" :width="14" :height="14" />
+                    </button>
+                  </div>
                   <span class="suffix">Hz</span>
                 </div>
               </div>
               <div class="input-group">
                 <label>Maximum Frequency</label>
                 <div class="control-inline">
-                  <input class="number-input" type="number"
+        <input class="number-input" type="number" step="any"
                          v-model.number="userMaxFrequency"
                          :min="1000"
-                         :max="25000" />
+          :max="25000"
+          @keydown="onLogStepKeydown('max', $event)" />
+                  <div class="stepper" aria-hidden="true">
+                    <button type="button" class="step-btn" @click.prevent="stepLog('max','up')" title="Increase (1/6 octave)">
+                      <AppIcon icon="caret-up" :width="14" :height="14" />
+                    </button>
+                    <button type="button" class="step-btn" @click.prevent="stepLog('max','down')" title="Decrease (1/6 octave)">
+                      <AppIcon icon="caret-down" :width="14" :height="14" />
+                    </button>
+                  </div>
                   <span class="suffix">Hz</span>
                 </div>
               </div>
@@ -270,6 +288,14 @@
           </div>
 
           <div class="eq-options">
+            <!-- Additional filter options -->
+            <div class="option-row">
+              <label class="option-label">Add low-pass filter</label>
+              <div class="control-inline">
+                <input id="add-lowpass" type="checkbox" v-model="addLowpass" />
+              </div>
+            </div>
+
             <!-- Optimizer preset selection -->
             <div class="option-row">
               <label class="option-label">Optimizer preset</label>
@@ -468,6 +494,7 @@ const reset = () => {
   maxBoost.value = 6
   maxCut.value = 12
   optimizerPreset.value = 'Default'
+  addLowpass.value = false
 }
 
 const nextStep = async () => {
@@ -565,6 +592,8 @@ const loadTargets = async () => {
 
 const toLabel = (name: string) => name.replace(/_/g, ' ')
 const selectTarget = (name: string) => { targetCurve.value = name }
+// Step 3 options used by Step 4
+const addLowpass = ref<boolean>(false)
 
 // Detect usable frequency range from measurement
 // Define interfaces for the actual server response structure
@@ -665,6 +694,10 @@ const detectUsableRange = async () => {
       if (extractedResult.usable_freq_high) {
         userMaxFrequency.value = extractedResult.usable_freq_high
       }
+      // Preset low-pass checkbox if minimum usable frequency is > 50Hz
+      if ((extractedResult.usable_freq_low || 0) > 50) {
+        addLowpass.value = true
+      }
     } else {
       usableRangeError.value = response.detail || 'Failed to detect usable frequency range'
       usableRangeResult.value = null
@@ -722,6 +755,35 @@ watch(currentStep, (newStep) => {
     detectUsableRange()
   }
 })
+
+// Logarithmic stepping for frequency inputs: 1/6 octave increments
+const applyLogStep = (which: 'min' | 'max', direction: 'up' | 'down') => {
+  const sixthOct = Math.pow(2, 1 / 6)
+  const dir = direction === 'up' ? sixthOct : 1 / sixthOct
+  if (which === 'min') {
+    const current = userMinFrequency.value || 20
+    const next = current * dir
+    const clamped = Math.max(10, Math.min(next, Math.min(userMaxFrequency.value - 1, 1000)))
+    userMinFrequency.value = Math.round(clamped)
+  } else {
+    const current = userMaxFrequency.value || 20000
+    const next = current * dir
+    const clamped = Math.min(25000, Math.max(next, Math.max(userMinFrequency.value + 1, 1000)))
+    userMaxFrequency.value = Math.round(clamped)
+  }
+}
+
+// Keyboard handler delegates to applyLogStep
+const onLogStepKeydown = (which: 'min' | 'max', e: KeyboardEvent) => {
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+  e.preventDefault()
+  applyLogStep(which, e.key === 'ArrowUp' ? 'up' : 'down')
+}
+
+// Click handler for integrated stepper buttons
+const stepLog = (which: 'min' | 'max', direction: 'up' | 'down') => {
+  applyLogStep(which, direction)
+}
 
 // Chart path generator based on saved measurement
 const generatePath = (m: RoomMeasurement): string => {
@@ -962,7 +1024,10 @@ const runOptimisation = async () => {
         mindb: -10.0,
         maxdb: 3.0,
         add_highpass: true,
-        acceptable_error: 1.0
+  acceptable_error: 1.0,
+  min_frequency: userMinFrequency.value,
+  max_frequency: userMaxFrequency.value,
+  add_lowpass: addLowpass.value
       },
       sample_rate: measurement.value.sample_rate || 48000,
       filter_count: 16
@@ -1351,6 +1416,35 @@ const runOptimisation = async () => {
           box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
         }
       }
+
+      /* Hide native spinners for a cleaner custom stepper */
+      .number-input::-webkit-outer-spin-button,
+      .number-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .number-input[type=number] { appearance: textfield; -moz-appearance: textfield; }
+
+      .stepper {
+        display: inline-flex;
+        flex-direction: column;
+        margin-left: 4px;
+        gap: 2px;
+      }
+
+      .step-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 18px;
+        padding: 0;
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        background: var(--background-card);
+        color: var(--color-head);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .step-btn:hover { background: var(--color-bg-secondary); }
+      .step-btn:active { transform: translateY(1px); }
 
       .suffix { color: var(--color-body-secondary); }
     }

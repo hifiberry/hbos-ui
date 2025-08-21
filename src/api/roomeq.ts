@@ -295,21 +295,191 @@ export interface RoomEQOptimizerPresets {
   success: true
 }
 
-// EQ Optimization types (updated for streaming API)
-export interface RoomEQOptimizationRequest {
-  // Option 1: From Recording (Recommended)
-  recording_id?: string
-  // Option 2: From FFT Data
-  frequencies?: number[]
-  magnitudes?: number[]
-  sample_rate?: number
-  // Common parameters
-  target_curve: string
-  optimizer_preset?: string
-  filter_count?: number
-  intermediate_results_interval?: number
-  window?: string
-  points_per_octave?: number
+// EQ Optimization types (updated for new streaming API format)
+export interface NewRoomEQMeasuredCurve {
+  frequencies: number[]
+  magnitudes_db: number[]
+}
+
+export interface NewRoomEQTargetCurvePoint {
+  frequency: number
+  target_db: number
+  weight: number | [number, number] | null
+}
+
+export interface NewRoomEQTargetCurve {
+  curve: NewRoomEQTargetCurvePoint[]
+}
+
+export interface NewRoomEQOptimizerParams {
+  qmax: number
+  mindb: number
+  maxdb: number
+  add_highpass: boolean
+  acceptable_error: number
+}
+
+export interface NewRoomEQOptimizationRequest {
+  measured_curve: NewRoomEQMeasuredCurve
+  target_curve: NewRoomEQTargetCurve
+  optimizer_params: NewRoomEQOptimizerParams
+  sample_rate: number
+  filter_count: number
+}
+
+export interface NewRoomEQOptimizedFilter {
+  filter_type: 'hp' | 'eq' | 'lp'
+  frequency: number
+  q: number
+  gain_db: number
+  description: string
+}
+
+export interface NewRoomEQOptimizationResult {
+  success: boolean
+  filters: NewRoomEQOptimizedFilter[]
+  final_error: number
+  original_error: number
+  improvement_db: number
+  processing_time_ms: number
+  error_message: string | null
+  usable_freq_low: number
+  usable_freq_high: number
+}
+
+// Server-Sent Event types for new streaming optimization
+export interface NewRoomEQOptimizationProgress {
+  type: 'started' | 'output' | 'completed'
+  message: string
+  line?: string
+  line_number?: number
+  lines_processed?: number
+  processing_time?: number
+  job_data?: NewRoomEQOptimizationRequest
+}
+
+/**
+ * Start EQ optimization using the new streaming Server-Sent Events API
+ */
+export const startNewRoomEQOptimizationStream = async (
+  payload: NewRoomEQOptimizationRequest,
+  onEvent: (event: NewRoomEQOptimizationProgress) => void,
+  onError: (error: string) => void,
+  onComplete: (result?: NewRoomEQOptimizationResult) => void
+): Promise<{ success: boolean; detail?: string }> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+    const url = `${apiBaseUrl}/eq/optimize`
+
+    console.log('Starting new streaming EQ optimization:', url, payload)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    console.log('Response status:', response.status)
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (!response.ok) {
+      throw new Error(`Failed to start optimization: ${response.status} ${response.statusText}`)
+    }
+
+    if (!response.body) {
+      throw new Error('No response body for streaming')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = '' // Buffer for incomplete data
+    let eventCount = 0
+    const startTime = Date.now()
+    let finalResult: NewRoomEQOptimizationResult | undefined
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+
+        if (done) {
+          const duration = Date.now() - startTime
+          console.log(`🏁 Stream reader completed - received ${eventCount} total events in ${duration}ms`)
+          onComplete(finalResult)
+          break
+        }
+
+        // Append new chunk to buffer
+        const chunk = decoder.decode(value, { stream: true })
+        if (chunk.length > 0) {
+          console.log('Received chunk length:', chunk.length)
+          buffer += chunk
+        }
+
+        // Process complete lines
+        const lines = buffer.split('\n')
+        // Keep the last potentially incomplete line in buffer
+        buffer = lines.pop() || ''
+
+        console.log(`Processing ${lines.length} lines from buffer`)
+        for (const line of lines) {
+          if (line.trim() === '') {
+            continue
+          }
+
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonData = line.substring(6).trim()
+              if (jsonData) {
+                const eventData = JSON.parse(jsonData) as NewRoomEQOptimizationProgress
+                eventCount++
+                console.log(`Optimization event #${eventCount} type:`, eventData.type, 'message:', eventData.message)
+
+                onEvent(eventData)
+
+                if (eventData.type === 'completed') {
+                  console.log('🎯 Received completed event - parsing final result')
+                  
+                  // Check if the completion event contains the final result in the line
+                  if (eventData.line) {
+                    try {
+                      const resultData = JSON.parse(eventData.line)
+                      if (resultData.success !== undefined) {
+                        finalResult = resultData as NewRoomEQOptimizationResult
+                        console.log('Final optimization result:', finalResult)
+                      }
+                    } catch (parseError) {
+                      console.warn('Could not parse final result from completion event:', parseError)
+                    }
+                  }
+                  
+                  onComplete(finalResult)
+                  return { success: true }
+                }
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse optimization event:', line.substring(0, 200) + '...', parseError)
+            }
+          } else if (line.trim() !== '' && !line.startsWith(':')) {
+            console.log('Non-data line received:', line.substring(0, 100))
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+
+    return { success: true }
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error starting streaming optimization:', error)
+    onError(errorMsg)
+    return { success: false, detail: errorMsg }
+  }
 }
 
 // Server-Sent Event types for streaming optimization
@@ -417,10 +587,21 @@ export interface RoomEQOptimizationResult {
 }
 
 /**
- * Start EQ optimization using streaming Server-Sent Events API
+ * Start EQ optimization using streaming Server-Sent Events API (Legacy)
  */
 export const startRoomEQOptimizationStream = async (
-  payload: RoomEQOptimizationRequest,
+  payload: {
+    recording_id?: string
+    frequencies?: number[]
+    magnitudes?: number[]
+    sample_rate?: number
+    target_curve: string
+    optimizer_preset?: string
+    filter_count?: number
+    intermediate_results_interval?: number
+    window?: string
+    points_per_octave?: number
+  },
   onEvent: (event: RoomEQOptimizationEvent) => void,
   onError: (error: string) => void,
   onComplete: () => void
@@ -612,10 +793,21 @@ export const getRoomEQOptimizerPresets = async (): Promise<RoomEQApiEnvelope<Roo
 }
 
 /**
- * Start EQ optimization using the new API with real-time progress reporting
+ * Start EQ optimization using the new API with real-time progress reporting (Legacy)
  */
 export const startRoomEQOptimization = async (
-  payload: RoomEQOptimizationRequest
+  payload: {
+    recording_id?: string
+    frequencies?: number[]
+    magnitudes?: number[]
+    sample_rate?: number
+    target_curve: string
+    optimizer_preset?: string
+    filter_count?: number
+    intermediate_results_interval?: number
+    window?: string
+    points_per_octave?: number
+  }
 ): Promise<RoomEQApiEnvelope<RoomEQOptimizationStartResponse>> => {
   try {
     const configStore = useAppConfigStore()

@@ -564,15 +564,16 @@ const generateOptimisationPath = (data: { frequencies: number[]; magnitudes: num
   return path
 }
 
-// Optimisation step - Updated for streaming API
+// Optimisation step - Updated for new streaming API
 import {
-  startRoomEQOptimizationStream,
+  startNewRoomEQOptimizationStream,
   getRoomEQOptimizerPresets,
   checkRoomEQVersionRequirement,
   ROOMEQ_MINIMUM_VERSION,
-  type RoomEQOptimizationRequest,
-  type RoomEQOptimizationEvent,
-  type RoomEQOptimizationFilter
+  type NewRoomEQOptimizationRequest,
+  type NewRoomEQOptimizationProgress,
+  type NewRoomEQOptimizedFilter,
+  type NewRoomEQOptimizationResult
 } from '@/api/roomeq'
 
 const optimising = ref(false)
@@ -591,7 +592,7 @@ const optEstimatedRemaining = ref(0)
 const optCurrentFilter = ref<{ frequency: number; gain_db: number; q: number; filter_type: string } | null>(null)
 const optFinalRmsError = ref(0)
 const optImprovementDb = ref(0)
-const optimizedFilters = ref<RoomEQOptimizationFilter[]>([])
+const optimizedFilters = ref<NewRoomEQOptimizedFilter[]>([])
 const optimizationTime = ref(0)
 const loadOptimizerPresets = async () => {
   try {
@@ -655,58 +656,95 @@ const runOptimisation = async () => {
     console.log('Available target IDs:', Object.keys(targets.value))
     console.log('Target display names:', targetDisplayNames.value)
 
-    const payload: RoomEQOptimizationRequest = {
-      // For now, we'll use FFT data from the measurement
-      // In a full implementation, you'd use recording_id if available
-      frequencies: measurement.value.frequencies,
-      magnitudes: measurement.value.magnitudes,
+    // Build the new API payload format
+    const payload: NewRoomEQOptimizationRequest = {
+      measured_curve: {
+        frequencies: measurement.value.frequencies,
+        magnitudes_db: measurement.value.magnitudes
+      },
+      target_curve: {
+        curve: selectedTargetPoints.value.map(point => ({
+          frequency: point.frequency,
+          target_db: point.target_db,
+          weight: point.weight
+        }))
+      },
+      optimizer_params: {
+        qmax: 10.0,
+        mindb: -10.0,
+        maxdb: 3.0,
+        add_highpass: true,
+        acceptable_error: 1.0
+      },
       sample_rate: measurement.value.sample_rate || 48000,
-      target_curve: targetCurve.value, // Now this is already the correct API key
-      optimizer_preset: optimizerPreset.value,
-      filter_count: 16,
-      intermediate_results_interval: 1, // Get results after every filter
-      points_per_octave: 12
+      filter_count: 16
     }
 
-    // Start streaming optimization
-    const streamResult = await startRoomEQOptimizationStream(
+    // Start streaming optimization using the new API
+    const streamResult = await startNewRoomEQOptimizationStream(
       payload,
       // onEvent callback
-      (event: RoomEQOptimizationEvent) => {
+      (event: NewRoomEQOptimizationProgress) => {
         console.log('🎯 WIZARD: Processing optimization event:', event.type, event.message)
 
         switch (event.type) {
           case 'started':
-            console.log('🚀 WIZARD: Optimization started')
+            console.log('Optimization started')
             optStatus.value = event.message || 'Optimization started'
-            optTotalSteps.value = event.parameters?.filter_count || 16
+            optTotalSteps.value = 16 // Default filter count
             optimisationProgress.value = 0
-            currentOptimizationId.value = event.optimization_id || null
-            optCurrentFilter.value = null // Clear current filter when starting
+            currentOptimizationId.value = 'new-api' // Placeholder
+            optCurrentFilter.value = null
             break
 
-          case 'filter_added':
-            console.log('🔧 WIZARD: Filter added, step:', event.step, 'progress:', event.progress)
-            const progress = event.progress || 0
-            optimisationProgress.value = progress
-            optCurrentStep.value = event.message || `Filter ${event.step || 0}`
-            optStepsCompleted.value = event.step || 0
-
-            // Update current filter being worked on
-            if (event.filter) {
-              optCurrentFilter.value = event.filter
-            }
-
-            // Update filter list
-            if (event.current_filter_set) {
-              optimizedFilters.value = event.current_filter_set
-            }
-
-            // Update real-time frequency response display
-            if (event.frequency_response) {
-              optimizedResponse.value = {
-                frequencies: event.frequency_response.frequencies,
-                magnitudes: event.frequency_response.magnitude_db
+          case 'output':
+            console.log('📊 WIZARD: Processing output event')
+            // Parse JSON from the line if available
+            if (event.line) {
+              try {
+                const outputData = JSON.parse(event.line)
+                console.log('� WIZARD: Parsed output data:', outputData)
+                
+                // Handle different types of output data
+                if (outputData.filters && Array.isArray(outputData.filters)) {
+                  // This looks like progress or final result data
+                  optimizedFilters.value = outputData.filters
+                  optStatus.value = outputData.message || `Generated ${outputData.filters.length} filters`
+                  
+                  // Calculate progress based on number of filters
+                  const filterCount = outputData.filters.length
+                  const expectedTotal = 16 // Or parse from payload
+                  optimisationProgress.value = Math.min(100, (filterCount / expectedTotal) * 100)
+                  optStepsCompleted.value = filterCount
+                  
+                  // Show current filter being worked on (use the last filter)
+                  if (outputData.filters.length > 0) {
+                    const lastFilter = outputData.filters[outputData.filters.length - 1]
+                    optCurrentFilter.value = {
+                      frequency: lastFilter.frequency,
+                      gain_db: lastFilter.gain_db,
+                      q: lastFilter.q,
+                      filter_type: lastFilter.filter_type
+                    }
+                  }
+                  
+                  // Update frequency response if available
+                  if (outputData.frequency_response && outputData.frequency_response.resulting_response) {
+                    optimizedResponse.value = {
+                      frequencies: outputData.frequency_response.frequencies,
+                      magnitudes: outputData.frequency_response.resulting_response.magnitude_db
+                    }
+                  }
+                } else if (outputData.step !== undefined) {
+                  // This is a step progress update
+                  optStepsCompleted.value = outputData.step
+                  optimisationProgress.value = outputData.progress_percent || 0
+                  optStatus.value = outputData.message || `Step ${outputData.step}`
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse output line as JSON:', parseError)
+                // Treat as text progress update
+                optStatus.value = event.line.substring(0, 100) + (event.line.length > 100 ? '...' : '')
               }
             }
             break
@@ -715,33 +753,28 @@ const runOptimisation = async () => {
             console.log('✅ WIZARD: Optimization completed')
             optimisationProgress.value = 100
             optStatus.value = 'Optimization completed!'
-            optCurrentFilter.value = null // Clear current filter when completed
-
-            if (event.current_filter_set) {
-              optimizedFilters.value = event.current_filter_set
-              optStatus.value = `Optimization completed! Generated ${event.current_filter_set.length} filters`
-            }
-
-            // Final frequency response
-            if (event.frequency_response) {
-              optimizedResponse.value = {
-                frequencies: event.frequency_response.frequencies,
-                magnitudes: event.frequency_response.magnitude_db
+            optCurrentFilter.value = null
+            optimising.value = false
+            
+            // Parse final result if available in the line
+            if (event.line) {
+              try {
+                const finalResult = JSON.parse(event.line) as NewRoomEQOptimizationResult
+                if (finalResult.success && finalResult.filters) {
+                  optimizedFilters.value = finalResult.filters
+                  optStatus.value = `Optimization completed! Generated ${finalResult.filters.length} filters`
+                  optFinalRmsError.value = finalResult.final_error || 0
+                  optImprovementDb.value = finalResult.improvement_db || 0
+                  optimizationTime.value = finalResult.processing_time_ms || 0
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse completion result:', parseError)
               }
             }
-
-            optimising.value = false
-            break
-
-          case 'error':
-            console.log('❌ WIZARD: Optimization error')
-            optStatus.value = event.message || 'Optimization error occurred'
-            optCurrentFilter.value = null // Clear current filter on error
-            optimising.value = false
             break
 
           default:
-            console.log('❓ WIZARD: Unknown event type:', event.type)
+            console.log('Unknown event type:', event.type)
         }
       },
       // onError callback
@@ -753,8 +786,14 @@ const runOptimisation = async () => {
         optimising.value = false
       },
       // onComplete callback
-      () => {
-        console.log('📋 WIZARD: Optimization onComplete callback triggered')
+      (result?: NewRoomEQOptimizationResult) => {
+        console.log('Optimization onComplete callback triggered')
+        if (result && result.filters) {
+          optimizedFilters.value = result.filters
+          optFinalRmsError.value = result.final_error || 0
+          optImprovementDb.value = result.improvement_db || 0
+          optimizationTime.value = result.processing_time_ms || 0
+        }
         if (optimising.value) {
           optimising.value = false
         }

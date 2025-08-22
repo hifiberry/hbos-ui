@@ -96,12 +96,16 @@
               {{ targetDescription }}
             </div>
 
-            <!-- Preview selected target curve -->
+            <!-- Preview selected target curve with measured overlay (±20 dB scale) -->
             <div v-if="selectedTargetPoints.length" class="target-preview">
               <svg viewBox="0 0 800 200" class="response-svg">
                 <rect width="800" height="200" fill="#111" rx="6" />
-                <path :d="generateTargetPath(selectedTargetPoints)" fill="none" stroke="#58a6ff" stroke-width="2" />
+                <!-- 0 dB reference line (rendered first, behind curves) -->
                 <line x1="40" y1="100" x2="760" y2="100" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
+                <!-- Measured overlay -->
+                <path v-if="measurement" :d="generateStep2MeasuredPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="2" />
+                <!-- Target curve (±20 dB scale) -->
+                <path :d="generateTargetPath(selectedTargetPoints)" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
               </svg>
             </div>
 
@@ -351,8 +355,8 @@
                 <!-- Initial measurement curve -->
                 <path :d="generateOptimisationPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="2" />
 
-                <!-- Target curve -->
-                <path v-if="selectedTargetPoints.length" :d="generateOptimisationPath({ frequencies: selectedTargetPoints.map(p => p.frequency), magnitudes: selectedTargetPoints.map(p => p.target_db) })" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
+                <!-- Target curve (clipped to min/max optimizer frequencies) -->
+                <path v-if="selectedTargetPoints.length" :d="generateOptimisationTargetClippedPath(selectedTargetPoints, userMinFrequency, userMaxFrequency)" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
 
                 <!-- Optimized curve (shown during/after optimization) -->
                 <path v-if="optimizedResponse" :d="generateOptimisationPath(optimizedResponse)" fill="none" stroke="#ff6b35" stroke-width="2" />
@@ -816,29 +820,194 @@ const generatePath = (m: RoomMeasurement): string => {
 const generateTargetPath = (pts: RoomEQTargetPoint[]): string => {
   if (!pts || !pts.length) return ''
   const minFreq = 20
-  const maxFreq = 25000
-  // Preview scale: +/-5 dB as requested
-  const minMag = -5
-  const maxMag = 5
+  const maxFreq = 20000
+  // Preview scale: ±20 dB to match Steps 1 and 3
+  const minMag = -20
+  const maxMag = 20
   const width = 760 - 40
   const height = 180 - 20
   const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
   const magScale = (mag: number) => 10 + (maxMag - mag) / (maxMag - minMag) * height
+
+  // Ensure points are sorted by frequency
+  const points = [...pts]
+    .filter(p => p && typeof p === 'object')
+    .sort((a, b) => a.frequency - b.frequency)
+
   let path = ''
-  for (const p of pts) {
-    // Handle the new API format where each point is an object with frequency and target_db
-    if (!p || typeof p !== 'object') {
-      console.warn('Invalid target curve point:', p)
-      continue
+  let drawing = false
+
+  const addPoint = (f: number, db: number, move = false) => {
+    const x = logScale(f)
+    const y = magScale(db)
+    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
+    drawing = true
+  }
+
+  for (let i = 1; i < points.length; i++) {
+    const p0 = points[i - 1]
+    const p1 = points[i]
+    let f0 = p0.frequency
+  const f1 = p1.frequency
+    let y0 = p0.target_db
+  const y1 = p1.target_db
+
+    // Skip zero/negative frequencies safely
+    if (f0 <= 0 || f1 <= 0) continue
+
+    const in0 = f0 >= minFreq && f0 <= maxFreq
+    const in1 = f1 >= minFreq && f1 <= maxFreq
+
+    // If segment entirely to the left or right, check crossings
+    if (!in0 || !in1) {
+      // Compute potential intersections at min/max if segment crosses
+      const crossesMin = (f0 < minFreq && f1 > minFreq) || (f1 < minFreq && f0 > minFreq)
+      const crossesMax = (f0 < maxFreq && f1 > maxFreq) || (f1 < maxFreq && f0 > maxFreq)
+
+      // Both outside and no crossing with visible range -> end current drawing
+      if (!in0 && !in1 && !crossesMin && !crossesMax) {
+        drawing = false
+        continue
+      }
+
+      // If crossing min boundary, add interpolated point at minFreq
+      if (crossesMin) {
+        const t = (minFreq - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        addPoint(minFreq, y, !drawing)
+        // Clamp start to min
+        f0 = minFreq
+        y0 = y
+      }
+      // If crossing max boundary, we'll end at max
+      if (crossesMax) {
+        const t = (maxFreq - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        if (in0) {
+          // Draw from in-range point to max boundary
+          addPoint(f0, y0, !drawing)
+        } else if (!drawing) {
+          addPoint(minFreq, y0, true) // ensure a move exists if needed (safety)
+        }
+        addPoint(maxFreq, y)
+        drawing = false
+        continue
+      }
+
+      // If one point is inside (and not crossing max), connect to the inside point, possibly after adding min boundary
+      if (in0 && !in1) {
+        addPoint(f0, y0, !drawing)
+        // Compute intersection at either max or min (we handled crossings above); if f1 > maxFreq, truncate at max
+        const bound = f1 > maxFreq ? maxFreq : minFreq
+        if (bound === minFreq && f0 > minFreq) {
+          // Segment exits below min; compute intersection to min
+          const t = (minFreq - f0) / (f1 - f0)
+          const y = y0 + t * (y1 - y0)
+          addPoint(minFreq, y)
+        }
+        drawing = false
+        continue
+      }
+      if (!in0 && in1) {
+        // Entering visible range
+        const t = ((f0 < minFreq ? minFreq : maxFreq) - f0) / (f1 - f0)
+        const fEnter = f0 < minFreq ? minFreq : maxFreq
+        const yEnter = y0 + t * (y1 - y0)
+        addPoint(fEnter, yEnter, !drawing)
+        addPoint(f1, y1)
+        continue
+      }
     }
-    const frequency = p.frequency
-    const targetDb = p.target_db
-    if (frequency >= minFreq && frequency <= maxFreq) {
-      const x = logScale(frequency)
-      const y = magScale(targetDb)
-      path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
+
+    // Both points inside: draw normally
+    if (in0 && in1) {
+      if (!drawing) addPoint(f0, y0, true)
+      addPoint(f1, y1)
     }
   }
+
+  return path
+}
+
+// Generate measured path for Step 2 preview (800x200, 20–20k Hz, ±20 dB)
+const generateStep2MeasuredPath = (m: RoomMeasurement): string => {
+  if (!m.frequencies || !m.magnitudes) return ''
+  const minFreq = 20
+  const maxFreq = 20000
+  const minMag = -20
+  const maxMag = 20
+  const width = 760 - 40
+  const height = 180 - 20
+  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
+  const magScale = (mag: number) => 10 + (maxMag - mag) / (maxMag - minMag) * height
+
+  const freqs = m.frequencies
+  const mags = m.magnitudes
+  let path = ''
+  let drawing = false
+
+  const addPoint = (f: number, db: number, move = false) => {
+    const x = logScale(f)
+    const y = magScale(db)
+    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
+    drawing = true
+  }
+
+  for (let i = 1; i < freqs.length; i++) {
+    let f0 = freqs[i - 1]
+  const f1 = freqs[i]
+    let y0 = mags[i - 1]
+  const y1 = mags[i]
+    if (f0 <= 0 || f1 <= 0) continue
+
+    const in0 = f0 >= minFreq && f0 <= maxFreq
+    const in1 = f1 >= minFreq && f1 <= maxFreq
+
+    if (!in0 || !in1) {
+      const crossesMin = (f0 < minFreq && f1 > minFreq) || (f1 < minFreq && f0 > minFreq)
+      const crossesMax = (f0 < maxFreq && f1 > maxFreq) || (f1 < maxFreq && f0 > maxFreq)
+
+      if (!in0 && !in1 && !crossesMin && !crossesMax) {
+        drawing = false
+        continue
+      }
+
+      if (crossesMin) {
+        const t = (minFreq - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        addPoint(minFreq, y, !drawing)
+        f0 = minFreq
+        y0 = y
+      }
+      if (crossesMax) {
+        const t = (maxFreq - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        if (in0) addPoint(f0, y0, !drawing)
+        addPoint(maxFreq, y)
+        drawing = false
+        continue
+      }
+      if (in0 && !in1) {
+        addPoint(f0, y0, !drawing)
+        drawing = false
+        continue
+      }
+      if (!in0 && in1) {
+        const t = ((f0 < minFreq ? minFreq : maxFreq) - f0) / (f1 - f0)
+        const fEnter = f0 < minFreq ? minFreq : maxFreq
+        const yEnter = y0 + t * (y1 - y0)
+        addPoint(fEnter, yEnter, !drawing)
+        addPoint(f1, y1)
+        continue
+      }
+    }
+
+    if (in0 && in1) {
+      if (!drawing) addPoint(f0, y0, true)
+      addPoint(f1, y1)
+    }
+  }
+
   return path
 }
 
@@ -874,6 +1043,90 @@ const generateOptimisationPath = (data: { frequencies: number[]; magnitudes: num
       const x = logScale(f)
       const y = magScale(mag)
       path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
+    }
+  }
+  return path
+}
+
+// Generate target curve for Step 4 clipped to [minFreq, maxFreq] with ±10 dB scale
+const generateOptimisationTargetClippedPath = (pts: RoomEQTargetPoint[], minFreqUser: number, maxFreqUser: number): string => {
+  if (!pts || !pts.length) return ''
+  const chartMinFreq = 20
+  const chartMaxFreq = 20000
+  const minMag = -10
+  const maxMag = 10
+  const width = 760 - 40
+  const height = 280 - 20
+  const logScale = (freq: number) => 40 + (Math.log10(freq / chartMinFreq) / Math.log10(chartMaxFreq / chartMinFreq)) * width
+  const magScale = (mag: number) => 20 + (maxMag - mag) / (maxMag - minMag) * height
+
+  const lo = Math.max(chartMinFreq, Math.max(20, Math.floor(minFreqUser || chartMinFreq)))
+  const hi = Math.min(chartMaxFreq, Math.min(20000, Math.ceil(maxFreqUser || chartMaxFreq)))
+  if (lo >= hi) return ''
+
+  // Sort points by frequency
+  const points = [...pts]
+    .filter(p => p && typeof p === 'object')
+    .sort((a, b) => a.frequency - b.frequency)
+
+  let path = ''
+  let drawing = false
+  const addPoint = (f: number, db: number, move = false) => {
+    const x = logScale(f)
+    const y = magScale(db)
+    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
+    drawing = true
+  }
+
+  for (let i = 1; i < points.length; i++) {
+    let f0 = points[i - 1].frequency
+    const f1 = points[i].frequency
+    let y0 = points[i - 1].target_db
+    const y1 = points[i].target_db
+    if (f0 <= 0 || f1 <= 0) continue
+
+    const in0 = f0 >= lo && f0 <= hi
+    const in1 = f1 >= lo && f1 <= hi
+    const crossesLo = (f0 < lo && f1 > lo) || (f1 < lo && f0 > lo)
+    const crossesHi = (f0 < hi && f1 > hi) || (f1 < hi && f0 > hi)
+
+    if (!in0 || !in1) {
+      if (!in0 && !in1 && !crossesLo && !crossesHi) {
+        drawing = false
+        continue
+      }
+      if (crossesLo) {
+        const t = (lo - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        addPoint(lo, y, !drawing)
+        f0 = lo
+        y0 = y
+      }
+      if (crossesHi) {
+        const t = (hi - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        if (in0) addPoint(f0, y0, !drawing)
+        addPoint(hi, y)
+        drawing = false
+        continue
+      }
+      if (in0 && !in1) {
+        addPoint(f0, y0, !drawing)
+        drawing = false
+        continue
+      }
+      if (!in0 && in1) {
+        const t = ((f0 < lo ? lo : hi) - f0) / (f1 - f0)
+        const fEnter = f0 < lo ? lo : hi
+        const yEnter = y0 + t * (y1 - y0)
+        addPoint(fEnter, yEnter, !drawing)
+        addPoint(f1, y1)
+        continue
+      }
+    }
+    if (in0 && in1) {
+      if (!drawing) addPoint(f0, y0, true)
+      addPoint(f1, y1)
     }
   }
   return path

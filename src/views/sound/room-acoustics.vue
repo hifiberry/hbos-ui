@@ -46,8 +46,50 @@
         </div>
       </div>
 
+      <!-- Saved Equalisation Settings -->
+      <div v-if="equalisationConfigs.length > 0" class="equalisation-section">
+        <h2>Saved Room EQ Configurations</h2>
+        <div class="equalisation-grid">
+          <div
+            v-for="config in equalisationConfigs"
+            :key="config.key"
+            class="equalisation-card"
+          >
+            <div class="equalisation-header">
+              <div class="equalisation-info">
+                <h3>{{ config.data.name }}</h3>
+                <p class="equalisation-date">{{ formatDate(config.data.created_at) }}</p>
+                <p class="equalisation-details">
+                  {{ config.data.filters.length }} filters
+                  <span v-if="config.data.optimization_results?.improvement_db">
+                    • {{ config.data.optimization_results.improvement_db.toFixed(1) }}dB improvement
+                  </span>
+                  <span v-if="config.data.settings?.min_frequency && config.data.settings?.max_frequency">
+                    • {{ Math.round(config.data.settings.min_frequency) }}Hz - {{ Math.round(config.data.settings.max_frequency) }}Hz
+                  </span>
+                </p>
+              </div>
+              <button @click.stop="deleteEqualisationConfig(config.key)" class="delete-button" title="Delete Configuration">
+                <AppIcon icon="close" />
+              </button>
+            </div>
+            <div class="equalisation-response">
+              <svg viewBox="0 0 300 100" class="response-svg">
+                <!-- Frequency response curve -->
+                <path
+                  :d="generateEQResponsePath(config.data.filters)"
+                  fill="none"
+                  stroke="#58a6ff"
+                  stroke-width="2"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Empty State -->
-      <div v-else class="card">
+      <div v-if="measurements.length === 0 && equalisationConfigs.length === 0" class="card">
         <div class="empty-state">
           <AppIcon icon="tabler/armchair" class="empty-icon" />
           <h3>Room Acoustics Correction</h3>
@@ -79,12 +121,43 @@ import AppIcon from '@/components/app-icon.vue'
 import AppRoomMeasurementWizard from '@/components/app-room-measurement-wizard.vue'
 import AppRoomEqualisationWizard from '@/components/app-room-equalisation-wizard.vue'
 import { useSettingsStore, type RoomMeasurement } from '@/stores/settings'
+import { getConfigKeys, getConfigValue, deleteConfigValue } from '@/api/config'
+import { type Filter } from '@/utils/filtercalc'
+import { type BiquadFilterType } from '@/utils/biquad'
+import { generateCombinedGraphData, type GraphDimensions, DEFAULT_FREQ_RANGE } from '@/utils/filtergraph'
+
+// Room EQ Configuration Types
+interface RoomEQConfig {
+  name: string;
+  filters: Array<{
+    filter_type: string;
+    frequency: number;
+    gain_db: number;
+    q: number;
+    description?: string;
+  }>;
+  optimization_results?: {
+    improvement_db?: number;
+    final_rms_error?: number;
+  };
+  settings?: {
+    min_frequency?: number;
+    max_frequency?: number;
+  };
+  created_at: string;
+}
+
+interface RoomEQConfigItem {
+  key: string;
+  data: RoomEQConfig;
+}
 
 // State
 const showMeasurementWizard = ref(false)
 const showEqualisationWizard = ref(false)
 const selectedMeasurement = ref<RoomMeasurement | null>(null)
 const measurements = ref<RoomMeasurement[]>([])
+const equalisationConfigs = ref<RoomEQConfigItem[]>([])
 const settingsStore = useSettingsStore()
 
 // Methods
@@ -106,6 +179,8 @@ const handleMeasurementCompleted = async () => {
 const handleEqualisationSetup = (setup: unknown) => {
   console.log('Equalisation setup selected:', setup)
   // TODO: Wire to backend when API is available
+  // After equalisation wizard completes, refresh the configs list
+  loadEqualisationConfigs()
 }
 
 const loadMeasurements = async () => {
@@ -115,6 +190,48 @@ const loadMeasurements = async () => {
   } catch (error) {
     console.error('Failed to load measurements:', error)
     measurements.value = []
+  }
+}
+
+const loadEqualisationConfigs = async () => {
+  try {
+    const configs: RoomEQConfigItem[] = []
+
+    // First get all config keys with the correction-filters prefix (same as Room EQ wizard uses)
+    const keysResponse = await getConfigKeys('correction-filters.')
+
+    if (keysResponse.status === 'success' && keysResponse.data && Array.isArray(keysResponse.data)) {
+      // For each key, get the actual value
+      for (const key of keysResponse.data) {
+        if (key.startsWith('correction-filters.')) {
+          try {
+            const valueResponse = await getConfigValue(key)
+            if (valueResponse.status === 'success' && valueResponse.data?.value) {
+              const configData = JSON.parse(valueResponse.data.value) as RoomEQConfig
+              configs.push({ key, data: configData })
+            }
+          } catch (parseError) {
+            console.warn(`Failed to parse Room EQ config ${key}:`, parseError)
+          }
+        }
+      }
+    }
+
+    // Sort by creation date (newest first)
+    configs.sort((a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime())
+    equalisationConfigs.value = configs
+    console.log('Loaded Room EQ configurations:', configs)
+  } catch (error) {
+    // If we get a 404 or other error, it likely means no configurations exist yet
+    // This is normal for a fresh installation, so we'll just return an empty array
+    if (error instanceof Error && error.message.includes('404')) {
+      console.log('No Room EQ configurations found (404) - this is normal for a fresh installation')
+      equalisationConfigs.value = []
+      return
+    }
+
+    console.error('Failed to load Room EQ configurations:', error)
+    equalisationConfigs.value = []
   }
 }
 
@@ -128,9 +245,67 @@ const deleteMeasurement = async (id: number) => {
   }
 }
 
+const deleteEqualisationConfig = async (configKey: string) => {
+  try {
+    await deleteConfigValue(configKey)
+    await loadEqualisationConfigs() // Refresh the list
+    console.log(`Room EQ configuration ${configKey} deleted`)
+  } catch (error) {
+    console.error('Failed to delete Room EQ configuration:', error)
+  }
+}
+
 const formatDate = (timestamp: string): string => {
   const date = new Date(timestamp)
   return date.toLocaleString()
+}
+
+// Convert Room EQ filter to Speaker EQ filter format (reusing the conversion logic)
+const convertRoomEQFilterToEQFilter = (roomEQFilter: RoomEQConfig['filters'][0], index: number): Filter => {
+  // Map Room EQ filter types to Speaker EQ filter types
+  const filterTypeMap: Record<string, BiquadFilterType> = {
+    'hp': 'highpass',        // Room EQ uses 'hp'
+    'lp': 'lowpass',         // Room EQ uses 'lp'
+    'eq': 'peaking',         // Room EQ uses 'eq' for peaking/parametric EQ
+    'peak': 'peaking',
+    'peaking': 'peaking',
+    'lowpass': 'lowpass',
+    'highpass': 'highpass',
+    'lowshelf': 'lowshelf',
+    'highshelf': 'highshelf'
+  };
+
+  const filterType = filterTypeMap[roomEQFilter.filter_type] || 'peaking';
+
+  return {
+    id: Date.now() + index,
+    icon: filterType,
+    text: filterType.charAt(0).toUpperCase() + filterType.slice(1),
+    frequency: Math.round(roomEQFilter.frequency),
+    gain: roomEQFilter.gain_db,
+    Q: roomEQFilter.q || 1.0,
+    enabled: true
+  };
+};
+
+const generateEQResponsePath = (filters: RoomEQConfig['filters']): string => {
+  // Convert Room EQ filters to Filter format
+  const convertedFilters = filters.map(convertRoomEQFilterToEQFilter);
+
+  // Set up graph dimensions
+  const dimensions: GraphDimensions = {
+    plotWidth: 300,
+    plotHeight: 100,
+    minFreq: DEFAULT_FREQ_RANGE.min,
+    maxFreq: DEFAULT_FREQ_RANGE.max,
+    minGain: -12,
+    maxGain: 12
+  };
+
+  // Generate combined graph data using existing utilities
+  const graphData = generateCombinedGraphData(convertedFilters, dimensions, 150);
+
+  return graphData ? graphData.linePath : '';
 }
 
 const generatePreviewPath = (measurement: RoomMeasurement): string => {
@@ -174,6 +349,7 @@ const generatePreviewPath = (measurement: RoomMeasurement): string => {
 // Lifecycle
 onMounted(() => {
   loadMeasurements()
+  loadEqualisationConfigs()
 })
 </script>
 
@@ -249,6 +425,7 @@ onMounted(() => {
       padding: 20px;
       position: relative;
       transition: box-shadow 0.2s ease;
+      cursor: pointer;
 
       &:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -293,6 +470,84 @@ onMounted(() => {
           height: 80px;
           background: #f8f9fa;
           border-radius: 4px;
+        }
+      }
+    }
+  }
+
+  .equalisation-section {
+    margin-bottom: 20px;
+
+    h2 {
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .equalisation-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 20px;
+    }
+
+    .equalisation-card {
+      background: var(--card-background, #fff);
+      border: 1px solid var(--border-color, #e5e5e5);
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+      transition: box-shadow 0.2s ease;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .delete-button {
+        @include delete-button(24px, 14px);
+        position: absolute;
+        top: 16px;
+        right: 16px;
+      }
+
+      .equalisation-header {
+        margin-bottom: 15px;
+        padding-right: 40px; // Leave space for delete button
+
+        .equalisation-info {
+          h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #333;
+          }
+
+          .equalisation-date {
+            font-size: 14px;
+            color: #666;
+            margin: 0 0 4px 0;
+          }
+
+          .equalisation-details {
+            font-size: 12px;
+            color: #888;
+            margin: 0;
+          }
+        }
+      }
+
+      .equalisation-response {
+        .response-svg {
+          width: 100%;
+          height: 80px;
+          background: #f8f9fa;
+          border-radius: 6px;
+
+          path {
+            stroke: #58a6ff;
+            stroke-width: 2;
+            fill: none;
+          }
         }
       }
     }
@@ -384,6 +639,52 @@ onMounted(() => {
         .measurement-preview {
           .preview-svg {
             height: 60px;
+          }
+        }
+      }
+    }
+
+    .equalisation-section {
+      .equalisation-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .equalisation-card {
+        padding: 15px;
+
+        .delete-button {
+          top: 12px;
+          right: 12px;
+        }
+
+        .equalisation-header {
+          padding-right: 36px; // Adjust for smaller delete button spacing
+
+          .equalisation-info {
+            h3 {
+              font-size: 16px;
+            }
+
+            .equalisation-date {
+              font-size: 12px;
+            }
+
+            .equalisation-details {
+              font-size: 11px;
+            }
+          }
+        }
+
+        .equalisation-response {
+          .response-svg {
+            height: 50px;
+            background: #f8f9fa;
+
+            path {
+              stroke: #58a6ff;
+              stroke-width: 1.5;
+            }
           }
         }
       }

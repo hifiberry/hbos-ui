@@ -26,6 +26,7 @@
             :class="{ bypassed: isBypassed }"
             class="icon-btn"
             title="Bypass" />
+          <img src="/images/svg/tabler/armchair.svg" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
           <img src="/images/svg/folder_open.svg" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
           <img src="/images/svg/save.svg" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
         </div>
@@ -240,6 +241,72 @@
           <div class="modal-body" v-html="backendCapabilities?.backendDescription"></div>
         </div>
       </div>
+
+      <!-- Room EQ Loader Modal -->
+      <div v-if="showRoomEQModal" class="modal-backdrop" @click.self="showRoomEQModal = false">
+        <div class="modal-content room-eq-modal">
+          <div class="modal-header">
+            <h2>Load Room EQ Configuration</h2>
+            <button class="close-btn" @click="showRoomEQModal = false">×</button>
+          </div>
+          <div class="modal-body">
+            <div v-if="loadingRoomEQConfigs" class="loading-message">
+              Loading configurations...
+            </div>
+            <div v-else-if="roomEQConfigs.length === 0" class="no-configs-message">
+              No Room EQ configurations found. Create one using the Room Equalisation Wizard first.
+            </div>
+            <div v-else>
+              <div class="config-selection">
+                <h4>Select Configuration:</h4>
+                <div class="config-list">
+                  <div
+                    v-for="config in roomEQConfigs"
+                    :key="config.key"
+                    :class="['config-item', { selected: selectedRoomEQConfig === config }]"
+                    @click="selectedRoomEQConfig = config"
+                  >
+                    <div class="config-name">{{ config.data.name }}</div>
+                    <div class="config-details">
+                      {{ config.data.filters.length }} filters •
+                      {{ new Date(config.data.created_at).toLocaleDateString() }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="selectedRoomEQConfig" class="channel-selection">
+                <h4>Apply to Channels:</h4>
+                <div class="channel-options">
+                  <label class="channel-option">
+                    <input type="radio" v-model="roomEQChannelMode" value="left" />
+                    <span>Left Channel Only</span>
+                  </label>
+                  <label class="channel-option">
+                    <input type="radio" v-model="roomEQChannelMode" value="right" />
+                    <span>Right Channel Only</span>
+                  </label>
+                  <label class="channel-option">
+                    <input type="radio" v-model="roomEQChannelMode" value="both" />
+                    <span>Both Channels</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="modal-actions">
+                <button @click="showRoomEQModal = false" class="btn secondary">Cancel</button>
+                <button
+                  @click="loadSelectedRoomEQConfig"
+                  :disabled="!selectedRoomEQConfig"
+                  class="btn primary"
+                >
+                  Load Configuration
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </teleport>
   </div>
 </template>
@@ -253,7 +320,7 @@ import { type Filter } from '@/utils/filtercalc';
 
 import {
   type BiquadFilterType,
-  
+
 } from '@/utils/biquad';
 import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
 
@@ -261,6 +328,8 @@ import {
   setFilterBankBypassState,
   type FilterBypassSetResponse
 } from '@/api/dsptoolkit';
+
+import { getConfigKeys, getConfigValue } from '@/api/config';
 
 import {
   type LinkedChannelConfig,
@@ -400,6 +469,31 @@ const filters = computed(() => {
 
 const showAddFilterModal = ref(false);
 const showBackendInfoModal = ref(false);
+
+// Room EQ Configuration Types
+interface RoomEQConfig {
+  name: string;
+  filters: Array<{
+    filter_type: string;
+    frequency: number;
+    gain_db: number;
+    q: number;
+    description?: string;
+  }>;
+  created_at: string;
+}
+
+interface RoomEQConfigItem {
+  key: string;
+  data: RoomEQConfig;
+}
+
+// Room EQ loader modal state
+const showRoomEQModal = ref(false);
+const loadingRoomEQConfigs = ref(false);
+const roomEQConfigs = ref<RoomEQConfigItem[]>([]);
+const selectedRoomEQConfig = ref<RoomEQConfigItem | null>(null);
+const roomEQChannelMode = ref<'left' | 'right' | 'both'>('both');
 
 // Bypass functionality state
 const isBypassed = ref(false);
@@ -709,6 +803,7 @@ const loadEQSettings = () => {
           if (data.filters && Array.isArray(data.filters)) {
             const loadedFilters = data.filters.map((filter: Filter, index: number) => ({
               ...filter,
+              frequency: Math.round(filter.frequency), // Round frequency to full hertz
               id: Date.now() + index // Ensure unique IDs
             }));
 
@@ -717,10 +812,12 @@ const loadEQSettings = () => {
               // New format with separate channels
               leftFilters.value = data.leftFilters.map((filter: Filter, index: number) => ({
                 ...filter,
+                frequency: Math.round(filter.frequency), // Round frequency to full hertz
                 id: Date.now() + index
               }));
               rightFilters.value = data.rightFilters.map((filter: Filter, index: number) => ({
                 ...filter,
+                frequency: Math.round(filter.frequency), // Round frequency to full hertz
                 id: Date.now() + index + 1000
               }));
 
@@ -789,6 +886,126 @@ const saveEQSettings = () => {
   document.body.removeChild(link);
 
   URL.revokeObjectURL(url);
+};
+
+// Load Room EQ configurations from config API
+const loadRoomEQSettings = async () => {
+  showRoomEQModal.value = true;
+  loadingRoomEQConfigs.value = true;
+  roomEQConfigs.value = [];
+  selectedRoomEQConfig.value = null;
+
+  try {
+    const configs: RoomEQConfigItem[] = [];
+
+    // First get all config keys with the correction-filters prefix
+    const keysResponse = await getConfigKeys('correction-filters.');
+
+    if (keysResponse.status === 'success' && keysResponse.data && Array.isArray(keysResponse.data)) {
+      // For each key, get the actual value
+      for (const key of keysResponse.data) {
+        if (key.startsWith('correction-filters.')) {
+          try {
+            const valueResponse = await getConfigValue(key);
+            if (valueResponse.status === 'success' && valueResponse.data?.value) {
+              const configData = JSON.parse(valueResponse.data.value) as RoomEQConfig;
+              configs.push({ key, data: configData });
+            }
+          } catch (parseError) {
+            console.warn(`Failed to parse Room EQ config ${key}:`, parseError);
+          }
+        }
+      }
+    }
+
+    // Sort by creation date (newest first)
+    configs.sort((a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime());
+    roomEQConfigs.value = configs;
+  } catch (error) {
+    // If we get a 404 or other error, it likely means no configurations exist yet
+    if (error instanceof Error && error.message.includes('404')) {
+      console.log('No Room EQ configurations found (404) - this is normal for a fresh installation');
+      roomEQConfigs.value = [];
+    } else {
+      console.error('Failed to load Room EQ configurations:', error);
+      roomEQConfigs.value = [];
+    }
+  } finally {
+    loadingRoomEQConfigs.value = false;
+  }
+};
+
+// Convert Room EQ filter to Speaker EQ filter format
+const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: RoomEQConfig['filters'][0], index: number): Filter => {
+  // Map Room EQ filter types to Speaker EQ filter types
+  const filterTypeMap: Record<string, BiquadFilterType> = {
+    'hp': 'highpass',        // Room EQ uses 'hp'
+    'lp': 'lowpass',         // Room EQ uses 'lp'
+    'eq': 'peaking',         // Room EQ uses 'eq' for peaking/parametric EQ
+    'peak': 'peaking',
+    'peaking': 'peaking',
+    'lowpass': 'lowpass',
+    'highpass': 'highpass',
+    'lowshelf': 'lowshelf',
+    'highshelf': 'highshelf'
+  };
+
+  const filterType = filterTypeMap[roomEQFilter.filter_type] || 'peaking';
+
+  return {
+    id: Date.now() + index,
+    icon: filterType,
+    text: formatFilterTypeName(filterType),
+    frequency: Math.round(roomEQFilter.frequency),
+    gain: roomEQFilter.gain_db,
+    Q: roomEQFilter.q,
+    enabled: true
+  };
+};
+
+// Load the selected Room EQ configuration
+const loadSelectedRoomEQConfig = async () => {
+  if (!selectedRoomEQConfig.value) return;
+
+  try {
+    const config = selectedRoomEQConfig.value.data;
+    const convertedFilters = config.filters.map(convertRoomEQFilterToSpeakerEQ);
+
+    // Clear existing filters first
+    if (roomEQChannelMode.value === 'both' || roomEQChannelMode.value === 'left') {
+      await filterStore.clearFiltersFromBank('left');
+      leftFilters.value = [];
+    }
+    if (roomEQChannelMode.value === 'both' || roomEQChannelMode.value === 'right') {
+      await filterStore.clearFiltersFromBank('right');
+      rightFilters.value = [];
+    }
+
+    // Apply filters to selected channels
+    if (roomEQChannelMode.value === 'both' || roomEQChannelMode.value === 'left') {
+      leftFilters.value = [...convertedFilters];
+      for (const [index, filter] of convertedFilters.entries()) {
+        await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
+      }
+    }
+    if (roomEQChannelMode.value === 'both' || roomEQChannelMode.value === 'right') {
+      rightFilters.value = [...convertedFilters];
+      for (const [index, filter] of convertedFilters.entries()) {
+        await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
+      }
+    }
+
+    // Set first filter as active
+    if (convertedFilters.length > 0) {
+      activeFilterId.value = convertedFilters[0].id;
+    }
+
+    showRoomEQModal.value = false;
+    console.log(`✅ Loaded Room EQ configuration "${config.name}" to ${roomEQChannelMode.value} channel(s)`);
+  } catch (error) {
+    console.error('Failed to load Room EQ configuration:', error);
+    alert('Error loading Room EQ configuration. Please try again.');
+  }
 };
 
 // Helper function to apply changes to multiple channels based on current mode
@@ -885,11 +1102,13 @@ const handleKeydown = (e: KeyboardEvent) => {
       showAddFilterModal.value = false;
     } else if (showBackendInfoModal.value) {
       showBackendInfoModal.value = false;
+    } else if (showRoomEQModal.value) {
+      showRoomEQModal.value = false;
     }
   }
 
   // Spacebar for bypass (common in audio software)
-  if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value) {
+  if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value && !showRoomEQModal.value) {
     e.preventDefault(); // Prevent page scroll
     startBypass();
   }
@@ -1825,6 +2044,135 @@ watch(activeChannel, async () => {
     p:first-child strong {
       color: #e11e4a;
       font-size: 18px;
+    }
+  }
+}
+
+// Room EQ Modal Styles
+.room-eq-modal {
+  min-width: 500px !important;
+  max-width: 700px !important;
+
+  .modal-body {
+    text-align: left;
+  }
+
+  .loading-message, .no-configs-message {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+  }
+
+  .config-selection {
+    margin-bottom: 1.5rem;
+
+    h4 {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    .config-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .config-item {
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #f8f9fa;
+      }
+
+      &.selected {
+        background-color: #e3f2fd;
+        border-color: #2196f3;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .config-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.25rem;
+      }
+
+      .config-details {
+        font-size: 0.875rem;
+        color: #666;
+      }
+    }
+  }
+
+  .channel-selection {
+    margin-bottom: 1.5rem;
+
+    h4 {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    .channel-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .channel-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      color: #333;
+
+      input[type="radio"] {
+        margin: 0;
+      }
+    }
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+
+      &.secondary {
+        background: #6c757d;
+        color: white;
+
+        &:hover {
+          background: #5a6268;
+        }
+      }
+
+      &.primary {
+        background: #007bff;
+        color: white;
+
+        &:hover:not(:disabled) {
+          background: #0056b3;
+        }
+
+        &:disabled {
+          background: #6c757d;
+          cursor: not-allowed;
+        }
+      }
     }
   }
 }

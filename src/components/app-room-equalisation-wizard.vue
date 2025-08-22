@@ -96,12 +96,16 @@
               {{ targetDescription }}
             </div>
 
-            <!-- Preview selected target curve -->
+            <!-- Preview selected target curve with measured overlay (±20 dB scale) -->
             <div v-if="selectedTargetPoints.length" class="target-preview">
               <svg viewBox="0 0 800 200" class="response-svg">
                 <rect width="800" height="200" fill="#111" rx="6" />
-                <path :d="generateTargetPath(selectedTargetPoints)" fill="none" stroke="#58a6ff" stroke-width="2" />
+                <!-- 0 dB reference line (rendered first, behind curves) -->
                 <line x1="40" y1="100" x2="760" y2="100" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
+                <!-- Measured overlay -->
+                <path v-if="measurement" :d="generateStep2MeasuredPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="2" />
+                <!-- Target curve (±20 dB scale) -->
+                <path :d="generateTargetPath(selectedTargetPoints)" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
               </svg>
             </div>
 
@@ -138,11 +142,164 @@
             <AppIcon icon="tabler/settings-cog" class="step-icon" />
             <div class="step-info">
               <h3>Step 3: Optimisation Setup</h3>
-              <p>Configure optimisation settings before running the analysis.</p>
+              <p>Configure optimisation settings and review frequency response.</p>
+            </div>
+          </div>
+
+          <!-- Measured Frequency Response Display -->
+          <div class="frequency-response-section">
+            <h4>Measured Frequency Response</h4>
+            <div class="frequency-response-chart">
+              <svg viewBox="0 0 800 300" class="response-svg">
+                <defs>
+                  <pattern id="grid-step3" width="40" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
+                  </pattern>
+                </defs>
+                <rect width="800" height="300" fill="url(#grid-step3)" />
+
+                <!-- Frequency axis (20Hz - 20kHz) -->
+                <g class="frequency-axis">
+                  <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
+                  <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
+                  <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
+                  <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
+                  <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
+                </g>
+
+                <!-- Magnitude axis (-20dB to +20dB) -->
+                <g class="magnitude-axis">
+                  <text x="20" y="285" text-anchor="middle" class="axis-label">-20</text>
+                  <text x="20" y="235" text-anchor="middle" class="axis-label">-10</text>
+                  <text x="20" y="185" text-anchor="middle" class="axis-label">-5</text>
+                  <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
+                  <text x="20" y="115" text-anchor="middle" class="axis-label">+5</text>
+                  <text x="20" y="65" text-anchor="middle" class="axis-label">+10</text>
+                  <text x="20" y="15" text-anchor="middle" class="axis-label">+20</text>
+                </g>
+
+                <!-- 0 dB reference line -->
+                <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="3,3" />
+
+                <!-- Measured frequency response curve -->
+        <path v-if="measurement"
+          :d="generateMeasuredPath(measurement)"
+          fill="none"
+          stroke="#4CAF50"
+          stroke-width="2" />
+
+                <!-- Usable frequency range indicators -->
+                <g v-if="userMinFrequency && userMaxFrequency">
+                  <!-- Low frequency limit line -->
+                  <line :x1="frequencyToX(userMinFrequency || 20)"
+                        y1="20"
+                        :x2="frequencyToX(userMinFrequency || 20)"
+                        y2="280"
+                        stroke="#ff6b6b"
+                        stroke-width="2"
+                        stroke-dasharray="5,5" />
+                  <text :x="frequencyToX(userMinFrequency || 20)"
+                        y="12"
+                        text-anchor="middle"
+                        class="range-label"
+                        fill="#ff6b6b">
+                    {{ Math.round(userMinFrequency || 20) }}Hz
+                  </text>
+
+                  <!-- High frequency limit line -->
+      <line :x1="frequencyToX(userMaxFrequency || 20000)"
+                        y1="20"
+        :x2="frequencyToX(userMaxFrequency || 20000)"
+                        y2="280"
+                        stroke="#ff6b6b"
+                        stroke-width="2"
+                        stroke-dasharray="5,5" />
+      <text :x="frequencyToX(userMaxFrequency || 20000)"
+                        y="12"
+                        text-anchor="middle"
+                        class="range-label"
+                        fill="#ff6b6b">
+        {{ Math.round(userMaxFrequency || 20000) }}Hz
+                  </text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Usable Frequency Range Controls -->
+          <div class="usable-range-controls">
+            <div class="range-header">
+              <h4>Usable Frequency Range</h4>
+              <div class="range-status">
+                <span v-if="loadingUsableRange" class="status-loading">
+                  <AppIcon icon="tabler/loader" class="spinning" /> Detecting...
+                </span>
+                <span v-else-if="usableRangeError" class="status-error">
+                  <AppIcon icon="tabler/alert-circle" /> {{ usableRangeError }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Range input controls -->
+            <div class="range-inputs">
+              <div class="input-group">
+                <label>Minimum Frequency</label>
+                <div class="control-inline">
+        <input class="number-input" type="number" step="any"
+                         v-model.number="userMinFrequency"
+                         :min="10"
+          :max="1000"
+          @keydown="onLogStepKeydown('min', $event)" />
+                  <div class="stepper" aria-hidden="true">
+                    <button type="button" class="step-btn" @click.prevent="stepLog('min','up')" title="Increase (1/6 octave)">
+                      <AppIcon icon="caret-up" :width="14" :height="14" />
+                    </button>
+                    <button type="button" class="step-btn" @click.prevent="stepLog('min','down')" title="Decrease (1/6 octave)">
+                      <AppIcon icon="caret-down" :width="14" :height="14" />
+                    </button>
+                  </div>
+                  <span class="suffix">Hz</span>
+                </div>
+              </div>
+              <div class="input-group">
+                <label>Maximum Frequency</label>
+                <div class="control-inline">
+        <input class="number-input" type="number" step="any"
+                         v-model.number="userMaxFrequency"
+                         :min="1000"
+          :max="25000"
+          @keydown="onLogStepKeydown('max', $event)" />
+                  <div class="stepper" aria-hidden="true">
+                    <button type="button" class="step-btn" @click.prevent="stepLog('max','up')" title="Increase (1/6 octave)">
+                      <AppIcon icon="caret-up" :width="14" :height="14" />
+                    </button>
+                    <button type="button" class="step-btn" @click.prevent="stepLog('max','down')" title="Decrease (1/6 octave)">
+                      <AppIcon icon="caret-down" :width="14" :height="14" />
+                    </button>
+                  </div>
+                  <span class="suffix">Hz</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Range analysis info -->
+            <div v-if="usableRangeResult" class="range-analysis">
+              <div class="analysis-item">
+                <span class="label">Recommended:</span>
+                <span class="value">{{ Math.round(usableRangeResult.recommended_min || 20) }}Hz - {{ Math.round(usableRangeResult.recommended_max || 20000) }}Hz</span>
+              </div>
             </div>
           </div>
 
           <div class="eq-options">
+            <!-- Additional filter options -->
+            <div class="option-row">
+              <label class="option-label">Add low-pass filter</label>
+              <div class="control-inline">
+                <input id="add-lowpass" type="checkbox" v-model="addLowpass" />
+              </div>
+            </div>
+
             <!-- Optimizer preset selection -->
             <div class="option-row">
               <label class="option-label">Optimizer preset</label>
@@ -198,8 +355,8 @@
                 <!-- Initial measurement curve -->
                 <path :d="generateOptimisationPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="2" />
 
-                <!-- Target curve -->
-                <path v-if="selectedTargetPoints.length" :d="generateOptimisationPath({ frequencies: selectedTargetPoints.map(p => p.frequency), magnitudes: selectedTargetPoints.map(p => p.target_db) })" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
+                <!-- Target curve (clipped to min/max optimizer frequencies) -->
+                <path v-if="selectedTargetPoints.length" :d="generateOptimisationTargetClippedPath(selectedTargetPoints, userMinFrequency, userMaxFrequency)" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
 
                 <!-- Optimized curve (shown during/after optimization) -->
                 <path v-if="optimizedResponse" :d="generateOptimisationPath(optimizedResponse)" fill="none" stroke="#ff6b35" stroke-width="2" />
@@ -270,7 +427,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import AppIcon from './app-icon.vue'
 import type { RoomMeasurement } from '@/stores/settings'
-import { getRoomEQTargetPresets, type RoomEQTargetPoint } from '@/api/roomeq'
+import { getRoomEQTargetPresets, type RoomEQTargetPoint, detectUsableFrequencyRange, type RoomEQUsableRangeResult } from '@/api/roomeq'
 
 interface Props {
   isOpen: boolean
@@ -309,6 +466,13 @@ const maxCut = ref<number>(12)
 const exportMode = computed(() => props.exportMode === true)
 const targetDescription = computed(() => targetDescriptions.value[targetCurve.value] || '')
 
+// Usable frequency range detection
+const usableRangeResult = ref<RoomEQUsableRangeResult | null>(null)
+const loadingUsableRange = ref(false)
+const usableRangeError = ref('')
+const userMinFrequency = ref<number>(20)
+const userMaxFrequency = ref<number>(20000)
+
 watch(measurement, (m) => {
   if (m?.frequency_range) {
     rangeMin.value = Math.max(10, Math.floor(m.frequency_range[0]))
@@ -334,6 +498,7 @@ const reset = () => {
   maxBoost.value = 6
   maxCut.value = 12
   optimizerPreset.value = 'Default'
+  addLowpass.value = false
 }
 
 const nextStep = async () => {
@@ -431,6 +596,124 @@ const loadTargets = async () => {
 
 const toLabel = (name: string) => name.replace(/_/g, ' ')
 const selectTarget = (name: string) => { targetCurve.value = name }
+// Step 3 options used by Step 4
+const addLowpass = ref<boolean>(false)
+
+// Detect usable frequency range from measurement
+// Define interfaces for the actual server response structure
+interface UsableRangeServerResponse {
+  success: boolean
+  message?: string
+  usable_frequency_range?: {
+    min_frequency?: number
+    max_frequency?: number
+    recommended_min?: number
+    recommended_max?: number
+    dynamic_range?: number
+    low_frequency_rolloff?: number
+    high_frequency_rolloff?: number
+    noise_floor_estimate?: number
+    usable_freq_low?: number
+    usable_freq_high?: number
+  }
+  // Fallback for direct structure
+  usable_freq_low?: number
+  usable_freq_high?: number
+  recommended_min?: number
+  recommended_max?: number
+  dynamic_range?: number
+  low_frequency_rolloff?: number
+  high_frequency_rolloff?: number
+  noise_floor_estimate?: number
+}
+
+const detectUsableRange = async () => {
+  if (!measurement.value) return
+
+  try {
+    loadingUsableRange.value = true
+    usableRangeError.value = ''
+
+    const payload = {
+      measured_curve: {
+        frequencies: measurement.value.frequencies,
+        magnitudes_db: measurement.value.magnitudes
+      },
+      optimizer_params: {
+        min_frequency: userMinFrequency.value,
+        max_frequency: userMaxFrequency.value
+      },
+      sample_rate: measurement.value.sample_rate || 48000
+    }
+
+    const response = await detectUsableFrequencyRange(payload)
+
+    if (response.success && response.data) {
+      const data = response.data as UsableRangeServerResponse
+
+      // Extract usable frequency range from the actual response structure
+      let extractedResult: RoomEQUsableRangeResult
+
+      if (data.usable_frequency_range) {
+        // Server returns nested structure
+        const range = data.usable_frequency_range
+        extractedResult = {
+          success: data.success,
+          usable_freq_low: range.min_frequency || range.usable_freq_low || userMinFrequency.value,
+          usable_freq_high: range.max_frequency || range.usable_freq_high || userMaxFrequency.value,
+          recommended_min: range.recommended_min || range.min_frequency || userMinFrequency.value,
+          recommended_max: range.recommended_max || range.max_frequency || userMaxFrequency.value,
+          message: data.message,
+          analysis: {
+            dynamic_range: range.dynamic_range || 0,
+            low_frequency_rolloff: range.low_frequency_rolloff || 0,
+            high_frequency_rolloff: range.high_frequency_rolloff || 0,
+            noise_floor_estimate: range.noise_floor_estimate || 0
+          }
+        }
+      } else {
+        // Fallback to direct structure
+        extractedResult = {
+          success: data.success,
+          usable_freq_low: data.usable_freq_low || userMinFrequency.value,
+          usable_freq_high: data.usable_freq_high || userMaxFrequency.value,
+          recommended_min: data.recommended_min || data.usable_freq_low || userMinFrequency.value,
+          recommended_max: data.recommended_max || data.usable_freq_high || userMaxFrequency.value,
+          message: data.message,
+          analysis: {
+            dynamic_range: data.dynamic_range || 0,
+            low_frequency_rolloff: data.low_frequency_rolloff || 0,
+            high_frequency_rolloff: data.high_frequency_rolloff || 0,
+            noise_floor_estimate: data.noise_floor_estimate || 0
+          }
+        }
+      }
+
+      usableRangeResult.value = extractedResult
+
+      // Update the range inputs with detected values
+      if (extractedResult.usable_freq_low) {
+        userMinFrequency.value = extractedResult.usable_freq_low
+      }
+      if (extractedResult.usable_freq_high) {
+        userMaxFrequency.value = extractedResult.usable_freq_high
+      }
+      // Preset low-pass checkbox if minimum usable frequency is > 50Hz
+      if ((extractedResult.usable_freq_low || 0) > 50) {
+        addLowpass.value = true
+      }
+    } else {
+      usableRangeError.value = response.detail || 'Failed to detect usable frequency range'
+      usableRangeResult.value = null
+    }
+  } catch (error) {
+    console.error('Error detecting usable frequency range:', error)
+    usableRangeError.value = error instanceof Error ? error.message : 'Unknown error occurred'
+    usableRangeResult.value = null
+  } finally {
+    loadingUsableRange.value = false
+  }
+}
 
 const selectedTargetPoints = computed(() => {
   const points = targets.value[targetCurve.value] || []
@@ -470,6 +753,42 @@ watch(() => props.isOpen, (open) => {
   }
 })
 
+// Auto-detect usable frequency range when entering step 3
+watch(currentStep, (newStep) => {
+  if (newStep === 3 && measurement.value) {
+    detectUsableRange()
+  }
+})
+
+// Logarithmic stepping for frequency inputs: 1/6 octave increments
+const applyLogStep = (which: 'min' | 'max', direction: 'up' | 'down') => {
+  const sixthOct = Math.pow(2, 1 / 6)
+  const dir = direction === 'up' ? sixthOct : 1 / sixthOct
+  if (which === 'min') {
+    const current = userMinFrequency.value || 20
+    const next = current * dir
+    const clamped = Math.max(10, Math.min(next, Math.min(userMaxFrequency.value - 1, 1000)))
+    userMinFrequency.value = Math.round(clamped)
+  } else {
+    const current = userMaxFrequency.value || 20000
+    const next = current * dir
+    const clamped = Math.min(25000, Math.max(next, Math.max(userMinFrequency.value + 1, 1000)))
+    userMaxFrequency.value = Math.round(clamped)
+  }
+}
+
+// Keyboard handler delegates to applyLogStep
+const onLogStepKeydown = (which: 'min' | 'max', e: KeyboardEvent) => {
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+  e.preventDefault()
+  applyLogStep(which, e.key === 'ArrowUp' ? 'up' : 'down')
+}
+
+// Click handler for integrated stepper buttons
+const stepLog = (which: 'min' | 'max', direction: 'up' | 'down') => {
+  applyLogStep(which, direction)
+}
+
 // Chart path generator based on saved measurement
 const generatePath = (m: RoomMeasurement): string => {
   if (!m.frequencies || !m.magnitudes) return ''
@@ -501,29 +820,194 @@ const generatePath = (m: RoomMeasurement): string => {
 const generateTargetPath = (pts: RoomEQTargetPoint[]): string => {
   if (!pts || !pts.length) return ''
   const minFreq = 20
-  const maxFreq = 25000
-  // Preview scale: +/-5 dB as requested
-  const minMag = -5
-  const maxMag = 5
+  const maxFreq = 20000
+  // Preview scale: ±20 dB to match Steps 1 and 3
+  const minMag = -20
+  const maxMag = 20
   const width = 760 - 40
   const height = 180 - 20
   const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
   const magScale = (mag: number) => 10 + (maxMag - mag) / (maxMag - minMag) * height
+
+  // Ensure points are sorted by frequency
+  const points = [...pts]
+    .filter(p => p && typeof p === 'object')
+    .sort((a, b) => a.frequency - b.frequency)
+
   let path = ''
-  for (const p of pts) {
-    // Handle the new API format where each point is an object with frequency and target_db
-    if (!p || typeof p !== 'object') {
-      console.warn('Invalid target curve point:', p)
-      continue
+  let drawing = false
+
+  const addPoint = (f: number, db: number, move = false) => {
+    const x = logScale(f)
+    const y = magScale(db)
+    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
+    drawing = true
+  }
+
+  for (let i = 1; i < points.length; i++) {
+    const p0 = points[i - 1]
+    const p1 = points[i]
+    let f0 = p0.frequency
+  const f1 = p1.frequency
+    let y0 = p0.target_db
+  const y1 = p1.target_db
+
+    // Skip zero/negative frequencies safely
+    if (f0 <= 0 || f1 <= 0) continue
+
+    const in0 = f0 >= minFreq && f0 <= maxFreq
+    const in1 = f1 >= minFreq && f1 <= maxFreq
+
+    // If segment entirely to the left or right, check crossings
+    if (!in0 || !in1) {
+      // Compute potential intersections at min/max if segment crosses
+      const crossesMin = (f0 < minFreq && f1 > minFreq) || (f1 < minFreq && f0 > minFreq)
+      const crossesMax = (f0 < maxFreq && f1 > maxFreq) || (f1 < maxFreq && f0 > maxFreq)
+
+      // Both outside and no crossing with visible range -> end current drawing
+      if (!in0 && !in1 && !crossesMin && !crossesMax) {
+        drawing = false
+        continue
+      }
+
+      // If crossing min boundary, add interpolated point at minFreq
+      if (crossesMin) {
+        const t = (minFreq - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        addPoint(minFreq, y, !drawing)
+        // Clamp start to min
+        f0 = minFreq
+        y0 = y
+      }
+      // If crossing max boundary, we'll end at max
+      if (crossesMax) {
+        const t = (maxFreq - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        if (in0) {
+          // Draw from in-range point to max boundary
+          addPoint(f0, y0, !drawing)
+        } else if (!drawing) {
+          addPoint(minFreq, y0, true) // ensure a move exists if needed (safety)
+        }
+        addPoint(maxFreq, y)
+        drawing = false
+        continue
+      }
+
+      // If one point is inside (and not crossing max), connect to the inside point, possibly after adding min boundary
+      if (in0 && !in1) {
+        addPoint(f0, y0, !drawing)
+        // Compute intersection at either max or min (we handled crossings above); if f1 > maxFreq, truncate at max
+        const bound = f1 > maxFreq ? maxFreq : minFreq
+        if (bound === minFreq && f0 > minFreq) {
+          // Segment exits below min; compute intersection to min
+          const t = (minFreq - f0) / (f1 - f0)
+          const y = y0 + t * (y1 - y0)
+          addPoint(minFreq, y)
+        }
+        drawing = false
+        continue
+      }
+      if (!in0 && in1) {
+        // Entering visible range
+        const t = ((f0 < minFreq ? minFreq : maxFreq) - f0) / (f1 - f0)
+        const fEnter = f0 < minFreq ? minFreq : maxFreq
+        const yEnter = y0 + t * (y1 - y0)
+        addPoint(fEnter, yEnter, !drawing)
+        addPoint(f1, y1)
+        continue
+      }
     }
-    const frequency = p.frequency
-    const targetDb = p.target_db
-    if (frequency >= minFreq && frequency <= maxFreq) {
-      const x = logScale(frequency)
-      const y = magScale(targetDb)
-      path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
+
+    // Both points inside: draw normally
+    if (in0 && in1) {
+      if (!drawing) addPoint(f0, y0, true)
+      addPoint(f1, y1)
     }
   }
+
+  return path
+}
+
+// Generate measured path for Step 2 preview (800x200, 20–20k Hz, ±20 dB)
+const generateStep2MeasuredPath = (m: RoomMeasurement): string => {
+  if (!m.frequencies || !m.magnitudes) return ''
+  const minFreq = 20
+  const maxFreq = 20000
+  const minMag = -20
+  const maxMag = 20
+  const width = 760 - 40
+  const height = 180 - 20
+  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
+  const magScale = (mag: number) => 10 + (maxMag - mag) / (maxMag - minMag) * height
+
+  const freqs = m.frequencies
+  const mags = m.magnitudes
+  let path = ''
+  let drawing = false
+
+  const addPoint = (f: number, db: number, move = false) => {
+    const x = logScale(f)
+    const y = magScale(db)
+    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
+    drawing = true
+  }
+
+  for (let i = 1; i < freqs.length; i++) {
+    let f0 = freqs[i - 1]
+  const f1 = freqs[i]
+    let y0 = mags[i - 1]
+  const y1 = mags[i]
+    if (f0 <= 0 || f1 <= 0) continue
+
+    const in0 = f0 >= minFreq && f0 <= maxFreq
+    const in1 = f1 >= minFreq && f1 <= maxFreq
+
+    if (!in0 || !in1) {
+      const crossesMin = (f0 < minFreq && f1 > minFreq) || (f1 < minFreq && f0 > minFreq)
+      const crossesMax = (f0 < maxFreq && f1 > maxFreq) || (f1 < maxFreq && f0 > maxFreq)
+
+      if (!in0 && !in1 && !crossesMin && !crossesMax) {
+        drawing = false
+        continue
+      }
+
+      if (crossesMin) {
+        const t = (minFreq - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        addPoint(minFreq, y, !drawing)
+        f0 = minFreq
+        y0 = y
+      }
+      if (crossesMax) {
+        const t = (maxFreq - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        if (in0) addPoint(f0, y0, !drawing)
+        addPoint(maxFreq, y)
+        drawing = false
+        continue
+      }
+      if (in0 && !in1) {
+        addPoint(f0, y0, !drawing)
+        drawing = false
+        continue
+      }
+      if (!in0 && in1) {
+        const t = ((f0 < minFreq ? minFreq : maxFreq) - f0) / (f1 - f0)
+        const fEnter = f0 < minFreq ? minFreq : maxFreq
+        const yEnter = y0 + t * (y1 - y0)
+        addPoint(fEnter, yEnter, !drawing)
+        addPoint(f1, y1)
+        continue
+      }
+    }
+
+    if (in0 && in1) {
+      if (!drawing) addPoint(f0, y0, true)
+      addPoint(f1, y1)
+    }
+  }
+
   return path
 }
 
@@ -564,15 +1048,135 @@ const generateOptimisationPath = (data: { frequencies: number[]; magnitudes: num
   return path
 }
 
-// Optimisation step - Updated for streaming API
+// Generate target curve for Step 4 clipped to [minFreq, maxFreq] with ±10 dB scale
+const generateOptimisationTargetClippedPath = (pts: RoomEQTargetPoint[], minFreqUser: number, maxFreqUser: number): string => {
+  if (!pts || !pts.length) return ''
+  const chartMinFreq = 20
+  const chartMaxFreq = 20000
+  const minMag = -10
+  const maxMag = 10
+  const width = 760 - 40
+  const height = 280 - 20
+  const logScale = (freq: number) => 40 + (Math.log10(freq / chartMinFreq) / Math.log10(chartMaxFreq / chartMinFreq)) * width
+  const magScale = (mag: number) => 20 + (maxMag - mag) / (maxMag - minMag) * height
+
+  const lo = Math.max(chartMinFreq, Math.max(20, Math.floor(minFreqUser || chartMinFreq)))
+  const hi = Math.min(chartMaxFreq, Math.min(20000, Math.ceil(maxFreqUser || chartMaxFreq)))
+  if (lo >= hi) return ''
+
+  // Sort points by frequency
+  const points = [...pts]
+    .filter(p => p && typeof p === 'object')
+    .sort((a, b) => a.frequency - b.frequency)
+
+  let path = ''
+  let drawing = false
+  const addPoint = (f: number, db: number, move = false) => {
+    const x = logScale(f)
+    const y = magScale(db)
+    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
+    drawing = true
+  }
+
+  for (let i = 1; i < points.length; i++) {
+    let f0 = points[i - 1].frequency
+    const f1 = points[i].frequency
+    let y0 = points[i - 1].target_db
+    const y1 = points[i].target_db
+    if (f0 <= 0 || f1 <= 0) continue
+
+    const in0 = f0 >= lo && f0 <= hi
+    const in1 = f1 >= lo && f1 <= hi
+    const crossesLo = (f0 < lo && f1 > lo) || (f1 < lo && f0 > lo)
+    const crossesHi = (f0 < hi && f1 > hi) || (f1 < hi && f0 > hi)
+
+    if (!in0 || !in1) {
+      if (!in0 && !in1 && !crossesLo && !crossesHi) {
+        drawing = false
+        continue
+      }
+      if (crossesLo) {
+        const t = (lo - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        addPoint(lo, y, !drawing)
+        f0 = lo
+        y0 = y
+      }
+      if (crossesHi) {
+        const t = (hi - f0) / (f1 - f0)
+        const y = y0 + t * (y1 - y0)
+        if (in0) addPoint(f0, y0, !drawing)
+        addPoint(hi, y)
+        drawing = false
+        continue
+      }
+      if (in0 && !in1) {
+        addPoint(f0, y0, !drawing)
+        drawing = false
+        continue
+      }
+      if (!in0 && in1) {
+        const t = ((f0 < lo ? lo : hi) - f0) / (f1 - f0)
+        const fEnter = f0 < lo ? lo : hi
+        const yEnter = y0 + t * (y1 - y0)
+        addPoint(fEnter, yEnter, !drawing)
+        addPoint(f1, y1)
+        continue
+      }
+    }
+    if (in0 && in1) {
+      if (!drawing) addPoint(f0, y0, true)
+      addPoint(f1, y1)
+    }
+  }
+  return path
+}
+
+// Helper functions for step 3 chart display
+const generateMeasuredPath = (m: RoomMeasurement): string => {
+  if (!m.frequencies || !m.magnitudes) return ''
+
+  const minFreq = 20
+  const maxFreq = 20000
+  const minMag = -20
+  const maxMag = 20
+  const width = 760 - 40
+  const height = 280 - 20
+
+  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
+  const magScale = (mag: number) => 20 + (maxMag - mag) / (maxMag - minMag) * height
+
+  let path = ''
+  for (let i = 0; i < m.frequencies.length; i++) {
+    const f = m.frequencies[i]
+    const mag = m.magnitudes[i]
+    if (f >= minFreq && f <= maxFreq) {
+      const x = logScale(f)
+      const y = magScale(mag)
+      path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
+    }
+  }
+  return path
+}
+
+// Convert frequency to X coordinate on the chart
+const frequencyToX = (freq: number): number => {
+  const minFreq = 20
+  const maxFreq = 20000
+  const width = 760 - 40
+  return 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
+}
+
+// Optimisation step - Updated for new streaming API
 import {
-  startRoomEQOptimizationStream,
+  startNewRoomEQOptimizationStream,
   getRoomEQOptimizerPresets,
   checkRoomEQVersionRequirement,
   ROOMEQ_MINIMUM_VERSION,
-  type RoomEQOptimizationRequest,
-  type RoomEQOptimizationEvent,
-  type RoomEQOptimizationFilter
+  type NewRoomEQOptimizationRequest,
+  type NewRoomEQOptimizationProgress,
+  type NewRoomEQOptimizedFilter,
+  type NewRoomEQOptimizationResult
 } from '@/api/roomeq'
 
 const optimising = ref(false)
@@ -591,7 +1195,7 @@ const optEstimatedRemaining = ref(0)
 const optCurrentFilter = ref<{ frequency: number; gain_db: number; q: number; filter_type: string } | null>(null)
 const optFinalRmsError = ref(0)
 const optImprovementDb = ref(0)
-const optimizedFilters = ref<RoomEQOptimizationFilter[]>([])
+const optimizedFilters = ref<NewRoomEQOptimizedFilter[]>([])
 const optimizationTime = ref(0)
 const loadOptimizerPresets = async () => {
   try {
@@ -655,58 +1259,98 @@ const runOptimisation = async () => {
     console.log('Available target IDs:', Object.keys(targets.value))
     console.log('Target display names:', targetDisplayNames.value)
 
-    const payload: RoomEQOptimizationRequest = {
-      // For now, we'll use FFT data from the measurement
-      // In a full implementation, you'd use recording_id if available
-      frequencies: measurement.value.frequencies,
-      magnitudes: measurement.value.magnitudes,
+    // Build the new API payload format
+    const payload: NewRoomEQOptimizationRequest = {
+      measured_curve: {
+        frequencies: measurement.value.frequencies,
+        magnitudes_db: measurement.value.magnitudes
+      },
+      target_curve: {
+        curve: selectedTargetPoints.value.map(point => ({
+          frequency: point.frequency,
+          target_db: point.target_db,
+          weight: point.weight
+        }))
+      },
+      optimizer_params: {
+        qmax: 10.0,
+        mindb: -10.0,
+        maxdb: 3.0,
+        add_highpass: true,
+  acceptable_error: 1.0,
+  min_frequency: userMinFrequency.value,
+  max_frequency: userMaxFrequency.value,
+  add_lowpass: addLowpass.value
+      },
       sample_rate: measurement.value.sample_rate || 48000,
-      target_curve: targetCurve.value, // Now this is already the correct API key
-      optimizer_preset: optimizerPreset.value,
-      filter_count: 16,
-      intermediate_results_interval: 1, // Get results after every filter
-      points_per_octave: 12
+      filter_count: 16
     }
 
-    // Start streaming optimization
-    const streamResult = await startRoomEQOptimizationStream(
+    // Start streaming optimization using the new API
+    const streamResult = await startNewRoomEQOptimizationStream(
       payload,
       // onEvent callback
-      (event: RoomEQOptimizationEvent) => {
+      (event: NewRoomEQOptimizationProgress) => {
         console.log('🎯 WIZARD: Processing optimization event:', event.type, event.message)
 
         switch (event.type) {
           case 'started':
-            console.log('🚀 WIZARD: Optimization started')
+            console.log('Optimization started')
             optStatus.value = event.message || 'Optimization started'
-            optTotalSteps.value = event.parameters?.filter_count || 16
+            optTotalSteps.value = 16 // Default filter count
             optimisationProgress.value = 0
-            currentOptimizationId.value = event.optimization_id || null
-            optCurrentFilter.value = null // Clear current filter when starting
+            currentOptimizationId.value = 'new-api' // Placeholder
+            optCurrentFilter.value = null
             break
 
-          case 'filter_added':
-            console.log('🔧 WIZARD: Filter added, step:', event.step, 'progress:', event.progress)
-            const progress = event.progress || 0
-            optimisationProgress.value = progress
-            optCurrentStep.value = event.message || `Filter ${event.step || 0}`
-            optStepsCompleted.value = event.step || 0
+          case 'output':
+            console.log('📊 WIZARD: Processing output event')
+            // Parse JSON from the line if available
+            if (event.line) {
+              try {
+                const outputData = JSON.parse(event.line)
+                console.log('� WIZARD: Parsed output data:', outputData)
 
-            // Update current filter being worked on
-            if (event.filter) {
-              optCurrentFilter.value = event.filter
-            }
+                // Handle different types of output data
+                if (outputData.filters && Array.isArray(outputData.filters)) {
+                  // This looks like progress or final result data
+                  optimizedFilters.value = outputData.filters
+                  optStatus.value = outputData.message || `Generated ${outputData.filters.length} filters`
 
-            // Update filter list
-            if (event.current_filter_set) {
-              optimizedFilters.value = event.current_filter_set
-            }
+                  // Calculate progress based on number of filters
+                  const filterCount = outputData.filters.length
+                  const expectedTotal = 16 // Or parse from payload
+                  optimisationProgress.value = Math.min(100, (filterCount / expectedTotal) * 100)
+                  optStepsCompleted.value = filterCount
 
-            // Update real-time frequency response display
-            if (event.frequency_response) {
-              optimizedResponse.value = {
-                frequencies: event.frequency_response.frequencies,
-                magnitudes: event.frequency_response.magnitude_db
+                  // Show current filter being worked on (use the last filter)
+                  if (outputData.filters.length > 0) {
+                    const lastFilter = outputData.filters[outputData.filters.length - 1]
+                    optCurrentFilter.value = {
+                      frequency: lastFilter.frequency,
+                      gain_db: lastFilter.gain_db,
+                      q: lastFilter.q,
+                      filter_type: lastFilter.filter_type
+                    }
+                  }
+
+                  // Update frequency response if available
+                  if (outputData.frequency_response && outputData.frequency_response.resulting_response) {
+                    optimizedResponse.value = {
+                      frequencies: outputData.frequency_response.frequencies,
+                      magnitudes: outputData.frequency_response.resulting_response.magnitude_db
+                    }
+                  }
+                } else if (outputData.step !== undefined) {
+                  // This is a step progress update
+                  optStepsCompleted.value = outputData.step
+                  optimisationProgress.value = outputData.progress_percent || 0
+                  optStatus.value = outputData.message || `Step ${outputData.step}`
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse output line as JSON:', parseError)
+                // Treat as text progress update
+                optStatus.value = event.line.substring(0, 100) + (event.line.length > 100 ? '...' : '')
               }
             }
             break
@@ -715,33 +1359,28 @@ const runOptimisation = async () => {
             console.log('✅ WIZARD: Optimization completed')
             optimisationProgress.value = 100
             optStatus.value = 'Optimization completed!'
-            optCurrentFilter.value = null // Clear current filter when completed
+            optCurrentFilter.value = null
+            optimising.value = false
 
-            if (event.current_filter_set) {
-              optimizedFilters.value = event.current_filter_set
-              optStatus.value = `Optimization completed! Generated ${event.current_filter_set.length} filters`
-            }
-
-            // Final frequency response
-            if (event.frequency_response) {
-              optimizedResponse.value = {
-                frequencies: event.frequency_response.frequencies,
-                magnitudes: event.frequency_response.magnitude_db
+            // Parse final result if available in the line
+            if (event.line) {
+              try {
+                const finalResult = JSON.parse(event.line) as NewRoomEQOptimizationResult
+                if (finalResult.success && finalResult.filters) {
+                  optimizedFilters.value = finalResult.filters
+                  optStatus.value = `Optimization completed! Generated ${finalResult.filters.length} filters`
+                  optFinalRmsError.value = finalResult.final_error || 0
+                  optImprovementDb.value = finalResult.improvement_db || 0
+                  optimizationTime.value = finalResult.processing_time_ms || 0
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse completion result:', parseError)
               }
             }
-
-            optimising.value = false
-            break
-
-          case 'error':
-            console.log('❌ WIZARD: Optimization error')
-            optStatus.value = event.message || 'Optimization error occurred'
-            optCurrentFilter.value = null // Clear current filter on error
-            optimising.value = false
             break
 
           default:
-            console.log('❓ WIZARD: Unknown event type:', event.type)
+            console.log('Unknown event type:', event.type)
         }
       },
       // onError callback
@@ -753,8 +1392,14 @@ const runOptimisation = async () => {
         optimising.value = false
       },
       // onComplete callback
-      () => {
-        console.log('📋 WIZARD: Optimization onComplete callback triggered')
+      (result?: NewRoomEQOptimizationResult) => {
+        console.log('Optimization onComplete callback triggered')
+        if (result && result.filters) {
+          optimizedFilters.value = result.filters
+          optFinalRmsError.value = result.final_error || 0
+          optImprovementDb.value = result.improvement_db || 0
+          optimizationTime.value = result.processing_time_ms || 0
+        }
         if (optimising.value) {
           optimising.value = false
         }
@@ -958,4 +1603,128 @@ const runOptimisation = async () => {
     }
   }
 }
+
+// Usable frequency range controls (Step 3)
+.usable-range-controls {
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+
+  .range-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    h4 {
+      margin: 0;
+      color: var(--color-head);
+    }
+
+    .range-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+
+      .status-loading { color: var(--color-text-secondary); }
+      .status-error { color: #ff6b6b; }
+      .status-success { color: var(--primary); }
+      .spinning { animation: spin 1s linear infinite; }
+    }
+  }
+
+  .range-inputs {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+
+    .input-group {
+      flex: 1;
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+        color: var(--color-head);
+        font-weight: 500;
+      }
+
+      .control-inline { display: inline-flex; align-items: center; gap: 8px; width: 100%; }
+
+      .number-input {
+        background: var(--background-card);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        color: var(--color-head);
+        padding: 8px 10px;
+        min-width: 110px;
+        width: 100%;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+        }
+      }
+
+      /* Hide native spinners for a cleaner custom stepper */
+      .number-input::-webkit-outer-spin-button,
+      .number-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .number-input[type=number] { appearance: textfield; -moz-appearance: textfield; }
+
+      .stepper {
+        display: inline-flex;
+        flex-direction: column;
+        margin-left: 4px;
+        gap: 2px;
+      }
+
+      .step-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 18px;
+        padding: 0;
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        background: var(--background-card);
+        color: var(--color-head);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .step-btn:hover { background: var(--color-bg-secondary); }
+      .step-btn:active { transform: translateY(1px); }
+
+      .suffix { color: var(--color-body-secondary); }
+    }
+  }
+}
+
+.range-analysis {
+  .analysis-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border);
+
+    &:last-child { border-bottom: none; }
+
+    .label { color: var(--color-text-secondary); font-size: 0.9rem; }
+    .value { color: var(--color-head); font-weight: 500; font-family: 'Courier New', monospace; }
+  }
+}
+
+  .range-label {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 </style>

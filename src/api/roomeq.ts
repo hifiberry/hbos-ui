@@ -1984,6 +1984,7 @@ export interface RoomMeasureRequest {
   count?: number // Number of measurements to average (1-20)
   timeout?: number // Overall timeout in seconds
   normalize_frequency?: number | 'none' // Frequency for normalization (10-22000 Hz) or 'none'
+  fft_points?: number // Number of reduced FFT sample points (8-512, default: 64)
 }
 
 export interface RoomMeasureResponse {
@@ -1991,6 +1992,7 @@ export interface RoomMeasureResponse {
   device: string
   channel: string
   count: number
+  fft_points: number
   csv_path: string
   fft: {
     frequencies: number[]
@@ -2022,6 +2024,9 @@ export const startRoomMeasure = async (
     if (request.timeout !== undefined) params.append('timeout', request.timeout.toString())
     if (request.normalize_frequency !== undefined) {
       params.append('normalize_frequency', request.normalize_frequency.toString())
+    }
+    if (request.fft_points !== undefined) {
+      params.append('fft_points', request.fft_points.toString())
     }
 
     const url = `${apiBaseUrl}/audio/room-measure${params.toString() ? '?' + params.toString() : ''}`

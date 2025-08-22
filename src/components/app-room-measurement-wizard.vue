@@ -195,8 +195,8 @@
           </div>
 
           <div class="measure-settings">
-            <div class="setting-row">
-              <label class="setting-label">Input Channel</label>
+            <div v-if="isExpertMode" class="setting-row">
+              <label class="setting-label">Channel</label>
               <div class="segmented">
                 <button
                   v-for="channel in channelOptions"
@@ -211,7 +211,7 @@
             </div>
 
             <div class="setting-row">
-              <label class="setting-label">Number of measurements to average</label>
+              <label class="setting-label">Number of measurements</label>
               <div class="segmented">
                 <button
                   v-for="n in measurementCountOptions"
@@ -225,24 +225,18 @@
               </div>
             </div>
 
-            <div class="setting-row">
-              <label class="setting-label">Normalization Frequency</label>
-              <div class="normalization-controls">
-                <select
-                  v-model="normalizationFrequency"
-                  class="frequency-select"
+            <div v-if="isExpertMode" class="setting-row">
+              <label class="setting-label">FFT Points</label>
+              <div class="segmented">
+                <button
+                  v-for="n in fftPointsOptions"
+                  :key="n"
+                  type="button"
+                  class="segmented-btn"
+                  :class="{ active: fftPoints === n }"
                   :disabled="isMeasuringRoom"
-                >
-                  <option value="none">No normalization</option>
-                  <option value="100">100 Hz</option>
-                  <option value="500">500 Hz</option>
-                  <option value="1000">1 kHz (recommended)</option>
-                  <option value="2000">2 kHz</option>
-                  <option value="5000">5 kHz</option>
-                </select>
-                <p class="normalization-help">
-                  The selected frequency will be normalized to 0 dB, with all other frequencies adjusted relative to this reference.
-                </p>
+                  @click="fftPoints = n"
+                >{{ n }}</button>
               </div>
             </div>
           </div>
@@ -481,10 +475,11 @@ const channelOptions = [
   { value: 'right', label: 'Right' },
   { value: 'both', label: 'Both' }
 ] as const
-const measurementCountOptions = [2, 4, 8, 12, 16, 20]
-const selectedChannel = ref<'left' | 'right' | 'both'>('left')
-const measurementCount = ref<number>(8)
-const normalizationFrequency = ref<number | 'none'>(1000)
+const measurementCountOptions = [1, 2, 4]
+const fftPointsOptions = [64, 128, 256]
+const selectedChannel = ref<'left' | 'right' | 'both'>('both')
+const measurementCount = ref<number>(2)
+const fftPoints = ref<number>(64)
 const isMeasuringRoom = ref(false)
 const step4Error = ref<string>('')
 
@@ -563,15 +558,16 @@ const startRoomMeasurement = async () => {
       await stopNoise()
     }
 
-    // Get the selected microphone device
-    const deviceName = selectedMicrophone.value?.device_name || undefined
+    // Get the selected microphone device in ALSA format (hw:card_index,0)
+    const deviceName = selectedMicrophone.value ? `hw:${selectedMicrophone.value.card_index},0` : undefined
 
     // Prepare the room measurement request
     const request: RoomMeasureRequest = {
       device: deviceName,
       channel: selectedChannel.value,
       count: measurementCount.value,
-      normalize_frequency: normalizationFrequency.value
+      normalize_frequency: 1000, // Fixed normalization at 1kHz
+      fft_points: fftPoints.value
     }
 
     console.log('Starting room measurement with:', request)
@@ -800,6 +796,11 @@ const resetWizard = () => {
   totalRecordingDuration.value = 0  // Reset recording duration
   sweepCount.value = 2
   step4Error.value = ''
+
+  // Reset measurement settings to defaults
+  selectedChannel.value = 'both'
+  measurementCount.value = 2
+  fftPoints.value = 64
 
   // Reset FFT analysis state
   fftData.value = null
@@ -1449,30 +1450,6 @@ watch(smoothingType, () => {
             opacity: 0.6;
             cursor: not-allowed;
           }
-        }
-      }
-
-      .normalization-controls {
-        .frequency-select {
-          width: 200px;
-          padding: 8px 12px;
-          border: 1px solid var(--color-border);
-          border-radius: 6px;
-          background: var(--color-bg-primary);
-          color: var(--color-body);
-          font-size: 14px;
-
-          &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-        }
-
-        .normalization-help {
-          margin-top: 8px;
-          font-size: 13px;
-          color: var(--color-body-secondary);
-          line-height: 1.4;
         }
       }
 

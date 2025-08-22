@@ -190,23 +190,59 @@
             <AppIcon icon="tabler/wave-sine" class="step-icon" />
             <div class="step-info">
               <h3>Step 4: Measure Room</h3>
-              <p>Select the number of sweeps and start the measurement. We'll play test signals and capture data.</p>
+              <p>Configure measurement parameters and start the room measurement. The system will automatically play test signals and analyze the response.</p>
             </div>
           </div>
 
           <div class="measure-settings">
             <div class="setting-row">
-              <label class="setting-label">Number of sweeps</label>
+              <label class="setting-label">Input Channel</label>
               <div class="segmented">
                 <button
-                  v-for="n in sweepOptions"
+                  v-for="channel in channelOptions"
+                  :key="channel.value"
+                  type="button"
+                  class="segmented-btn"
+                  :class="{ active: selectedChannel === channel.value }"
+                  :disabled="isMeasuringRoom"
+                  @click="selectedChannel = channel.value"
+                >{{ channel.label }}</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <label class="setting-label">Number of measurements to average</label>
+              <div class="segmented">
+                <button
+                  v-for="n in measurementCountOptions"
                   :key="n"
                   type="button"
                   class="segmented-btn"
-                  :class="{ active: sweepCount === n }"
+                  :class="{ active: measurementCount === n }"
                   :disabled="isMeasuringRoom"
-                  @click="sweepCount = n"
+                  @click="measurementCount = n"
                 >{{ n }}</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <label class="setting-label">Normalization Frequency</label>
+              <div class="normalization-controls">
+                <select
+                  v-model="normalizationFrequency"
+                  class="frequency-select"
+                  :disabled="isMeasuringRoom"
+                >
+                  <option value="none">No normalization</option>
+                  <option value="100">100 Hz</option>
+                  <option value="500">500 Hz</option>
+                  <option value="1000">1 kHz (recommended)</option>
+                  <option value="2000">2 kHz</option>
+                  <option value="5000">5 kHz</option>
+                </select>
+                <p class="normalization-help">
+                  The selected frequency will be normalized to 0 dB, with all other frequencies adjusted relative to this reference.
+                </p>
               </div>
             </div>
           </div>
@@ -221,17 +257,13 @@
               {{ isMeasuringRoom ? 'Measuring…' : 'Start measurement' }}
             </button>
           </div>
-          <div v-if="recordingFilename && isExpertMode" class="recording-file">
-            <AppIcon icon="tabler/file-music" />
-            Recording file: <span class="mono">{{ recordingFilename }}</span>
-          </div>
 
           <div v-if="isMeasuringRoom" class="progress-info">
             <div class="progress-text">
-              Sweep {{ currentSweepIndex + 1 }} of {{ sweepCount }}
+              Running room measurement... ({{ measurementCount }} sweeps)
             </div>
             <div class="progress-bar">
-              <div class="fill" :style="{ width: `${Math.min(100, Math.max(0, ((currentSweepIndex + 1) / sweepCount) * 100))}%` }"></div>
+              <div class="fill indeterminate"></div>
             </div>
           </div>
         </div>
@@ -366,7 +398,7 @@
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import AppIcon from './app-icon.vue'
 import AppProgressSlider from './app-progress-slider.vue'
-import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, startRoomEQRecording, analyzeRoomEQFFTRecording, completeRoomMeasurement, startRoomEQPrerecordedSignal, PRERECORDED_SWEEP_SIGNAL } from '@/api/roomeq'
+import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, completeRoomMeasurement, startRoomMeasure, type RoomMeasureRequest, analyzeRoomEQFFTRecording } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'
 import { usePlayerStore } from '@/stores/player'
 import { useSettingsStore } from '@/stores/settings'
@@ -444,17 +476,27 @@ const isMeasuring = ref(false)
 const isMeasuringSPL = ref(false) // Flag to prevent concurrent SPL API calls
 
 // Step 4: Room measurement state
-const sweepOptions = [1, 2, 4]
-const sweepCount = ref<number>(2)
+const channelOptions = [
+  { value: 'left', label: 'Left' },
+  { value: 'right', label: 'Right' },
+  { value: 'both', label: 'Both' }
+] as const
+const measurementCountOptions = [2, 4, 8, 12, 16, 20]
+const selectedChannel = ref<'left' | 'right' | 'both'>('left')
+const measurementCount = ref<number>(8)
+const normalizationFrequency = ref<number | 'none'>(1000)
 const isMeasuringRoom = ref(false)
+const step4Error = ref<string>('')
+
+// Legacy state for compatibility (will be removed)
+const sweepCount = ref<number>(2)
 const currentSweepIndex = ref(0)
 const sweepStatusInterval = ref<number | null>(null)
 const totalSweepDuration = ref<number | null>(null)
 const recordingId = ref<string | number | null>(null)
 const recordingFilename = ref<string>('')
-const sourceSignalFilename = ref<string>('')  // Store source signal filename for FFT difference
-const totalRecordingDuration = ref<number>(0)  // Store total recording duration for optimal waiting
-const step4Error = ref<string>('')
+const sourceSignalFilename = ref<string>('')
+const totalRecordingDuration = ref<number>(0)
 
 // FFT analysis state
 // FFT analysis state
@@ -511,102 +553,80 @@ const setDefaultMeasurementName = () => {
 // Start room measurement: start recording (pre-roll), then trigger sine sweeps, then wait post-roll
 const startRoomMeasurement = async () => {
   if (isMeasuringRoom.value) return
+
   try {
     step4Error.value = ''
     isMeasuringRoom.value = true
-    currentSweepIndex.value = 0
-    totalSweepDuration.value = null
-    recordingId.value = null
-    recordingFilename.value = ''
-    sourceSignalFilename.value = ''  // Reset source signal filename
-    totalRecordingDuration.value = 0  // Reset recording duration
 
     // Ensure no noise is playing
     if (isNoiseePlaying.value) {
       await stopNoise()
     }
 
-    // Calculate total durations based on signal type
-    const preRoll = 1.0
-    const postRoll = 1.0
-    // Using pre-recorded sweep signal (10 seconds)
-    const perSweepDuration = 10.0
-    const signalDuration = perSweepDuration * sweepCount.value
-    const totalRecording = preRoll + signalDuration + postRoll
+    // Get the selected microphone device
+    const deviceName = selectedMicrophone.value?.device_name || undefined
 
-    // Store total recording duration for later use
-    totalRecordingDuration.value = totalRecording
-
-    // Start recording first
-    const recResp = await startRoomEQRecording({
-      duration: totalRecording,
-      // sampleRate: 48000, // leave default if API chooses
-      // filenameHint: undefined,
-    })
-    if (!recResp.success || !recResp.data) {
-      throw new Error(recResp.detail || 'Failed to start recording')
-    }
-    recordingId.value = recResp.data.recording_id
-    recordingFilename.value = recResp.data.filename
-
-    // Pre-roll wait
-    await new Promise((resolve) => setTimeout(resolve, preRoll * 1000))
-
-    // Start pre-recorded signal playback
-    const startResp = await startRoomEQPrerecordedSignal(PRERECORDED_SWEEP_SIGNAL, noiseAmplitude.value, sweepCount.value)
-    if (!startResp.success || !startResp.data) {
-      throw new Error(startResp.detail || 'Failed to start pre-recorded signal playback')
+    // Prepare the room measurement request
+    const request: RoomMeasureRequest = {
+      device: deviceName,
+      channel: selectedChannel.value,
+      count: measurementCount.value,
+      normalize_frequency: normalizationFrequency.value
     }
 
-    // At this point we know startResp.success && startResp.data are truthy from the checks above
-      // Use the signal duration from the response or default to calculated duration
-      totalSweepDuration.value = (startResp.data!).duration || signalDuration
-      // Store source signal filename for FFT difference analysis
-      sourceSignalFilename.value = (startResp.data!).filename || PRERECORDED_SWEEP_SIGNAL
+    console.log('Starting room measurement with:', request)
 
-    // Store start time for progress calculation (right after signal start)
-    const sweepStartTime = Date.now()
+    // Call the new room-measure endpoint
+    const response = await startRoomMeasure(request)
 
-    // Set up progress tracking for pre-recorded sweep using known timing
-    sweepStatusInterval.value = window.setInterval(() => {
-      const elapsed = (Date.now() - sweepStartTime) / 1000
-      if (elapsed > 0 && elapsed < signalDuration) {
-        const newSweepIndex = Math.min(sweepCount.value - 1, Math.floor(elapsed / perSweepDuration))
-        currentSweepIndex.value = newSweepIndex
+    if (!response.success || !response.data) {
+      throw new Error(response.detail || 'Failed to perform room measurement')
+    }
+
+    const measurementData = response.data
+    console.log('Room measurement completed:', measurementData)
+
+    // Convert the response to FFT format expected by the rest of the wizard
+    fftData.value = {
+      frequencies: measurementData.fft.frequencies,
+      magnitude: measurementData.fft.magnitudes_db, // Note: already in dB
+      phase: measurementData.fft.phase,
+      sample_rate: 44100, // Default assumption
+      peak_frequency: 0, // Will be calculated if needed
+      peak_magnitude: 0,  // Will be calculated if needed
+      frequency_bands: {
+        sub_bass: { range: '20-60 Hz', avg_magnitude: 0, peak_frequency: 0 },
+        bass: { range: '60-250 Hz', avg_magnitude: 0, peak_frequency: 0 },
+        low_midrange: { range: '250-500 Hz', avg_magnitude: 0, peak_frequency: 0 },
+        midrange: { range: '500-2000 Hz', avg_magnitude: 0, peak_frequency: 0 },
+        upper_midrange: { range: '2-4 kHz', avg_magnitude: 0, peak_frequency: 0 },
+        presence: { range: '4-8 kHz', avg_magnitude: 0, peak_frequency: 0 },
+        brilliance: { range: '8-20 kHz', avg_magnitude: 0, peak_frequency: 0 }
+      },
+      normalization: {
+        applied: measurementData.normalization?.applied || false,
+        requested_freq: measurementData.normalization?.requested_frequency,
+        actual_freq: measurementData.normalization?.actual_frequency,
+        reference_level_db: measurementData.normalization?.reference_level_db
       }
-    }, 500)
-
-    // Clear progress tracking when signal should be finished
-    setTimeout(() => {
-      if (sweepStatusInterval.value) {
-          clearInterval(sweepStatusInterval.value)
-          sweepStatusInterval.value = null
-        }
-      }, (preRoll + signalDuration + 1) * 1000) // +1 second buffer
-
-    // After recording and sweeps are complete, auto-advance
-    if (recordingId.value != null) {
-      console.log('Setting up auto-advance timer for', totalRecording, 'seconds')
-      setTimeout(() => {
-        console.log('Auto-advance timer expired, finishing measurement...')
-        // Clear any remaining intervals
-        if (sweepStatusInterval.value) {
-          clearInterval(sweepStatusInterval.value)
-          sweepStatusInterval.value = null
-        }
-        isMeasuringRoom.value = false
-        // Auto-advance to next step
-        if (currentStep.value < totalSteps.value) currentStep.value++
-        else completeMeasurement()
-      }, totalRecording * 1000)
     }
+
+    // Clear any previous analysis errors
+    fftError.value = ''
+    isAnalyzingFFT.value = false
+
+    // Auto-advance to next step
+    if (currentStep.value < totalSteps.value) {
+      currentStep.value++
+    } else {
+      completeMeasurement()
+    }
+
   } catch (error) {
     console.error('Room measurement failed:', error)
+    step4Error.value = error instanceof Error ? error.message : 'Room measurement failed'
   } finally {
-    // Don't flip off immediately if polling will mark completion; let poller clear state
-    if (!sweepStatusInterval.value) {
-      isMeasuringRoom.value = false
-    }
+    isMeasuringRoom.value = false
   }
 }
 
@@ -1432,6 +1452,30 @@ watch(smoothingType, () => {
         }
       }
 
+      .normalization-controls {
+        .frequency-select {
+          width: 200px;
+          padding: 8px 12px;
+          border: 1px solid var(--color-border);
+          border-radius: 6px;
+          background: var(--color-bg-primary);
+          color: var(--color-body);
+          font-size: 14px;
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+        }
+
+        .normalization-help {
+          margin-top: 8px;
+          font-size: 13px;
+          color: var(--color-body-secondary);
+          line-height: 1.4;
+        }
+      }
+
       .signal-type-options {
         display: flex;
         gap: 12px;
@@ -1529,6 +1573,11 @@ watch(smoothingType, () => {
         width: 0%;
         background: var(--primary);
         transition: width 0.25s ease;
+
+        &.indeterminate {
+          width: 30%;
+          animation: indeterminate 2s ease-in-out infinite;
+        }
       }
     }
   }
@@ -2462,6 +2511,18 @@ watch(smoothingType, () => {
         }
       }
     }
+  }
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(200%);
+  }
+  100% {
+    transform: translateX(-100%);
   }
 }
 </style>

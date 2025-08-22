@@ -778,6 +778,11 @@ const saveConfiguration = async () => {
 
     console.log(`✅ Room correction configuration saved as: ${configKey}`)
 
+    // Close the wizard after successful save
+    setTimeout(() => {
+      closeWizard()
+    }, 1000) // Small delay to show the success message
+
   } catch (error) {
     console.error('Failed to save configuration:', error)
     saveError.value = error instanceof Error ? error.message : 'Failed to save configuration'
@@ -1725,8 +1730,14 @@ const runOptimisation = async () => {
 const getFilterTypeLabel = (type: string): string => {
   switch (type) {
     case 'hp': return 'High Pass'
-    case 'eq': return 'EQ'
     case 'lp': return 'Low Pass'
+    case 'eq': return 'EQ'
+    case 'highpass': return 'High Pass'
+    case 'lowpass': return 'Low Pass'
+    case 'peaking': return 'EQ'
+    case 'peak': return 'EQ'
+    case 'lowshelf': return 'Low Shelf'
+    case 'highshelf': return 'High Shelf'
     default: return type.toUpperCase()
   }
 }

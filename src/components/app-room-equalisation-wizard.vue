@@ -404,6 +404,133 @@
             </div>
           </div>
         </div>
+
+        <!-- Step 5: Correction Filters -->
+        <div v-if="currentStep === 5" class="step-content">
+          <div class="step-header">
+            <div class="step-info">
+              <h3>Step 5: Correction Filters</h3>
+              <p>Review the generated correction filters before applying them to your system.</p>
+            </div>
+          </div>
+
+          <div v-if="optimizedFilters.length === 0" class="no-filters-message">
+            <AppIcon icon="tabler/info-circle" class="info-icon" />
+            <p>No correction filters were generated. The optimization process may still be running or no filters were needed.</p>
+          </div>
+
+          <div v-else class="filters-section">
+            <!-- Frequency Response with Filters Applied -->
+            <div class="corrected-response-section">
+              <h4>Corrected Frequency Response</h4>
+              <div class="frequency-response-chart">
+                <svg viewBox="0 0 800 300" class="response-svg">
+                  <defs>
+                    <pattern id="grid-corrected" width="40" height="30" patternUnits="userSpaceOnUse">
+                      <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
+                    </pattern>
+                  </defs>
+                  <rect width="800" height="300" fill="url(#grid-corrected)" />
+
+                  <!-- Frequency axis -->
+                  <g class="frequency-axis">
+                    <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
+                    <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
+                    <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
+                    <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
+                    <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
+                  </g>
+
+                  <!-- Magnitude axis -->
+                  <g class="magnitude-axis">
+                    <text x="20" y="270" text-anchor="middle" class="axis-label">-10</text>
+                    <text x="20" y="220" text-anchor="middle" class="axis-label">-5</text>
+                    <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
+                    <text x="20" y="80" text-anchor="middle" class="axis-label">+5</text>
+                    <text x="20" y="30" text-anchor="middle" class="axis-label">+10</text>
+                  </g>
+
+                  <!-- Original measurement (faded) -->
+                  <path :d="generateOptimisationPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="1.5" opacity="0.4" />
+
+                  <!-- Target curve (dashed) -->
+                  <path v-if="selectedTargetPoints.length" :d="generateOptimisationTargetClippedPath(selectedTargetPoints, userMinFrequency, userMaxFrequency)" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
+
+                  <!-- Corrected response (highlighted) -->
+                  <path v-if="optimizedResponse" :d="generateOptimisationPath(optimizedResponse)" fill="none" stroke="#ff6b35" stroke-width="2.5" />
+
+                  <!-- 0 dB reference line -->
+                  <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="3,3"/>
+                </svg>
+              </div>
+
+              <div class="chart-legend">
+                <div class="legend-item">
+                  <div class="legend-color original"></div>
+                  <span>Original Measurement</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color target"></div>
+                  <span>Target Curve</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color corrected"></div>
+                  <span>Corrected Response</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="filters-summary">
+              <h4>Filter Summary</h4>
+              <div class="summary-stats">
+                <div class="stat-item">
+                  <span class="stat-label">Total Filters:</span>
+                  <span class="stat-value">{{ optimizedFilters.length }}</span>
+                </div>
+                <div class="stat-item" v-if="optImprovementDb">
+                  <span class="stat-label">Improvement:</span>
+                  <span class="stat-value">{{ optImprovementDb.toFixed(1) }}dB</span>
+                </div>
+                <div class="stat-item" v-if="optFinalRmsError">
+                  <span class="stat-label">Final RMS Error:</span>
+                  <span class="stat-value">{{ optFinalRmsError.toFixed(2) }}dB</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="filters-table">
+              <h4>Filter Details</h4>
+              <div class="table-container">
+                <table class="filters-data-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Frequency</th>
+                      <th>Q Factor</th>
+                      <th>Gain</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(filter, index) in optimizedFilters" :key="index" class="filter-row">
+                      <td class="filter-type">
+                        <span class="type-badge" :class="filter.filter_type">
+                          {{ getFilterTypeLabel(filter.filter_type) }}
+                        </span>
+                      </td>
+                      <td class="filter-frequency">{{ formatFrequency(filter.frequency) }}</td>
+                      <td class="filter-q">{{ filter.q.toFixed(2) }}</td>
+                      <td class="filter-gain" :class="{ positive: filter.gain_db > 0, negative: filter.gain_db < 0 }">
+                        {{ filter.gain_db >= 0 ? '+' : '' }}{{ filter.gain_db.toFixed(1) }}dB
+                      </td>
+                      <td class="filter-description">{{ filter.description }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -413,8 +540,10 @@
             Previous
           </button>
           <div class="step-indicator">Step {{ currentStep }} of {{ totalSteps }}</div>
-          <button v-if="currentStep < totalSteps" @click="nextStep" class="nav-button primary">
-            {{ currentStep === 3 ? 'Start' : 'Next' }} <AppIcon icon="arrow-right" />
+          <button v-if="currentStep < totalSteps" @click="nextStep" class="nav-button primary"
+                  :disabled="currentStep === 4 && !canProceedToStep5">
+            {{ currentStep === 3 ? 'Start' : currentStep === 4 && !canProceedToStep5 ? 'Processing...' : 'Next' }}
+            <AppIcon icon="arrow-right" />
           </button>
           <button v-else @click="finish" :disabled="optimising" class="nav-button primary">Done <AppIcon icon="checkmark" /></button>
         </div>
@@ -455,7 +584,7 @@ const measurement = computed(() => props.measurement)
 
 // Steps
 const currentStep = ref(1)
-const totalSteps = 4
+const totalSteps = 5
 
 // EQ option state
 const targetCurve = ref<TargetCurveName>('')
@@ -465,6 +594,11 @@ const maxBoost = ref<number>(6)
 const maxCut = ref<number>(12)
 const exportMode = computed(() => props.exportMode === true)
 const targetDescription = computed(() => targetDescriptions.value[targetCurve.value] || '')
+
+// Check if optimization is complete and we can proceed to step 5
+const canProceedToStep5 = computed(() => {
+  return !optimising.value && (optimizedFilters.value.length > 0 || optimisationProgress.value >= 100)
+})
 
 // Usable frequency range detection
 const usableRangeResult = ref<RoomEQUsableRangeResult | null>(null)
@@ -499,6 +633,12 @@ const reset = () => {
   maxCut.value = 12
   optimizerPreset.value = 'Default'
   addLowpass.value = false
+  addHighpass.value = false
+
+  // Reset usable frequency range detection
+  usableRangeResult.value = null
+  loadingUsableRange.value = false
+  usableRangeError.value = ''
 }
 
 const nextStep = async () => {
@@ -598,6 +738,7 @@ const toLabel = (name: string) => name.replace(/_/g, ' ')
 const selectTarget = (name: string) => { targetCurve.value = name }
 // Step 3 options used by Step 4
 const addLowpass = ref<boolean>(false)
+const addHighpass = ref<boolean>(false)
 
 // Detect usable frequency range from measurement
 // Define interfaces for the actual server response structure
@@ -646,7 +787,9 @@ const detectUsableRange = async () => {
       sample_rate: measurement.value.sample_rate || 48000
     }
 
+    console.log('🔍 /eq/usable-range request payload:', payload)
     const response = await detectUsableFrequencyRange(payload)
+    console.log('🔍 /eq/usable-range response:', response)
 
     if (response.success && response.data) {
       const data = response.data as UsableRangeServerResponse
@@ -661,7 +804,7 @@ const detectUsableRange = async () => {
           success: data.success,
           usable_freq_low: range.min_frequency || range.usable_freq_low || userMinFrequency.value,
           usable_freq_high: range.max_frequency || range.usable_freq_high || userMaxFrequency.value,
-          recommended_min: range.recommended_min || range.min_frequency || userMinFrequency.value,
+          recommended_min: Math.max(30, range.recommended_min || range.min_frequency || userMinFrequency.value),
           recommended_max: range.recommended_max || range.max_frequency || userMaxFrequency.value,
           message: data.message,
           analysis: {
@@ -677,7 +820,7 @@ const detectUsableRange = async () => {
           success: data.success,
           usable_freq_low: data.usable_freq_low || userMinFrequency.value,
           usable_freq_high: data.usable_freq_high || userMaxFrequency.value,
-          recommended_min: data.recommended_min || data.usable_freq_low || userMinFrequency.value,
+          recommended_min: Math.max(30, data.recommended_min || data.usable_freq_low || userMinFrequency.value),
           recommended_max: data.recommended_max || data.usable_freq_high || userMaxFrequency.value,
           message: data.message,
           analysis: {
@@ -691,16 +834,22 @@ const detectUsableRange = async () => {
 
       usableRangeResult.value = extractedResult
 
-      // Update the range inputs with detected values
-      if (extractedResult.usable_freq_low) {
-        userMinFrequency.value = extractedResult.usable_freq_low
+      // Update the range inputs with recommended values (ensuring minimum is at least 30Hz)
+      if (extractedResult.recommended_min) {
+        userMinFrequency.value = Math.max(30, extractedResult.recommended_min)
+      } else if (extractedResult.usable_freq_low) {
+        userMinFrequency.value = Math.max(30, extractedResult.usable_freq_low)
       }
-      if (extractedResult.usable_freq_high) {
-        userMaxFrequency.value = extractedResult.usable_freq_high
+      if (extractedResult.recommended_max || extractedResult.usable_freq_high) {
+        userMaxFrequency.value = extractedResult.recommended_max || extractedResult.usable_freq_high || userMaxFrequency.value
       }
       // Preset low-pass checkbox if minimum usable frequency is > 50Hz
       if ((extractedResult.usable_freq_low || 0) > 50) {
         addLowpass.value = true
+      }
+      // Preset high-pass checkbox if minimum usable frequency is > 40Hz
+      if ((extractedResult.usable_freq_low || 0) > 40) {
+        addHighpass.value = true
       }
     } else {
       usableRangeError.value = response.detail || 'Failed to detect usable frequency range'
@@ -1069,70 +1218,74 @@ const generateOptimisationTargetClippedPath = (pts: RoomEQTargetPoint[], minFreq
     .filter(p => p && typeof p === 'object')
     .sort((a, b) => a.frequency - b.frequency)
 
+  if (points.length === 0) return ''
+
+  // Linear interpolation helper
+  const linearInterp = (x: number, x1: number, y1: number, x2: number, y2: number): number => {
+    if (x2 === x1) return y1
+    return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
+  }
+
+  // Process each line segment and clip to frequency range
+  const clippedSegments: { freq: number, db: number }[] = []
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i]
+    const p2 = points[i + 1]
+    const f1 = p1.frequency
+    const f2 = p2.frequency
+    const db1 = p1.target_db
+    const db2 = p2.target_db
+
+    // Skip invalid segments
+    if (f1 <= 0 || f2 <= 0 || f1 === f2) continue
+
+    // Determine clipped segment bounds
+    let startFreq = f1
+    let endFreq = f2
+    let startDb = db1
+    let endDb = db2
+
+    // Clip segment to frequency range
+    if (startFreq < lo) {
+      if (endFreq <= lo) continue // Entire segment is below range
+      startDb = linearInterp(lo, f1, db1, f2, db2)
+      startFreq = lo
+    }
+
+    if (endFreq > hi) {
+      if (startFreq >= hi) continue // Entire segment is above range
+      endDb = linearInterp(hi, f1, db1, f2, db2)
+      endFreq = hi
+    }
+
+    // Add clipped segment points
+    if (clippedSegments.length === 0 || clippedSegments[clippedSegments.length - 1].freq !== startFreq) {
+      clippedSegments.push({ freq: startFreq, db: startDb })
+    }
+    if (startFreq !== endFreq) {
+      clippedSegments.push({ freq: endFreq, db: endDb })
+    }
+  }
+
+  if (clippedSegments.length === 0) return ''
+
+  // Generate SVG path
   let path = ''
-  let drawing = false
-  const addPoint = (f: number, db: number, move = false) => {
-    const x = logScale(f)
-    const y = magScale(db)
-    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
-    drawing = true
-  }
+  for (let i = 0; i < clippedSegments.length; i++) {
+    const point = clippedSegments[i]
+    const x = logScale(point.freq)
+    const y = magScale(point.db)
 
-  for (let i = 1; i < points.length; i++) {
-    let f0 = points[i - 1].frequency
-    const f1 = points[i].frequency
-    let y0 = points[i - 1].target_db
-    const y1 = points[i].target_db
-    if (f0 <= 0 || f1 <= 0) continue
-
-    const in0 = f0 >= lo && f0 <= hi
-    const in1 = f1 >= lo && f1 <= hi
-    const crossesLo = (f0 < lo && f1 > lo) || (f1 < lo && f0 > lo)
-    const crossesHi = (f0 < hi && f1 > hi) || (f1 < hi && f0 > hi)
-
-    if (!in0 || !in1) {
-      if (!in0 && !in1 && !crossesLo && !crossesHi) {
-        drawing = false
-        continue
-      }
-      if (crossesLo) {
-        const t = (lo - f0) / (f1 - f0)
-        const y = y0 + t * (y1 - y0)
-        addPoint(lo, y, !drawing)
-        f0 = lo
-        y0 = y
-      }
-      if (crossesHi) {
-        const t = (hi - f0) / (f1 - f0)
-        const y = y0 + t * (y1 - y0)
-        if (in0) addPoint(f0, y0, !drawing)
-        addPoint(hi, y)
-        drawing = false
-        continue
-      }
-      if (in0 && !in1) {
-        addPoint(f0, y0, !drawing)
-        drawing = false
-        continue
-      }
-      if (!in0 && in1) {
-        const t = ((f0 < lo ? lo : hi) - f0) / (f1 - f0)
-        const fEnter = f0 < lo ? lo : hi
-        const yEnter = y0 + t * (y1 - y0)
-        addPoint(fEnter, yEnter, !drawing)
-        addPoint(f1, y1)
-        continue
-      }
-    }
-    if (in0 && in1) {
-      if (!drawing) addPoint(f0, y0, true)
-      addPoint(f1, y1)
+    if (i === 0) {
+      path = `M ${x} ${y}`
+    } else {
+      path += ` L ${x} ${y}`
     }
   }
+
   return path
-}
-
-// Helper functions for step 3 chart display
+}// Helper functions for step 3 chart display
 const generateMeasuredPath = (m: RoomMeasurement): string => {
   if (!m.frequencies || !m.magnitudes) return ''
 
@@ -1276,7 +1429,7 @@ const runOptimisation = async () => {
         qmax: 10.0,
         mindb: -10.0,
         maxdb: 3.0,
-        add_highpass: true,
+        add_highpass: addHighpass.value,
   acceptable_error: 1.0,
   min_frequency: userMinFrequency.value,
   max_frequency: userMaxFrequency.value,
@@ -1424,6 +1577,23 @@ const runOptimisation = async () => {
     }
     optimising.value = false
   }
+}
+
+// Helper functions for Step 5
+const getFilterTypeLabel = (type: string): string => {
+  switch (type) {
+    case 'hp': return 'High Pass'
+    case 'eq': return 'EQ'
+    case 'lp': return 'Low Pass'
+    default: return type.toUpperCase()
+  }
+}
+
+const formatFrequency = (freq: number): string => {
+  if (freq >= 1000) {
+    return `${(freq / 1000).toFixed(freq % 1000 === 0 ? 0 : 1)}kHz`
+  }
+  return `${Math.round(freq)}Hz`
 }
 </script>
 
@@ -1721,6 +1891,214 @@ const runOptimisation = async () => {
   .range-label {
     font-size: 11px;
     font-weight: 600;
+  }
+
+  // Step 5 - Filters Section
+  .no-filters-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    text-align: center;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+
+    .info-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--color-body-secondary);
+      margin-bottom: 16px;
+    }
+
+    p {
+      margin: 0;
+      color: var(--color-body-secondary);
+      max-width: 400px;
+    }
+  }
+
+  .filters-section {
+    .filters-summary {
+      margin-bottom: 24px;
+      padding: 20px;
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+
+      h4 {
+        margin: 0 0 16px 0;
+        color: var(--color-head);
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+
+      .summary-stats {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          .stat-label {
+            font-size: 0.875rem;
+            color: var(--color-body-secondary);
+          }
+
+          .stat-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--color-head);
+          }
+        }
+      }
+    }
+
+    .filters-table {
+      margin-bottom: 32px;
+
+      h4 {
+        margin: 0 0 16px 0;
+        color: var(--color-head);
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+
+      .table-container {
+        overflow-x: auto;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+
+        .filters-data-table {
+          width: 100%;
+          border-collapse: collapse;
+          background: var(--color-bg-primary);
+
+          th {
+            background: var(--color-bg-secondary);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-head);
+            border-bottom: 1px solid var(--color-border);
+            font-size: 0.875rem;
+          }
+
+          td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--color-border-light);
+            font-size: 0.875rem;
+
+            &.filter-type {
+              .type-badge {
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+
+                &.hp {
+                  background: #e3f2fd;
+                  color: #1976d2;
+                }
+
+                &.eq {
+                  background: #f3e5f5;
+                  color: #7b1fa2;
+                }
+
+                &.lp {
+                  background: #e8f5e8;
+                  color: #388e3c;
+                }
+              }
+            }
+
+            &.filter-frequency {
+              font-family: 'Courier New', monospace;
+              font-weight: 600;
+            }
+
+            &.filter-q {
+              font-family: 'Courier New', monospace;
+            }
+
+            &.filter-gain {
+              font-family: 'Courier New', monospace;
+              font-weight: 600;
+
+              &.positive {
+                color: #d32f2f;
+              }
+
+              &.negative {
+                color: #1976d2;
+              }
+            }
+
+            &.filter-description {
+              color: var(--color-body-secondary);
+            }
+          }
+
+          tr.filter-row:last-child td {
+            border-bottom: none;
+          }
+
+          tr.filter-row:nth-child(even) {
+            background: var(--color-bg-secondary);
+          }
+        }
+      }
+    }
+
+    .corrected-response-section {
+      h4 {
+        margin: 0 0 16px 0;
+        color: var(--color-head);
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+
+      .chart-legend {
+        display: flex;
+        gap: 24px;
+        margin-top: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.875rem;
+          color: var(--color-body);
+
+          .legend-color {
+            width: 16px;
+            height: 3px;
+            border-radius: 2px;
+
+            &.original {
+              background: #4CAF50;
+              opacity: 0.4;
+            }
+
+            &.target {
+              background: #58a6ff;
+            }
+
+            &.corrected {
+              background: #ff6b35;
+            }
+          }
+        }
+      }
+    }
   }
 
   @keyframes spin {

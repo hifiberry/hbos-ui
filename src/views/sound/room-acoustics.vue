@@ -127,33 +127,33 @@
         <div class="modal-body">
           <div class="channel-selection-content">
             <p>Apply the Room EQ configuration "{{ selectedRoomEQConfig?.data.name }}" to which channel(s)?</p>
-            
+
             <div class="channel-options">
               <label class="channel-option">
-                <input 
-                  type="radio" 
-                  v-model="selectedChannel" 
-                  value="left" 
+                <input
+                  type="radio"
+                  v-model="selectedChannel"
+                  value="left"
                   name="channel"
                 />
                 <span class="radio-label">Left Channel Only</span>
               </label>
-              
+
               <label class="channel-option">
-                <input 
-                  type="radio" 
-                  v-model="selectedChannel" 
-                  value="right" 
+                <input
+                  type="radio"
+                  v-model="selectedChannel"
+                  value="right"
                   name="channel"
                 />
                 <span class="radio-label">Right Channel Only</span>
               </label>
-              
+
               <label class="channel-option">
-                <input 
-                  type="radio" 
-                  v-model="selectedChannel" 
-                  value="both" 
+                <input
+                  type="radio"
+                  v-model="selectedChannel"
+                  value="both"
                   name="channel"
                 />
                 <span class="radio-label">Both Channels</span>
@@ -253,7 +253,7 @@ const openChannelSelectionDialog = (config: RoomEQConfigItem) => {
     console.error('Invalid Room EQ configuration:', config)
     return
   }
-  
+
   console.log('Opening channel selection dialog for config:', config)
   selectedRoomEQConfig.value = config
   selectedChannel.value = 'both' // Default to both channels
@@ -271,9 +271,9 @@ const handleChannelSelectionConfirm = async () => {
     console.warn('No Room EQ configuration selected')
     return
   }
-  
+
   closeChannelSelectionDialog()
-  
+
   // Navigate to speaker equalizer with query parameters to apply the Room EQ config
   await router.push({
     path: '/sound/speaker-equalizer',

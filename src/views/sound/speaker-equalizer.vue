@@ -434,7 +434,7 @@ const currentChannelFilterInfo = computed(() => {
 // Initialize filter banks in the store
 onMounted(async () => {
   const route = useRoute();
-  
+
   // Initialize backend from settingsDB first
   await filterStore.initializeBackend();
 
@@ -450,13 +450,13 @@ onMounted(async () => {
 
   // Reload capabilities after loading filters to get updated counts
   await loadBackendCapabilities();
-  
+
   // Check for Room EQ query parameters
   if (route.query.applyRoomEQ && route.query.channel) {
     await loadRoomEQSettings();
     const roomEQKey = route.query.applyRoomEQ as string;
     const channel = route.query.channel as 'left' | 'right' | 'both';
-    
+
     // Find and select the Room EQ configuration
     const config = roomEQConfigs.value.find(config => config.key === roomEQKey);
     if (config) {

@@ -531,6 +531,62 @@
             </div>
           </div>
         </div>
+
+        <!-- Step 6: Save Configuration -->
+        <div v-if="currentStep === 6" class="step-content">
+          <div class="step-header">
+            <div class="step-info">
+              <h3>Step 6: Save Configuration</h3>
+              <p>Enter a name for this room correction configuration to save it for future use.</p>
+            </div>
+          </div>
+
+          <div class="save-configuration-section">
+            <div class="config-name-input">
+              <label for="config-name">Configuration Name:</label>
+              <input
+                id="config-name"
+                v-model="configName"
+                type="text"
+                placeholder="e.g., Living Room Correction, Main System EQ"
+                maxlength="100"
+                class="name-input"
+                @keyup.enter="saveConfiguration"
+              />
+              <div class="input-hint">
+                Choose a descriptive name to easily identify this configuration later.
+              </div>
+            </div>
+
+            <div v-if="optimizedFilters.length > 0" class="save-preview">
+              <h4>Configuration Summary</h4>
+              <div class="summary-info">
+                <div class="info-item">
+                  <span class="info-label">Filters:</span>
+                  <span class="info-value">{{ optimizedFilters.length }}</span>
+                </div>
+                <div class="info-item" v-if="optImprovementDb">
+                  <span class="info-label">Improvement:</span>
+                  <span class="info-value">{{ optImprovementDb.toFixed(1) }}dB</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Frequency Range:</span>
+                  <span class="info-value">{{ Math.round(userMinFrequency) }}Hz - {{ Math.round(userMaxFrequency) }}Hz</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="saveError" class="error-message">
+              <AppIcon icon="tabler/alert-circle" />
+              <span>{{ saveError }}</span>
+            </div>
+
+            <div v-if="saveSuccess" class="success-message">
+              <AppIcon icon="tabler/check-circle" />
+              <span>Configuration saved successfully as "{{ savedConfigName }}"</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -545,7 +601,11 @@
             {{ currentStep === 3 ? 'Start' : currentStep === 4 && !canProceedToStep5 ? 'Processing...' : 'Next' }}
             <AppIcon icon="arrow-right" />
           </button>
-          <button v-else @click="finish" :disabled="optimising" class="nav-button primary">Done <AppIcon icon="checkmark" /></button>
+          <button v-else @click="saveConfiguration" :disabled="savingConfiguration" class="nav-button primary">
+            <AppIcon v-if="savingConfiguration" icon="spinner" class="spinning" />
+            <AppIcon v-else icon="save" />
+            {{ savingConfiguration ? 'Saving...' : 'Save' }}
+          </button>
         </div>
       </div>
     </div>
@@ -557,6 +617,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import AppIcon from './app-icon.vue'
 import type { RoomMeasurement } from '@/stores/settings'
 import { getRoomEQTargetPresets, type RoomEQTargetPoint, detectUsableFrequencyRange, type RoomEQUsableRangeResult } from '@/api/roomeq'
+import { setConfigValue } from '@/api/config'
 
 interface Props {
   isOpen: boolean
@@ -584,7 +645,7 @@ const measurement = computed(() => props.measurement)
 
 // Steps
 const currentStep = ref(1)
-const totalSteps = 5
+const totalSteps = 6
 
 // EQ option state
 const targetCurve = ref<TargetCurveName>('')
@@ -639,6 +700,13 @@ const reset = () => {
   usableRangeResult.value = null
   loadingUsableRange.value = false
   usableRangeError.value = ''
+
+  // Reset Step 6 variables
+  configName.value = ''
+  savingConfiguration.value = false
+  saveError.value = ''
+  saveSuccess.value = false
+  savedConfigName.value = ''
 }
 
 const nextStep = async () => {
@@ -653,6 +721,71 @@ const nextStep = async () => {
 const previousStep = () => {
   if (currentStep.value > 1) currentStep.value--
 }
+
+const saveConfiguration = async () => {
+  if (!configName.value.trim()) {
+    saveError.value = 'Please enter a configuration name'
+    return
+  }
+
+  if (optimizedFilters.value.length === 0) {
+    saveError.value = 'No filters to save'
+    return
+  }
+
+  try {
+    savingConfiguration.value = true
+    saveError.value = ''
+    saveSuccess.value = false
+
+    // Create the configuration data
+    const configData = {
+      name: configName.value.trim(),
+      filters: optimizedFilters.value,
+      measurement: {
+        frequencies: measurement.value?.frequencies || [],
+        magnitudes: measurement.value?.magnitudes || []
+      },
+      target_curve: {
+        name: targetCurve.value,
+        points: selectedTargetPoints.value
+      },
+      settings: {
+        min_frequency: userMinFrequency.value,
+        max_frequency: userMaxFrequency.value,
+        add_highpass: addHighpass.value,
+        add_lowpass: addLowpass.value
+      },
+      optimization_results: {
+        improvement_db: optImprovementDb.value,
+        final_rms_error: optFinalRmsError.value,
+        steps_completed: optStepsCompleted.value
+      },
+      created_at: new Date().toISOString()
+    }
+
+    // Generate a unique key based on timestamp and name
+    const timestamp = Date.now()
+    const safeName = configName.value.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
+    const configKey = `correction-filters.${timestamp}.${safeName}`
+
+    // Save to config API
+    await setConfigValue(configKey, JSON.stringify(configData))
+
+    // Show success
+    saveSuccess.value = true
+    savedConfigName.value = configName.value.trim()
+
+    console.log(`✅ Room correction configuration saved as: ${configKey}`)
+
+  } catch (error) {
+    console.error('Failed to save configuration:', error)
+    saveError.value = error instanceof Error ? error.message : 'Failed to save configuration'
+  } finally {
+    savingConfiguration.value = false
+  }
+}
+
 const finish = () => {
   emit('equalisationSetup', {
     targetCurve: targetCurve.value,
@@ -740,14 +873,23 @@ const selectTarget = (name: string) => { targetCurve.value = name }
 const addLowpass = ref<boolean>(false)
 const addHighpass = ref<boolean>(false)
 
+// Step 6: Save Configuration
+const configName = ref<string>('')
+const savingConfiguration = ref<boolean>(false)
+const saveError = ref<string>('')
+const saveSuccess = ref<boolean>(false)
+const savedConfigName = ref<string>('')
+
 // Detect usable frequency range from measurement
 // Define interfaces for the actual server response structure
 interface UsableRangeServerResponse {
   success: boolean
   message?: string
   usable_frequency_range?: {
-    min_frequency?: number
-    max_frequency?: number
+    low_hz?: number           // New API format
+    high_hz?: number          // New API format
+    min_frequency?: number    // Fallback
+    max_frequency?: number    // Fallback
     recommended_min?: number
     recommended_max?: number
     dynamic_range?: number
@@ -802,10 +944,10 @@ const detectUsableRange = async () => {
         const range = data.usable_frequency_range
         extractedResult = {
           success: data.success,
-          usable_freq_low: range.min_frequency || range.usable_freq_low || userMinFrequency.value,
-          usable_freq_high: range.max_frequency || range.usable_freq_high || userMaxFrequency.value,
-          recommended_min: Math.max(30, range.recommended_min || range.min_frequency || userMinFrequency.value),
-          recommended_max: range.recommended_max || range.max_frequency || userMaxFrequency.value,
+          usable_freq_low: range.low_hz || range.min_frequency || range.usable_freq_low || userMinFrequency.value,
+          usable_freq_high: range.high_hz || range.max_frequency || range.usable_freq_high || userMaxFrequency.value,
+          recommended_min: Math.max(30, range.low_hz || range.recommended_min || range.min_frequency || userMinFrequency.value),
+          recommended_max: range.high_hz || range.recommended_max || range.max_frequency || userMaxFrequency.value,
           message: data.message,
           analysis: {
             dynamic_range: range.dynamic_range || 0,
@@ -2097,6 +2239,157 @@ const formatFrequency = (freq: number): string => {
             }
           }
         }
+      }
+    }
+  }
+
+  // Step 6: Save Configuration Styles
+  .save-configuration-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 600px;
+    margin: 0 auto;
+
+    .config-name-input {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      label {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .name-input {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: border-color 0.2s, box-shadow 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: var(--accent-primary);
+          box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+        }
+
+        &::placeholder {
+          color: var(--text-muted);
+        }
+      }
+
+      .input-hint {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+    }
+
+    .save-preview {
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+
+      h4 {
+        margin: 0 0 0.75rem 0;
+        color: var(--text-primary);
+        font-size: 1.1rem;
+      }
+
+      .summary-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        .info-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .info-label {
+            color: var(--text-muted);
+          }
+
+          .info-value {
+            font-weight: 600;
+            color: var(--text-primary);
+          }
+        }
+      }
+    }
+
+    .save-actions {
+      display: flex;
+      justify-content: center;
+
+      .save-button {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+
+        &.primary {
+          background: var(--accent-primary);
+          color: white;
+
+          &:hover:not(:disabled) {
+            background: var(--accent-primary-hover);
+            transform: translateY(-1px);
+          }
+
+          &:disabled {
+            background: var(--bg-muted);
+            color: var(--text-muted);
+            cursor: not-allowed;
+          }
+        }
+
+        .spinning {
+          animation: spin 1s linear infinite;
+        }
+      }
+    }
+
+    .error-message {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: rgba(248, 81, 73, 0.1);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      border-radius: 8px;
+      color: #f85149;
+
+      svg {
+        flex-shrink: 0;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+
+    .success-message {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: rgba(63, 185, 80, 0.1);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+      border-radius: 8px;
+      color: #3fb950;
+
+      svg {
+        flex-shrink: 0;
+        width: 1rem;
+        height: 1rem;
       }
     }
   }

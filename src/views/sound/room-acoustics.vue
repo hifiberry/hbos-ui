@@ -54,6 +54,7 @@
             v-for="config in equalisationConfigs"
             :key="config.key"
             class="equalisation-card"
+            @click="openChannelSelectionDialog(config)"
           >
             <div class="equalisation-header">
               <div class="equalisation-info">
@@ -112,11 +113,71 @@
       @close="showEqualisationWizard = false"
       @equalisation-setup="handleEqualisationSetup"
     />
+
+    <!-- Channel Selection Dialog -->
+    <div v-if="showChannelSelectionDialog" class="modal-overlay" @click="closeChannelSelectionDialog">
+      <div class="modal-content channel-selection-modal" @click.stop>
+        <div class="modal-header">
+          <h2>Apply Room EQ Configuration</h2>
+          <button @click="closeChannelSelectionDialog" class="close-button" title="Close">
+            <AppIcon icon="close" />
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="channel-selection-content">
+            <p>Apply the Room EQ configuration "{{ selectedRoomEQConfig?.data.name }}" to which channel(s)?</p>
+            
+            <div class="channel-options">
+              <label class="channel-option">
+                <input 
+                  type="radio" 
+                  v-model="selectedChannel" 
+                  value="left" 
+                  name="channel"
+                />
+                <span class="radio-label">Left Channel Only</span>
+              </label>
+              
+              <label class="channel-option">
+                <input 
+                  type="radio" 
+                  v-model="selectedChannel" 
+                  value="right" 
+                  name="channel"
+                />
+                <span class="radio-label">Right Channel Only</span>
+              </label>
+              
+              <label class="channel-option">
+                <input 
+                  type="radio" 
+                  v-model="selectedChannel" 
+                  value="both" 
+                  name="channel"
+                />
+                <span class="radio-label">Both Channels</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button @click="closeChannelSelectionDialog" class="nav-button secondary">
+            Cancel
+          </button>
+          <button @click="handleChannelSelectionConfirm" :disabled="!selectedRoomEQConfig" class="nav-button primary">
+            Apply to Speaker Equalizer
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import AppIcon from '@/components/app-icon.vue'
 import AppRoomMeasurementWizard from '@/components/app-room-measurement-wizard.vue'
 import AppRoomEqualisationWizard from '@/components/app-room-equalisation-wizard.vue'
@@ -155,10 +216,14 @@ interface RoomEQConfigItem {
 // State
 const showMeasurementWizard = ref(false)
 const showEqualisationWizard = ref(false)
+const showChannelSelectionDialog = ref(false)
 const selectedMeasurement = ref<RoomMeasurement | null>(null)
+const selectedRoomEQConfig = ref<RoomEQConfigItem | null>(null)
+const selectedChannel = ref<'left' | 'right' | 'both'>('both')
 const measurements = ref<RoomMeasurement[]>([])
 const equalisationConfigs = ref<RoomEQConfigItem[]>([])
 const settingsStore = useSettingsStore()
+const router = useRouter()
 
 // Methods
 const startMeasurement = () => {
@@ -181,6 +246,42 @@ const handleEqualisationSetup = (setup: unknown) => {
   // TODO: Wire to backend when API is available
   // After equalisation wizard completes, refresh the configs list
   loadEqualisationConfigs()
+}
+
+const openChannelSelectionDialog = (config: RoomEQConfigItem) => {
+  if (!config || !config.key) {
+    console.error('Invalid Room EQ configuration:', config)
+    return
+  }
+  
+  console.log('Opening channel selection dialog for config:', config)
+  selectedRoomEQConfig.value = config
+  selectedChannel.value = 'both' // Default to both channels
+  showChannelSelectionDialog.value = true
+}
+
+const closeChannelSelectionDialog = () => {
+  showChannelSelectionDialog.value = false
+  selectedRoomEQConfig.value = null
+}
+
+const handleChannelSelectionConfirm = async () => {
+  const config = selectedRoomEQConfig.value
+  if (!config) {
+    console.warn('No Room EQ configuration selected')
+    return
+  }
+  
+  closeChannelSelectionDialog()
+  
+  // Navigate to speaker equalizer with query parameters to apply the Room EQ config
+  await router.push({
+    path: '/sound/speaker-equalizer',
+    query: {
+      applyRoomEQ: config.key,
+      channel: selectedChannel.value
+    }
+  })
 }
 
 const loadMeasurements = async () => {
@@ -497,6 +598,7 @@ onMounted(() => {
       border-radius: 8px;
       padding: 20px;
       position: relative;
+      cursor: pointer;
       transition: box-shadow 0.2s ease;
 
       &:hover {
@@ -707,6 +809,179 @@ onMounted(() => {
 
       p {
         font-size: 14px;
+      }
+    }
+  }
+}
+
+/* Channel Selection Modal - consistent with wizard styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.channel-selection-modal {
+  background: var(--background-card);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px 20px 32px;
+    border-bottom: 1px solid var(--color-border);
+
+    h2 {
+      margin: 0;
+      color: var(--color-head);
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .close-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--color-body-secondary);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--color-bg-secondary);
+        color: var(--color-head);
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 32px;
+    flex: 1;
+    overflow-y: auto;
+
+    .channel-selection-content {
+      p {
+        color: var(--color-body-secondary);
+        margin-bottom: 24px;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+
+      .channel-options {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .channel-option {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px;
+          border: 2px solid var(--color-border);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          background: var(--color-bg);
+
+          &:hover {
+            border-color: var(--primary);
+            background: var(--color-bg-secondary);
+          }
+
+          input[type="radio"] {
+            margin: 0;
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+          }
+
+          input[type="radio"]:checked + .radio-label {
+            color: var(--primary);
+            font-weight: 600;
+          }
+
+          .radio-label {
+            font-size: 1rem;
+            color: var(--color-body);
+            cursor: pointer;
+            line-height: 1.5;
+          }
+        }
+      }
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 32px 32px 32px;
+    border-top: 1px solid var(--color-border);
+
+    .nav-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.secondary {
+        background: var(--color-bg-secondary);
+        color: var(--color-body);
+        border: 1px solid var(--color-border);
+
+        &:hover:not(:disabled) {
+          background: var(--color-border);
+        }
+      }
+
+      &.primary {
+        background: var(--primary);
+        color: white;
+
+        &:hover:not(:disabled) {
+          background: var(--primary-dark, var(--primary));
+          opacity: 0.9;
+        }
+      }
+
+      svg {
+        width: 16px;
+        height: 16px;
       }
     }
   }

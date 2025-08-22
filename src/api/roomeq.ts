@@ -1974,3 +1974,83 @@ export const startRoomEQPrerecordedSignal = async (filename: string, amplitude: 
     }
   }
 }
+
+/**
+ * Room measurement endpoint - performs end-to-end measurement with sine sweeps
+ */
+export interface RoomMeasureRequest {
+  device?: string // ALSA device name (e.g., hw:0,0)
+  channel?: 'left' | 'right' | 'both' // Input channel
+  count?: number // Number of measurements to average (1-20)
+  timeout?: number // Overall timeout in seconds
+  normalize_frequency?: number | 'none' // Frequency for normalization (10-22000 Hz) or 'none'
+}
+
+export interface RoomMeasureResponse {
+  status: 'success'
+  device: string
+  channel: string
+  count: number
+  csv_path: string
+  fft: {
+    frequencies: number[]
+    magnitudes_db: number[]
+    phase: number[]
+    points: number
+  }
+  normalization?: {
+    applied: boolean
+    requested_frequency: number
+    actual_frequency: number
+    reference_level_db: number
+  }
+  message: string
+}
+
+export const startRoomMeasure = async (
+  request: RoomMeasureRequest = {}
+): Promise<RoomEQApiEnvelope<RoomMeasureResponse>> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
+
+    // Build query parameters
+    const params = new URLSearchParams()
+    if (request.device) params.append('device', request.device)
+    if (request.channel) params.append('channel', request.channel)
+    if (request.count !== undefined) params.append('count', request.count.toString())
+    if (request.timeout !== undefined) params.append('timeout', request.timeout.toString())
+    if (request.normalize_frequency !== undefined) {
+      params.append('normalize_frequency', request.normalize_frequency.toString())
+    }
+
+    const url = `${apiBaseUrl}/audio/room-measure${params.toString() ? '?' + params.toString() : ''}`
+    console.log('Starting room measurement:', url, request)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to start room measurement: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json() as RoomMeasureResponse
+    console.log('Room measurement response:', data)
+
+    return {
+      success: true,
+      data
+    }
+
+  } catch (error) {
+    console.error('Error starting room measurement:', error)
+    return {
+      success: false,
+      detail: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}

@@ -250,6 +250,50 @@
           </table>
         </div>
 
+        <!-- Volume Control Information -->
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="volume" class="card-icon" />
+            <h2>Volume Control</h2>
+          </div>
+          <div v-if="volumeLoading" class="loading-message">
+            Loading volume information...
+          </div>
+          <div v-else-if="volumeError" class="error-message">
+            {{ volumeError }}
+          </div>
+          <div v-else-if="!volumeInfo || !volumeInfo.available" class="info-message">
+            Volume control not available
+          </div>
+          <table v-else class="info-table">
+            <tbody>
+              <tr v-if="volumeInfo.control_info">
+                <td class="label">Control Name</td>
+                <td class="value">{{ volumeInfo.control_info.display_name }}</td>
+              </tr>
+              <tr v-if="volumeInfo.current_state">
+                <td class="label">Main Volume</td>
+                <td class="value">
+                  <span>{{ Math.round(volumeInfo.current_state.percentage) }}%</span>
+                  <span v-if="volumeInfo.current_state.decibels !== undefined">
+                    ({{ volumeInfo.current_state.decibels > 0 ? '+' : '' }}{{ Math.round(volumeInfo.current_state.decibels) }} dB)
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="volumeInfo.control_info?.decibel_range">
+                <td class="label">Range</td>
+                <td class="value">
+                  {{ volumeInfo.control_info.decibel_range.min_db }} dB to {{ volumeInfo.control_info.decibel_range.max_db }} dB
+                </td>
+              </tr>
+              <tr>
+                <td class="label">Change Monitoring</td>
+                <td class="value">{{ volumeInfo.supports_change_monitoring ? 'Yes' : 'No' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Favourites Information -->
         <div class="info-card">
           <div class="card-header">
@@ -560,6 +604,7 @@ import {
   type BackgroundJob
 } from '@/api/system'
 import { getNetworkConfiguration, scanI2CDevices, type NetworkConfiguration, type I2CDeviceInfo } from '@/api/config'
+import { getVolumeInfo, type VolumeInfo } from '@/api/volume'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
@@ -568,6 +613,11 @@ import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart
 const loading = ref(true)
 const error = ref('')
 const systemInfo = ref<SystemInfo | null>(null)
+
+// Volume info state
+const volumeInfo = ref<VolumeInfo | null>(null)
+const volumeLoading = ref(false)
+const volumeError = ref('')
 
 // Soundcard editing state
 const isEditingSoundCard = ref(false)
@@ -926,6 +976,21 @@ const fetchCoverArtMethods = async () => {
   }
 }
 
+const fetchVolumeInfo = async () => {
+  volumeLoading.value = true
+  volumeError.value = ''
+
+  try {
+    const data = await getVolumeInfo()
+    volumeInfo.value = data
+  } catch (err) {
+    console.error('Error fetching volume info:', err)
+    volumeError.value = err instanceof Error ? err.message : 'Failed to retrieve volume information'
+  } finally {
+    volumeLoading.value = false
+  }
+}
+
 const fetchCacheStats = async () => {
   console.log('fetchCacheStats: Starting...')
   cacheLoading.value = true
@@ -1150,10 +1215,14 @@ onMounted(async () => {
     fetchI2CDevices().then(result => {
       console.log('fetchI2CDevices result:', result)
       return result
+    }),
+    fetchVolumeInfo().then(result => {
+      console.log('fetchVolumeInfo result:', result)
+      return result
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {

@@ -535,7 +535,6 @@ onMounted(async () => {
               &:disabled {
                 opacity: 0.5;
                 cursor: not-allowed;
-                background: var(--background-input-disabled, #f8f9fa);
               }
             }
           }

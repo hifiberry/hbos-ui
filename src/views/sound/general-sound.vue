@@ -424,7 +424,7 @@ onMounted(async () => {
   .settings-overview {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;
     .service-card {
-      display: block; background: var(--background-card); border-radius: 8px; padding: 24px; border: 1px solid var(--color-border, #e5e7eb);
+      display: block; background: var(--background-card); border-radius: 8px; padding: 24px; border: 1px solid var(--color-border);
       .service-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
       .service-icon { width: 24px; height: 24px; color: var(--color-primary); }
       h2 { margin: 0; color: var(--color-head); font-size: 1.25rem; }
@@ -503,7 +503,7 @@ onMounted(async () => {
             flex-wrap: nowrap;
             border-radius: 8px;
             overflow: hidden;
-            border: 1px solid var(--color-border, #333);
+            border: 1px solid var(--color-border);
 
             .mode-btn {
               flex: 1;
@@ -513,7 +513,7 @@ onMounted(async () => {
               font-size: 14px;
               font-weight: 500;
               border: none;
-              border-right: 1px solid var(--color-border, #333);
+              border-right: 1px solid var(--color-border);
               transition: all 0.2s ease-in-out;
               background-color: transparent;
               color: var(--color-body, #707070);

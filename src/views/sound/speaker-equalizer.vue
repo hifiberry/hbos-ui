@@ -1596,7 +1596,7 @@ watch(activeChannel, async () => {
                 font-size: 18px;
                 font-weight: 500;
                 margin: 0 0 5px 0;
-                color: #333;
+                color: #color-text;
               }
 
               .filter-frequency {
@@ -1714,7 +1714,7 @@ watch(activeChannel, async () => {
                 font-weight: 500;
                 min-width: 60px;
                 text-align: center;
-                color: #333;
+                color: var(--color-text);
               }
             }
           }

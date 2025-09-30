@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 interface SortSelectorProps {
   sortBy: 'release_date' | 'artist'

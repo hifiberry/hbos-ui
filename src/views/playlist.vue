@@ -85,7 +85,7 @@ import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { usePlaylistStore } from '@/stores/playlist'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/ApIcon.vue'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
 
 import type { Track } from '@/types/library'

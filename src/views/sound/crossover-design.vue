@@ -140,7 +140,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import FilterGraph from '@/components/filter-graph.vue'
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector'
 import { type Filter } from '@/utils/filtercalc'

@@ -178,7 +178,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import AppRoomMeasurementWizard from '@/components/AppRoomMeasurementWizard.vue'
 import AppRoomEqualisationWizard from '@/components/AppRoomEqualisationWizard.vue'
 import { useSettingsStore, type RoomMeasurement } from '@/stores/settings'

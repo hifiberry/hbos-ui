@@ -45,7 +45,7 @@ import type { Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppPoster from '@/components/AppPoster.vue'
 import AppPosterSkeleton from '@/components/skeletons/AppPosterSkeleton.vue'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 import type { PosterItem } from '@/types/library'
 import { useLibraryStore } from '@/stores/library'

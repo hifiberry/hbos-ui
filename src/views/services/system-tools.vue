@@ -132,7 +132,7 @@ Would you like to reboot now?"
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppConfirmationDialog from '@/components/app-confirmation-dialog.vue'
 import { useToastStore } from '@/stores/toast'

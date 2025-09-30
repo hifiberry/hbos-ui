@@ -178,7 +178,7 @@ const router = useRouter()
 
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppPosterGrid from '@/components/AppPosterGrid.vue'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import AppArtistImageSelector from '@/components/AppArtistImageSelector.vue'
 
 import { updateArtistImage } from '@/api/coverart'

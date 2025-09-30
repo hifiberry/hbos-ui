@@ -116,7 +116,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppMarquee from '@/components/AppMarquee.vue'

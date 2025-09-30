@@ -85,7 +85,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
-import AppIcon from '@/components/app-icon.vue';
+import AppIcon from '@/components/AppIcon.vue';
 import AppBackRouter from '@/components/app-back-router.vue';
 
 // Initialize stores

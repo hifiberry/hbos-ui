@@ -61,7 +61,7 @@ import AppAudioControlsHeader from '@/components/app-audio-controls-header.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
 import AppCover from '@/components/app-cover.vue'
 import AppMarquee from '@/components/app-marquee.vue'
-import AppMetadataTooltip from '@/components/app-metadata-tooltip.vue'
+import AppMetadataTooltip from '@/components/AppMetadataTooltip.vue'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 import type { Song } from '@/types/player'
 

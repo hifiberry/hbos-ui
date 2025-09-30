@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AppIconButton from '@/components/app-icon-button.vue'
+import AppIconButton from '@/components/AppIconButton.vue'
 import AppLyricsOverlay from '@/components/AppLyricsOverlay.vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'

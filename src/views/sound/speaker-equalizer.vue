@@ -1233,16 +1233,11 @@ watch(activeChannel, async () => {
         cursor: pointer;
         width: 24px;
         height: 24px;
-        fill: #707070;
         transition: fill 0.2s ease;
-
-        &:hover {
-          fill: #e11e4a;
-        }
+        stroke: var(--color-icon);
 
         &.bypassed {
-          fill: #00b8ff;
-          filter: drop-shadow(0 0 4px rgba(0, 184, 255, 0.5));
+          stroke: blue;
         }
       }
 
@@ -1250,19 +1245,14 @@ watch(activeChannel, async () => {
         cursor: pointer;
         width: 24px;
         height: 24px;
-        filter: invert(44%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(1);
-        transition: filter 0.2s ease;
+        transition: opacity 0.2s ease;
 
         &:hover {
-          filter: invert(23%) sepia(89%) saturate(1352%) hue-rotate(340deg) brightness(99%) contrast(80%);
-        }
-
-        &.bypassed {
-          filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(186deg) brightness(118%) contrast(119%) drop-shadow(0 0 4px rgba(0, 184, 255, 0.5));
+          opacity: 0.5;
         }
 
         &.linked {
-          filter: invert(23%) sepia(89%) saturate(1352%) hue-rotate(340deg) brightness(99%) contrast(80%);
+          stroke: red;
         }
       }
     }

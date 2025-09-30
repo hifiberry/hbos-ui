@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import AppCover from '@/components/app-cover.vue'
+import AppCover from '@/components/AppCover.vue'
 import AppListenNow from '@/components/AppListenNow.vue'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
 

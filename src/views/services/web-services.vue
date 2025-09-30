@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import AppBackRouter from '@/components/app-back-router.vue'
 import LastFMIntegration from '@/components/app-lastfm.vue'
-import SpotifyIntegration from '@/components/app-spotify.vue'
+import SpotifyIntegration from '@/components/AppSpotify.vue'
 import MusicBrainzIntegration from '@/components/app-musicbrainz.vue'
 import TheAudioDBIntegration from '@/components/AppTheaudiodb.vue'
 import FanartTvIntegration from '@/components/app-fanarttv.vue'

@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
+import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
 
 type posterForm = 'square' | 'circle'
 interface PosterProps {

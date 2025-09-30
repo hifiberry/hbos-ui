@@ -40,7 +40,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/app-icon.vue'
-import AppSongControlInfo from '@/components/app-song-control-info.vue'
+import AppSongControlInfo from '@/components/AppSongControlInfo.vue'
 import { usePlayerStore } from '@/stores/player'
 
 interface SidebarProps {

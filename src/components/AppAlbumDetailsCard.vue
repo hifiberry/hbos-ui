@@ -37,7 +37,7 @@
 import { computed } from 'vue'
 
 import AppCover from '@/components/app-cover.vue'
-import AppListenNow from '@/components/app-listen-now.vue'
+import AppListenNow from '@/components/AppListenNow.vue'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
 
 import type { AlbumDetails, Track } from '@/types/library'

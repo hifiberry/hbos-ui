@@ -21,7 +21,7 @@ import { storeToRefs } from 'pinia'
 
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppAlbumDetailsCard from '@/components/AppAlbumDetailsCard.vue'
-import AppTracksCard from '@/components/app-tracks-card.vue'
+import AppTracksCard from '@/components/AppTracksCard.vue'
 
 import { useRoute } from 'vue-router'
 const route = useRoute()

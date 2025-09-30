@@ -53,7 +53,7 @@
 import { ref, computed } from 'vue'
 import AppCoverArt from '@/components/AppCoverArt.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
-import AppAudioControls from '@/components/app-audio-controls.vue'
+import AppAudioControls from '@/components/AppAudioControls.vue'
 import AppVolumeControl from '@/components/AppVolumeControl.vue'
 import AppMetadataTooltip from '@/components/AppMetadataTooltip.vue'
 

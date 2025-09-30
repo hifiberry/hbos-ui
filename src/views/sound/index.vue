@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 </script>
 
 <style scoped lang="scss">

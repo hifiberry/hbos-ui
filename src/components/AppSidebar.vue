@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import AppSongControlInfo from '@/components/AppSongControlInfo.vue'
 import { usePlayerStore } from '@/stores/player'
 

@@ -32,7 +32,7 @@
 import { ref as deepRef, watch } from 'vue'
 import { useImage } from '@vueuse/core'
 
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import AppMarquee from '@/components/AppMarquee.vue'
 
 type PoserForm = 'square' | 'circle'

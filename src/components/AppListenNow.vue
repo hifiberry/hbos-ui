@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 const emit = defineEmits(['click'])
 </script>

@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 interface Props {
   label: string

@@ -314,7 +314,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
-import AppIcon from '@/components/app-icon.vue';
+import AppIcon from '@/components/AppIcon.vue';
 import FilterGraph from '@/components/filter-graph.vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { type Filter } from '@/utils/filtercalc';

@@ -95,7 +95,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import type { RadioFavorite } from '@/stores/radio'
 
 interface Props {

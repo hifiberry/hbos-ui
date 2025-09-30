@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
 
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 interface InputProps {
   modelValue: string

@@ -149,7 +149,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppConfirmationDialog from '@/components/app-confirmation-dialog.vue'
 import { type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'

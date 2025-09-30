@@ -193,7 +193,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
-import AppIcon from '@/components/app-icon.vue';
+import AppIcon from '@/components/AppIcon.vue';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import {
   type Filter,

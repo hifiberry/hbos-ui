@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { coverArtLoader } from '@/services/coverartloader'
 import type { CoverArtApiResponse } from '@/services/coverartloader'
 

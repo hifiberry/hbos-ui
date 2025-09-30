@@ -55,7 +55,7 @@ await loadCoverArt(song)
 Ready-to-use components for displaying cover art:
 
 - **`AppCoverArt.vue`**: Simple, reusable cover art component
-- **`app-cover-art-example.vue`**: Comprehensive example with testing interface
+- **`AppCoverArtExample.vue`**: Comprehensive example with testing interface
 
 ## Usage Examples
 
@@ -167,7 +167,7 @@ The system handles errors gracefully:
 
 ## Testing
 
-Use the example component (`app-cover-art-example.vue`) to test the system:
+Use the example component (`AppCoverArtExample.vue`) to test the system:
 
 1. Add the component to a test page
 2. Enter song metadata in the test form

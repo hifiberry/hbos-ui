@@ -1900,7 +1900,7 @@ watch(activeChannel, async () => {
 }
 
 .modal-content {
-  background-color: var(--scroll-thumb-background);
+  background-color: var(--background-card);
   padding: 30px;
   border-radius: 10px;
   width: max-content;

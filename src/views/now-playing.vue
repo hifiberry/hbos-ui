@@ -54,7 +54,7 @@ import { ref, computed } from 'vue'
 import AppCoverArt from '@/components/app-cover-art.vue'
 import AppProgressControl from '@/components/app-progress-control.vue'
 import AppAudioControls from '@/components/app-audio-controls.vue'
-import AppVolumeControl from '@/components/app-volume-control.vue'
+import AppVolumeControl from '@/components/AppVolumeControl.vue'
 import AppMetadataTooltip from '@/components/app-metadata-tooltip.vue'
 
 import { storeToRefs } from 'pinia'

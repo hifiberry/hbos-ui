@@ -46,7 +46,7 @@ const toggleDark = useToggle(isDark)
 const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 
 import AppSongControlInfo from '@/components/app-song-control-info.vue'
-import AppVolumeControl from '@/components/app-volume-control.vue'
+import AppVolumeControl from '@/components/AppVolumeControl.vue'
 
 interface HeaderProps {
   isPlayerControls?: boolean

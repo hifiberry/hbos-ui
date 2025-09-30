@@ -176,7 +176,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import AppBackRouter from '@/components/app-back-router.vue'
+import AppBackRouter from '@/components/AppBackRouter.vue'
 import AppPosterGrid from '@/components/AppPosterGrid.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import AppArtistImageSelector from '@/components/AppArtistImageSelector.vue'

@@ -36,7 +36,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import AppBackRouter from '@/components/app-back-router.vue'
+import AppBackRouter from '@/components/AppBackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppPosterGrid from '@/components/AppPosterGrid.vue'
 import AppAlphabetIndex from '@/components/AppAlphabetIndex.vue'

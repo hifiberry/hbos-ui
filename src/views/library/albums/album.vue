@@ -19,7 +19,7 @@
 import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import AppBackRouter from '@/components/app-back-router.vue'
+import AppBackRouter from '@/components/AppBackRouter.vue'
 import AppAlbumDetailsCard from '@/components/AppAlbumDetailsCard.vue'
 import AppTracksCard from '@/components/AppTracksCard.vue'
 

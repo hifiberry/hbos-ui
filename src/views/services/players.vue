@@ -139,7 +139,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
-import AppBackRouter from '@/components/app-back-router.vue'
+import AppBackRouter from '@/components/AppBackRouter.vue'
 import {
   getMultipleServiceStatus,
   enableService,

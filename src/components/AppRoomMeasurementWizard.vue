@@ -390,7 +390,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
-import AppIcon from './app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import AppProgressSlider from './AppProgressSlider.vue'
 import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, completeRoomMeasurement, startRoomMeasure, type RoomMeasureRequest, analyzeRoomEQFFTRecording } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'

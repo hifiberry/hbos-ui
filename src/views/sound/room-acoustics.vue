@@ -179,7 +179,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/app-icon.vue'
-import AppRoomMeasurementWizard from '@/components/app-room-measurement-wizard.vue'
+import AppRoomMeasurementWizard from '@/components/AppRoomMeasurementWizard.vue'
 import AppRoomEqualisationWizard from '@/components/app-room-equalisation-wizard.vue'
 import { useSettingsStore, type RoomMeasurement } from '@/stores/settings'
 import { getConfigKeys, getConfigValue, deleteConfigValue } from '@/api/config'

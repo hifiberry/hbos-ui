@@ -1984,7 +1984,7 @@ watch(activeChannel, async () => {
 
     h2 {
       margin: 0;
-      color: black;
+      color: var(--color-head);
     }
 
     .close-btn {
@@ -2011,48 +2011,8 @@ watch(activeChannel, async () => {
   }
 
   .modal-body {
-    color: #333;
+    color: var(--color-text);
     line-height: 1.6;
-
-    h4 {
-      color: #e11e4a;
-      font-size: 16px;
-      margin-top: 20px;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-
-    ul {
-      margin: 10px 0;
-      padding-left: 20px;
-
-      li {
-        margin-bottom: 8px;
-      }
-    }
-
-    code {
-      background-color: #f5f5f5;
-      color: #d63384;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-    }
-
-    strong {
-      color: #000;
-    }
-
-    em {
-      color: #666;
-      font-style: italic;
-    }
-
-    p:first-child strong {
-      color: #e11e4a;
-      font-size: 18px;
-    }
   }
 }
 

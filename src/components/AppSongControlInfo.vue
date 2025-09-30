@@ -57,7 +57,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppAudioControls from '@/components/AppAudioControls.vue'
-import AppAudioControlsHeader from '@/components/app-audio-controls-header.vue'
+import AppAudioControlsHeader from '@/components/AppAudioControlsHeader.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
 import AppCover from '@/components/AppCover.vue'
 import AppMarquee from '@/components/AppMarquee.vue'

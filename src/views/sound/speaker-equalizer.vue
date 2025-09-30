@@ -315,7 +315,7 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import AppIcon from '@/components/AppIcon.vue';
-import FilterGraph from '@/components/filter-graph.vue';
+import FilterGraph from '@/components/FilterGraph.vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { type Filter } from '@/utils/filtercalc';
 

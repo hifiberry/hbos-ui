@@ -141,7 +141,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
-import FilterGraph from '@/components/filter-graph.vue'
+import FilterGraph from '@/components/FilterGraph.vue'
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector'
 import { type Filter } from '@/utils/filtercalc'
 import { type BiquadFilterType } from '@/utils/biquad'

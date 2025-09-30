@@ -179,7 +179,7 @@ const router = useRouter()
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
 import AppIcon from '@/components/app-icon.vue'
-import AppArtistImageSelector from '@/components/app-artist-image-selector.vue'
+import AppArtistImageSelector from '@/components/AppArtistImageSelector.vue'
 
 import { updateArtistImage } from '@/api/coverart'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'

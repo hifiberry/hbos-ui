@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import AppAudioControls from '@/components/app-audio-controls.vue'
+import AppAudioControls from '@/components/AppAudioControls.vue'
 import AppAudioControlsHeader from '@/components/app-audio-controls-header.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
 import AppCover from '@/components/AppCover.vue'

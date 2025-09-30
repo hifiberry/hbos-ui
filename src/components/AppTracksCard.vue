@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
-import AppMarquee from '@/components/app-marquee.vue'
+import AppMarquee from '@/components/AppMarquee.vue'
 
 import type { Track, AlbumDetails } from '@/types/library'
 

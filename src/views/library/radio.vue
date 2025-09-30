@@ -119,7 +119,7 @@ import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/app-icon.vue'
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppSearch from '@/components/AppSearch.vue'
-import AppMarquee from '@/components/app-marquee.vue'
+import AppMarquee from '@/components/AppMarquee.vue'
 import AppRadioEditPopup from '@/components/AppRadioEditPopup.vue'
 import { useRadioStore, type RadioStation, type RadioFavorite } from '@/stores/radio'
 

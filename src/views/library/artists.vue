@@ -39,7 +39,7 @@ const router = useRouter()
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppSearch from '@/components/app-search.vue'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
-import AppAlphabetIndex from '@/components/app-alphabet-index.vue'
+import AppAlphabetIndex from '@/components/AppAlphabetIndex.vue'
 
 import { storeToRefs } from 'pinia'
 

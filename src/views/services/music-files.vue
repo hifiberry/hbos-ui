@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
-import AppBackRouter from '@/components/app-back-router.vue'
+import AppBackRouter from '@/components/AppBackRouter.vue'
 import AppAddSmbMountDialog from '@/components/AppAddSmbMountDialog.vue'
 import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
 import { useAppConfigStore } from '@/stores/appconfig'

@@ -133,7 +133,7 @@ Would you like to reboot now?"
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/AppIcon.vue'
-import AppBackRouter from '@/components/app-back-router.vue'
+import AppBackRouter from '@/components/AppBackRouter.vue'
 import AppConfirmationDialog from '@/components/AppConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'

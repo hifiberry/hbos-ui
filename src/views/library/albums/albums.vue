@@ -38,7 +38,7 @@ const router = useRouter()
 
 import { storeToRefs } from 'pinia'
 
-import AppBackRouter from '@/components/app-back-router.vue'
+import AppBackRouter from '@/components/AppBackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppSortSelector from '@/components/AppSortSelector.vue'
 

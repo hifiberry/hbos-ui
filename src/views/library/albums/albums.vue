@@ -43,7 +43,7 @@ import AppSearch from '@/components/AppSearch.vue'
 import AppSortSelector from '@/components/AppSortSelector.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
-import AppPosterGrid from '@/components/app-poster-grid.vue'
+import AppPosterGrid from '@/components/AppPosterGrid.vue'
 
 const albumStore = useAlbumStore()
 const { loading, loaded, sortedAlbums, sortBy, sortOrder } = storeToRefs(albumStore)

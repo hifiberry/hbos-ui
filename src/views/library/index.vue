@@ -85,7 +85,7 @@ const playStation = async (station: { $id?: string }) => {
 }
 
 import { useAlbumStore } from '@/stores/album'
-import AppPosterGrid from '@/components/app-poster-grid.vue'
+import AppPosterGrid from '@/components/AppPosterGrid.vue'
 import AppIcon from '@/components/app-icon.vue'
 const albumStore = useAlbumStore()
 const {

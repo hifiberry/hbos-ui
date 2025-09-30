@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from './app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 // No configuration or state management needed for Fanart.tv
 // It's a read-only metadata service

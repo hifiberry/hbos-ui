@@ -33,7 +33,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
-import AppProgressSlider from '@/components/app-progress-slider.vue'
+import AppProgressSlider from '@/components/AppProgressSlider.vue'
 
 // Props for size variants
 interface Props {

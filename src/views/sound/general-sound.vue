@@ -147,7 +147,7 @@
 
 <script setup lang="ts">
 import AppIcon from '@/components/app-icon.vue'
-import AppProgressSlider from '@/components/app-progress-slider.vue'
+import AppProgressSlider from '@/components/AppProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
 

@@ -37,7 +37,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 import AppBackRouter from '@/components/app-back-router.vue'
-import AppSearch from '@/components/app-search.vue'
+import AppSearch from '@/components/AppSearch.vue'
 import AppPosterGrid from '@/components/app-poster-grid.vue'
 import AppAlphabetIndex from '@/components/AppAlphabetIndex.vue'
 

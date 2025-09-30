@@ -45,7 +45,7 @@ const toggleDark = useToggle(isDark)
 
 const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 
-import AppSongControlInfo from '@/components/app-song-control-info.vue'
+import AppSongControlInfo from '@/components/AppSongControlInfo.vue'
 import AppVolumeControl from '@/components/AppVolumeControl.vue'
 
 interface HeaderProps {

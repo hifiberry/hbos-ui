@@ -614,7 +614,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import AppIcon from './app-icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import type { RoomMeasurement } from '@/stores/settings'
 import { getRoomEQTargetPresets, type RoomEQTargetPoint, detectUsableFrequencyRange, type RoomEQUsableRangeResult } from '@/api/roomeq'
 import { setConfigValue } from '@/api/config'

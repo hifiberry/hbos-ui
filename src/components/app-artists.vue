@@ -38,7 +38,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 import AppPoster from '@/components/app-poster.vue'
-import AppPosterSkeleton from '@/components/skeletons/app-poster-skeleton.vue'
+import AppPosterSkeleton from '@/components/skeletons/AppPosterSkeleton.vue'
 
 const chunkSize = 30
 const currentPage = ref(0)

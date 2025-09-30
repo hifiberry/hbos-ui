@@ -25,7 +25,7 @@ import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
-import AppProgressSlider from '@/components/app-progress-slider.vue'
+import AppProgressSlider from '@/components/AppProgressSlider.vue'
 import AppProgressTime from '@/components/AppProgressTime.vue'
 
 interface AppProgressControlProps {

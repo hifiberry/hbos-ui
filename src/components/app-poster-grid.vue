@@ -43,7 +43,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { Ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppPoster from '@/components/app-poster.vue'
+import AppPoster from '@/components/AppPoster.vue'
 import AppPosterSkeleton from '@/components/skeletons/AppPosterSkeleton.vue'
 import AppIcon from '@/components/app-icon.vue'
 

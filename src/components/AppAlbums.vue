@@ -34,7 +34,7 @@ const { loading = false, loaded = false, albums = [], inRow = false } = definePr
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import AppPoster from '@/components/app-poster.vue'
+import AppPoster from '@/components/AppPoster.vue'
 import AppPosterSkeleton from '@/components/skeletons/AppPosterSkeleton.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'

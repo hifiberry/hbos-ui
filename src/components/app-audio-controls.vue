@@ -99,7 +99,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import AppIconButton from '@/components/app-icon-button.vue'
-import AppLyricsOverlay from '@/components/app-lyrics-overlay.vue'
+import AppLyricsOverlay from '@/components/AppLyricsOverlay.vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'

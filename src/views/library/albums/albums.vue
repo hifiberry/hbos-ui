@@ -40,7 +40,7 @@ import { storeToRefs } from 'pinia'
 
 import AppBackRouter from '@/components/app-back-router.vue'
 import AppSearch from '@/components/app-search.vue'
-import AppSortSelector from '@/components/app-sort-selector.vue'
+import AppSortSelector from '@/components/AppSortSelector.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
 import AppPosterGrid from '@/components/app-poster-grid.vue'

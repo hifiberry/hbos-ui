@@ -17,7 +17,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 
-import AppHeader from '@/components/app-header.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 
 const slickPlayerControlsExceptions: string[] = ['now-playing']

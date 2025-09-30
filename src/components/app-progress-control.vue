@@ -26,7 +26,7 @@ import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
 import AppProgressSlider from '@/components/app-progress-slider.vue'
-import AppProgressTime from '@/components/app-progress-time.vue'
+import AppProgressTime from '@/components/AppProgressTime.vue'
 
 interface AppProgressControlProps {
   min?: number

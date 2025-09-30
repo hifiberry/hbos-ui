@@ -1900,7 +1900,7 @@ watch(activeChannel, async () => {
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--scroll-thumb-background);
   padding: 30px;
   border-radius: 10px;
   width: max-content;
@@ -1911,16 +1911,15 @@ watch(activeChannel, async () => {
   border: 1px solid #333;
   color: white;
 
-  h2 {
+  h2, p {
     font-size: 22px;
     margin-bottom: 15px;
-    color: black;
+    color: var(--color-text);
   }
 
   p {
     font-size: 16px;
     margin-bottom: 20px;
-    color: black;
   }
 
   .filter-type-selector {
@@ -1941,7 +1940,7 @@ watch(activeChannel, async () => {
       background-color: transparent;
       cursor: pointer;
       transition: all 0.3s ease;
-      color: #333; // Text color for default state
+      color: var(--color-text); // Text color for default state
       min-width: 120px; // Set a minimum width to make boxes more compact
       max-width: 140px; // Set a maximum width
 

@@ -297,7 +297,7 @@
         <!-- DSP Program Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="processor" class="card-icon" />
+            <Icon icon="processor" class="card-icon" />
             <h2>DSP Program</h2>
           </div>
           <div v-if="dspProgramLoading" class="loading-message">

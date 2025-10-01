@@ -12,7 +12,7 @@
 
     <!-- Column 2: Song Info + Player Controls Combined -->
     <div v-if="isPlayerControls" class="header-column header-column--player">
-      <AppSongControlInfo isOnHeader />
+      <SongControlInfo isOnHeader />
     </div>
 
     <!-- Spacer 2 (only show when player controls are visible) -->
@@ -45,7 +45,7 @@ const toggleDark = useToggle(isDark)
 
 const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 
-import AppSongControlInfo from '@/components/AppSongControlInfo.vue'
+import SongControlInfo from '@/components/SongControlInfo.vue'
 import AppVolumeControl from '@/components/AppVolumeControl.vue'
 
 interface HeaderProps {

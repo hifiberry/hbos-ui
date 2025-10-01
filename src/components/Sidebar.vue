@@ -1,7 +1,7 @@
 <template>
   <aside class="sidebar">
     <div v-if="isPlayerControls" class="sidebar-controls">
-      <AppSongControlInfo isOnSticky />
+      <SongControlInfo isOnSticky />
     </div>
     <div class="nav">
       <template v-for="route in routes" :key="route.name">
@@ -40,7 +40,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
-import AppSongControlInfo from '@/components/AppSongControlInfo.vue'
+import SongControlInfo from '@/components/SongControlInfo.vue'
 import { usePlayerStore } from '@/stores/player'
 
 interface SidebarProps {

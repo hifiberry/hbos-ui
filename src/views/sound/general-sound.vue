@@ -7,13 +7,13 @@
         <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/volume" class="setting-icon" />
+              <Icon icon="tabler/volume" class="setting-icon" />
               <div class="setting-title">
                 <h3>Volume limit</h3>
               </div>
             </div>
             <div class="setting-progress">
-              <AppProgressSlider
+              <ProgressSlider
                 :value="volumeLimitPercent"
                 :min="0"
                 :max="100"
@@ -35,13 +35,13 @@
         <div class="setting-item" title="Your sound card doesn't support headphones">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/headphones" class="setting-icon" />
+              <Icon icon="tabler/headphones" class="setting-icon" />
               <div class="setting-title">
                 <h3>Headphone volume</h3>
               </div>
             </div>
             <div class="setting-progress">
-              <AppProgressSlider
+              <ProgressSlider
                 :value="0"
                 :min="0"
                 :max="100"
@@ -61,13 +61,13 @@
         <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/caret-left-right" class="setting-icon" />
+              <Icon icon="tabler/caret-left-right" class="setting-icon" />
               <div class="setting-title">
                 <h3>Balance</h3>
               </div>
             </div>
             <div class="setting-progress">
-              <AppProgressSlider
+              <ProgressSlider
                 :value="balanceSliderPercent"
                 :min="0"
                 :max="100"
@@ -89,7 +89,7 @@
         <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/speaker" class="setting-icon" />
+              <Icon icon="tabler/speaker" class="setting-icon" />
               <div class="setting-title">
                 <h3>Mode</h3>
               </div>
@@ -146,8 +146,8 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/app-icon.vue'
-import AppProgressSlider from '@/components/app-progress-slider.vue'
+import Icon from '@/components/Icon.vue'
+import ProgressSlider from '@/components/ProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
 
@@ -194,7 +194,7 @@ async function onSliderChange(newVal: number) {
 const balanceValue = ref<number>(0) // -1 (full left) to +1 (full right), 0 = center, always a valid number
 const balanceAvailable = ref<boolean>(true)
 
-// Convert PipeWire balance (-1 to +1) to slider percentage for AppProgressSlider (0-100)
+// Convert PipeWire balance (-1 to +1) to slider percentage for ProgressSlider (0-100)
 const balanceToSliderPercent = (balance: number): number => {
   // Handle invalid balance values
   if (typeof balance !== 'number' || isNaN(balance)) {

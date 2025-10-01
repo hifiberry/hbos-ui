@@ -14,7 +14,7 @@
         @mouseleave="showTooltip = false"
         @mousemove="updateTooltipPosition"
       >
-        <AppCoverArt
+        <CoverArt
           class="now-playing__cover"
           :song="song"
           size="large"
@@ -24,7 +24,7 @@
         />
 
         <!-- Metadata Tooltip -->
-        <AppMetadataTooltip
+        <MetadataTooltip
           v-if="showTooltip && song"
           :song="song"
           class="now-playing__metadata-tooltip"
@@ -37,13 +37,13 @@
         <p v-if="song?.artist">{{ song.artist }}</p>
       </div>
 
-      <AppAudioControls class="now-playing__audio-controls" />
+      <AudioControls class="now-playing__audio-controls" />
 
-      <AppProgressControl class="now-playing__progress-control" isDraggable />
+      <ProgressControl class="now-playing__progress-control" isDraggable />
 
       <!-- Volume control -->
       <div class="now-playing__volume">
-        <AppVolumeControl size="wide" />
+        <VolumeControl size="wide" />
       </div>
     </div>
   </div>
@@ -51,11 +51,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AppCoverArt from '@/components/app-cover-art.vue'
-import AppProgressControl from '@/components/app-progress-control.vue'
-import AppAudioControls from '@/components/app-audio-controls.vue'
-import AppVolumeControl from '@/components/app-volume-control.vue'
-import AppMetadataTooltip from '@/components/app-metadata-tooltip.vue'
+import CoverArt from '@/components/CoverArt.vue'
+import ProgressControl from '@/components/ProgressControl.vue'
+import AudioControls from '@/components/AudioControls.vue'
+import VolumeControl from '@/components/VolumeControl.vue'
+import MetadataTooltip from '@/components/MetadataTooltip.vue'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'

@@ -36,8 +36,8 @@ The following icons are used for media player controls:
 
 ## Usage
 
-Icons should be used with the `AppIcon` component:
+Icons should be used with the `Icon` component:
 
 ```vue
-<AppIcon icon="material/play_arrow" />
+<Icon icon="material/play_arrow" />
 ```

@@ -1,7 +1,7 @@
 <template>
   <div class="dsp-backends">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">DSP Backends</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">DSP Backends</BackRouter>
     </div>
 
     <div class="dsp-backends-content">
@@ -23,7 +23,7 @@
           >
             <div class="backend-main">
               <div class="backend-info">
-                <AppIcon :icon="getBackendIcon(backendId)" class="backend-icon" />
+                <Icon :icon="getBackendIcon(backendId)" class="backend-icon" />
                 <div class="backend-details">
                   <h3>{{ backend.name }}</h3>
                   <p class="backend-description">{{ getBackendDescription(backendId) }}</p>
@@ -55,7 +55,7 @@
                     @click.stop="showBackendDetails(backendId)"
                     :title="`View ${backend.name} details`"
                   >
-                    <AppIcon icon="info" />
+                    <Icon icon="info" />
                   </button>
                 </div>
               </div>
@@ -85,8 +85,8 @@ import { ref, computed, onMounted } from 'vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
-import AppIcon from '@/components/app-icon.vue';
-import AppBackRouter from '@/components/app-back-router.vue';
+import Icon from '@/components/Icon.vue';
+import BackRouter from '@/components/BackRouter.vue';
 
 // Initialize stores
 const filterStore = useFilterStore();

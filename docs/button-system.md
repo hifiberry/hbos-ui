@@ -209,7 +209,7 @@ For quick usage, these combine base + variant + size:
       :disabled="saving || !editValue.trim()"
       title="Save"
     >
-      <AppIcon icon="checkmark" :width="16" :height="16" />
+      <Icon icon="checkmark" :width="16" :height="16" />
     </button>
     <button 
       @click="cancel"
@@ -217,7 +217,7 @@ For quick usage, these combine base + variant + size:
       :disabled="saving"
       title="Cancel"
     >
-      <AppIcon icon="close" :width="16" :height="16" />
+      <Icon icon="close" :width="16" :height="16" />
     </button>
   </div>
 </div>

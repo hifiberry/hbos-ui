@@ -2,7 +2,7 @@
   <div class="dsp-programs-page">
     <div class="dsp-programs">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">DSP Programs</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">DSP Programs</BackRouter>
     </div>
 
     <div class="dsp-programs-content">
@@ -16,7 +16,7 @@
           <div class="alert alert-info mb-0">
             <div class="d-flex align-items-center justify-content-center">
               <div class="text-center">
-                <AppIcon name="info-circle" class="text-info mb-3" size="3rem" />
+                <Icon name="info-circle" class="text-info mb-3" size="3rem" />
                 <h4 class="alert-title">{{ dspError || 'No DSP hardware detected' }}</h4>
               </div>
             </div>
@@ -29,7 +29,7 @@
         <h2>Installed DSP profile</h2>
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="info" class="card-icon" />
+            <Icon icon="info" class="card-icon" />
           </div>
           <table class="info-table">
             <tbody>
@@ -89,7 +89,7 @@
               <div class="profile-item">
                 <div class="profile-main">
                   <div class="profile-info">
-                    <AppIcon icon="tabler/speaker" class="profile-icon" />
+                    <Icon icon="tabler/speaker" class="profile-icon" />
                     <div class="profile-details">
                       <h3>{{ profile.profileName }}</h3>
                       <div class="profile-version">
@@ -102,7 +102,7 @@
                     </div>
                   </div>
                   <div class="profile-actions">
-                    <AppIcon icon="tabler/download" class="deploy-icon" />
+                    <Icon icon="tabler/download" class="deploy-icon" />
                   </div>
                 </div>
               </div>
@@ -113,7 +113,7 @@
             <div class="card-body">
               <div class="empty">
                 <div class="empty-icon">
-                  <AppIcon icon="tabler/folder" size="3rem" />
+                  <Icon icon="tabler/folder" size="3rem" />
                 </div>
                 <p v-if="detectedModelName" class="empty-title">No compatible profiles found</p>
                 <p v-else class="empty-title">No profiles available</p>
@@ -132,7 +132,7 @@
     </div>
 
     <!-- Deploy Profile Confirmation Dialog -->
-    <AppConfirmationDialog
+    <ConfirmationDialog
       :isOpen="showDeployModal"
       :title="deployModalTitle"
       :message="deployModalMessage"
@@ -149,9 +149,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
-import AppBackRouter from '@/components/app-back-router.vue'
-import AppConfirmationDialog from '@/components/app-confirmation-dialog.vue'
+import Icon from '@/components/Icon.vue'
+import BackRouter from '@/components/BackRouter.vue'
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
 import { detectSoundCard, type SoundCardDetectionResponse } from '@/api/system'
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit'

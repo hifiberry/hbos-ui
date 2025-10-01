@@ -1,7 +1,7 @@
 <template>
   <div class="system-tools">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">System Tools</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">System Tools</BackRouter>
     </div>
 
     <div class="system-tools-content">
@@ -14,7 +14,7 @@
       <div class="tool-section">
         <div class="tool-card reset-tool">
           <div class="tool-info">
-            <AppIcon icon="reset" class="tool-icon" />
+            <Icon icon="reset" class="tool-icon" />
             <div class="tool-details">
               <h3>Reset System</h3>
               <p class="tool-description">
@@ -34,7 +34,7 @@
       <div class="tool-section">
         <div class="tool-card detect-tool">
           <div class="tool-info">
-            <AppIcon icon="search" class="tool-icon" />
+            <Icon icon="search" class="tool-icon" />
             <div class="tool-details">
               <h3>Auto-detect Sound Card</h3>
               <p class="tool-description">
@@ -54,7 +54,7 @@
       <div class="tool-section">
         <div class="tool-card expert-tool">
           <div class="tool-info">
-            <AppIcon icon="tabler/user-star" class="tool-icon" />
+            <Icon icon="tabler/user-star" class="tool-icon" />
             <div class="tool-details">
               <h3>Expert Mode</h3>
               <p class="tool-description">
@@ -80,7 +80,7 @@
     </div>
 
     <!-- Reset System Confirmation Dialog -->
-    <AppConfirmationDialog
+    <ConfirmationDialog
       :is-open="showResetConfirmation"
       title="Reset System"
       message="Are you sure you want to reset the system to factory defaults?
@@ -101,7 +101,7 @@ This action CANNOT BE UNDONE!"
     />
 
     <!-- Auto-detect Sound Card Confirmation Dialog -->
-    <AppConfirmationDialog
+    <ConfirmationDialog
       :is-open="showDetectConfirmation"
       title="Auto-detect Sound Card"
       :message="getDetectConfirmationMessage()"
@@ -113,7 +113,7 @@ This action CANNOT BE UNDONE!"
     />
 
     <!-- Reboot Confirmation Dialog -->
-    <AppConfirmationDialog
+    <ConfirmationDialog
       :is-open="showRebootConfirmation"
       title="Reboot Required"
       message="Sound card configuration completed. The system needs to be rebooted for changes to take effect.
@@ -132,9 +132,9 @@ Would you like to reboot now?"
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppIcon from '@/components/app-icon.vue'
-import AppBackRouter from '@/components/app-back-router.vue'
-import AppConfirmationDialog from '@/components/app-confirmation-dialog.vue'
+import Icon from '@/components/Icon.vue'
+import BackRouter from '@/components/BackRouter.vue'
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
 import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay } from '@/api/system'

@@ -1,9 +1,9 @@
 <template>
   <div class="albums">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'library' }">Albums</AppBackRouter>
+      <BackRouter :to="{ name: 'library' }">Albums</BackRouter>
       <div class="controls">
-        <AppSortSelector
+        <SortSelector
           :sort-by="sortBy"
           :sort-order="sortOrder"
           @sort-by-change="handleSortByChange"
@@ -20,7 +20,7 @@
       </div>
     </div>
     <div class="card">
-      <AppPosterGrid
+      <PosterGrid
         :loading="loading"
         :loaded="loaded"
         :items="sortedAlbums"
@@ -38,12 +38,12 @@ const router = useRouter()
 
 import { storeToRefs } from 'pinia'
 
-import AppBackRouter from '@/components/app-back-router.vue'
-import AppSearch from '@/components/app-search.vue'
-import AppSortSelector from '@/components/app-sort-selector.vue'
+import BackRouter from '@/components/BackRouter.vue'
+import AppSearch from '@/components/AppSearch.vue'
+import SortSelector from '@/components/SortSelector.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
-import AppPosterGrid from '@/components/app-poster-grid.vue'
+import PosterGrid from '@/components/PosterGrid.vue'
 
 const albumStore = useAlbumStore()
 const { loading, loaded, sortedAlbums, sortBy, sortOrder } = storeToRefs(albumStore)

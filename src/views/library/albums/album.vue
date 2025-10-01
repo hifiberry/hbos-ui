@@ -1,15 +1,15 @@
 <template>
   <div class="album">
     <div class="breadcrumbs">
-      <AppBackRouter :to="backRoute" :loading="loading">{{ backText }}</AppBackRouter>
+      <BackRouter :to="backRoute" :loading="loading">{{ backText }}</BackRouter>
     </div>
 
     <div class="grid">
       <div class="col-6-md">
-        <AppAlbumDetailsCard :album="album" :loading="loading" />
+        <AlbumDetailsCard :album="album" :loading="loading" />
       </div>
       <div class="col-6-md">
-        <AppTracksCard :tracks="album?.tracks || []" :loading="loading" :album="album" />
+        <TracksCard :tracks="album?.tracks || []" :loading="loading" :album="album" />
       </div>
     </div>
   </div>
@@ -19,9 +19,9 @@
 import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import AppBackRouter from '@/components/app-back-router.vue'
-import AppAlbumDetailsCard from '@/components/app-album-details-card.vue'
-import AppTracksCard from '@/components/app-tracks-card.vue'
+import BackRouter from '@/components/BackRouter.vue'
+import AlbumDetailsCard from '@/components/AlbumDetailsCard.vue'
+import TracksCard from '@/components/TracksCard.vue'
 
 import { useRoute } from 'vue-router'
 const route = useRoute()

@@ -109,13 +109,13 @@ defineOptions({
   inheritAttrs: false
 })
 
-interface AppAudioControlsProps {
+interface AudioControlsProps {
   isSeparate?: boolean
   isOnSticky?: boolean
   isOnHeader?: boolean
 }
 
-const { isSeparate = false, isOnSticky = false, isOnHeader = false } = defineProps<AppAudioControlsProps>()
+const { isSeparate = false, isOnSticky = false, isOnHeader = false } = defineProps<AudioControlsProps>()
 
 const playerStore = usePlayerStore()
 const {

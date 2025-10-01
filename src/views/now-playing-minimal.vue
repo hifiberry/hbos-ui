@@ -36,7 +36,7 @@
         <p v-if="song?.artist">{{ song.artist }}</p>
       </div>
 
-      <AppAudioControls class="now-playing__audio-controls" />
+      <AudioControls class="now-playing__audio-controls" />
 
       <AppProgressControl class="now-playing__progress-control" isDraggable />
 
@@ -57,7 +57,7 @@
 import { ref, computed } from 'vue'
 import AppCoverArt from '@/components/AppCoverArt.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
-import AppAudioControls from '@/components/AppAudioControls.vue'
+import AudioControls from '@/components/AudioControls.vue'
 import AppVolumeControl from '@/components/AppVolumeControl.vue'
 import AppMetadataTooltip from '@/components/AppMetadataTooltip.vue'
 

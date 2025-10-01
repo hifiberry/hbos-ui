@@ -11,11 +11,11 @@ defineOptions({
   inheritAttrs: false,
 })
 
-interface AppAudioControlsProps {
+interface AudioControlsProps {
   disabled?: boolean
 }
 
-const { disabled = false } = defineProps<AppAudioControlsProps>()
+const { disabled = false } = defineProps<AudioControlsProps>()
 </script>
 
 <style scoped lang="scss">

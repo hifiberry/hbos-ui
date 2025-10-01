@@ -24,7 +24,7 @@
     </div>
 
     <!-- Alphabet Index -->
-    <AppAlphabetIndex
+    <AlphabetIndex
       :items="sortedArtists"
       @letter-click="scrollToLetter"
     />
@@ -39,7 +39,7 @@ const router = useRouter()
 import AppBackRouter from '@/components/AppBackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppPosterGrid from '@/components/AppPosterGrid.vue'
-import AppAlphabetIndex from '@/components/AppAlphabetIndex.vue'
+import AlphabetIndex from '@/components/AlphabetIndex.vue'
 
 import { storeToRefs } from 'pinia'
 

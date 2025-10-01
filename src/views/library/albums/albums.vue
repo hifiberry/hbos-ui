@@ -20,7 +20,7 @@
       </div>
     </div>
     <div class="card">
-      <AppPosterGrid
+      <PosterGrid
         :loading="loading"
         :loaded="loaded"
         :items="sortedAlbums"
@@ -43,7 +43,7 @@ import AppSearch from '@/components/AppSearch.vue'
 import AppSortSelector from '@/components/AppSortSelector.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
-import AppPosterGrid from '@/components/AppPosterGrid.vue'
+import PosterGrid from '@/components/PosterGrid.vue'
 
 const albumStore = useAlbumStore()
 const { loading, loaded, sortedAlbums, sortBy, sortOrder } = storeToRefs(albumStore)

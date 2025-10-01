@@ -38,7 +38,7 @@
 
       <AudioControls class="now-playing__audio-controls" />
 
-      <AppProgressControl class="now-playing__progress-control" isDraggable />
+      <ProgressControl class="now-playing__progress-control" isDraggable />
 
       <!-- Volume control -->
       <div class="now-playing__volume">
@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import CoverArt from '@/components/CoverArt.vue'
-import AppProgressControl from '@/components/AppProgressControl.vue'
+import ProgressControl from '@/components/ProgressControl.vue'
 import AudioControls from '@/components/AudioControls.vue'
 import AppVolumeControl from '@/components/AppVolumeControl.vue'
 import MetadataTooltip from '@/components/MetadataTooltip.vue'

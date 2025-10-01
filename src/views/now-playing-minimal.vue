@@ -25,7 +25,7 @@
         />
 
         <!-- Metadata Tooltip -->
-        <AppMetadataTooltip
+        <MetadataTooltip
           v-if="showTooltip && song"
           :song="song"
           class="now-playing__metadata-tooltip"
@@ -59,7 +59,7 @@ import CoverArt from '@/components/CoverArt.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
 import AudioControls from '@/components/AudioControls.vue'
 import AppVolumeControl from '@/components/AppVolumeControl.vue'
-import AppMetadataTooltip from '@/components/AppMetadataTooltip.vue'
+import MetadataTooltip from '@/components/MetadataTooltip.vue'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'

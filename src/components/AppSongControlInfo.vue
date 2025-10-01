@@ -7,7 +7,7 @@
         @mouseleave="showTooltip = false"
         @mousemove="updateTooltipPosition"
       >
-        <AppCover
+        <Cover
           :src="getCoverImageUrl(song)"
           :alt="song.artist || 'Artist'"
         />
@@ -59,7 +59,7 @@ import { useRouter } from 'vue-router'
 import AudioControls from '@/components/AudioControls.vue'
 import AudioControlsHeader from '@/components/AudioControlsHeader.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
-import AppCover from '@/components/AppCover.vue'
+import Cover from '@/components/Cover.vue'
 import AppMarquee from '@/components/AppMarquee.vue'
 import AppMetadataTooltip from '@/components/AppMetadataTooltip.vue'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'

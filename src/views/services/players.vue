@@ -1,7 +1,7 @@
 <template>
   <div class="players">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">Players</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">Players</BackRouter>
     </div>
 
     <div class="players-content">
@@ -18,7 +18,7 @@
           }">
             <div class="player-main">
               <div class="player-info">
-                <AppIcon :icon="player.icon" class="player-icon" />
+                <Icon :icon="player.icon" class="player-icon" />
                 <div class="player-details">
                   <h3>{{ player.name }} ({{ player.providedBy }})</h3>
                   <div class="player-status">
@@ -53,7 +53,7 @@
                   <div v-if="(player.name === 'Airplay' || player.name === 'TOSLink') && typeof player.config === 'object'"
                        class="expand-caret"
                        @click="toggleConfigExpanded(index)">
-                    <AppIcon :icon="'caret-down'" class="config-caret" :class="{ expanded: isConfigExpanded(index) }" />
+                    <Icon :icon="'caret-down'" class="config-caret" :class="{ expanded: isConfigExpanded(index) }" />
                   </div>
                 </div>
               </div>
@@ -138,8 +138,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
-import AppBackRouter from '@/components/app-back-router.vue'
+import Icon from '@/components/Icon.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import {
   getMultipleServiceStatus,
   enableService,

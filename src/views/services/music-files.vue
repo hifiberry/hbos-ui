@@ -1,9 +1,9 @@
 <template>
   <div class="music-files">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">Music Files</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">Music Files</BackRouter>
       <button @click="rescanLibrary" :disabled="rescanning" class="rescan-button" title="Rescan Music Library">
-        <AppIcon icon="refresh" />
+        <Icon icon="refresh" />
         Rescan Library
       </button>
     </div>
@@ -34,10 +34,10 @@
           </div>
           <div class="header-actions">
             <button @click="showAddDialog = true" class="add-button" title="Add SMB Mount">
-              <AppIcon icon="plus" />
+              <Icon icon="plus" />
             </button>
             <button @click="refreshMounts" :disabled="loading" class="refresh-button" title="Refresh">
-              <AppIcon icon="refresh" />
+              <Icon icon="refresh" />
             </button>
           </div>
         </div>
@@ -56,7 +56,7 @@
         </div>
 
         <div v-else-if="mounts.length === 0" class="empty-state">
-          <AppIcon icon="nas" class="empty-icon" />
+          <Icon icon="nas" class="empty-icon" />
           <h3>No SMB Mounts</h3>
           <p>No SMB/CIFS shares are currently configured for music access. Add using the + symbol</p>
         </div>
@@ -66,7 +66,7 @@
             <div class="mount-item" :class="{ expanded: isExpanded(mount) }">
               <div class="mount-main">
                 <div class="mount-info">
-                  <AppIcon icon="nas" class="mount-icon" />
+                  <Icon icon="nas" class="mount-icon" />
                   <div class="mount-details">
                     <h3>
                       <span class="mount-source">{{ mount.server }}/{{ mount.share }}</span>
@@ -88,10 +88,10 @@
                       class="delete-button"
                       title="Remove mount"
                     >
-                      <AppIcon icon="close" />
+                      <Icon icon="close" />
                     </button>
                     <div class="expand-caret" @click="toggleMountDetails(mount)">
-                      <AppIcon icon="caret-down" class="config-caret" :class="{ expanded: isExpanded(mount) }" />
+                      <Icon icon="caret-down" class="config-caret" :class="{ expanded: isExpanded(mount) }" />
                     </div>
                   </div>
                 </div>
@@ -139,7 +139,7 @@
     </div>
 
     <!-- Add Mount Dialog -->
-    <AppAddSmbMountDialog
+    <AddSmbMountDialog
       :is-open="showAddDialog"
       @close="showAddDialog = false"
       @mount-created="handleMountCreated"
@@ -149,9 +149,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
-import AppBackRouter from '@/components/app-back-router.vue'
-import AppAddSmbMountDialog from '@/components/app-add-smb-mount-dialog.vue'
+import Icon from '@/components/Icon.vue'
+import BackRouter from '@/components/BackRouter.vue'
+import AddSmbMountDialog from '@/components/AddSmbMountDialog.vue'
 import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
 import { useAppConfigStore } from '@/stores/appconfig'
 import { useToastStore } from '@/stores/toast'

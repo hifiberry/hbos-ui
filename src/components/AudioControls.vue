@@ -88,7 +88,7 @@
     </div>
 
     <!-- Lyrics Overlay -->
-    <AppLyricsOverlay
+    <LyricsOverlay
       :is-visible="showLyricsOverlay"
       :song="song"
       @close="closeLyrics"
@@ -99,7 +99,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import IconButton from '@/components/IconButton.vue'
-import AppLyricsOverlay from '@/components/AppLyricsOverlay.vue'
+import LyricsOverlay from '@/components/LyricsOverlay.vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'

@@ -2,7 +2,7 @@
   <div class="dsp-programs-page">
     <div class="dsp-programs">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">DSP Programs</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">DSP Programs</BackRouter>
     </div>
 
     <div class="dsp-programs-content">
@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import AppConfirmationDialog from '@/components/AppConfirmationDialog.vue'
 import { type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
 import { detectSoundCard, type SoundCardDetectionResponse } from '@/api/system'

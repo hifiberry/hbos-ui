@@ -1,7 +1,7 @@
 <template>
   <div class="artists">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'library' }">Artists</AppBackRouter>
+      <BackRouter :to="{ name: 'library' }">Artists</BackRouter>
       <div class="search-bar">
         <AppSearch
           v-model="search"
@@ -36,7 +36,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppPosterGrid from '@/components/AppPosterGrid.vue'
 import AlphabetIndex from '@/components/AlphabetIndex.vue'

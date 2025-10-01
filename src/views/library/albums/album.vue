@@ -1,7 +1,7 @@
 <template>
   <div class="album">
     <div class="breadcrumbs">
-      <AppBackRouter :to="backRoute" :loading="loading">{{ backText }}</AppBackRouter>
+      <BackRouter :to="backRoute" :loading="loading">{{ backText }}</BackRouter>
     </div>
 
     <div class="grid">
@@ -19,7 +19,7 @@
 import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import AlbumDetailsCard from '@/components/AlbumDetailsCard.vue'
 import AppTracksCard from '@/components/AppTracksCard.vue'
 

@@ -1,7 +1,7 @@
 <template>
   <div class="system-tools">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">System Tools</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">System Tools</BackRouter>
     </div>
 
     <div class="system-tools-content">
@@ -133,7 +133,7 @@ Would you like to reboot now?"
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/AppIcon.vue'
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import AppConfirmationDialog from '@/components/AppConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'

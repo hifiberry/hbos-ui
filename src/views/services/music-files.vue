@@ -1,7 +1,7 @@
 <template>
   <div class="music-files">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">Music Files</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">Music Files</BackRouter>
       <button @click="rescanLibrary" :disabled="rescanning" class="rescan-button" title="Rescan Music Library">
         <AppIcon icon="refresh" />
         Rescan Library
@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import AddSmbMountDialog from '@/components/AddSmbMountDialog.vue'
 import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
 import { useAppConfigStore } from '@/stores/appconfig'

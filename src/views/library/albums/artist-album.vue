@@ -1,7 +1,7 @@
 <template>
   <div class="album">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'artists' }">Artists</AppBackRouter>
+      <BackRouter :to="{ name: 'artists' }">Artists</BackRouter>
     </div>
 
     <div class="card">
@@ -21,7 +21,7 @@
               @error="onArtistImageError"
             />
             <div v-else class="artist-img-placeholder">
-              <AppIcon icon="users-thin" class="artist-placeholder-icon" />
+              <Icon icon="users-thin" class="artist-placeholder-icon" />
             </div>
 
             <!-- Edit Icon Overlay -->
@@ -30,7 +30,7 @@
               class="artist-img-edit-overlay"
               @click="openImageSelector"
             >
-              <AppIcon icon="edit" />
+              <Icon icon="edit" />
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@
       <!-- Albums Section -->
       <div class="albums-section">
         <h2 class="section-header">Albums</h2>
-        <AppPosterGrid
+        <PosterGrid
           :items="sortedAlbumsByReleaseDate"
           :loading="loading"
           :loaded="loaded"
@@ -160,7 +160,7 @@
     </div>
 
     <!-- Artist Image Selector Modal -->
-    <AppArtistImageSelector
+    <ArtistImageSelector
       :is-visible="showImageSelector"
       :artist-name="artistByName?.name || ''"
       @close="showImageSelector = false"
@@ -176,10 +176,10 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import AppBackRouter from '@/components/app-back-router.vue'
-import AppPosterGrid from '@/components/app-poster-grid.vue'
-import AppIcon from '@/components/app-icon.vue'
-import AppArtistImageSelector from '@/components/app-artist-image-selector.vue'
+import BackRouter from '@/components/BackRouter.vue'
+import PosterGrid from '@/components/PosterGrid.vue'
+import Icon from '@/components/Icon.vue'
+import ArtistImageSelector from '@/components/ArtistImageSelector.vue'
 
 import { updateArtistImage } from '@/api/coverart'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'

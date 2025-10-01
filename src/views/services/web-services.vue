@@ -33,7 +33,7 @@ import BackRouter from '@/components/BackRouter.vue'
 import LastFMIntegration from '@/components/Lastfm.vue'
 import SpotifyIntegration from '@/components/Spotify.vue'
 import MusicBrainzIntegration from '@/components/Musicbrainz.vue'
-import TheAudioDBIntegration from '@/components/AppTheaudiodb.vue'
+import TheAudioDBIntegration from '@/components/Theaudiodb.vue'
 import FanartTvIntegration from '@/components/Fanarttv.vue'
 </script>
 

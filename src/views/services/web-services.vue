@@ -1,7 +1,7 @@
 <template>
   <div class="web-services">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">Web Services</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">Web Services</BackRouter>
     </div>
 
     <div class="web-services-content">
@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import LastFMIntegration from '@/components/AppLastfm.vue'
 import SpotifyIntegration from '@/components/AppSpotify.vue'
 import MusicBrainzIntegration from '@/components/AppMusicbrainz.vue'

@@ -1,7 +1,7 @@
 <template>
   <div class="album">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'artists' }">Artists</AppBackRouter>
+      <BackRouter :to="{ name: 'artists' }">Artists</BackRouter>
     </div>
 
     <div class="card">
@@ -176,7 +176,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import AppPosterGrid from '@/components/AppPosterGrid.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import ArtistImageSelector from '@/components/ArtistImageSelector.vue'

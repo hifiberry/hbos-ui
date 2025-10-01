@@ -1,7 +1,7 @@
 <template>
   <div class="radio">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'library' }">Radio</AppBackRouter>
+      <BackRouter :to="{ name: 'library' }">Radio</BackRouter>
     </div>
 
     <div class="radio-content">
@@ -117,7 +117,7 @@
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/AppIcon.vue'
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppMarquee from '@/components/AppMarquee.vue'
 import AppRadioEditPopup from '@/components/AppRadioEditPopup.vue'

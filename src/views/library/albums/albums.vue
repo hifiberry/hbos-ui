@@ -1,7 +1,7 @@
 <template>
   <div class="albums">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'library' }">Albums</AppBackRouter>
+      <BackRouter :to="{ name: 'library' }">Albums</BackRouter>
       <div class="controls">
         <AppSortSelector
           :sort-by="sortBy"
@@ -38,7 +38,7 @@ const router = useRouter()
 
 import { storeToRefs } from 'pinia'
 
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppSortSelector from '@/components/AppSortSelector.vue'
 

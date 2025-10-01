@@ -1,7 +1,7 @@
 <template>
   <div class="dsp-backends">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">DSP Backends</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">DSP Backends</BackRouter>
     </div>
 
     <div class="dsp-backends-content">
@@ -86,7 +86,7 @@ import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connec
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import AppIcon from '@/components/AppIcon.vue';
-import AppBackRouter from '@/components/AppBackRouter.vue';
+import BackRouter from '@/components/BackRouter.vue';
 
 // Initialize stores
 const filterStore = useFilterStore();

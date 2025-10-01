@@ -1,7 +1,7 @@
 <template>
   <div class="players">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'services' }">Players</AppBackRouter>
+      <BackRouter :to="{ name: 'services' }">Players</BackRouter>
     </div>
 
     <div class="players-content">
@@ -139,7 +139,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
-import AppBackRouter from '@/components/AppBackRouter.vue'
+import BackRouter from '@/components/BackRouter.vue'
 import {
   getMultipleServiceStatus,
   enableService,

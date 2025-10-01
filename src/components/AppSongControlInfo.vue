@@ -13,7 +13,7 @@
         />
 
         <!-- Metadata Tooltip -->
-        <AppMetadataTooltip
+        <MetadataTooltip
           v-if="showTooltip && song"
           :song="song"
           class="song-control-info__metadata-tooltip"
@@ -61,7 +61,7 @@ import AudioControlsHeader from '@/components/AudioControlsHeader.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
 import Cover from '@/components/Cover.vue'
 import AppMarquee from '@/components/AppMarquee.vue'
-import AppMetadataTooltip from '@/components/AppMetadataTooltip.vue'
+import MetadataTooltip from '@/components/MetadataTooltip.vue'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 import type { Song } from '@/types/player'
 

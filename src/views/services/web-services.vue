@@ -34,7 +34,7 @@ import LastFMIntegration from '@/components/AppLastfm.vue'
 import SpotifyIntegration from '@/components/AppSpotify.vue'
 import MusicBrainzIntegration from '@/components/AppMusicbrainz.vue'
 import TheAudioDBIntegration from '@/components/AppTheaudiodb.vue'
-import FanartTvIntegration from '@/components/AppFanarttv.vue'
+import FanartTvIntegration from '@/components/Fanarttv.vue'
 </script>
 
 <style scoped lang="scss">

@@ -4,26 +4,26 @@
       <div class="modal-header">
         <h3>Select Artist Image for {{ artistName }}</h3>
         <button class="close-btn" @click="closeModal">
-          <AppIcon icon="clear" />
+          <Icon icon="clear" />
         </button>
       </div>
 
       <div class="modal-content">
         <div v-if="loading" class="loading-state">
-          <AppIcon icon="loading" class="loading-spinner" />
+          <Icon icon="loading" class="loading-spinner" />
           <p>Loading artist images...</p>
         </div>
 
         <div v-else-if="error" class="error-state">
           <p>{{ error }}</p>
           <button class="retry-btn" @click="fetchArtistImages">
-            <AppIcon icon="refresh" />
+            <Icon icon="refresh" />
             Retry
           </button>
         </div>
 
         <div v-else-if="artistImages.length === 0" class="no-images-state">
-          <AppIcon icon="image" class="no-images-icon" />
+          <Icon icon="image" class="no-images-icon" />
           <h4>No images found</h4>
           <p>No artist images were found for "{{ artistName }}"</p>
         </div>
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import { coverArtLoader } from '@/services/coverartloader'
 import type { CoverArtApiResponse } from '@/services/coverartloader'
 

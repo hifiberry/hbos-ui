@@ -18,7 +18,7 @@
 
       <!-- Center section: Main controls -->
       <div class="app-audio-controls--main">
-        <AppIconButton
+        <IconButton
           v-if="!isOnSticky"
           class="app-audio-controls__secondary"
           :class="{ active: audioControls.isShuffle }"
@@ -28,28 +28,28 @@
           @click="audioControls.toggleShuffle"
         />
 
-        <AppIconButton
+        <IconButton
           icon="lucide/skip-back"
           title="Previous"
           :disabled="isSendingCommand || !caps.canPrevious"
           @click="audioControls.playNextOrPrev('previous')"
         />
 
-        <AppIconButton
+        <IconButton
           :icon="audioControls.isPlaying ? 'lucide/pause' : 'lucide/play'"
           title="Play/Pause"
           :disabled="isSendingCommand || !(caps.canPlay || caps.canPause)"
           @click="audioControls.togglePlayPause"
         />
 
-        <AppIconButton
+        <IconButton
           icon="lucide/skip-forward"
           title="Next"
           :disabled="isSendingCommand || !caps.canNext"
           @click="audioControls.playNextOrPrev('next')"
         />
 
-        <AppIconButton
+        <IconButton
           v-if="!isOnSticky"
           class="app-audio-controls__secondary"
           :class="{ active: !audioControls.iscurrentLoopModeNone }"
@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AppIconButton from '@/components/AppIconButton.vue'
+import IconButton from '@/components/IconButton.vue'
 import AppLyricsOverlay from '@/components/AppLyricsOverlay.vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'

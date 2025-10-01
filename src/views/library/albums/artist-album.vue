@@ -21,7 +21,7 @@
               @error="onArtistImageError"
             />
             <div v-else class="artist-img-placeholder">
-              <AppIcon icon="users-thin" class="artist-placeholder-icon" />
+              <Icon icon="users-thin" class="artist-placeholder-icon" />
             </div>
 
             <!-- Edit Icon Overlay -->
@@ -30,7 +30,7 @@
               class="artist-img-edit-overlay"
               @click="openImageSelector"
             >
-              <AppIcon icon="edit" />
+              <Icon icon="edit" />
             </div>
           </div>
         </div>
@@ -178,7 +178,7 @@ const router = useRouter()
 
 import BackRouter from '@/components/BackRouter.vue'
 import AppPosterGrid from '@/components/AppPosterGrid.vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import ArtistImageSelector from '@/components/ArtistImageSelector.vue'
 
 import { updateArtistImage } from '@/api/coverart'

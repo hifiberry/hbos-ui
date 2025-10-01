@@ -8,7 +8,7 @@
         :class="['sort-btn', { active: sortBy === 'release_date' }]"
       >
         Year
-        <AppIcon
+        <Icon
           v-if="sortBy === 'release_date'"
           :icon="sortOrder === 'asc' ? 'caret-up' : 'caret-down'"
           class="sort-icon"
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 interface SortSelectorProps {
   sortBy: 'release_date' | 'artist'

@@ -26,7 +26,7 @@
       <div v-if="isLibraryUpdating" class="library-updating">
         <div class="updating-content">
           <div class="loading-icon">
-            <AppIcon name="loading" />
+            <Icon name="loading" />
           </div>
           <div class="updating-text">
             <div class="primary-text">Library update still running</div>
@@ -45,7 +45,7 @@ import type { Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppPoster from '@/components/AppPoster.vue'
 import AppPosterSkeleton from '@/components/skeletons/AppPosterSkeleton.vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 import type { PosterItem } from '@/types/library'
 import { useLibraryStore } from '@/stores/library'

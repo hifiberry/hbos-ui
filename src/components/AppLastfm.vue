@@ -4,7 +4,7 @@
       <div class="service-item">
         <div class="service-main">
           <div class="service-info">
-            <AppIcon icon="last-fm" class="service-icon" />
+            <Icon icon="last-fm" class="service-icon" />
             <div class="service-details">
               <h3>Last.fm</h3>
               <p class="service-description">Scrobble your music, set your favourite tracks and get recommendations</p>
@@ -42,7 +42,7 @@
             <!-- Settings caret -->
             <div class="settings-expand">
               <div class="expand-caret" @click="toggleSettingsExpanded">
-                <AppIcon icon="caret-down" class="settings-caret" :class="{ expanded: isSettingsExpanded }" />
+                <Icon icon="caret-down" class="settings-caret" :class="{ expanded: isSettingsExpanded }" />
               </div>
             </div>
           </div>
@@ -104,7 +104,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import {
   getLastFMStatus,
   startLastFMAuth,

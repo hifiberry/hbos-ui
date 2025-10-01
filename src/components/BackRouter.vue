@@ -1,6 +1,6 @@
 <template>
   <router-link :to="to" v-bind="$attrs" class="back-router">
-    <AppIcon icon="caret-down" />
+    <Icon icon="caret-down" />
     <span class="h1">
       <slot />
     </span>
@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 interface BackRouterProps {
   to: string | object

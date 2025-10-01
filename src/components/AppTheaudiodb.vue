@@ -4,7 +4,7 @@
       <div class="service-item">
         <div class="service-main">
           <div class="service-info">
-            <AppIcon icon="database" class="service-icon" />
+            <Icon icon="database" class="service-icon" />
             <div class="service-details">
               <h3>TheAudioDB</h3>
               <p class="service-description">TheAudioDB is used to retrieve additional artist images and biographies</p>
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 // No configuration or state management needed for TheAudioDB
 // It's a read-only metadata service

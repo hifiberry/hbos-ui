@@ -6,7 +6,7 @@
         'countdown-low': countdownSeconds <= 10 && !isAutoUpdatePaused,
         'paused': isAutoUpdatePaused
       }">
-        <AppIcon icon="activity" :width="16" :height="16" />
+        <Icon icon="activity" :width="16" :height="16" />
         <span v-if="isAutoUpdatePaused">Auto-update paused</span>
         <span v-else>Auto-updates in {{ countdownSeconds }}s</span>
       </div>
@@ -30,7 +30,7 @@
         <!-- Raspberry Pi Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="computer" class="card-icon" />
+            <Icon icon="computer" class="card-icon" />
             <h2>Raspberry Pi</h2>
           </div>
           <table class="info-table">
@@ -45,7 +45,7 @@
                       class="edit-button"
                       :disabled="loading"
                     >
-                      <AppIcon icon="edit" :width="16" :height="16" />
+                      <Icon icon="edit" :width="16" :height="16" />
                     </button>
                   </div>
                   <div v-else class="hostname-edit">
@@ -65,7 +65,7 @@
                         :disabled="savingHostname || !editHostname.trim()"
                         :title="savingHostname ? 'Saving...' : 'Save'"
                       >
-                        <AppIcon icon="checkmark" :width="16" :height="16" />
+                        <Icon icon="checkmark" :width="16" :height="16" />
                       </button>
                       <button
                         @click="cancelEditingHostname"
@@ -73,7 +73,7 @@
                         :disabled="savingHostname"
                         title="Cancel"
                       >
-                        <AppIcon icon="close" :width="16" :height="16" />
+                        <Icon icon="close" :width="16" :height="16" />
                       </button>
                     </div>
                   </div>
@@ -94,7 +94,7 @@
         <!-- Network Configuration -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="network" class="card-icon" />
+            <Icon icon="network" class="card-icon" />
             <h2>Network</h2>
           </div>
           <div v-if="networkLoading" class="loading-message">
@@ -145,7 +145,7 @@
         <!-- HAT Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="hifiberry" class="card-icon" />
+            <Icon icon="hifiberry" class="card-icon" />
             <h2>HAT Information</h2>
           </div>
           <table class="info-table">
@@ -169,7 +169,7 @@
         <!-- Sound Card Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="volume" class="card-icon" />
+            <Icon icon="volume" class="card-icon" />
             <h2>Sound Card</h2>
           </div>
           <table class="info-table">
@@ -184,7 +184,7 @@
                       class="edit-button"
                       :disabled="loading"
                     >
-                      <AppIcon icon="edit" :width="16" :height="16" />
+                      <Icon icon="edit" :width="16" :height="16" />
                     </button>
                   </div>
                   <div v-else class="soundcard-edit">
@@ -208,7 +208,7 @@
                         :disabled="savingSoundCard || !selectedSoundCard"
                         :title="savingSoundCard ? 'Saving...' : 'Save'"
                       >
-                        <AppIcon icon="checkmark" :width="16" :height="16" />
+                        <Icon icon="checkmark" :width="16" :height="16" />
                       </button>
                       <button
                         @click="cancelEditingSoundCard"
@@ -216,7 +216,7 @@
                         :disabled="savingSoundCard"
                         title="Cancel"
                       >
-                        <AppIcon icon="close" :width="16" :height="16" />
+                        <Icon icon="close" :width="16" :height="16" />
                       </button>
                     </div>
                   </div>
@@ -253,7 +253,7 @@
         <!-- Volume Control Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="volume" class="card-icon" />
+            <Icon icon="volume" class="card-icon" />
             <h2>Volume Control</h2>
           </div>
           <div v-if="volumeLoading" class="loading-message">
@@ -297,7 +297,7 @@
         <!-- Favourites Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="heart" class="card-icon" />
+            <Icon icon="heart" class="card-icon" />
             <h2>Favourites</h2>
           </div>
           <div v-if="favouritesLoading" class="loading-message">
@@ -328,7 +328,7 @@
         <!-- Cover Art Providers -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="database_star" class="card-icon" />
+            <Icon icon="database_star" class="card-icon" />
             <h2>Cover Art Providers</h2>
           </div>
           <div v-if="coverArtLoading" class="loading-message">
@@ -354,7 +354,7 @@
         <!-- Cache Statistics -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="database" class="card-icon" />
+            <Icon icon="database" class="card-icon" />
             <h2>Cache Statistics</h2>
           </div>
           <div v-if="cacheLoading" class="loading-message">
@@ -402,7 +402,7 @@
         <!-- Background Jobs -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="activity" class="card-icon" />
+            <Icon icon="activity" class="card-icon" />
             <h2>Background Jobs</h2>
           </div>
           <div v-if="jobsLoading" class="loading-message">
@@ -457,7 +457,7 @@
         <!-- I2C Devices -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="binary" class="card-icon" />
+            <Icon icon="binary" class="card-icon" />
             <h2>I2C Devices</h2>
           </div>
           <div v-if="i2cLoading" class="loading-message">
@@ -499,9 +499,9 @@
         <!-- Pipewire Filter Chain -->
         <div class="info-card clickable" @click="$router.push({ name: 'pipewire-filter-chain' })">
           <div class="card-header">
-            <AppIcon icon="tabler/schema" class="card-icon" />
+            <Icon icon="tabler/schema" class="card-icon" />
             <h2>Pipewire Filter Chain</h2>
-            <AppIcon icon="chevron-right" class="chevron-icon" />
+            <Icon icon="chevron-right" class="chevron-icon" />
           </div>
           <div class="card-description">
             <p>Show filter chain</p>
@@ -514,7 +514,7 @@
     <div v-if="showSoundCardWarning" class="warning-overlay">
       <div class="warning-dialog">
         <div class="warning-header">
-          <AppIcon icon="bell" class="warning-icon" />
+          <Icon icon="bell" class="warning-icon" />
           <h3>Warning: Sound Card Change</h3>
         </div>
         <div class="warning-content">
@@ -546,7 +546,7 @@
     <div v-if="showRebootDialog" class="warning-overlay">
       <div class="warning-dialog">
         <div class="warning-header">
-          <AppIcon icon="checkmark" class="success-icon" />
+          <Icon icon="checkmark" class="success-icon" />
           <h3>Sound Card Updated</h3>
         </div>
         <div class="warning-content">
@@ -579,7 +579,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import {
   getSystemInfo,
   updateHostname,

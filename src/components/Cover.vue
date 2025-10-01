@@ -1,6 +1,6 @@
 <template>
   <div class="app-cover" :class="{ 'no-img': isLoading || error }">
-    <AppIcon
+    <Icon
       v-if="isLoading || error"
       class="app-cover__placeholder-icon"
       :icon="isLoading ? 'loading' : 'music'"
@@ -22,7 +22,7 @@
 import { ref as deepRef, watch } from 'vue'
 import { useImage } from '@vueuse/core'
 
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 interface CoverProps {
   src?: string

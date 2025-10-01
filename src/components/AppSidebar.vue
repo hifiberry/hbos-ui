@@ -8,18 +8,18 @@
         <div v-if="route.children && route.children.length" :class="['nav-item__parent']">
           <router-link :to="{ name: route.name }" :class="['nav-item']">
             <span class="nav-item__icon">
-              <AppIcon :icon="route.icon" />
+              <Icon :icon="route.icon" />
             </span>
             <span class="nav-item__title">{{ route.title }}</span>
             <span class="nav-item__arrow">
-              <AppIcon icon="caret-down" />
+              <Icon icon="caret-down" />
             </span>
           </router-link>
           <div class="nav-item__dropdown">
             <router-link v-for="childrenRoute in route.children" :key="childrenRoute.name"
               :to="{ name: childrenRoute.name }" class="nav-item">
               <span class="nav-item__icon">
-                <AppIcon :icon="childrenRoute.icon" />
+                <Icon :icon="childrenRoute.icon" />
               </span>
               <span class="nav-item__title">{{ childrenRoute.title }}</span>
             </router-link>
@@ -27,7 +27,7 @@
         </div>
         <router-link v-else :to="{ name: route.name }" :class="['nav-item']">
           <span class="nav-item__icon">
-            <AppIcon :icon="route.icon" />
+            <Icon :icon="route.icon" />
           </span>
           <span class="nav-item__title">{{ route.title }}</span>
         </router-link>
@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import AppSongControlInfo from '@/components/AppSongControlInfo.vue'
 import { usePlayerStore } from '@/stores/player'
 

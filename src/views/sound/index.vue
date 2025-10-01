@@ -5,7 +5,7 @@
     <div class="settings-overview">
       <router-link :to="{ name: 'general-sound' }" class="service-card">
         <div class="service-header">
-          <AppIcon icon="tabler/adjustments" class="service-icon" />
+          <Icon icon="tabler/adjustments" class="service-icon" />
           <h2>General sound settings</h2>
         </div>
         <p class="service-description">
@@ -18,7 +18,7 @@
 
       <router-link :to="{ name: 'speaker-equalizer' }" class="service-card">
         <div class="service-header">
-          <AppIcon icon="tabler/speaker" class="service-icon" />
+          <Icon icon="tabler/speaker" class="service-icon" />
           <h2>Speaker Equalizer</h2>
         </div>
         <p class="service-description">
@@ -31,7 +31,7 @@
 
       <router-link :to="{ name: 'crossover-design' }" class="service-card">
         <div class="service-header">
-          <AppIcon icon="tabler/crossover" class="service-icon" />
+          <Icon icon="tabler/crossover" class="service-icon" />
           <h2>Crossover Design</h2>
         </div>
         <p class="service-description">Configure frequency separation and phase alignment for multi-way speaker systems</p>
@@ -42,7 +42,7 @@
 
       <router-link :to="{ name: 'room-acoustics' }" class="service-card">
         <div class="service-header">
-          <AppIcon icon="tabler/armchair" class="service-icon" />
+          <Icon icon="tabler/armchair" class="service-icon" />
           <h2>Room Acoustics Correction</h2>
         </div>
         <p class="service-description">Automatically analyze and correct room acoustics for optimal sound reproduction</p>
@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 </script>
 
 <style scoped lang="scss">

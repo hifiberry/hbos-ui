@@ -4,7 +4,7 @@
       <div class="modal-header">
         <h2>Room Measurement Wizard</h2>
         <button @click="closeWizard" class="close-button" title="Close">
-          <AppIcon icon="close" />
+          <Icon icon="close" />
         </button>
       </div>
 
@@ -12,7 +12,7 @@
         <!-- Step 1: Microphone Detection -->
         <div v-if="currentStep === 1" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/microphone" class="step-icon" />
+            <Icon icon="tabler/microphone" class="step-icon" />
             <div class="step-info">
               <h3>Step 1: Microphone Detection</h3>
               <p>Detecting available microphones for room measurement...</p>
@@ -29,20 +29,20 @@
           </div>
 
           <div v-else-if="microphoneError" class="error-section">
-            <AppIcon icon="tabler/alert-circle" class="error-icon" />
+            <Icon icon="tabler/alert-circle" class="error-icon" />
             <p class="error-message">{{ microphoneError }}</p>
             <button @click="detectMicrophones" class="retry-button">
-              <AppIcon icon="refresh" />
+              <Icon icon="refresh" />
               Retry Detection
             </button>
           </div>
 
           <div v-else-if="detectedMicrophones.length === 0" class="empty-section">
-            <AppIcon icon="tabler/microphone-off" class="empty-icon" />
+            <Icon icon="tabler/microphone-off" class="empty-icon" />
             <h4>No Microphones Detected</h4>
             <p>Please connect a USB microphone or ensure your microphone is properly configured.</p>
             <button @click="detectMicrophones" class="retry-button">
-              <AppIcon icon="refresh" />
+              <Icon icon="refresh" />
               Check Again
             </button>
           </div>
@@ -58,7 +58,7 @@
                 @click="selectMicrophone(microphone)"
               >
                 <div class="microphone-info">
-                  <AppIcon icon="tabler/microphone" class="microphone-icon" />
+                  <Icon icon="tabler/microphone" class="microphone-icon" />
                   <div class="microphone-details">
                     <h5>{{ microphone.device_name }}</h5>
                     <p class="microphone-specs">
@@ -69,7 +69,7 @@
                   </div>
                 </div>
                 <div class="microphone-select">
-                  <AppIcon v-if="selectedMicrophone?.card_index === microphone.card_index" icon="checkmark" class="check-icon" />
+                  <Icon v-if="selectedMicrophone?.card_index === microphone.card_index" icon="checkmark" class="check-icon" />
                 </div>
               </div>
             </div>
@@ -79,7 +79,7 @@
         <!-- Step 2: Microphone Positioning -->
         <div v-if="currentStep === 2" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/target" class="step-icon" />
+            <Icon icon="tabler/target" class="step-icon" />
             <div class="step-info">
               <h3>Step 2: Microphone Positioning</h3>
               <p>Position your measurement microphone at your listening position pointing upwards.</p>
@@ -101,7 +101,7 @@
         <!-- Step 3: Audio Level -->
         <div v-if="currentStep === 3" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/volume-2" class="step-icon" />
+            <Icon icon="tabler/volume-2" class="step-icon" />
             <div class="step-info">
               <h3>Step 3: Audio Level</h3>
               <p>Adjust your audio system to the appropriate level for room measurement.</p>
@@ -122,7 +122,7 @@
                     @click="toggleNoise"
                     :class="['nav-button', isNoiseePlaying ? 'danger' : 'primary']"
                   >
-                    <AppIcon :icon="isNoiseePlaying ? 'tabler/player-stop' : 'tabler/player-play'" />
+                    <Icon :icon="isNoiseePlaying ? 'tabler/player-stop' : 'tabler/player-play'" />
                     {{ isNoiseePlaying ? 'Stop Noise' : 'Play Noise' }}
                   </button>
                 </div>
@@ -187,7 +187,7 @@
         <!-- Step 4: Measure Room -->
         <div v-if="currentStep === 4" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/wave-sine" class="step-icon" />
+            <Icon icon="tabler/wave-sine" class="step-icon" />
             <div class="step-info">
               <h3>Step 4: Measure Room</h3>
               <p>Configure measurement parameters and start the room measurement. The system will automatically play test signals and analyze the response.</p>
@@ -247,7 +247,7 @@
               :disabled="isMeasuringRoom"
               @click="startRoomMeasurement"
             >
-              <AppIcon icon="tabler/player-play" />
+              <Icon icon="tabler/player-play" />
               {{ isMeasuringRoom ? 'Measuring…' : 'Start measurement' }}
             </button>
           </div>
@@ -265,7 +265,7 @@
         <!-- Step 5: Save Measurement -->
         <div v-if="currentStep === 5" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/device-floppy" class="step-icon" />
+            <Icon icon="tabler/device-floppy" class="step-icon" />
             <div class="step-info">
               <h3>Step 5: Save Measurement</h3>
               <p>Your room measurement has been recorded and is ready to be used.</p>
@@ -299,11 +299,11 @@
               </div>
             </div>
             <div v-if="isAnalyzingFFT" class="fft-loading">
-              <AppIcon icon="tabler/loader-2" class="fft-loading-icon" />
+              <Icon icon="tabler/loader-2" class="fft-loading-icon" />
               <span>Analyzing frequency response...</span>
             </div>
             <div v-else-if="fftError" class="fft-error">
-              <AppIcon icon="tabler/alert-circle" />
+              <Icon icon="tabler/alert-circle" />
               <span>Error: {{ fftError }}</span>
             </div>
             <div v-else-if="fftData" class="fft-chart">
@@ -363,7 +363,7 @@
       <div class="modal-footer">
         <div class="step-navigation">
           <button v-if="currentStep > 1" @click="previousStep" class="nav-button secondary">
-            <AppIcon icon="arrow-left" />
+            <Icon icon="arrow-left" />
             Previous
           </button>
           <div class="step-indicator">
@@ -376,11 +376,11 @@
             :disabled="!canProceedToNextStep"
           >
             Next
-            <AppIcon icon="arrow-right" />
+            <Icon icon="arrow-right" />
           </button>
           <button v-else-if="currentStep === totalSteps" @click="saveMeasurement" class="nav-button primary">
             Save
-            <AppIcon icon="checkmark" />
+            <Icon icon="checkmark" />
           </button>
         </div>
       </div>
@@ -390,7 +390,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import AppProgressSlider from './AppProgressSlider.vue'
 import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, completeRoomMeasurement, startRoomMeasure, type RoomMeasureRequest, analyzeRoomEQFFTRecording } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'

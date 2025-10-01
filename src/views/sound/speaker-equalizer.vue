@@ -12,12 +12,12 @@
         </div>
       </div>
       <div class="header-actions">
-        <AppIcon icon="link"
+        <Icon icon="link"
           @click="toggleChannelMode"
           title="Channel Mode"
           :class="{ linked: channelMode === 'both' }"
           class="icon-btn" />
-        <AppIcon icon="ear"
+        <Icon icon="ear"
           @mousedown="startBypass"
           @mouseup="endBypass"
           @mouseleave="endBypass"
@@ -26,9 +26,9 @@
           :class="{ bypassed: isBypassed }"
           class="icon-btn"
           title="Bypass" />
-        <AppIcon icon="armchair" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
-        <AppIcon icon="folder_open" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
-        <AppIcon icon="save" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
+        <Icon icon="armchair" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
+        <Icon icon="folder_open" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
+        <Icon icon="save" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
       </div>
     </div>
     <div class="card">
@@ -68,7 +68,7 @@
           <div class="filter-item" :class="{ active: activeFilterId === filter.id }" @click="setActiveFilter(filter.id)">
             <div class="filter-main">
               <div class="filter-info">
-                <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon"
+                <Icon :icon="getFilterIconName(filter.icon)" class="filter-icon"
                   :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
                 <div class="filter-details">
                   <h3 v-if="filter.icon === 'generic_normalized'">
@@ -92,7 +92,7 @@
                   </label>
                 </div>
                 <div class="filter-remove" @click="removeFilter(filter.id)">
-                  <AppIcon icon="close" />
+                  <Icon icon="close" />
                 </div>
               </div>
             </div>
@@ -105,11 +105,11 @@
                     <label>Frequency</label>
                     <div class="control-buttons">
                       <button @click="decrementFilterFrequency(filter)" class="control-btn">
-                        <AppIcon icon="minus-small" />
+                        <Icon icon="minus-small" />
                       </button>
                       <span class="control-value">{{ filter.frequency }} Hz</span>
                       <button @click="incrementFilterFrequency(filter)" class="control-btn">
-                        <AppIcon icon="plus-small" />
+                        <Icon icon="plus-small" />
                       </button>
                     </div>
                   </div>
@@ -118,11 +118,11 @@
                     <label>Gain</label>
                     <div class="control-buttons">
                       <button @click="decrementFilterGain(filter)" class="control-btn">
-                        <AppIcon icon="minus-small" />
+                        <Icon icon="minus-small" />
                       </button>
                       <span class="control-value">{{ filter.gain }} dB</span>
                       <button @click="incrementFilterGain(filter)" class="control-btn">
-                        <AppIcon icon="plus-small" />
+                        <Icon icon="plus-small" />
                       </button>
                     </div>
                   </div>
@@ -131,11 +131,11 @@
                       <label>Q (width)</label>
                       <div class="control-buttons">
                         <button @click="widenFilterBand(filter)" class="control-btn">
-                          <AppIcon icon="minus-small" />
+                          <Icon icon="minus-small" />
                         </button>
                         <span class="control-value">{{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</span>
                         <button @click="narrowFilterBand(filter)" class="control-btn">
-                          <AppIcon icon="plus-small" />
+                          <Icon icon="plus-small" />
                         </button>
                       </div>
                     </div>
@@ -194,7 +194,7 @@
                  @click="canAddFilterToCurrentChannel && (showAddFilterModal = true)">
               <div class="filter-main">
                 <div class="filter-info">
-                  <AppIcon icon="plus" class="filter-icon" />
+                  <Icon icon="plus" class="filter-icon" />
                   <div class="filter-details">
                     <h3>{{ canAddFilterToCurrentChannel ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
                     <div class="filter-frequency">
@@ -225,7 +225,7 @@
             <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
               :class="['filter-type-option']"
               @click="addFilterOfType(type)">
-              <AppIcon :icon="getFilterIconName(type)" class="filter-icon" />
+              <Icon :icon="getFilterIconName(type)" class="filter-icon" />
               <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
             </button>
           </div>
@@ -314,7 +314,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
-import AppIcon from '@/components/AppIcon.vue';
+import Icon from '@/components/Icon.vue';
 import FilterGraph from '@/components/FilterGraph.vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { type Filter } from '@/utils/filtercalc';

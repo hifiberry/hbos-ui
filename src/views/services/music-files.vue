@@ -139,7 +139,7 @@
     </div>
 
     <!-- Add Mount Dialog -->
-    <AppAddSmbMountDialog
+    <AddSmbMountDialog
       :is-open="showAddDialog"
       @close="showAddDialog = false"
       @mount-created="handleMountCreated"
@@ -151,7 +151,7 @@
 import { ref, onMounted } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import AppBackRouter from '@/components/AppBackRouter.vue'
-import AppAddSmbMountDialog from '@/components/AppAddSmbMountDialog.vue'
+import AddSmbMountDialog from '@/components/AddSmbMountDialog.vue'
 import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
 import { useAppConfigStore } from '@/stores/appconfig'
 import { useToastStore } from '@/stores/toast'

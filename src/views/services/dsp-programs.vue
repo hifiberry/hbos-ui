@@ -132,7 +132,7 @@
     </div>
 
     <!-- Deploy Profile Confirmation Dialog -->
-    <AppConfirmationDialog
+    <ConfirmationDialog
       :isOpen="showDeployModal"
       :title="deployModalTitle"
       :message="deployModalMessage"
@@ -151,7 +151,7 @@
 import { ref, onMounted, computed } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import BackRouter from '@/components/BackRouter.vue'
-import AppConfirmationDialog from '@/components/AppConfirmationDialog.vue'
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
 import { detectSoundCard, type SoundCardDetectionResponse } from '@/api/system'
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit'

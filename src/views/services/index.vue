@@ -11,9 +11,6 @@
         <p class="service-description">
           Manage and configure audio players
         </p>
-        <span class="service-link">
-          View Players
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'web-services' }" class="service-card">
@@ -22,9 +19,6 @@
           <h2>Web Services</h2>
         </div>
         <p class="service-description">Connect and manage web-based music services</p>
-        <span class="service-link">
-          View Web Services
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'music-files' }" class="service-card">
@@ -33,9 +27,6 @@
           <h2>Music Files</h2>
         </div>
         <p class="service-description">Mount SMB shares and manage local music directories</p>
-        <span class="service-link">
-          View Music Files
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'dsp-programs' }" class="service-card">
@@ -44,9 +35,6 @@
           <h2>DSP Programs</h2>
         </div>
         <p class="service-description">Download and manage digital signal processing programs</p>
-        <span class="service-link">
-          View DSP Programs
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'dsp-backends' }" class="service-card">
@@ -55,9 +43,6 @@
           <h2>DSP Backends</h2>
         </div>
         <p class="service-description">Select and configure digital signal processing backends</p>
-        <span class="service-link">
-          View DSP Backends
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'system-info' }" class="service-card">
@@ -66,9 +51,6 @@
           <h2>System Information</h2>
         </div>
         <p class="service-description">View system details including Pi model, HAT information, and system UUID</p>
-        <span class="service-link">
-          View System Info
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'system-tools' }" class="service-card warning-card">
@@ -141,22 +123,6 @@ import Icon from '@/components/Icon.vue'
         line-height: 1.5;
       }
 
-      .service-link {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 16px;
-        background: var(--color-primary);
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
-      }
-
-      &:hover .service-link {
-        background: var(--color-primary-dark);
-      }
-
       &.warning-card {
         border-color: var(--color-warning, #f59e0b);
 
@@ -166,14 +132,6 @@ import Icon from '@/components/Icon.vue'
           strong {
             color: var(--color-warning-dark, #d97706);
           }
-        }
-
-        .service-link {
-          background: var(--color-warning, #f59e0b);
-        }
-
-        &:hover .service-link {
-          background: var(--color-warning-dark, #d97706);
         }
       }
     }

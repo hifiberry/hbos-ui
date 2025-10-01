@@ -10,12 +10,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-interface AppProgressTime {
+interface ProgressTime {
   seekPositionTime?: string
   songDurationTime?: string
 }
 
-const { seekPositionTime = '00:00', songDurationTime = '00:00' } = defineProps<AppProgressTime>()
+const { seekPositionTime = '00:00', songDurationTime = '00:00' } = defineProps<ProgressTime>()
 
 const hasSongDurationTime = computed(() => songDurationTime !== '00:00')
 </script>

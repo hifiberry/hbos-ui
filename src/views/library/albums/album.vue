@@ -6,7 +6,7 @@
 
     <div class="grid">
       <div class="col-6-md">
-        <AppAlbumDetailsCard :album="album" :loading="loading" />
+        <AlbumDetailsCard :album="album" :loading="loading" />
       </div>
       <div class="col-6-md">
         <AppTracksCard :tracks="album?.tracks || []" :loading="loading" :album="album" />
@@ -20,7 +20,7 @@ import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import AppBackRouter from '@/components/AppBackRouter.vue'
-import AppAlbumDetailsCard from '@/components/AppAlbumDetailsCard.vue'
+import AlbumDetailsCard from '@/components/AlbumDetailsCard.vue'
 import AppTracksCard from '@/components/AppTracksCard.vue'
 
 import { useRoute } from 'vue-router'

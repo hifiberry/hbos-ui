@@ -1050,9 +1050,9 @@ const fetchDSPProgramInfo = async () => {
   } catch (err) {
     console.error('Error fetching DSP program info:', err)
     const errorMessage = err instanceof Error ? err.message : 'Failed to retrieve DSP program information'
-    
+
     // Check if the error indicates no DSP detected
-    if (errorMessage.includes('DSP software not available') || 
+    if (errorMessage.includes('DSP software not available') ||
         errorMessage.includes('not available') ||
         errorMessage.includes('not detected')) {
       dspProgramError.value = 'No DSP detected'

@@ -142,7 +142,7 @@
       <!-- Albums Section -->
       <div class="albums-section">
         <h2 class="section-header">Albums</h2>
-        <AppPosterGrid
+        <PosterGrid
           :items="sortedAlbumsByReleaseDate"
           :loading="loading"
           :loaded="loaded"
@@ -177,7 +177,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 import BackRouter from '@/components/BackRouter.vue'
-import AppPosterGrid from '@/components/AppPosterGrid.vue'
+import PosterGrid from '@/components/PosterGrid.vue'
 import Icon from '@/components/Icon.vue'
 import ArtistImageSelector from '@/components/ArtistImageSelector.vue'
 

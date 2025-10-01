@@ -12,7 +12,7 @@
       </div>
     </div>
     <div class="card">
-      <AppPosterGrid
+      <PosterGrid
         ref="posterGrid"
         :loading="loading"
         :loaded="loaded"
@@ -38,7 +38,7 @@ const router = useRouter()
 
 import BackRouter from '@/components/BackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
-import AppPosterGrid from '@/components/AppPosterGrid.vue'
+import PosterGrid from '@/components/PosterGrid.vue'
 import AlphabetIndex from '@/components/AlphabetIndex.vue'
 
 import { storeToRefs } from 'pinia'

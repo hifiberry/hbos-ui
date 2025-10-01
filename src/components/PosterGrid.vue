@@ -1,7 +1,7 @@
 <template>
   <div :class="['app-poster-grid']">
     <div :class="['poster-grid', inRow ? 'row' : 'cell']">
-      <AppPosterSkeleton v-if="loading" :posterForm="posterForm" :is-note="isNote" />
+      <PosterSkeleton v-if="loading" :posterForm="posterForm" :is-note="isNote" />
 
       <template v-else>
         <div
@@ -10,7 +10,7 @@
           :data-id="item.$id"
           class="poster-item"
         >
-          <AppPoster
+          <Poster
             :posterForm="posterForm"
             :title="item.$title || ''"
             :subtitle="item.$subtitle || ''"
@@ -43,8 +43,8 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { Ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppPoster from '@/components/AppPoster.vue'
-import AppPosterSkeleton from '@/components/skeletons/AppPosterSkeleton.vue'
+import Poster from '@/components/Poster.vue'
+import PosterSkeleton from '@/components/skeletons/PosterSkeleton.vue'
 import Icon from '@/components/Icon.vue'
 
 import type { PosterItem } from '@/types/library'

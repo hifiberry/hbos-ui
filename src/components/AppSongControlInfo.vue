@@ -45,7 +45,7 @@
     </div>
 
     <div class="song-control-info__controls">
-      <AppAudioControlsHeader v-if="isOnHeader" />
+      <AudioControlsHeader v-if="isOnHeader" />
       <AudioControls v-else isSeparate :isOnSticky="isOnSticky" />
 
       <AppProgressControl v-if="!isOnSticky" isOnHeader isDraggable />
@@ -57,7 +57,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AudioControls from '@/components/AudioControls.vue'
-import AppAudioControlsHeader from '@/components/AppAudioControlsHeader.vue'
+import AudioControlsHeader from '@/components/AudioControlsHeader.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
 import AppCover from '@/components/AppCover.vue'
 import AppMarquee from '@/components/AppMarquee.vue'

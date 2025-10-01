@@ -294,6 +294,43 @@
           </table>
         </div>
 
+        <!-- DSP Program Information -->
+        <div class="info-card">
+          <div class="card-header">
+            <AppIcon icon="processor" class="card-icon" />
+            <h2>DSP Program</h2>
+          </div>
+          <div v-if="dspProgramLoading" class="loading-message">
+            Loading DSP program information...
+          </div>
+          <div v-else-if="dspProgramError" class="info-message">
+            {{ dspProgramError }}
+          </div>
+          <table v-else-if="dspProgramInfo" class="info-table">
+            <tbody>
+              <tr>
+                <td class="label">Program Length</td>
+                <td class="value">{{ dspProgramInfo.program_length }} bytes</td>
+              </tr>
+              <tr v-if="dspProgramInfo.checksums?.md5">
+                <td class="label">MD5 Checksum</td>
+                <td class="value uuid">{{ formatChecksum(dspProgramInfo.checksums.md5) }}</td>
+              </tr>
+              <tr v-if="dspProgramInfo.checksums?.sha1">
+                <td class="label">SHA1 Checksum</td>
+                <td class="value uuid">{{ formatChecksum(dspProgramInfo.checksums.sha1) }}</td>
+              </tr>
+              <tr v-if="!dspProgramInfo.checksums?.md5 && !dspProgramInfo.checksums?.sha1">
+                <td class="label">Checksums</td>
+                <td class="value">Not available</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="info-message">
+            DSP program information not available
+          </div>
+        </div>
+
         <!-- Favourites Information -->
         <div class="info-card">
           <div class="card-header">
@@ -605,6 +642,7 @@ import {
 } from '@/api/system'
 import { getNetworkConfiguration, scanI2CDevices, type NetworkConfiguration, type I2CDeviceInfo } from '@/api/config'
 import { getVolumeInfo, type VolumeInfo } from '@/api/volume'
+import { getDSPProgramInfo, type DSPProgramInfo } from '@/api/dsptoolkit'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
@@ -618,6 +656,11 @@ const systemInfo = ref<SystemInfo | null>(null)
 const volumeInfo = ref<VolumeInfo | null>(null)
 const volumeLoading = ref(false)
 const volumeError = ref('')
+
+// DSP program info state
+const dspProgramInfo = ref<DSPProgramInfo | null>(null)
+const dspProgramLoading = ref(false)
+const dspProgramError = ref('')
 
 // Soundcard editing state
 const isEditingSoundCard = ref(false)
@@ -725,6 +768,12 @@ const formatDuration = (seconds: number): string => {
   } else {
     return `${remainingSeconds}s`
   }
+}
+
+// Format checksum with dashes for better readability
+const formatChecksum = (checksum: string): string => {
+  // Add dashes every 8 characters for MD5/SHA1 checksums
+  return checksum.replace(/(.{8})/g, '$1-').slice(0, -1)
 }
 
 // Format timestamp to relative time
@@ -991,6 +1040,30 @@ const fetchVolumeInfo = async () => {
   }
 }
 
+const fetchDSPProgramInfo = async () => {
+  dspProgramLoading.value = true
+  dspProgramError.value = ''
+
+  try {
+    const data = await getDSPProgramInfo()
+    dspProgramInfo.value = data
+  } catch (err) {
+    console.error('Error fetching DSP program info:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Failed to retrieve DSP program information'
+    
+    // Check if the error indicates no DSP detected
+    if (errorMessage.includes('DSP software not available') || 
+        errorMessage.includes('not available') ||
+        errorMessage.includes('not detected')) {
+      dspProgramError.value = 'No DSP detected'
+    } else {
+      dspProgramError.value = errorMessage
+    }
+  } finally {
+    dspProgramLoading.value = false
+  }
+}
+
 const fetchCacheStats = async () => {
   console.log('fetchCacheStats: Starting...')
   cacheLoading.value = true
@@ -1156,9 +1229,11 @@ const refreshData = async () => {
     fetchCacheStats(),
     fetchBackgroundJobs(),
     fetchNetworkConfiguration(),
-    fetchI2CDevices()
+    fetchI2CDevices(),
+    fetchVolumeInfo(),
+    fetchDSPProgramInfo()
   ]).then(results => {
-    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices']
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info']
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
@@ -1219,10 +1294,14 @@ onMounted(async () => {
     fetchVolumeInfo().then(result => {
       console.log('fetchVolumeInfo result:', result)
       return result
+    }),
+    fetchDSPProgramInfo().then(result => {
+      console.log('fetchDSPProgramInfo result:', result)
+      return result
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {

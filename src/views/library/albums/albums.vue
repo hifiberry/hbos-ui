@@ -3,7 +3,7 @@
     <div class="breadcrumbs">
       <BackRouter :to="{ name: 'library' }">Albums</BackRouter>
       <div class="controls">
-        <AppSortSelector
+        <SortSelector
           :sort-by="sortBy"
           :sort-order="sortOrder"
           @sort-by-change="handleSortByChange"
@@ -40,7 +40,7 @@ import { storeToRefs } from 'pinia'
 
 import BackRouter from '@/components/BackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
-import AppSortSelector from '@/components/AppSortSelector.vue'
+import SortSelector from '@/components/SortSelector.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
 import PosterGrid from '@/components/PosterGrid.vue'

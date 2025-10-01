@@ -26,7 +26,7 @@
           {{ album.tracks_count }} track{{ album.tracks_count !== 1 ? 's' : '' }}
         </div>
         <div class="album-details__listen">
-          <AppListenNow @click="onListenNow" />
+          <ListenNow @click="onListenNow" />
         </div>
       </div>
     </template>
@@ -37,7 +37,7 @@
 import { computed } from 'vue'
 
 import Cover from '@/components/Cover.vue'
-import AppListenNow from '@/components/AppListenNow.vue'
+import ListenNow from '@/components/ListenNow.vue'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
 
 import type { AlbumDetails, Track } from '@/types/library'

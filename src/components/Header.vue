@@ -20,7 +20,7 @@
 
     <!-- Column 3: Volume Control (only show when player controls are visible) -->
     <div v-if="isPlayerControls" class="header-column header-column--volume">
-      <AppVolumeControl size="compact" />
+      <VolumeControl size="compact" />
     </div>
 
     <!-- Spacer 3 (only show when player controls are visible) -->
@@ -46,7 +46,7 @@ const toggleDark = useToggle(isDark)
 const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 
 import SongControlInfo from '@/components/SongControlInfo.vue'
-import AppVolumeControl from '@/components/AppVolumeControl.vue'
+import VolumeControl from '@/components/VolumeControl.vue'
 
 interface HeaderProps {
   isPlayerControls?: boolean

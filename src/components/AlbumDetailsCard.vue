@@ -12,7 +12,7 @@
     </template>
     <template v-if="album && !loading">
       <div class="album-cover">
-        <AppCover :src="albumCover" />
+        <Cover :src="albumCover" />
       </div>
       <div class="album-details">
         <div class="h2">{{ album.name }}</div>
@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import AppCover from '@/components/AppCover.vue'
+import Cover from '@/components/Cover.vue'
 import AppListenNow from '@/components/AppListenNow.vue'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
 

@@ -24,13 +24,13 @@ import { useImage } from '@vueuse/core'
 
 import AppIcon from '@/components/AppIcon.vue'
 
-interface AppCoverProps {
+interface CoverProps {
   src?: string
   alt?: string
   delay?: number
 }
 
-const { src = '', alt = '', delay = 0 } = defineProps<AppCoverProps>()
+const { src = '', alt = '', delay = 0 } = defineProps<CoverProps>()
 
 const imageOptions = deepRef({ src })
 const { isLoading, error } = useImage(imageOptions, { delay: delay })

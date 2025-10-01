@@ -14,7 +14,7 @@
         @mouseleave="showTooltip = false"
         @mousemove="updateTooltipPosition"
       >
-        <AppCoverArt
+        <CoverArt
           class="now-playing__cover"
           :song="song"
           size="large"
@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AppCoverArt from '@/components/AppCoverArt.vue'
+import CoverArt from '@/components/CoverArt.vue'
 import AppProgressControl from '@/components/AppProgressControl.vue'
 import AudioControls from '@/components/AudioControls.vue'
 import AppVolumeControl from '@/components/AppVolumeControl.vue'

@@ -1,6 +1,6 @@
 <template>
   <div class="app-progress-control">
-    <AppProgressTime
+    <ProgressTime
       v-if="!isOnHeader"
       :seekPositionTime="audioControls.seekPositionTime"
       :songDurationTime="audioControls.songDurationTime"
@@ -26,7 +26,7 @@ import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
 import ProgressSlider from '@/components/ProgressSlider.vue'
-import AppProgressTime from '@/components/AppProgressTime.vue'
+import ProgressTime from '@/components/ProgressTime.vue'
 
 interface ProgressControlProps {
   min?: number

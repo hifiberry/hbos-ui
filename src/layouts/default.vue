@@ -1,6 +1,6 @@
 <template>
   <div class="wrapper">
-    <AppHeader :isPlayerControls="isPlayerControls" />
+    <Header :isPlayerControls="isPlayerControls" />
     <AppSidebar :isPlayerControls="isPlayerControls" />
     <main :class="[{ 'no-player-controls': !isPlayerControls }]">
       <router-view v-slot="{ Component }">
@@ -17,7 +17,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 
-import AppHeader from '@/components/AppHeader.vue'
+import Header from '@/components/Header.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 
 const slickPlayerControlsExceptions: string[] = ['now-playing']

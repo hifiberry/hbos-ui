@@ -155,6 +155,9 @@ export const useRadioStore = defineStore('radio', () => {
       if (servers && servers.length > 0) {
         const randomServer = servers[Math.floor(Math.random() * servers.length)]
         radioBrowserBaseUrl.value = `https://${randomServer.name}`
+
+        /* Save item in storage */
+        localStorage.setItem('radioBrowserBaseUrl', radioBrowserBaseUrl.value)
         console.log('Using Radio-Browser API base URL:', radioBrowserBaseUrl.value)
       }
     } catch (error) {

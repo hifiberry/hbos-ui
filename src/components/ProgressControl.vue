@@ -28,7 +28,7 @@ import { useAudioControls } from '@/stores/audio-controls'
 import AppProgressSlider from '@/components/AppProgressSlider.vue'
 import AppProgressTime from '@/components/AppProgressTime.vue'
 
-interface AppProgressControlProps {
+interface ProgressControlProps {
   min?: number
   max?: number
   step?: number
@@ -44,7 +44,7 @@ const {
   hasThumb = true,
   isDraggable = false,
   isOnHeader = false,
-} = defineProps<AppProgressControlProps>()
+} = defineProps<ProgressControlProps>()
 
 const { isSendingCommand, playerCapabilities: caps } = storeToRefs(usePlayerStore())
 const audioControls = useAudioControls()

@@ -48,7 +48,7 @@
       <AudioControlsHeader v-if="isOnHeader" />
       <AudioControls v-else isSeparate :isOnSticky="isOnSticky" />
 
-      <AppProgressControl v-if="!isOnSticky" isOnHeader isDraggable />
+      <ProgressControl v-if="!isOnSticky" isOnHeader isDraggable />
     </div>
   </div>
 </template>
@@ -58,7 +58,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AudioControls from '@/components/AudioControls.vue'
 import AudioControlsHeader from '@/components/AudioControlsHeader.vue'
-import AppProgressControl from '@/components/AppProgressControl.vue'
+import ProgressControl from '@/components/ProgressControl.vue'
 import Cover from '@/components/Cover.vue'
 import AppMarquee from '@/components/AppMarquee.vue'
 import MetadataTooltip from '@/components/MetadataTooltip.vue'

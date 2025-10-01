@@ -160,7 +160,7 @@
     </div>
 
     <!-- Artist Image Selector Modal -->
-    <AppArtistImageSelector
+    <ArtistImageSelector
       :is-visible="showImageSelector"
       :artist-name="artistByName?.name || ''"
       @close="showImageSelector = false"
@@ -179,7 +179,7 @@ const router = useRouter()
 import AppBackRouter from '@/components/AppBackRouter.vue'
 import AppPosterGrid from '@/components/AppPosterGrid.vue'
 import AppIcon from '@/components/AppIcon.vue'
-import AppArtistImageSelector from '@/components/AppArtistImageSelector.vue'
+import ArtistImageSelector from '@/components/ArtistImageSelector.vue'
 
 import { updateArtistImage } from '@/api/coverart'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'

@@ -108,7 +108,7 @@
     </div>
 
     <!-- Edit Popup -->
-    <AppRadioEditPopup :is-visible="showEditPopup" :station="editingStation" @close="closeEditPopup"
+    <RadioEditPopup :is-visible="showEditPopup" :station="editingStation" @close="closeEditPopup"
       @save="saveEditedStation" />
   </div>
 </template>
@@ -120,7 +120,7 @@ import Icon from '@/components/Icon.vue'
 import BackRouter from '@/components/BackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppMarquee from '@/components/AppMarquee.vue'
-import AppRadioEditPopup from '@/components/AppRadioEditPopup.vue'
+import RadioEditPopup from '@/components/RadioEditPopup.vue'
 import { useRadioStore, type RadioStation, type RadioFavorite } from '@/stores/radio'
 
 const radioStore = useRadioStore()

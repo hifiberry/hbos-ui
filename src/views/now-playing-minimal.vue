@@ -42,7 +42,7 @@
 
       <!-- Volume control -->
       <div class="now-playing__volume">
-        <AppVolumeControl size="wide" />
+        <VolumeControl size="wide" />
       </div>
     </div>
 
@@ -58,7 +58,7 @@ import { ref, computed } from 'vue'
 import CoverArt from '@/components/CoverArt.vue'
 import ProgressControl from '@/components/ProgressControl.vue'
 import AudioControls from '@/components/AudioControls.vue'
-import AppVolumeControl from '@/components/AppVolumeControl.vue'
+import VolumeControl from '@/components/VolumeControl.vue'
 import MetadataTooltip from '@/components/MetadataTooltip.vue'
 
 import { storeToRefs } from 'pinia'

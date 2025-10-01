@@ -9,7 +9,7 @@
         <AlbumDetailsCard :album="album" :loading="loading" />
       </div>
       <div class="col-6-md">
-        <AppTracksCard :tracks="album?.tracks || []" :loading="loading" :album="album" />
+        <TracksCard :tracks="album?.tracks || []" :loading="loading" :album="album" />
       </div>
     </div>
   </div>
@@ -21,7 +21,7 @@ import { storeToRefs } from 'pinia'
 
 import BackRouter from '@/components/BackRouter.vue'
 import AlbumDetailsCard from '@/components/AlbumDetailsCard.vue'
-import AppTracksCard from '@/components/AppTracksCard.vue'
+import TracksCard from '@/components/TracksCard.vue'
 
 import { useRoute } from 'vue-router'
 const route = useRoute()

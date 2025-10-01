@@ -71,16 +71,16 @@ All icons are sourced from [Lucide Icons](https://lucide.dev/) with the followin
 
 ## Usage
 
-Icons should be used with the `AppIcon` component:
+Icons should be used with the `Icon` component:
 
 ```vue
-<AppIcon icon="lucide/play" />
+<Icon icon="lucide/play" />
 ```
 
 ### With Custom Stroke Width
 
 ```vue
-<AppIcon icon="lucide/play" class="stroke-thin" />
+<Icon icon="lucide/play" class="stroke-thin" />
 ```
 
 ```css

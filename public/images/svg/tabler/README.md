@@ -62,10 +62,10 @@ Tabler Icons is a set of 4,000+ free SVG icons designed specifically for web int
 
 ## Usage
 
-Icons should be used with the `AppIcon` component:
+Icons should be used with the `Icon` component:
 
 ```vue
-<AppIcon icon="tabler/player-play" />
+<Icon icon="tabler/player-play" />
 ```
 
 ## Stroke Width Customization

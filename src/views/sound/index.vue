@@ -5,57 +5,45 @@
     <div class="settings-overview">
       <router-link :to="{ name: 'general-sound' }" class="service-card">
         <div class="service-header">
-          <AppIcon icon="tabler/adjustments" class="service-icon" />
+          <Icon icon="tabler/adjustments" class="service-icon" />
           <h2>General sound settings</h2>
         </div>
         <p class="service-description">
           Configure global sound options and defaults for your system
         </p>
-        <span class="service-link">
-          Open General Settings
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'speaker-equalizer' }" class="service-card">
         <div class="service-header">
-          <AppIcon icon="tabler/speaker" class="service-icon" />
+          <Icon icon="tabler/speaker" class="service-icon" />
           <h2>Speaker Equalizer</h2>
         </div>
         <p class="service-description">
           Advanced parametric equalizer with individual filter control and bypass functionality
         </p>
-        <span class="service-link">
-          Open Equalizer
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'crossover-design' }" class="service-card">
         <div class="service-header">
-          <AppIcon icon="tabler/crossover" class="service-icon" />
+          <Icon icon="tabler/crossover" class="service-icon" />
           <h2>Crossover Design</h2>
         </div>
         <p class="service-description">Configure frequency separation and phase alignment for multi-way speaker systems</p>
-        <span class="service-link">
-          Open Crossover Design
-        </span>
       </router-link>
 
       <router-link :to="{ name: 'room-acoustics' }" class="service-card">
         <div class="service-header">
-          <AppIcon icon="tabler/armchair" class="service-icon" />
+          <Icon icon="tabler/armchair" class="service-icon" />
           <h2>Room Acoustics Correction</h2>
         </div>
         <p class="service-description">Automatically analyze and correct room acoustics for optimal sound reproduction</p>
-        <span class="service-link">
-          Open Room Correction
-        </span>
       </router-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/app-icon.vue'
+import Icon from '@/components/Icon.vue'
 </script>
 
 <style scoped lang="scss">
@@ -109,22 +97,6 @@ import AppIcon from '@/components/app-icon.vue'
         color: var(--color-body-secondary);
         margin-bottom: 20px;
         line-height: 1.5;
-      }
-
-      .service-link {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 16px;
-        background: var(--color-primary);
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
-      }
-
-      &:hover .service-link {
-        background: var(--color-primary-dark);
       }
     }
   }

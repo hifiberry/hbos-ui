@@ -5,7 +5,7 @@
     <!-- Show message when current player doesn't support playlists -->
     <div v-if="!playerCapabilities.hasQueue" class="playlist-no-support">
       <div class="empty-state">
-        <AppIcon icon="playlist-light" class="empty-icon" />
+        <Icon icon="playlist-light" class="empty-icon" />
         <h2>No queue support</h2>
         <p>The current player does not support queue functionality</p>
       </div>
@@ -33,7 +33,7 @@
       <!-- Empty playlist -->
       <div v-else-if="queue.length === 0" class="playlist-empty">
         <div class="empty-state">
-          <AppIcon icon="playlist-light" class="empty-icon" />
+          <Icon icon="playlist-light" class="empty-icon" />
           <h2>Your queue is empty</h2>
           <p>Add songs from your library to create your queue</p>
         </div>
@@ -71,7 +71,7 @@
               class="track-item__remove"
               title="Remove from queue"
             >
-              <AppIcon icon="clear" />
+              <Icon icon="clear" />
             </button>
           </div>
         </div>
@@ -85,8 +85,8 @@ import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { usePlaylistStore } from '@/stores/playlist'
-import AppIcon from '@/components/app-icon.vue'
-import AppSkeleton from '@/components/skeletons/app-skeleton.vue'
+import Icon from '@/components/Icon.vue'
+import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
 
 import type { Track } from '@/types/library'
 

@@ -7,7 +7,7 @@
         <h2>Artists</h2>
         <router-link v-if="artists.length > 0" :to="{ name: 'artists' }" class="text-link">View All</router-link>
       </div>
-      <AppPosterGrid :loading="loadingArtists" :loaded="loadedArtists" :items="artists" poster-form="circle" in-row
+      <PosterGrid :loading="loadingArtists" :loaded="loadedArtists" :items="artists" poster-form="circle" in-row
         @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })" />
     </div>
 
@@ -18,7 +18,7 @@
           All</router-link>
       </div>
 
-      <AppPosterGrid :loading="loadingAlbums" :loaded="loadedAlbums" :items="sortedAlbumsByReleaseDate" in-row
+      <PosterGrid :loading="loadingAlbums" :loaded="loadedAlbums" :items="sortedAlbumsByReleaseDate" in-row
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })" />
     </div>
 
@@ -29,11 +29,11 @@
       </div>
 
       <div v-if="favoritesList.length === 0 && loaded" class="empty-state">
-        <AppIcon icon="radio" class="empty-icon" />
+        <Icon icon="radio" class="empty-icon" />
         <p>No favorite radio stations saved</p>
       </div>
 
-      <AppPosterGrid v-else :loading="loading" :loaded="loaded" :items="favoriteStationsForDisplay" in-row
+      <PosterGrid v-else :loading="loading" :loaded="loaded" :items="favoriteStationsForDisplay" in-row
         @click="playStation" />
     </div>
   </div>
@@ -85,8 +85,8 @@ const playStation = async (station: { $id?: string }) => {
 }
 
 import { useAlbumStore } from '@/stores/album'
-import AppPosterGrid from '@/components/app-poster-grid.vue'
-import AppIcon from '@/components/app-icon.vue'
+import PosterGrid from '@/components/PosterGrid.vue'
+import Icon from '@/components/Icon.vue'
 const albumStore = useAlbumStore()
 const {
   sortedAlbumsByReleaseDate,

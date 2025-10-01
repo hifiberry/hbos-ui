@@ -54,8 +54,8 @@ await loadCoverArt(song)
 ### Vue Components
 Ready-to-use components for displaying cover art:
 
-- **`app-cover-art.vue`**: Simple, reusable cover art component
-- **`app-cover-art-example.vue`**: Comprehensive example with testing interface
+- **`CoverArt.vue`**: Simple, reusable cover art component
+- **`CoverArtExample.vue`**: Comprehensive example with testing interface
 
 ## Usage Examples
 
@@ -90,7 +90,7 @@ watch(() => playerStore.currentSong, async (song) => {
 
 ```vue
 <template>
-  <app-cover-art 
+  <CoverArt 
     :song="currentSong" 
     size="large" 
     @loaded="onCoverArtLoaded"
@@ -99,7 +99,7 @@ watch(() => playerStore.currentSong, async (song) => {
 </template>
 
 <script setup>
-import AppCoverArt from '@/components/app-cover-art.vue'
+import CoverArt from '@/components/CoverArt.vue'
 
 const onCoverArtLoaded = (result) => {
   console.log('Cover art loaded:', result.urls.length, 'from', result.source)
@@ -167,7 +167,7 @@ The system handles errors gracefully:
 
 ## Testing
 
-Use the example component (`app-cover-art-example.vue`) to test the system:
+Use the example component (`CoverArtExample.vue`) to test the system:
 
 1. Add the component to a test page
 2. Enter song metadata in the test form

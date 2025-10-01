@@ -80,7 +80,7 @@
     </div>
 
     <!-- Reset System Confirmation Dialog -->
-    <AppConfirmationDialog
+    <ConfirmationDialog
       :is-open="showResetConfirmation"
       title="Reset System"
       message="Are you sure you want to reset the system to factory defaults?
@@ -101,7 +101,7 @@ This action CANNOT BE UNDONE!"
     />
 
     <!-- Auto-detect Sound Card Confirmation Dialog -->
-    <AppConfirmationDialog
+    <ConfirmationDialog
       :is-open="showDetectConfirmation"
       title="Auto-detect Sound Card"
       :message="getDetectConfirmationMessage()"
@@ -113,7 +113,7 @@ This action CANNOT BE UNDONE!"
     />
 
     <!-- Reboot Confirmation Dialog -->
-    <AppConfirmationDialog
+    <ConfirmationDialog
       :is-open="showRebootConfirmation"
       title="Reboot Required"
       message="Sound card configuration completed. The system needs to be rebooted for changes to take effect.
@@ -134,7 +134,7 @@ import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppIcon from '@/components/AppIcon.vue'
 import BackRouter from '@/components/BackRouter.vue'
-import AppConfirmationDialog from '@/components/AppConfirmationDialog.vue'
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
 import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay } from '@/api/system'

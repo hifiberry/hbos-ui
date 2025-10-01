@@ -14,7 +14,7 @@
       <div class="tool-section">
         <div class="tool-card reset-tool">
           <div class="tool-info">
-            <AppIcon icon="reset" class="tool-icon" />
+            <Icon icon="reset" class="tool-icon" />
             <div class="tool-details">
               <h3>Reset System</h3>
               <p class="tool-description">
@@ -34,7 +34,7 @@
       <div class="tool-section">
         <div class="tool-card detect-tool">
           <div class="tool-info">
-            <AppIcon icon="search" class="tool-icon" />
+            <Icon icon="search" class="tool-icon" />
             <div class="tool-details">
               <h3>Auto-detect Sound Card</h3>
               <p class="tool-description">
@@ -54,7 +54,7 @@
       <div class="tool-section">
         <div class="tool-card expert-tool">
           <div class="tool-info">
-            <AppIcon icon="tabler/user-star" class="tool-icon" />
+            <Icon icon="tabler/user-star" class="tool-icon" />
             <div class="tool-details">
               <h3>Expert Mode</h3>
               <p class="tool-description">
@@ -132,7 +132,7 @@ Would you like to reboot now?"
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import BackRouter from '@/components/BackRouter.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'

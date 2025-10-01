@@ -4,7 +4,7 @@
       <div class="modal-header">
         <h2>Room Equalisation Wizard</h2>
         <button @click="closeWizard" class="close-button" title="Close">
-          <AppIcon icon="close" />
+          <Icon icon="close" />
         </button>
       </div>
 
@@ -12,7 +12,7 @@
         <!-- Step 1: Review Frequency Response -->
         <div v-if="currentStep === 1" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/wave-sine" class="step-icon" />
+            <Icon icon="tabler/wave-sine" class="step-icon" />
             <div class="step-info">
               <h3>Step 1: Review Frequency Response</h3>
               <p>Preview the measured response before creating correction filters.</p>
@@ -63,7 +63,7 @@
   <!-- Step 2: Equalisation Options -->
   <div v-if="currentStep === 2" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/settings" class="step-icon" />
+            <Icon icon="tabler/settings" class="step-icon" />
             <div class="step-info">
               <h3>Step 2: Equalisation Options</h3>
               <p>Choose how to generate the correction filters for your room.</p>
@@ -139,7 +139,7 @@
         <!-- Step 3: Optimisation Setup -->
         <div v-if="currentStep === 3" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/settings-cog" class="step-icon" />
+            <Icon icon="tabler/settings-cog" class="step-icon" />
             <div class="step-info">
               <h3>Step 3: Optimisation Setup</h3>
               <p>Configure optimisation settings and review frequency response.</p>
@@ -232,10 +232,10 @@
               <h4>Usable Frequency Range</h4>
               <div class="range-status">
                 <span v-if="loadingUsableRange" class="status-loading">
-                  <AppIcon icon="tabler/loader" class="spinning" /> Detecting...
+                  <Icon icon="tabler/loader" class="spinning" /> Detecting...
                 </span>
                 <span v-else-if="usableRangeError" class="status-error">
-                  <AppIcon icon="tabler/alert-circle" /> {{ usableRangeError }}
+                  <Icon icon="tabler/alert-circle" /> {{ usableRangeError }}
                 </span>
               </div>
             </div>
@@ -252,10 +252,10 @@
           @keydown="onLogStepKeydown('min', $event)" />
                   <div class="stepper" aria-hidden="true">
                     <button type="button" class="step-btn" @click.prevent="stepLog('min','up')" title="Increase (1/6 octave)">
-                      <AppIcon icon="caret-up" :width="14" :height="14" />
+                      <Icon icon="caret-up" :width="14" :height="14" />
                     </button>
                     <button type="button" class="step-btn" @click.prevent="stepLog('min','down')" title="Decrease (1/6 octave)">
-                      <AppIcon icon="caret-down" :width="14" :height="14" />
+                      <Icon icon="caret-down" :width="14" :height="14" />
                     </button>
                   </div>
                   <span class="suffix">Hz</span>
@@ -271,10 +271,10 @@
           @keydown="onLogStepKeydown('max', $event)" />
                   <div class="stepper" aria-hidden="true">
                     <button type="button" class="step-btn" @click.prevent="stepLog('max','up')" title="Increase (1/6 octave)">
-                      <AppIcon icon="caret-up" :width="14" :height="14" />
+                      <Icon icon="caret-up" :width="14" :height="14" />
                     </button>
                     <button type="button" class="step-btn" @click.prevent="stepLog('max','down')" title="Decrease (1/6 octave)">
-                      <AppIcon icon="caret-down" :width="14" :height="14" />
+                      <Icon icon="caret-down" :width="14" :height="14" />
                     </button>
                   </div>
                   <span class="suffix">Hz</span>
@@ -315,7 +315,7 @@
         <!-- Step 4: Run Optimisation -->
         <div v-if="currentStep === 4" class="step-content">
           <div class="step-header">
-            <AppIcon icon="tabler/sliders" class="step-icon" />
+            <Icon icon="tabler/sliders" class="step-icon" />
             <div class="step-info">
               <h3>Step 4: Run Optimisation</h3>
               <p>Run optimisation to generate filters based on your measurement and target.</p>
@@ -415,7 +415,7 @@
           </div>
 
           <div v-if="optimizedFilters.length === 0" class="no-filters-message">
-            <AppIcon icon="tabler/info-circle" class="info-icon" />
+            <Icon icon="tabler/info-circle" class="info-icon" />
             <p>No correction filters were generated. The optimization process may still be running or no filters were needed.</p>
           </div>
 
@@ -577,12 +577,12 @@
             </div>
 
             <div v-if="saveError" class="error-message">
-              <AppIcon icon="tabler/alert-circle" />
+              <Icon icon="tabler/alert-circle" />
               <span>{{ saveError }}</span>
             </div>
 
             <div v-if="saveSuccess" class="success-message">
-              <AppIcon icon="tabler/check-circle" />
+              <Icon icon="tabler/check-circle" />
               <span>Configuration saved successfully as "{{ savedConfigName }}"</span>
             </div>
           </div>
@@ -592,18 +592,18 @@
       <div class="modal-footer">
         <div class="step-navigation">
           <button v-if="currentStep > 1" @click="previousStep" class="nav-button secondary">
-            <AppIcon icon="arrow-left" />
+            <Icon icon="arrow-left" />
             Previous
           </button>
           <div class="step-indicator">Step {{ currentStep }} of {{ totalSteps }}</div>
           <button v-if="currentStep < totalSteps" @click="nextStep" class="nav-button primary"
                   :disabled="currentStep === 4 && !canProceedToStep5">
             {{ currentStep === 3 ? 'Start' : currentStep === 4 && !canProceedToStep5 ? 'Processing...' : 'Next' }}
-            <AppIcon icon="arrow-right" />
+            <Icon icon="arrow-right" />
           </button>
           <button v-else @click="saveConfiguration" :disabled="savingConfiguration" class="nav-button primary">
-            <AppIcon v-if="savingConfiguration" icon="spinner" class="spinning" />
-            <AppIcon v-else icon="save" />
+            <Icon v-if="savingConfiguration" icon="spinner" class="spinning" />
+            <Icon v-else icon="save" />
             {{ savingConfiguration ? 'Saving...' : 'Save' }}
           </button>
         </div>
@@ -614,7 +614,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import type { RoomMeasurement } from '@/stores/settings'
 import { getRoomEQTargetPresets, type RoomEQTargetPoint, detectUsableFrequencyRange, type RoomEQUsableRangeResult } from '@/api/roomeq'
 import { setConfigValue } from '@/api/config'

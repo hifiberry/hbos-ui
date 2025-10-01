@@ -4,7 +4,7 @@
       <div class="page-header">
         <h1>Room Acoustics Correction</h1>
         <button @click="startMeasurement" class="measure-button" title="Start Room Measurement">
-          <AppIcon icon="tabler/microphone" />
+          <Icon icon="tabler/microphone" />
           Measure Room
         </button>
       </div>
@@ -29,7 +29,7 @@
                 </p>
               </div>
               <button @click.stop="deleteMeasurement(measurement.id)" class="delete-button" title="Delete Measurement">
-                <AppIcon icon="close" />
+                <Icon icon="close" />
               </button>
             </div>
             <div class="measurement-preview">
@@ -71,7 +71,7 @@
                 </p>
               </div>
               <button @click.stop="deleteEqualisationConfig(config.key)" class="delete-button" title="Delete Configuration">
-                <AppIcon icon="close" />
+                <Icon icon="close" />
               </button>
             </div>
             <div class="equalisation-response">
@@ -92,7 +92,7 @@
       <!-- Empty State -->
       <div v-if="measurements.length === 0 && equalisationConfigs.length === 0" class="card">
         <div class="empty-state">
-          <AppIcon icon="tabler/armchair" class="empty-icon" />
+          <Icon icon="tabler/armchair" class="empty-icon" />
           <h3>Room Acoustics Correction</h3>
           <p>Use the "Measure Room" button above to start the acoustic measurement wizard. This will help you analyze and correct room acoustics for optimal sound reproduction.</p>
         </div>
@@ -120,7 +120,7 @@
         <div class="modal-header">
           <h2>Apply Room EQ Configuration</h2>
           <button @click="closeChannelSelectionDialog" class="close-button" title="Close">
-            <AppIcon icon="close" />
+            <Icon icon="close" />
           </button>
         </div>
 
@@ -178,7 +178,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import AppRoomMeasurementWizard from '@/components/AppRoomMeasurementWizard.vue'
 import AppRoomEqualisationWizard from '@/components/AppRoomEqualisationWizard.vue'
 import { useSettingsStore, type RoomMeasurement } from '@/stores/settings'

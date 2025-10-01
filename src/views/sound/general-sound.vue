@@ -7,7 +7,7 @@
         <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/volume" class="setting-icon" />
+              <Icon icon="tabler/volume" class="setting-icon" />
               <div class="setting-title">
                 <h3>Volume limit</h3>
               </div>
@@ -35,7 +35,7 @@
         <div class="setting-item" title="Your sound card doesn't support headphones">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/headphones" class="setting-icon" />
+              <Icon icon="tabler/headphones" class="setting-icon" />
               <div class="setting-title">
                 <h3>Headphone volume</h3>
               </div>
@@ -61,7 +61,7 @@
         <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/caret-left-right" class="setting-icon" />
+              <Icon icon="tabler/caret-left-right" class="setting-icon" />
               <div class="setting-title">
                 <h3>Balance</h3>
               </div>
@@ -89,7 +89,7 @@
         <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
-              <AppIcon icon="tabler/speaker" class="setting-icon" />
+              <Icon icon="tabler/speaker" class="setting-icon" />
               <div class="setting-title">
                 <h3>Mode</h3>
               </div>
@@ -146,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import AppProgressSlider from '@/components/AppProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'

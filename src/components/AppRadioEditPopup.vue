@@ -4,7 +4,7 @@
       <div class="popup-header">
         <h3>Edit Radio Station</h3>
         <button class="close-btn" @click="closePopup">
-          <AppIcon icon="clear" />
+          <Icon icon="clear" />
         </button>
       </div>
 
@@ -28,11 +28,11 @@
                 class="preview-image"
               />
               <div v-else class="preview-placeholder">
-                <AppIcon icon="plus" />
+                <Icon icon="plus" />
                 <span>Click to upload image</span>
               </div>
               <div class="image-overlay">
-                <AppIcon icon="plus" />
+                <Icon icon="plus" />
               </div>
             </div>
           </div>
@@ -95,7 +95,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import type { RadioFavorite } from '@/stores/radio'
 
 interface Props {

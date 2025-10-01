@@ -4,7 +4,7 @@
       <div class="modal-header">
         <h2>Add SMB Mount</h2>
         <button @click="closeDialog" class="close-button" title="Close">
-          <AppIcon icon="close" />
+          <Icon icon="close" />
         </button>
       </div>
 
@@ -22,16 +22,16 @@
           <div v-else-if="serverError" class="error-section">
             <p class="error-message">{{ serverError }}</p>
             <button @click="discoverServers" class="retry-button">
-              <AppIcon icon="refresh" />
+              <Icon icon="refresh" />
               Retry
             </button>
           </div>
 
           <div v-else-if="servers.length === 0" class="empty-section">
-            <AppIcon icon="network" class="empty-icon" />
+            <Icon icon="network" class="empty-icon" />
             <p>No SMB servers found on your network.</p>
             <button @click="discoverServers" class="retry-button">
-              <AppIcon icon="refresh" />
+              <Icon icon="refresh" />
               Scan Again
             </button>
             <p class="help-text">
@@ -61,7 +61,7 @@
                 @click="selectServer(server)"
               >
                 <div class="server-info">
-                  <AppIcon icon="nas" class="server-icon" />
+                  <Icon icon="nas" class="server-icon" />
                   <div class="server-details">
                     <h5>{{ server.hostname }}</h5>
                     <p>{{ server.ip }}</p>
@@ -69,7 +69,7 @@
                   </div>
                 </div>
                 <div class="server-select">
-                  <AppIcon v-if="selectedServer?.ip === server.ip" icon="checkmark" />
+                  <Icon v-if="selectedServer?.ip === server.ip" icon="checkmark" />
                 </div>
               </div>
             </div>
@@ -141,13 +141,13 @@
           <div v-else-if="shareError" class="error-section">
             <p class="error-message">{{ shareError }}</p>
             <button @click="loadShares" class="retry-button">
-              <AppIcon icon="refresh" />
+              <Icon icon="refresh" />
               Retry
             </button>
           </div>
 
           <div v-else-if="shares.length === 0" class="empty-section">
-            <AppIcon icon="material/folder-outlined" class="empty-icon" />
+            <Icon icon="material/folder-outlined" class="empty-icon" />
             <p>No shares found on this server.</p>
           </div>
 
@@ -162,7 +162,7 @@
                 @click="selectShare(share)"
               >
                 <div class="share-info">
-                  <AppIcon icon="material/folder-outlined" class="share-icon" />
+                  <Icon icon="material/folder-outlined" class="share-icon" />
                   <div class="share-details">
                     <h5>{{ share.name }}</h5>
                     <p v-if="share.comment">{{ share.comment }}</p>
@@ -170,7 +170,7 @@
                   </div>
                 </div>
                 <div class="share-select">
-                  <AppIcon v-if="selectedShare?.name === share.name" icon="checkmark" />
+                  <Icon v-if="selectedShare?.name === share.name" icon="checkmark" />
                 </div>
               </div>
             </div>
@@ -239,7 +239,7 @@
             @click="goToPreviousStep"
             class="btn btn-secondary"
           >
-            <AppIcon icon="chevron-left" />
+            <Icon icon="chevron-left" />
             Back
           </button>
 
@@ -250,7 +250,7 @@
             class="btn btn-primary"
           >
             Next
-            <AppIcon icon="chevron-right" />
+            <Icon icon="chevron-right" />
           </button>
 
           <button
@@ -259,7 +259,7 @@
             :disabled="!canCreateMount || mounting"
             class="btn btn-primary"
           >
-            <AppIcon icon="plus" />
+            <Icon icon="plus" />
             Create Mount
           </button>
         </div>
@@ -270,7 +270,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import {
   getSmbServers,
   testSmbServer,

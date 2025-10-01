@@ -4,14 +4,14 @@
       <div class="modal-header">
         <h2>{{ title }}</h2>
         <button @click="closeDialog" class="close-button" title="Close">
-          <AppIcon icon="close" />
+          <Icon icon="close" />
         </button>
       </div>
 
       <div class="modal-body">
         <div class="confirmation-content">
           <div v-if="icon" class="confirmation-icon">
-            <AppIcon :icon="icon" class="dialog-icon" />
+            <Icon :icon="icon" class="dialog-icon" />
           </div>
           <div class="confirmation-text">
             <p v-for="line in messageLines" :key="line" class="message-line"
@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 interface Props {
   isOpen: boolean

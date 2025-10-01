@@ -4,7 +4,7 @@
       <div class="service-item">
         <div class="service-main">
           <div class="service-info">
-            <AppIcon icon="database" class="service-icon" />
+            <Icon icon="database" class="service-icon" />
             <div class="service-details">
               <h3>MusicBrainz</h3>
               <p class="service-description">MusicBrainz is used to retrieve additional artist, song and album metadata</p>
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 // No configuration or state management needed for MusicBrainz
 // It's a read-only metadata service

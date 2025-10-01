@@ -1,14 +1,14 @@
 <template>
   <button class="app-listen-now" @click="emit('click')">
     <span class="listen-now-icon">
-      <AppIcon icon="play" />
+      <Icon icon="play" />
     </span>
     <span class="listen-now-text">Listen Now</span>
   </button>
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 const emit = defineEmits(['click'])
 </script>

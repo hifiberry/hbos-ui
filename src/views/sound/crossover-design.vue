@@ -4,7 +4,7 @@
       <h1>Crossover Design</h1>
       <div class="header-actions">
         <button class="btn" @click="refresh">
-          <AppIcon icon="refresh" />
+          <Icon icon="refresh" />
           <span>Refresh</span>
         </button>
       </div>
@@ -46,7 +46,7 @@
         </div>
         <div class="right">
           <button class="btn primary" :disabled="!canAddFilter" @click="showAddFilterModal = true">
-            <AppIcon icon="plus" />
+            <Icon icon="plus" />
             <span>Add Filter</span>
           </button>
         </div>
@@ -57,7 +57,7 @@
           <div class="filter-item" :class="{ active: activeFilterId === filter.id }" @click="setActiveFilter(filter.id)">
             <div class="filter-main">
               <div class="filter-info">
-                <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon" :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
+                <Icon :icon="getFilterIconName(filter.icon)" class="filter-icon" :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
                 <div class="filter-details">
                   <h3 v-if="filter.icon === 'generic_normalized'">
                     {{ formatFilterTypeName(filter.icon) }} |
@@ -84,10 +84,10 @@
               <button class="btn sm" @click="widenFilterBand(filter)">−Q</button>
               <button class="btn sm" @click="narrowFilterBand(filter)">+Q</button>
               <button class="btn sm" @click="toggleFilterEnabled(filter)">
-                <AppIcon :icon="filter.enabled ? 'eye' : 'eye-off'" />
+                <Icon :icon="filter.enabled ? 'eye' : 'eye-off'" />
               </button>
               <button class="btn sm danger" @click="removeFilter(filter.id)">
-                <AppIcon icon="trash" />
+                <Icon icon="trash" />
               </button>
             </div>
           </div>
@@ -97,7 +97,7 @@
           <div class="filter-item add-filter-item">
             <div class="filter-main">
               <div class="filter-info">
-                <AppIcon icon="plus" class="filter-icon" />
+                <Icon icon="plus" class="filter-icon" />
                 <div class="filter-details">
                   <h3>{{ canAddFilter ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
                   <div class="filter-frequency">
@@ -128,7 +128,7 @@
             <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
               :class="['filter-type-option']"
               @click="addFilterOfType(type)">
-              <AppIcon :icon="getFilterIconName(type)" class="filter-icon" />
+              <Icon :icon="getFilterIconName(type)" class="filter-icon" />
               <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
             </button>
           </div>
@@ -140,7 +140,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector'
 import { type Filter } from '@/utils/filtercalc'

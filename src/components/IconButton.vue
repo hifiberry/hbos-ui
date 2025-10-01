@@ -1,11 +1,11 @@
 <template>
   <button :disabled>
-    <AppIcon v-bind="$attrs" />
+    <Icon v-bind="$attrs" />
   </button>
 </template>
 
 <script setup lang="ts">
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 defineOptions({
   inheritAttrs: false,

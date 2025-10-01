@@ -31,7 +31,7 @@
                 loading="lazy"
                 @error="onImageError"
               />
-              <AppIcon v-else icon="radio" class="station-poster-placeholder" />
+              <Icon v-else icon="radio" class="station-poster-placeholder" />
             </div>
             <div class="station-poster-attr">
               <div class="station-title">
@@ -49,7 +49,7 @@
             <div class="station-actions">
               <button class="favorite-btn active" @click.stop="removeFromFavorites(favorite.id)"
                 title="Remove from favorites">
-                <AppIcon icon="clear" />
+                <Icon icon="clear" />
               </button>
             </div>
           </div>
@@ -61,7 +61,7 @@
         <h2>Search Results</h2>
 
         <div v-if="loading" class="loading-state">
-          <AppIcon icon="loading" />
+          <Icon icon="loading" />
           <p>Searching stations...</p>
         </div>
 
@@ -74,7 +74,7 @@
           <div v-for="station in searchResults" :key="station.id" class="station-poster" @click="playStation(station)">
             <div class="station-poster-img">
               <img v-if="station.image" :src="station.image" :alt="station.name" loading="lazy" @error="onImageError" />
-              <AppIcon v-else icon="radio" class="station-poster-placeholder" />
+              <Icon v-else icon="radio" class="station-poster-placeholder" />
             </div>
             <div class="station-poster-attr">
               <div class="station-title">
@@ -92,7 +92,7 @@
             <div class="station-actions">
               <button :class="['favorite-btn', { active: station.isFavorite }]" @click.stop="toggleFavorite(station)"
                 :title="station.isFavorite ? 'Remove from favorites' : 'Add to favorites'">
-                <AppIcon :icon="station.isFavorite ? 'clear' : 'plus'" />
+                <Icon :icon="station.isFavorite ? 'clear' : 'plus'" />
               </button>
             </div>
           </div>
@@ -101,7 +101,7 @@
 
       <!-- Empty State -->
       <div v-if="!hasFavorites && !hasSearched" class="empty-state">
-        <AppIcon icon="radio" class="empty-icon" />
+        <Icon icon="radio" class="empty-icon" />
         <h2>Radio Stations</h2>
         <p>Search for radio stations to get started</p>
       </div>
@@ -116,7 +116,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import BackRouter from '@/components/BackRouter.vue'
 import AppSearch from '@/components/AppSearch.vue'
 import AppMarquee from '@/components/AppMarquee.vue'

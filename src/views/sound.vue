@@ -4,8 +4,8 @@
       <div class="page-header">
         <h1>Speaker Equaliser {{ channelMode === 'both' ? getFilterBankDisplayName('both') : (activeChannel === 'left' ? getFilterBankDisplayName('left') : getFilterBankDisplayName('right')) }}</h1>
         <div class="header-actions">
-          <AppIcon :icon="channelMode === 'both' ? 'link' : 'link-unlinked'" @click="toggleChannelMode" />
-          <AppIcon
+          <Icon :icon="channelMode === 'both' ? 'link' : 'link-unlinked'" @click="toggleChannelMode" />
+          <Icon
             icon="ear"
             @mousedown="startBypass"
             @mouseup="endBypass"
@@ -90,7 +90,7 @@
             <div class="filter-item" :class="{ active: activeFilterId === filter.id }" @click="setActiveFilter(filter.id)">
               <div class="filter-main">
                 <div class="filter-info">
-                  <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon"
+                  <Icon :icon="getFilterIconName(filter.icon)" class="filter-icon"
                     :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
                   <div class="filter-details">
                     <h3>{{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</h3>
@@ -104,7 +104,7 @@
                     </label>
                   </div>
                   <div class="filter-remove" @click="removeFilter(filter.id)">
-                    <AppIcon icon="close" />
+                    <Icon icon="close" />
                   </div>
                 </div>
               </div>
@@ -114,11 +114,11 @@
                   <label>Frequency</label>
                   <div class="control-buttons">
                     <button @click="decrementFilterFrequency(filter)" class="control-btn">
-                      <AppIcon icon="minus-small" />
+                      <Icon icon="minus-small" />
                     </button>
                     <span class="control-value">{{ filter.frequency }} Hz</span>
                     <button @click="incrementFilterFrequency(filter)" class="control-btn">
-                      <AppIcon icon="plus-small" />
+                      <Icon icon="plus-small" />
                     </button>
                   </div>
                 </div>
@@ -127,11 +127,11 @@
                   <label>Gain</label>
                   <div class="control-buttons">
                     <button @click="decrementFilterGain(filter)" class="control-btn">
-                      <AppIcon icon="minus-small" />
+                      <Icon icon="minus-small" />
                     </button>
                     <span class="control-value">{{ filter.gain }} dB</span>
                     <button @click="incrementFilterGain(filter)" class="control-btn">
-                      <AppIcon icon="plus-small" />
+                      <Icon icon="plus-small" />
                     </button>
                   </div>
                 </div>
@@ -140,11 +140,11 @@
                   <label>Q (width)</label>
                   <div class="control-buttons">
                     <button @click="widenFilterBand(filter)" class="control-btn">
-                      <AppIcon icon="minus-small" />
+                      <Icon icon="minus-small" />
                     </button>
                     <span class="control-value">{{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</span>
                     <button @click="narrowFilterBand(filter)" class="control-btn">
-                      <AppIcon icon="plus-small" />
+                      <Icon icon="plus-small" />
                     </button>
                   </div>
                 </div>
@@ -156,7 +156,7 @@
             <div class="filter-item add-filter-item" @click="showAddFilterModal = true">
               <div class="filter-main">
                 <div class="filter-info">
-                  <AppIcon icon="plus" class="filter-icon" />
+                  <Icon icon="plus" class="filter-icon" />
                   <div class="filter-details">
                     <h3>Add New Filter</h3>
                     <div class="filter-frequency">Click to add</div>
@@ -181,7 +181,7 @@
             <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
               :class="['filter-type-option']"
               @click="addFilterOfType(type)">
-              <AppIcon :icon="getFilterIconName(type)" class="filter-icon" />
+              <Icon :icon="getFilterIconName(type)" class="filter-icon" />
               <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
             </button>
           </div>
@@ -193,7 +193,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
-import AppIcon from '@/components/AppIcon.vue';
+import Icon from '@/components/Icon.vue';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import {
   type Filter,

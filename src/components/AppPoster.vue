@@ -1,7 +1,7 @@
 <template>
   <div class="poster">
     <div :class="['poster-img', posterForm, { placeholder: error }]">
-      <AppIcon
+      <Icon
         v-if="error"
         class="poster-img__placeholder"
         :icon="posterForm === 'circle' ? 'users-thin' : 'notebook-thin'"
@@ -32,7 +32,7 @@
 import { ref as deepRef, watch } from 'vue'
 import { useImage } from '@vueuse/core'
 
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 import AppMarquee from '@/components/AppMarquee.vue'
 
 type PoserForm = 'square' | 'circle'

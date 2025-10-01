@@ -2,10 +2,10 @@
   <div class="app-search">
     <input :type="type" :value="modelValue" :placeholder="placeholder" @input="onInput" />
     <button class="search-btn">
-      <AppIcon icon="magnifying-glass-light" />
+      <Icon icon="magnifying-glass-light" />
     </button>
     <button v-if="modelValue.length" class="clear-btn" @click="onClear">
-      <AppIcon icon="clear" />
+      <Icon icon="clear" />
     </button>
   </div>
 </template>
@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
 
-import AppIcon from '@/components/AppIcon.vue'
+import Icon from '@/components/Icon.vue'
 
 interface InputProps {
   modelValue: string

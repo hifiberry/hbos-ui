@@ -107,7 +107,7 @@
     />
 
     <!-- Room Equalisation Wizard -->
-    <AppRoomEqualisationWizard
+    <RoomEqualisationWizard
       :is-open="showEqualisationWizard"
       :measurement="selectedMeasurement"
       @close="showEqualisationWizard = false"
@@ -180,7 +180,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '@/components/Icon.vue'
 import AppRoomMeasurementWizard from '@/components/AppRoomMeasurementWizard.vue'
-import AppRoomEqualisationWizard from '@/components/AppRoomEqualisationWizard.vue'
+import RoomEqualisationWizard from '@/components/RoomEqualisationWizard.vue'
 import { useSettingsStore, type RoomMeasurement } from '@/stores/settings'
 import { getConfigKeys, getConfigValue, deleteConfigValue } from '@/api/config'
 import { type Filter } from '@/utils/filtercalc'

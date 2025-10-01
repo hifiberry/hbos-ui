@@ -132,7 +132,7 @@
                     <span class="volume-label">Volume</span>
                   </div>
                   <div class="volume-slider-container">
-                    <AppProgressSlider
+                    <ProgressSlider
                       :value="displayVolume"
                       :min="0"
                       :max="100"
@@ -391,7 +391,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import Icon from '@/components/Icon.vue'
-import AppProgressSlider from './AppProgressSlider.vue'
+import ProgressSlider from './ProgressSlider.vue'
 import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, completeRoomMeasurement, startRoomMeasure, type RoomMeasureRequest, analyzeRoomEQFFTRecording } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'
 import { usePlayerStore } from '@/stores/player'

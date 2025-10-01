@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 
-interface AppProgressSliderProps {
+interface ProgressSliderProps {
   value: number
   min?: number
   max?: number
@@ -48,7 +48,7 @@ const {
   isDraggable = false,
   isOnHeader = false,
   centerMark = undefined,
-} = defineProps<AppProgressSliderProps>()
+} = defineProps<ProgressSliderProps>()
 
 const emit = defineEmits<{
   (e: 'click:progress', value: number): void

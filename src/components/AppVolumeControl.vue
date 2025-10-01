@@ -8,7 +8,7 @@
       <path d="M3 3l18 18" />
     </svg>
     <div class="volume-slider-container">
-      <AppProgressSlider
+      <ProgressSlider
         :value="displayVolume"
         :min="0"
         :max="100"
@@ -33,7 +33,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
-import AppProgressSlider from '@/components/AppProgressSlider.vue'
+import ProgressSlider from '@/components/ProgressSlider.vue'
 
 // Props for size variants
 interface Props {

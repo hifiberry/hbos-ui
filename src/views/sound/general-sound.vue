@@ -13,7 +13,7 @@
               </div>
             </div>
             <div class="setting-progress">
-              <AppProgressSlider
+              <ProgressSlider
                 :value="volumeLimitPercent"
                 :min="0"
                 :max="100"
@@ -41,7 +41,7 @@
               </div>
             </div>
             <div class="setting-progress">
-              <AppProgressSlider
+              <ProgressSlider
                 :value="0"
                 :min="0"
                 :max="100"
@@ -67,7 +67,7 @@
               </div>
             </div>
             <div class="setting-progress">
-              <AppProgressSlider
+              <ProgressSlider
                 :value="balanceSliderPercent"
                 :min="0"
                 :max="100"
@@ -147,7 +147,7 @@
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue'
-import AppProgressSlider from '@/components/AppProgressSlider.vue'
+import ProgressSlider from '@/components/ProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
 
@@ -194,7 +194,7 @@ async function onSliderChange(newVal: number) {
 const balanceValue = ref<number>(0) // -1 (full left) to +1 (full right), 0 = center, always a valid number
 const balanceAvailable = ref<boolean>(true)
 
-// Convert PipeWire balance (-1 to +1) to slider percentage for AppProgressSlider (0-100)
+// Convert PipeWire balance (-1 to +1) to slider percentage for ProgressSlider (0-100)
 const balanceToSliderPercent = (balance: number): number => {
   // Handle invalid balance values
   if (typeof balance !== 'number' || isNaN(balance)) {

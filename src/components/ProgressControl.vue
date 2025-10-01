@@ -6,7 +6,7 @@
       :songDurationTime="audioControls.songDurationTime"
     />
 
-    <AppProgressSlider
+    <ProgressSlider
       :value="audioControls.seekPosition"
       :disabled="isSendingCommand || !caps.canSeek"
       :min="min"
@@ -25,7 +25,7 @@ import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAudioControls } from '@/stores/audio-controls'
 
-import AppProgressSlider from '@/components/AppProgressSlider.vue'
+import ProgressSlider from '@/components/ProgressSlider.vue'
 import AppProgressTime from '@/components/AppProgressTime.vue'
 
 interface ProgressControlProps {

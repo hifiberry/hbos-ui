@@ -5,6 +5,11 @@ export interface SystemInfo {
   pi_model: {
     name: string
     version: string
+    memory?: {
+      total_kb: number
+      total_mb: number
+      total_gb: number
+    }
   }
   hat_info: {
     vendor: string

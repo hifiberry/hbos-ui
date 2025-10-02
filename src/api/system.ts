@@ -20,6 +20,7 @@ export interface SystemInfo {
   soundcard: {
     name: string
     volume_control: string
+    headphone_volume_control: string | null
     hardware_index: number
     output_channels: number
     input_channels: number
@@ -58,6 +59,7 @@ export interface SoundCard {
   name: string
   dtoverlay: string
   volume_control: string | null
+  headphone_volume_control: string | null
   output_channels: number
   input_channels: number
   features: string[]

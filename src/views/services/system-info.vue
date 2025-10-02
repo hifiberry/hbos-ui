@@ -83,6 +83,10 @@
                 <td class="label">Model</td>
                 <td class="value">{{ systemInfo.pi_model.name }}</td>
               </tr>
+              <tr v-if="systemInfo.pi_model.memory">
+                <td class="label">Memory</td>
+                <td class="value">{{ systemInfo.pi_model.memory.total_gb }} GB</td>
+              </tr>
               <tr>
                 <td class="label">System UUID</td>
                 <td class="value uuid">{{ systemInfo.system.uuid }}</td>

@@ -1972,7 +1972,6 @@ onUnmounted(() => {
 
   .favourites-count {
     color: var(--color-body-secondary);
-    font-size: 0.875em;
   }
 }
 

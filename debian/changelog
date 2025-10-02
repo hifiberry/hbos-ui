@@ -1,3 +1,17 @@
+hifiberry-webui (0.12) stable; urgency=medium
+
+  * Added system memory display in GB to Raspberry Pi system information
+  * Implemented functional headphone volume control with dynamic hardware detection
+  * Added background services monitoring with version display for API health checking
+  * Enhanced auto-refresh functionality - now disabled by default, user-controlled with 60s interval
+  * Fixed favourites font size consistency across system information sections
+  * Integrated headphone volume API with configurator endpoint for real volume adjustments
+  * Added clickable auto-update toggle with improved visual feedback and hover effects
+  * Enhanced service monitoring for Audio Control, Configuration, and DSP backend APIs
+  * Improved version information display without prefix formatting
+
+ -- HiFiBerry <info@hifiberry.com>  Wed, 02 Oct 2025 12:00:00 +0000
+
 hifiberry-webui (0.11) stable; urgency=medium
 
   * Enhanced PipeWire mixer API integration with modern separated endpoints

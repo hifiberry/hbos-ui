@@ -32,7 +32,7 @@
           </div>
         </div>
 
-        <div class="setting-item" title="Your sound card doesn't support headphones">
+        <div class="setting-item" :title="headphoneVolumeAvailable ? `Headphone volume control: ${headphoneVolumeControlType}` : 'Your sound card doesn\'t support headphones'">
           <div class="setting-header">
             <div class="setting-label">
               <Icon icon="tabler/headphones" class="setting-icon" />
@@ -42,18 +42,20 @@
             </div>
             <div class="setting-progress">
               <ProgressSlider
-                :value="0"
+                :value="headphoneVolumePercent"
                 :min="0"
                 :max="100"
                 :step="1"
-                :disabled="true"
-                :has-thumb="false"
-                :is-draggable="false"
+                :disabled="!headphoneVolumeAvailable"
+                :has-thumb="headphoneVolumeAvailable"
+                :is-draggable="headphoneVolumeAvailable"
                 :is-on-header="false"
+                @click:progress="onHeadphoneSliderChange"
               />
             </div>
             <div class="setting-value">
-              <!-- No values displayed when inactive -->
+              <span v-if="headphoneVolumeAvailable" class="percent">{{ headphoneVolumePercent }}%</span>
+              <span v-if="headphoneVolumeAvailable" class="db">{{ headphoneDisplayDb }}</span>
             </div>
           </div>
         </div>
@@ -150,11 +152,19 @@ import Icon from '@/components/Icon.vue'
 import ProgressSlider from '@/components/ProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
+import { getSystemInfo, type SystemInfo } from '@/api/system'
 
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
 const volumeLimitDb = ref<number | null>(null)
 const volumeAvailable = ref<boolean>(true)
+
+// Headphone volume control state
+const headphoneVolumePercent = ref<number>(100)
+const headphoneVolumeDb = ref<number | null>(null)
+const headphoneVolumeAvailable = ref<boolean>(false)
+const headphoneVolumeControlType = ref<string | null>(null)
+const systemInfo = ref<SystemInfo | null>(null)
 
 // Convert percentage to attenuation in dB (0% => -∞ dB, otherwise 20*log10(p))
 const displayDb = computed(() => {
@@ -166,6 +176,19 @@ const displayDb = computed(() => {
     return `${rounded.toFixed(1)} dB`
   }
   const rounded = Math.round(volumeLimitDb.value * 10) / 10
+  return `${rounded.toFixed(1)} dB`
+})
+
+// Convert percentage to attenuation in dB for headphone volume
+const headphoneDisplayDb = computed(() => {
+  if (headphoneVolumeDb.value === null) {
+    const p = headphoneVolumePercent.value / 100
+    if (p <= 0) return '- ∞ dB'
+    const db = 20 * Math.log10(p)
+    const rounded = Math.round(db * 10) / 10 // 0.1 dB precision
+    return `${rounded.toFixed(1)} dB`
+  }
+  const rounded = Math.round(headphoneVolumeDb.value * 10) / 10
   return `${rounded.toFixed(1)} dB`
 })
 
@@ -188,6 +211,15 @@ async function onSliderChange(newVal: number) {
     console.error('Failed to set PipeWire default volume:', e)
     volumeAvailable.value = false
   }
+}
+
+// Update headphone volume when the slider changes
+async function onHeadphoneSliderChange(newVal: number) {
+  const pct = Math.round(newVal)
+  headphoneVolumePercent.value = pct
+  // TODO: Implement headphone volume API call when available
+  // For now, this is just a placeholder for future implementation
+  console.log('Headphone volume changed to:', pct, '% (not implemented yet)')
 }
 
 // Balance state - connected to PipeWire mixer (-1 to +1 scale)
@@ -333,6 +365,26 @@ async function onBalanceChange(newVal: number) {
 
 // Initialize from default sink volume and balance
 onMounted(async () => {
+  // Load system info to check headphone volume control support
+  try {
+    const sysRes = await getSystemInfo()
+    if (sysRes.status === 'success') {
+      systemInfo.value = sysRes
+      // Check if the current soundcard supports headphone volume control
+      if (sysRes.soundcard?.headphone_volume_control) {
+        headphoneVolumeControlType.value = sysRes.soundcard.headphone_volume_control
+        headphoneVolumeAvailable.value = true
+        console.log('Headphone volume control available:', sysRes.soundcard.headphone_volume_control)
+      } else {
+        headphoneVolumeAvailable.value = false
+        console.log('Headphone volume control not supported by current soundcard')
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load system info:', e)
+    headphoneVolumeAvailable.value = false
+  }
+
   // Load volume
   try {
     const res = await getPipewireVolume('default')

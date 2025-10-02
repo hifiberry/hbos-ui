@@ -2,13 +2,21 @@
   <div class="system-info">
     <div class="page-header">
       <h1>System Information</h1>
-      <div class="auto-update-indicator" :class="{
-        'countdown-low': countdownSeconds <= 10 && !isAutoUpdatePaused,
-        'paused': isAutoUpdatePaused
-      }">
+      <div
+        class="auto-update-indicator"
+        :class="{
+          'countdown-low': countdownSeconds <= 10 && isAutoUpdateEnabled && !isAutoUpdatePaused,
+          'paused': isAutoUpdatePaused,
+          'disabled': !isAutoUpdateEnabled,
+          'clickable': true
+        }"
+        @click="toggleAutoUpdate"
+        title="Click to toggle auto-update"
+      >
         <Icon icon="activity" :width="16" :height="16" />
         <span v-if="isAutoUpdatePaused">Auto-update paused</span>
-        <span v-else>Auto-updates in {{ countdownSeconds }}s</span>
+        <span v-else-if="!isAutoUpdateEnabled">Click to enable auto-update</span>
+        <span v-else>Auto-update in {{ countdownSeconds }}s</span>
       </div>
     </div>
 
@@ -440,6 +448,40 @@
           </table>
         </div>
 
+        <!-- Background Services -->
+        <div class="info-card">
+          <div class="card-header">
+            <Icon icon="server" class="card-icon" />
+            <h2>Background Services</h2>
+          </div>
+          <div v-if="backgroundServicesLoading" class="loading-message">
+            Checking background services...
+          </div>
+          <div v-else-if="backgroundServicesError" class="error-message">
+            {{ backgroundServicesError }}
+          </div>
+          <table v-else-if="backgroundServices.length > 0" class="info-table">
+            <tbody>
+              <tr v-for="service in backgroundServices" :key="service.name">
+                <td class="label">{{ service.name }}</td>
+                <td class="value">
+                  <div class="service-info">
+                    <span v-if="service.status === 'available' && service.version" class="version-info">
+                      {{ service.version }}
+                    </span>
+                    <span v-else-if="service.status === 'available'" class="service-status status-available">
+                      Available
+                    </span>
+                    <span v-else :class="['service-status', `status-${service.status}`]">
+                      {{ service.status === 'unavailable' ? 'Unavailable' : 'Checking...' }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Background Jobs -->
         <div class="info-card">
           <div class="card-header">
@@ -650,6 +692,7 @@ import { getDSPProgramInfo, type DSPProgramInfo } from '@/api/dsptoolkit'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 // State
 const loading = ref(true)
@@ -709,6 +752,20 @@ const networkConfig = ref<NetworkConfiguration | null>(null)
 const i2cLoading = ref(true)
 const i2cError = ref('')
 const i2cDevices = ref<I2CDeviceInfo | null>(null)
+
+// Background services state
+interface BackgroundService {
+  name: string
+  url: string
+  status: 'available' | 'unavailable' | 'checking'
+  responseTime?: number
+  lastChecked?: Date
+  version?: string
+}
+
+const backgroundServicesLoading = ref(true)
+const backgroundServicesError = ref('')
+const backgroundServices = ref<BackgroundService[]>([])
 
 // Computed ref for hostname
 const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
@@ -1204,19 +1261,116 @@ const fetchI2CDevices = async () => {
   }
 }
 
+const fetchBackgroundServices = async () => {
+  console.log('fetchBackgroundServices: Starting...')
+  backgroundServicesLoading.value = true
+  backgroundServicesError.value = ''
+
+  try {
+    const appConfigStore = useAppConfigStore()
+
+    // Define the services to check (only those with version endpoints for now)
+    const servicesToCheck = [
+      {
+        name: 'Audio control',
+        url: `${appConfigStore.getApiBaseUrl()}/version`
+      },
+      {
+        name: 'Configuration',
+        url: `${appConfigStore.getConfigApiBaseUrl()}/version`
+      },
+      {
+        name: 'DSP backend',
+        url: `${appConfigStore.getDSPToolkitApiBaseUrl()}/version`
+      }
+    ]
+
+    backgroundServices.value = []
+
+    // Check each service
+    for (const service of servicesToCheck) {
+      const serviceCheck: BackgroundService = {
+        name: service.name,
+        url: service.url,
+        status: 'checking'
+      }
+
+      backgroundServices.value.push(serviceCheck)
+
+      try {
+        const startTime = Date.now()
+        console.log(`Checking ${service.name} at ${service.url}`)
+
+        const response = await fetch(service.url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        })
+
+        const responseTime = Date.now() - startTime
+        serviceCheck.responseTime = responseTime
+        serviceCheck.lastChecked = new Date()
+
+        if (response.ok) {
+          serviceCheck.status = 'available'
+
+          // Try to extract version information for APIs that support it
+          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend') {
+            try {
+              const data = await response.json()
+              if (data && data.version) {
+                serviceCheck.version = data.version
+                console.log(`${service.name} is available (${responseTime}ms) - Version: ${data.version}`)
+              } else {
+                console.log(`${service.name} is available (${responseTime}ms) - No version info`)
+              }
+            } catch (jsonError) {
+              console.log(`${service.name} is available (${responseTime}ms) - Could not parse version info`)
+            }
+          } else {
+            console.log(`${service.name} is available (${responseTime}ms)`)
+          }
+        } else {
+          serviceCheck.status = 'unavailable'
+          console.log(`${service.name} returned HTTP ${response.status}: ${response.statusText}`)
+        }
+      } catch (err) {
+        serviceCheck.status = 'unavailable'
+        serviceCheck.lastChecked = new Date()
+        console.error(`${service.name} is unavailable:`, err)
+        if (err instanceof Error) {
+          console.error(`Error details for ${service.name}:`, {
+            message: err.message,
+            name: err.name,
+            stack: err.stack
+          })
+        }
+      }
+    }
+
+    console.log('fetchBackgroundServices: All services checked')
+  } catch (err) {
+    console.error('fetchBackgroundServices: Error occurred:', err)
+    backgroundServicesError.value = err instanceof Error ? err.message : 'Failed to check background services'
+  } finally {
+    backgroundServicesLoading.value = false
+    console.log('fetchBackgroundServices: Completed')
+  }
+}
+
 // Auto-update state
 const autoUpdateInterval = ref<number | null>(null)
 const countdownInterval = ref<number | null>(null)
-const AUTO_UPDATE_INTERVAL = 30000 // 30 seconds in milliseconds
+const AUTO_UPDATE_INTERVAL = 60000 // 60 seconds in milliseconds
 const AUTO_UPDATE_SECONDS = AUTO_UPDATE_INTERVAL / 1000 // Convert to seconds for countdown
 const countdownSeconds = ref<number>(AUTO_UPDATE_SECONDS)
+const isAutoUpdateEnabled = ref<boolean>(false) // Disabled by default
 const isAutoUpdatePaused = ref<boolean>(false)
 
 // Auto-update function to refresh data
 const refreshData = async () => {
-  // Skip refresh if auto-update is paused (user is editing)
-  if (isAutoUpdatePaused.value) {
-    console.log('System Info: Auto-refresh skipped - user is editing')
+  // Skip refresh if auto-update is disabled or paused (user is editing)
+  if (!isAutoUpdateEnabled.value || isAutoUpdatePaused.value) {
+    console.log('System Info: Auto-refresh skipped - disabled or user is editing')
     return
   }
 
@@ -1235,9 +1389,10 @@ const refreshData = async () => {
     fetchNetworkConfiguration(),
     fetchI2CDevices(),
     fetchVolumeInfo(),
-    fetchDSPProgramInfo()
+    fetchDSPProgramInfo(),
+    fetchBackgroundServices()
   ]).then(results => {
-    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info']
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info', 'background services']
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
@@ -1250,6 +1405,28 @@ const refreshData = async () => {
 }
 
 // Functions to control auto-update behavior
+const toggleAutoUpdate = () => {
+  isAutoUpdateEnabled.value = !isAutoUpdateEnabled.value
+
+  if (isAutoUpdateEnabled.value) {
+    console.log('System Info: Auto-update enabled')
+    // Reset countdown when enabling
+    countdownSeconds.value = AUTO_UPDATE_SECONDS
+
+    // Start the auto-update interval if not already running
+    if (!autoUpdateInterval.value) {
+      autoUpdateInterval.value = window.setInterval(refreshData, AUTO_UPDATE_INTERVAL)
+    }
+  } else {
+    console.log('System Info: Auto-update disabled')
+    // Clear the interval when disabling
+    if (autoUpdateInterval.value) {
+      clearInterval(autoUpdateInterval.value)
+      autoUpdateInterval.value = null
+    }
+  }
+}
+
 const pauseAutoUpdate = () => {
   console.log('System Info: Pausing auto-update (user started editing)')
   isAutoUpdatePaused.value = true
@@ -1259,7 +1436,9 @@ const resumeAutoUpdate = () => {
   console.log('System Info: Resuming auto-update (user finished editing)')
   isAutoUpdatePaused.value = false
   // Reset countdown when resuming
-  countdownSeconds.value = AUTO_UPDATE_SECONDS
+  if (isAutoUpdateEnabled.value) {
+    countdownSeconds.value = AUTO_UPDATE_SECONDS
+  }
 }
 
 // Lifecycle
@@ -1302,10 +1481,14 @@ onMounted(async () => {
     fetchDSPProgramInfo().then(result => {
       console.log('fetchDSPProgramInfo result:', result)
       return result
+    }),
+    fetchBackgroundServices().then(result => {
+      console.log('fetchBackgroundServices result:', result)
+      return result
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info', 'background services']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {
@@ -1315,14 +1498,10 @@ onMounted(async () => {
     console.log('System Info: All loading completed')
   })
 
-  // Set up auto-update interval
-  console.log(`System Info: Setting up auto-update every ${AUTO_UPDATE_INTERVAL / 1000} seconds`)
-  autoUpdateInterval.value = window.setInterval(refreshData, AUTO_UPDATE_INTERVAL)
-
   // Set up countdown interval (updates every second)
   countdownInterval.value = window.setInterval(() => {
-    // Don't count down if auto-update is paused
-    if (isAutoUpdatePaused.value) {
+    // Don't count down if auto-update is disabled or paused
+    if (!isAutoUpdateEnabled.value || isAutoUpdatePaused.value) {
       return
     }
 
@@ -1403,6 +1582,32 @@ onUnmounted(() => {
 
         svg {
           opacity: 0.5;
+        }
+      }
+
+      &.disabled {
+        background: rgba(156, 163, 175, 0.1);
+        border-color: rgba(156, 163, 175, 0.3);
+        color: #6b7280;
+
+        svg {
+          opacity: 0.5;
+        }
+      }
+
+      &.clickable {
+        cursor: pointer;
+        user-select: none;
+
+        &:hover {
+          background: rgba(34, 197, 94, 0.15);
+          border-color: rgba(34, 197, 94, 0.3);
+          transform: translateY(-1px);
+        }
+
+        &.disabled:hover {
+          background: rgba(156, 163, 175, 0.15);
+          border-color: rgba(156, 163, 175, 0.4);
         }
       }
     }
@@ -1938,6 +2143,40 @@ onUnmounted(() => {
 .status-disabled {
   color: #dc2626;
   font-weight: 600;
+}
+
+// Service status styles
+.service-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .service-status {
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.875em;
+
+    &.status-available {
+      background: var(--background-success, rgba(34, 197, 94, 0.1));
+      color: var(--color-success, #16a34a);
+    }
+
+    &.status-unavailable {
+      background: var(--background-error, rgba(239, 68, 68, 0.1));
+      color: var(--color-error, #dc2626);
+    }
+
+    &.status-checking {
+      background: var(--background-warning, rgba(245, 158, 11, 0.1));
+      color: var(--color-warning, #d97706);
+    }
+  }
+
+  .response-time {
+    color: var(--color-body-secondary);
+    font-size: 0.8em;
+  }
 }
 
 @media (max-width: 768px) {

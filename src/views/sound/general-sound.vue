@@ -153,6 +153,7 @@ import ProgressSlider from '@/components/ProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
 import { getSystemInfo, type SystemInfo } from '@/api/system'
+import { getHeadphoneControls, getHeadphoneVolume, setHeadphoneVolume } from '@/api/volume'
 
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
@@ -215,11 +216,31 @@ async function onSliderChange(newVal: number) {
 
 // Update headphone volume when the slider changes
 async function onHeadphoneSliderChange(newVal: number) {
+  if (!headphoneVolumeAvailable.value) {
+    console.warn('Headphone volume control not available')
+    return
+  }
+
   const pct = Math.round(newVal)
   headphoneVolumePercent.value = pct
-  // TODO: Implement headphone volume API call when available
-  // For now, this is just a placeholder for future implementation
-  console.log('Headphone volume changed to:', pct, '% (not implemented yet)')
+
+  try {
+    console.log('Setting headphone volume to:', pct, '%')
+    const res = await setHeadphoneVolume(pct)
+
+    if (res.status === 'success') {
+      if (res.data?.volume !== undefined) {
+        headphoneVolumePercent.value = res.data.volume
+      }
+      console.log('Headphone volume successfully set to:', headphoneVolumePercent.value, '%')
+    } else {
+      console.error('Failed to set headphone volume:', res.message)
+      // You might want to revert the UI value or show an error message
+    }
+  } catch (e) {
+    console.error('Error setting headphone volume:', e)
+    // You might want to revert the UI value or show an error message
+  }
 }
 
 // Balance state - connected to PipeWire mixer (-1 to +1 scale)
@@ -365,24 +386,49 @@ async function onBalanceChange(newVal: number) {
 
 // Initialize from default sink volume and balance
 onMounted(async () => {
-  // Load system info to check headphone volume control support
+  // Check for headphone volume control support using the API
+  try {
+    console.log('Checking for headphone volume controls...')
+    const controlsRes = await getHeadphoneControls()
+
+    if (controlsRes.status === 'success' && controlsRes.data) {
+      const hasHeadphoneControls = controlsRes.data.count > 0
+      headphoneVolumeAvailable.value = hasHeadphoneControls
+
+      if (hasHeadphoneControls) {
+        headphoneVolumeControlType.value = controlsRes.data.controls[0] // Use first available control
+        console.log('Headphone volume controls found:', controlsRes.data.controls)
+
+        // Load current headphone volume
+        try {
+          const volumeRes = await getHeadphoneVolume()
+          if (volumeRes.status === 'success' && volumeRes.data) {
+            headphoneVolumePercent.value = volumeRes.data.volume
+            console.log('Current headphone volume:', volumeRes.data.volume, '%')
+          }
+        } catch (e) {
+          console.warn('Failed to load current headphone volume:', e)
+        }
+      } else {
+        console.log('No headphone volume controls available')
+      }
+    } else {
+      console.log('Failed to check headphone controls:', controlsRes.message)
+      headphoneVolumeAvailable.value = false
+    }
+  } catch (e) {
+    console.warn('Failed to check headphone volume controls:', e)
+    headphoneVolumeAvailable.value = false
+  }
+
+  // Load system info for other information
   try {
     const sysRes = await getSystemInfo()
     if (sysRes.status === 'success') {
       systemInfo.value = sysRes
-      // Check if the current soundcard supports headphone volume control
-      if (sysRes.soundcard?.headphone_volume_control) {
-        headphoneVolumeControlType.value = sysRes.soundcard.headphone_volume_control
-        headphoneVolumeAvailable.value = true
-        console.log('Headphone volume control available:', sysRes.soundcard.headphone_volume_control)
-      } else {
-        headphoneVolumeAvailable.value = false
-        console.log('Headphone volume control not supported by current soundcard')
-      }
     }
   } catch (e) {
     console.warn('Failed to load system info:', e)
-    headphoneVolumeAvailable.value = false
   }
 
   // Load volume

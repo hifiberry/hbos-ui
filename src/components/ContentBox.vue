@@ -13,6 +13,7 @@
   border-radius: 8px;
   padding: 24px;
   color: var(--color-body);
+  stroke: var(--color-body);
 
   &:not(:last-of-type) {
   margin-bottom: 55px;

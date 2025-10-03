@@ -1,70 +1,53 @@
 <template>
-  <div class="theaudiodb-integration">
-    <div class="card">
-      <div class="service-item">
-        <div class="service-main">
-          <div class="service-info">
-            <Icon icon="database" class="service-icon" />
-            <div class="service-details">
-              <h3>TheAudioDB</h3>
-              <p class="service-description">TheAudioDB is used to retrieve additional artist images and biographies</p>
-              <div class="service-status">
-                <a href="https://www.theaudiodb.com" target="_blank" rel="noopener noreferrer" class="status-indicator connected">
-                  Active
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="service-actions">
-            <!-- No actions needed for TheAudioDB as it's always active -->
-          </div>
-        </div>
-      </div>
+  <ContentBox>
+  <div class="webServiceContainer">
+    <Icon icon="database" class="webServiceIcon" />
+    <div class="webServiceDetails">
+      <h3>TheAudioDB</h3>
+      <p class="webServiceDescription">
+        TheAudioDB is used to retrieve additional artist images and biographies
+      </p>
+      <a href="https://www.theaudiodb.com" target="_blank" rel="noopener noreferrer"
+        class="webServiceStatusLink connected">
+        Active
+      </a>
     </div>
   </div>
+  </ContentBox>
 </template>
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue'
+import ContentBox from "@/components/ContentBox.vue"
 
 // No configuration or state management needed for TheAudioDB
 // It's a read-only metadata service
 </script>
 
 <style scoped lang="scss">
-@use '@/assets/scss/service-item' as *;
+.webServiceContainer{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  padding: 44px;
 
-.theaudiodb-integration {
-  .card {
-    @include service-card-base;
+  .webServiceIcon{
+    margin-right: 20px;
+    width: 40px;
+    height: 40px;
   }
 
-  .service-item {
-    @include service-item-base;
-
-    .service-main {
-      @include service-main-layout;
-    }
-
-    .service-info {
-      @include service-info-layout;
-
-      .service-icon {
-        @include service-icon-base;
-      }
-
-      .service-details {
-        @include service-details-base;
-      }
-    }
-
-    .service-actions {
-      @include service-actions-base;
-    }
+  .webServiceDescription{
+    color: var(--color-body-secondary);
   }
 
-  .status-indicator {
-    @include status-indicator-base;
+  .webServiceStatusLink{
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: #e6f7e6;
+    color: #2d7d2d;
   }
 }
 </style>

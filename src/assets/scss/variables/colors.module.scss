@@ -56,10 +56,6 @@ $colors: (
   toast: (
     toastify-color-light: $background-body,
   ),
-  search: (
-    search-background: $search-background,
-    search-color: $search-color,
-  ),
   scroll: (
     scroll-track-background: $scroll-track-background,
     scroll-thumb-background: $scroll-thumb-background
@@ -119,10 +115,6 @@ $colors--dark: (
   ),
   toast: (
     toastify-color-dark: $background-body--dark,
-  ),
-  search: (
-    search-background: $search-background--dark,
-    search-color: $search-color--dark,
   ),
   scroll: (
     scroll-track-background: $scroll-track-background--dark,

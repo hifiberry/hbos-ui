@@ -28,10 +28,10 @@
           <div class="track-item__num">{{ index + 1 }}</div>
           <div class="track-item__desc">
             <div class="h3 track-item__desc-name">
-              <AppMarquee>{{ track.name }}</AppMarquee>
+              <CustomMarquee>{{ track.name }}</CustomMarquee>
             </div>
             <div v-if="getTrackArtist(track)" class="track-item__desc-artist">
-              <AppMarquee>{{ getTrackArtist(track) }}</AppMarquee>
+              <CustomMarquee>{{ getTrackArtist(track) }}</CustomMarquee>
             </div>
           </div>
         </div>
@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
-import AppMarquee from '@/components/AppMarquee.vue'
+import CustomMarquee from '@/components/CustomMarquee.vue'
 
 import type { Track, AlbumDetails } from '@/types/library'
 

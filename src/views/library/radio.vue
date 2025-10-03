@@ -35,10 +35,11 @@
             </div>
             <div class="station-poster-attr">
               <div class="station-title">
-                <AppMarquee>{{ favorite.title }}</AppMarquee>
+                <CustomMarquee>{{ favorite.title }}</CustomMarquee>
               </div>
               <div class="station-subtitle">
-                <AppMarquee>{{ favorite.metadata?.country || favorite.country || 'Unknown' }}</AppMarquee>
+                <CustomMarquee>{{ favorite.metadata?.country || favorite.country || 'Unknown'
+                }}</CustomMarquee>
               </div>
               <div v-if="favorite.metadata?.tags || favorite.tags" class="station-tags">
                 <span v-for="tag in getStationTags(favorite.metadata?.tags || favorite.tags)" :key="tag" class="tag">
@@ -78,10 +79,10 @@
             </div>
             <div class="station-poster-attr">
               <div class="station-title">
-                <AppMarquee>{{ station.name }}</AppMarquee>
+                <CustomMarquee>{{ station.name }}</CustomMarquee>
               </div>
               <div class="station-subtitle">
-                <AppMarquee>{{ station.country || 'Unknown' }}</AppMarquee>
+                <CustomMarquee>{{ station.country || 'Unknown' }}</CustomMarquee>
               </div>
               <div v-if="station.tags" class="station-tags">
                 <span v-for="tag in getStationTags(station.tags)" :key="tag" class="tag">
@@ -119,7 +120,7 @@ import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
 import BackRouter from '@/components/BackRouter.vue'
 import CustomSearchField from '@/components/CustomSearchField.vue'
-import AppMarquee from '@/components/AppMarquee.vue'
+import CustomMarquee from '@/components/CustomMarquee.vue'
 import RadioEditPopup from '@/components/RadioEditPopup.vue'
 import { useRadioStore, type RadioStation, type RadioFavorite } from '@/stores/radio'
 

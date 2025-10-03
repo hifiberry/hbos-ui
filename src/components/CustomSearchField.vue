@@ -63,12 +63,13 @@ const onClear = () => {
 .customSearchFieldContent{
   padding: 5px;
   width: 100%;
+  height: 35px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
 
-  Input{
+  input{
     width: 100%;
     color: var(--body-color);
   }

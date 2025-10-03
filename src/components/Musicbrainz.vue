@@ -31,11 +31,15 @@ import ContentBox from "@/components/ContentBox.vue"
   align-items: center;
   width: 100%;
   padding: 44px;
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 
   .webServiceIcon{
-    margin-right: 20px;
+    margin-right: 15px;
     width: 40px;
     height: 40px;
+    object-fit: contain;
   }
 
   .webServiceDescription{

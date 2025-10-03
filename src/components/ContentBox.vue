@@ -10,8 +10,7 @@
 <style scoped lang="scss">
 .contentBox {
   background: var(--background-card);
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 10px;
   color: var(--color-body);
   stroke: var(--color-body);
 

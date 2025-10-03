@@ -1,0 +1,14 @@
+@startuml
+class ContentBox {
+}
+
+class ContentBoxLink {
+  + to: any
+}
+
+class CustomSearchField {
+}
+
+ContentBoxLink --|> ContentBox
+CustomSearchField --|> ContentBox
+@enduml

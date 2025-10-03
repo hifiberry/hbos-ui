@@ -3,7 +3,7 @@
     <h1>Sound</h1>
 
     <div class="settings-overview">
-      <router-link :to="{ name: 'general-sound' }" class="service-card">
+      <ContentBoxLink :to="{ name: 'general-sound' }">
         <div class="service-header">
           <Icon icon="tabler/adjustments" class="service-icon" />
           <h2>General sound settings</h2>
@@ -11,9 +11,9 @@
         <p class="service-description">
           Configure global sound options and defaults for your system
         </p>
-      </router-link>
+      </ContentBoxLink>
 
-      <router-link :to="{ name: 'speaker-equalizer' }" class="service-card">
+      <ContentBoxLink :to="{ name: 'speaker-equalizer' }">
         <div class="service-header">
           <Icon icon="tabler/speaker" class="service-icon" />
           <h2>Speaker Equalizer</h2>
@@ -21,29 +21,30 @@
         <p class="service-description">
           Advanced parametric equalizer with individual filter control and bypass functionality
         </p>
-      </router-link>
+      </ContentBoxLink>
 
-      <router-link :to="{ name: 'crossover-design' }" class="service-card">
+      <ContentBoxLink :to="{ name: 'crossover-design' }">
         <div class="service-header">
           <Icon icon="tabler/crossover" class="service-icon" />
           <h2>Crossover Design</h2>
         </div>
         <p class="service-description">Configure frequency separation and phase alignment for multi-way speaker systems</p>
-      </router-link>
+      </ContentBoxLink>
 
-      <router-link :to="{ name: 'room-acoustics' }" class="service-card">
+      <ContentBoxLink :to="{ name: 'room-acoustics' }">
         <div class="service-header">
           <Icon icon="tabler/armchair" class="service-icon" />
           <h2>Room Acoustics Correction</h2>
         </div>
         <p class="service-description">Automatically analyze and correct room acoustics for optimal sound reproduction</p>
-      </router-link>
+      </ContentBoxLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue'
+import ContentBoxLink from "@/components/ContentBoxLink.vue"
 </script>
 
 <style scoped lang="scss">

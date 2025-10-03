@@ -1,42 +1,42 @@
 <template>
-  <div class="settings">
+  <div class="sound">
     <h1>Sound</h1>
 
-    <div class="settings-overview">
+    <div class="soundOverview">
       <ContentBoxLink :to="{ name: 'general-sound' }"  height=150>
-        <div class="service-header">
-          <Icon icon="tabler/adjustments" class="service-icon" />
+        <div class="soundCardHeader">
+          <Icon icon="tabler/adjustments" class="soundCardHeaderIcon" />
           <h2>General sound settings</h2>
         </div>
-        <p class="service-description">
+        <p class="soundCardDescription">
           Configure global sound options and defaults for your system
         </p>
       </ContentBoxLink>
 
       <ContentBoxLink :to="{ name: 'speaker-equalizer' }"  height=150>
-        <div class="service-header">
-          <Icon icon="tabler/speaker" class="service-icon" />
+        <div class="soundCardHeader">
+          <Icon icon="tabler/speaker" class="soundCardHeaderIcon" />
           <h2>Speaker Equalizer</h2>
         </div>
-        <p class="service-description">
+        <p class="soundCardDescription">
           Advanced parametric equalizer with individual filter control and bypass functionality
         </p>
       </ContentBoxLink>
 
       <ContentBoxLink :to="{ name: 'crossover-design' }"  height=150>
-        <div class="service-header">
-          <Icon icon="tabler/crossover" class="service-icon" />
+        <div class="soundCardHeader">
+          <Icon icon="tabler/crossover" class="soundCardHeaderIcon" />
           <h2>Crossover Design</h2>
         </div>
-        <p class="service-description">Configure frequency separation and phase alignment for multi-way speaker systems</p>
+        <p class="soundCardDescription">Configure frequency separation and phase alignment for multi-way speaker systems</p>
       </ContentBoxLink>
 
       <ContentBoxLink :to="{ name: 'room-acoustics' }" height=150>
-        <div class="service-header">
-          <Icon icon="tabler/armchair" class="service-icon" />
+        <div class="soundCardHeader">
+          <Icon icon="tabler/armchair" class="soundCardHeaderIcon" />
           <h2>Room Acoustics Correction</h2>
         </div>
-        <p class="service-description">Automatically analyze and correct room acoustics for optimal sound reproduction</p>
+        <p class="soundCardDescription">Automatically analyze and correct room acoustics for optimal sound reproduction</p>
       </ContentBoxLink>
     </div>
   </div>
@@ -48,57 +48,19 @@ import ContentBoxLink from "@/components/ContentBoxLink.vue"
 </script>
 
 <style scoped lang="scss">
-.settings {
-  h1 {
-    margin-bottom: 32px;
-    color: var(--color-head);
-  }
+.soundOverview{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
 
-  .settings-overview {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
+  .soundCardHeader{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 10px;
 
-    .service-card {
-      display: block;
-      background: var(--background-card);
-      border-radius: 8px;
-      padding: 24px;
-      border: 1px solid var(--color-border);
-      transition: all 0.2s ease;
-      text-decoration: none;
-      color: inherit;
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-      }
-
-      .service-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-
-        .service-icon {
-          width: 24px;
-          height: 24px;
-          color: var(--color-primary);
-        }
-
-        h2 {
-          margin: 0;
-          color: var(--color-head);
-          font-size: 1.25rem;
-        }
-      }
-
-      .service-description {
-        display: block;
-        color: var(--color-body-secondary);
-        margin-bottom: 20px;
-        line-height: 1.5;
-      }
+    .soundCardHeaderIcon{
+      margin-right: 10px;
     }
   }
 }

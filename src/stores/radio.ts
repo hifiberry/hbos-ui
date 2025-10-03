@@ -142,18 +142,41 @@ export const useRadioStore = defineStore('radio', () => {
   const hasFavorites = computed(() => favoritesList.value.length > 0)
 
   /**
-    * Set the `radioBrowserBaseURL` to a random server,
-    * that are returned by [[https://all.api.radio-browser.info/json/servers]] API.
+    * Tries to use the server url that was stored in the local storage of the browser.
+    * If one is found and it is reachable, it will use this url.
+    * If its not reachable, it will output a warning in the console
+    * and then try to fetch the [[https://all.api.radio-browser.info/json/servers]] API.
     *
-    * If no servers are found, it falls back to [[https://de2.api.radio-browser.info]].
+    * This API should return a list of all [[radio-browser.info]] API servers
+    * that currently are reachable as a json.
+    *
+    * This function then will randomly select a server from this list,
+    * store this server in the local storage and set it as the radioBrowserBaseUrl.
+    *
+    * If the API to fetch all servers is not reachable,
+    * it falls back to [[https://de2.api.radio-browser.info]].
     */
   const setRadioBrowserBaseUrl = async () => {
+    const localStorageBaseUrl: string | null = localStorage.getItem("radioBrowserBaseUrl")
+    if (localStorageBaseUrl)
+    {
+      try {
+        const response: Response = await fetch(localStorageBaseUrl)
+        if (response.ok) {
+          radioBrowserBaseUrl.value = localStorageBaseUrl
+          return
+        }
+      }
+      catch (error) {
+        console.warn("Stored Radio-Browser URL failed: ", error)
+      }
+    }
     try {
-      const response = await fetch('https://all.api.radio-browser.info/json/servers')
-      const servers = await response.json()
+      const response: Response = await fetch('https://all.api.radio-browser.info/json/servers')
+      const servers: Record<string, any> = await response.json()
 
       if (servers && servers.length > 0) {
-        const randomServer = servers[Math.floor(Math.random() * servers.length)]
+        const randomServer: any = servers[Math.floor(Math.random() * servers.length)]
         radioBrowserBaseUrl.value = `https://${randomServer.name}`
 
         /* Save item in storage */

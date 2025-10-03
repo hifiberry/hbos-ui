@@ -2,16 +2,16 @@
   <div class="library">
     <h1>Music Library</h1>
 
-    <div class="card">
+    <ContentBox>
       <div class="title">
         <h2>Artists</h2>
         <router-link v-if="artists.length > 0" :to="{ name: 'artists' }" class="text-link">View All</router-link>
       </div>
       <PosterGrid :loading="loadingArtists" :loaded="loadedArtists" :items="artists" poster-form="circle" in-row
         @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })" />
-    </div>
+    </ContentBox>
 
-    <div class="card">
+    <ContentBox>
       <div class="title">
         <h2>Albums</h2>
         <router-link v-if="sortedAlbumsByReleaseDate.length > 0" :to="{ name: 'albums' }" class="text-link">View
@@ -20,26 +20,27 @@
 
       <PosterGrid :loading="loadingAlbums" :loaded="loadedAlbums" :items="sortedAlbumsByReleaseDate" in-row
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })" />
-    </div>
+    </ContentBox>
 
-    <div class="card radio-section">
+    <ContentBox>
       <div class="title">
         <h2>Radio</h2>
         <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
       </div>
 
-      <div v-if="favoritesList.length === 0 && loaded" class="empty-state">
+      <div v-if="favoritesList.length === 0" class="empty-state">
         <Icon icon="radio" class="empty-icon" />
         <p>No favorite radio stations saved</p>
       </div>
 
       <PosterGrid v-else :loading="loading" :loaded="loaded" :items="favoriteStationsForDisplay" in-row
         @click="playStation" />
-    </div>
+    </ContentBox>
   </div>
 </template>
 
 <script setup lang="ts">
+import ContentBox from "@/components/ContentBox.vue"
 import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
@@ -105,16 +106,6 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 .library {
-  .card {
-    &:not(:last-of-type) {
-      margin-bottom: 55px;
-
-      @include media-down(lg) {
-        margin-bottom: 24px;
-      }
-    }
-  }
-
   .title {
     display: flex;
     align-items: center;
@@ -143,7 +134,7 @@ onMounted(async () => {
   }
 
   // Radio section specific styling
-  .radio-section {
+  .radioSection {
     :deep(.app-poster-grid .poster-grid.row) {
       @include media-down(md) {
         justify-items: start;

@@ -8,7 +8,7 @@
       <!-- Search Section -->
       <div class="search-section">
         <div class="search-container">
-          <AppSearch v-model="searchQuery" :debounce="1000" placeholder="Search for radio stations with radiobrowser"
+          <CustomSearchField v-model="searchQuery" :debounce="1000" placeholder="Search for radio stations with radiobrowser"
             @change="onSearch" />
         </div>
       </div>
@@ -118,7 +118,7 @@ import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
 import BackRouter from '@/components/BackRouter.vue'
-import AppSearch from '@/components/AppSearch.vue'
+import CustomSearchField from '@/components/CustomSearchField.vue'
 import AppMarquee from '@/components/AppMarquee.vue'
 import RadioEditPopup from '@/components/RadioEditPopup.vue'
 import { useRadioStore, type RadioStation, type RadioFavorite } from '@/stores/radio'

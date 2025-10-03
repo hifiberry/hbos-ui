@@ -14,11 +14,6 @@
   color: var(--color-body);
   stroke: var(--color-body);
 
-  &:not(:last-of-type) {
-  margin-bottom: 55px;
-    @include media-down(lg) {
-      margin-bottom: 24px;
-    }
-  }
+  margin-bottom: 25px;
 }
 </style>

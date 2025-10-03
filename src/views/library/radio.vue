@@ -8,7 +8,7 @@
       <!-- Search Section -->
       <div class="search-section">
         <div class="search-container">
-          <CustomSearchField v-model="searchQuery" :debounce="1000" placeholder="Search for radio stations with radiobrowser"
+          <CustomSearchField v-model="searchQuery" :debounce="1000" placeholder="Search for radio stations..."
             @change="onSearch" />
         </div>
       </div>

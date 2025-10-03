@@ -3,7 +3,7 @@
     <h1>Sound</h1>
 
     <div class="settings-overview">
-      <ContentBoxLink :to="{ name: 'general-sound' }">
+      <ContentBoxLink :to="{ name: 'general-sound' }"  height=150>
         <div class="service-header">
           <Icon icon="tabler/adjustments" class="service-icon" />
           <h2>General sound settings</h2>
@@ -13,7 +13,7 @@
         </p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'speaker-equalizer' }">
+      <ContentBoxLink :to="{ name: 'speaker-equalizer' }"  height=150>
         <div class="service-header">
           <Icon icon="tabler/speaker" class="service-icon" />
           <h2>Speaker Equalizer</h2>
@@ -23,7 +23,7 @@
         </p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'crossover-design' }">
+      <ContentBoxLink :to="{ name: 'crossover-design' }"  height=150>
         <div class="service-header">
           <Icon icon="tabler/crossover" class="service-icon" />
           <h2>Crossover Design</h2>
@@ -31,7 +31,7 @@
         <p class="service-description">Configure frequency separation and phase alignment for multi-way speaker systems</p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'room-acoustics' }">
+      <ContentBoxLink :to="{ name: 'room-acoustics' }" height=150>
         <div class="service-header">
           <Icon icon="tabler/armchair" class="service-icon" />
           <h2>Room Acoustics Correction</h2>

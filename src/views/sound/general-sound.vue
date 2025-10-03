@@ -32,7 +32,7 @@
           </div>
         </div>
 
-        <div class="setting-item" title="Your sound card doesn't support headphones">
+        <div class="setting-item" :title="headphoneVolumeAvailable ? `Headphone volume control: ${headphoneVolumeControlType}` : 'Your sound card doesn\'t support headphones'">
           <div class="setting-header">
             <div class="setting-label">
               <Icon icon="tabler/headphones" class="setting-icon" />
@@ -42,18 +42,20 @@
             </div>
             <div class="setting-progress">
               <ProgressSlider
-                :value="0"
+                :value="headphoneVolumePercent"
                 :min="0"
                 :max="100"
                 :step="1"
-                :disabled="true"
-                :has-thumb="false"
-                :is-draggable="false"
+                :disabled="!headphoneVolumeAvailable"
+                :has-thumb="headphoneVolumeAvailable"
+                :is-draggable="headphoneVolumeAvailable"
                 :is-on-header="false"
+                @click:progress="onHeadphoneSliderChange"
               />
             </div>
             <div class="setting-value">
-              <!-- No values displayed when inactive -->
+              <span v-if="headphoneVolumeAvailable" class="percent">{{ headphoneVolumePercent }}%</span>
+              <span v-if="headphoneVolumeAvailable" class="db">{{ headphoneDisplayDb }}</span>
             </div>
           </div>
         </div>
@@ -150,11 +152,20 @@ import Icon from '@/components/Icon.vue'
 import ProgressSlider from '@/components/ProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
+import { getSystemInfo, type SystemInfo } from '@/api/system'
+import { getHeadphoneControls, getHeadphoneVolume, setHeadphoneVolume } from '@/api/volume'
 
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
 const volumeLimitDb = ref<number | null>(null)
 const volumeAvailable = ref<boolean>(true)
+
+// Headphone volume control state
+const headphoneVolumePercent = ref<number>(100)
+const headphoneVolumeDb = ref<number | null>(null)
+const headphoneVolumeAvailable = ref<boolean>(false)
+const headphoneVolumeControlType = ref<string | null>(null)
+const systemInfo = ref<SystemInfo | null>(null)
 
 // Convert percentage to attenuation in dB (0% => -∞ dB, otherwise 20*log10(p))
 const displayDb = computed(() => {
@@ -166,6 +177,19 @@ const displayDb = computed(() => {
     return `${rounded.toFixed(1)} dB`
   }
   const rounded = Math.round(volumeLimitDb.value * 10) / 10
+  return `${rounded.toFixed(1)} dB`
+})
+
+// Convert percentage to attenuation in dB for headphone volume
+const headphoneDisplayDb = computed(() => {
+  if (headphoneVolumeDb.value === null) {
+    const p = headphoneVolumePercent.value / 100
+    if (p <= 0) return '- ∞ dB'
+    const db = 20 * Math.log10(p)
+    const rounded = Math.round(db * 10) / 10 // 0.1 dB precision
+    return `${rounded.toFixed(1)} dB`
+  }
+  const rounded = Math.round(headphoneVolumeDb.value * 10) / 10
   return `${rounded.toFixed(1)} dB`
 })
 
@@ -187,6 +211,35 @@ async function onSliderChange(newVal: number) {
   } catch (e) {
     console.error('Failed to set PipeWire default volume:', e)
     volumeAvailable.value = false
+  }
+}
+
+// Update headphone volume when the slider changes
+async function onHeadphoneSliderChange(newVal: number) {
+  if (!headphoneVolumeAvailable.value) {
+    console.warn('Headphone volume control not available')
+    return
+  }
+
+  const pct = Math.round(newVal)
+  headphoneVolumePercent.value = pct
+
+  try {
+    console.log('Setting headphone volume to:', pct, '%')
+    const res = await setHeadphoneVolume(pct)
+
+    if (res.status === 'success') {
+      if (res.data?.volume !== undefined) {
+        headphoneVolumePercent.value = res.data.volume
+      }
+      console.log('Headphone volume successfully set to:', headphoneVolumePercent.value, '%')
+    } else {
+      console.error('Failed to set headphone volume:', res.message)
+      // You might want to revert the UI value or show an error message
+    }
+  } catch (e) {
+    console.error('Error setting headphone volume:', e)
+    // You might want to revert the UI value or show an error message
   }
 }
 
@@ -333,6 +386,51 @@ async function onBalanceChange(newVal: number) {
 
 // Initialize from default sink volume and balance
 onMounted(async () => {
+  // Check for headphone volume control support using the API
+  try {
+    console.log('Checking for headphone volume controls...')
+    const controlsRes = await getHeadphoneControls()
+
+    if (controlsRes.status === 'success' && controlsRes.data) {
+      const hasHeadphoneControls = controlsRes.data.count > 0
+      headphoneVolumeAvailable.value = hasHeadphoneControls
+
+      if (hasHeadphoneControls) {
+        headphoneVolumeControlType.value = controlsRes.data.controls[0] // Use first available control
+        console.log('Headphone volume controls found:', controlsRes.data.controls)
+
+        // Load current headphone volume
+        try {
+          const volumeRes = await getHeadphoneVolume()
+          if (volumeRes.status === 'success' && volumeRes.data) {
+            headphoneVolumePercent.value = volumeRes.data.volume
+            console.log('Current headphone volume:', volumeRes.data.volume, '%')
+          }
+        } catch (e) {
+          console.warn('Failed to load current headphone volume:', e)
+        }
+      } else {
+        console.log('No headphone volume controls available')
+      }
+    } else {
+      console.log('Failed to check headphone controls:', controlsRes.message)
+      headphoneVolumeAvailable.value = false
+    }
+  } catch (e) {
+    console.warn('Failed to check headphone volume controls:', e)
+    headphoneVolumeAvailable.value = false
+  }
+
+  // Load system info for other information
+  try {
+    const sysRes = await getSystemInfo()
+    if (sysRes.status === 'success') {
+      systemInfo.value = sysRes
+    }
+  } catch (e) {
+    console.warn('Failed to load system info:', e)
+  }
+
   // Load volume
   try {
     const res = await getPipewireVolume('default')

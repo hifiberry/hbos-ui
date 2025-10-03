@@ -145,7 +145,7 @@ export const useRadioStore = defineStore('radio', () => {
     * Set the `radioBrowserBaseURL` to a random server,
     * that are returned by [[https://all.api.radio-browser.info/json/servers]] API.
     *
-    * If no servers are found, it falls back to [[https://de1.api.radio-browser.info]].
+    * If no servers are found, it falls back to [[https://de2.api.radio-browser.info]].
     */
   const setRadioBrowserBaseUrl = async () => {
     try {
@@ -162,7 +162,7 @@ export const useRadioStore = defineStore('radio', () => {
       }
     } catch (error) {
       console.error('Failed to get Radio-Browser servers:', error)
-      radioBrowserBaseUrl.value = 'https://de1.api.radio-browser.info'
+      radioBrowserBaseUrl.value = 'https://de2.api.radio-browser.info'
     }
   }
 

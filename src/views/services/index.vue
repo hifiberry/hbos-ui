@@ -67,7 +67,6 @@
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue'
-import ContentBox from "@/components/ContentBox.vue"
 import ContentBoxLink from "@/components/ContentBoxLink.vue"
 </script>
 

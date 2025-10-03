@@ -3,7 +3,7 @@
     <div class="breadcrumbs">
       <BackRouter :to="{ name: 'library' }">Artists</BackRouter>
       <div class="search-bar">
-        <AppSearch
+        <CustomSearchField
           v-model="search"
           :debounce="300"
           placeholder="Search artists..."
@@ -37,7 +37,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 import BackRouter from '@/components/BackRouter.vue'
-import AppSearch from '@/components/AppSearch.vue'
+import CustomSearchField from '@/components/CustomSearchField.vue'
 import PosterGrid from '@/components/PosterGrid.vue'
 import AlphabetIndex from '@/components/AlphabetIndex.vue'
 

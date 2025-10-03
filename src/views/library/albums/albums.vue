@@ -10,7 +10,7 @@
           @toggle-order="handleToggleOrder"
         />
         <div class="search-bar">
-          <AppSearch
+          <CustomSearchField
             v-model="search"
             :debounce="300"
             placeholder="Search albums..."
@@ -39,7 +39,7 @@ const router = useRouter()
 import { storeToRefs } from 'pinia'
 
 import BackRouter from '@/components/BackRouter.vue'
-import AppSearch from '@/components/AppSearch.vue'
+import CustomSearchField from '@/components/CustomSearchField.vue'
 import SortSelector from '@/components/SortSelector.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'

@@ -3,38 +3,43 @@
     <h1>Music Library</h1>
 
     <ContentBox>
-      <div class="title">
-        <h2>Artists</h2>
-        <router-link v-if="artists.length > 0" :to="{ name: 'artists' }" class="text-link">View All</router-link>
+      <div class="libaryCard">
+        <div class="title">
+          <h2>Artists</h2>
+          <router-link v-if="artists.length > 0" :to="{ name: 'artists' }" class="text-link">View All</router-link>
+        </div>
+        <PosterGrid :loading="loadingArtists" :loaded="loadedArtists" :items="artists" poster-form="circle" in-row
+          @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })" />
       </div>
-      <PosterGrid :loading="loadingArtists" :loaded="loadedArtists" :items="artists" poster-form="circle" in-row
-        @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })" />
     </ContentBox>
 
-    <ContentBox>
-      <div class="title">
-        <h2>Albums</h2>
-        <router-link v-if="sortedAlbumsByReleaseDate.length > 0" :to="{ name: 'albums' }" class="text-link">View
-          All</router-link>
+    <ContentBox class="libaryContentBox">
+      <div class="libaryCard">
+        <div class="title">
+          <h2>Albums</h2>
+          <router-link v-if="sortedAlbumsByReleaseDate.length > 0" :to="{ name: 'albums' }" class="text-link">View
+            All</router-link>
+        </div>
+        <PosterGrid :loading="loadingAlbums" :loaded="loadedAlbums" :items="sortedAlbumsByReleaseDate" in-row
+          @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })" />
       </div>
-
-      <PosterGrid :loading="loadingAlbums" :loaded="loadedAlbums" :items="sortedAlbumsByReleaseDate" in-row
-        @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })" />
     </ContentBox>
 
-    <ContentBox>
-      <div class="title">
-        <h2>Radio</h2>
-        <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
-      </div>
+    <ContentBox class="libaryContentBox">
+      <div class="libaryCard">
+        <div class="title">
+          <h2>Radio</h2>
+          <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
+        </div>
 
-      <div v-if="favoritesList.length === 0" class="empty-state">
-        <Icon icon="radio" class="empty-icon" />
-        <p>No favorite radio stations saved</p>
-      </div>
+        <div v-if="favoritesList.length === 0" class="empty-state">
+          <Icon icon="radio" class="empty-icon" />
+          <p>No favorite radio stations saved</p>
+        </div>
 
-      <PosterGrid v-else :loading="loading" :loaded="loaded" :items="favoriteStationsForDisplay" in-row
-        @click="playStation" />
+        <PosterGrid v-else :loading="loading" :loaded="loaded" :items="favoriteStationsForDisplay" in-row
+          @click="playStation" />
+      </div>
     </ContentBox>
   </div>
 </template>
@@ -116,6 +121,10 @@ onMounted(async () => {
       margin-bottom: 0;
     }
   }
+  .libaryCard{
+    padding: 25px;
+  }
+
 
   .empty-state {
     padding: 40px 20px;
@@ -130,15 +139,6 @@ onMounted(async () => {
     p {
       margin: 0;
       font-size: 16px;
-    }
-  }
-
-  // Radio section specific styling
-  .radioSection {
-    :deep(.app-poster-grid .poster-grid.row) {
-      @include media-down(md) {
-        justify-items: start;
-      }
     }
   }
 }

@@ -1,6 +1,6 @@
 <template>
   <router-link :to="to">
-    <ContentBox class="contentBoxLink">
+    <ContentBox class="contentBoxLink" :style="{ height: height + 'px' }">
       <slot></slot>
     </ContentBox>
   </router-link>
@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import ContentBox from "@/components/ContentBox.vue"
 
-const { to } = defineProps<{ to: any }>()
+const { to, height } = defineProps<{ to: any, height?: number }>()
 </script>
 
 <style scoped lang="scss">

@@ -26,6 +26,15 @@ export interface DSPProgramChecksumResponse {
   format: 'md5'
 }
 
+// Program Info Types
+export interface DSPProgramInfo {
+  program_length: number
+  checksums: {
+    md5: string
+    sha1: string
+  }
+}
+
 // Memory Types
 export interface MemoryReadResponse {
   address: string
@@ -491,6 +500,10 @@ export async function getDSPProfilesMetadata(): Promise<DSPProfilesMetadataRespo
 // Program Checksum API
 export async function getDSPProgramChecksum(): Promise<DSPProgramChecksumResponse> {
   return apiRequest<DSPProgramChecksumResponse>('/checksum')
+}
+
+export async function getDSPProgramInfo(): Promise<DSPProgramInfo> {
+  return apiRequest<DSPProgramInfo>('/program-info')
 }
 
 // Filter Store API

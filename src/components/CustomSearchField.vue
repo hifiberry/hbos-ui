@@ -2,10 +2,9 @@
   <ContentBox>
     <div class="customSearchFieldContent">
       <input :type="type" :value="modelValue" :placeholder="placeholder" @input="onInput" />
-      <button class="search-btn">
-        <Icon icon="magnifying-glass-light" />
-      </button>
-      <button v-if="modelValue.length" class="clear-btn" @click="onClear">
+      <Icon v-if="!modelValue.length"
+        icon="magnifying-glass-light" />
+      <button v-if="modelValue.length" class="clearButton" @click="onClear">
         <Icon icon="clear" />
       </button>
     </div>
@@ -67,8 +66,9 @@ const onClear = () => {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  align-items: center;
 
-  input{
+  Input{
     width: 100%;
     color: var(--body-color);
   }

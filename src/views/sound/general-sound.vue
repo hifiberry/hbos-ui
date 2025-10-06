@@ -1,7 +1,5 @@
 <template>
   <PageContent title="General sound settings" :backrouterLink="{ name: 'sound' }" class="settings">
-    <h1>General sound settings</h1>
-
     <div class="settings-overview">
       <div class="service-card">
         <div class="setting-item">

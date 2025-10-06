@@ -1,6 +1,6 @@
 <template>
   <div>
-    <BackRouter v-if="backrouterLink" to="backrouterLink" class="backrouter">
+    <BackRouter v-if="backrouterLink" :to="backrouterLink" class="backrouter">
       {{ title }}
     </BackRouter>
 

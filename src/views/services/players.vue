@@ -1,5 +1,5 @@
 <template>
-  <PageContent title="Players" :backrouterLink="{ name: 'settings' }">
+  <PageContent title="Players" :backrouterLink="{ name: 'services' }">
     <div class="players-content">
       <div class="players-list">
         <div v-for="(player, index) in players" :key="player.name" class="card">

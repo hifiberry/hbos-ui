@@ -131,7 +131,6 @@
 import { ref, onMounted } from 'vue'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
-import BackRouter from '@/components/BackRouter.vue'
 import {
   getMultipleServiceStatus,
   enableService,

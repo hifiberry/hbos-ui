@@ -1,5 +1,5 @@
 <template>
-  <div class="settings">
+  <PageContent title="General sound settings" :backrouterLink="{ name: 'sound' }" class="settings">
     <h1>General sound settings</h1>
 
     <div class="settings-overview">
@@ -144,11 +144,12 @@
         </div>
       </div>
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue'
+import PageContent from '@/components/PageContent.vue'
 import ProgressSlider from '@/components/ProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
 import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
@@ -517,123 +518,121 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.settings {
-  h1 { margin-bottom: 32px; color: var(--color-head); }
-  .settings-overview {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;
-    .service-card {
-      display: block; background: var(--background-card); border-radius: 8px; padding: 24px; border: 1px solid var(--color-border);
-      .service-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-      .service-icon { width: 24px; height: 24px; color: var(--color-primary); }
-      h2 { margin: 0; color: var(--color-head); font-size: 1.25rem; }
-      .service-description { color: var(--color-body-secondary); line-height: 1.5; }
+h1 { margin-bottom: 32px; color: var(--color-head); }
+.settings-overview {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;
+  .service-card {
+    display: block; background: var(--background-card); border-radius: 8px; padding: 24px; border: 1px solid var(--color-border);
+    .service-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .service-icon { width: 24px; height: 24px; color: var(--color-primary); }
+    h2 { margin: 0; color: var(--color-head); font-size: 1.25rem; }
+    .service-description { color: var(--color-body-secondary); line-height: 1.5; }
 
-      .setting-item {
-        margin-top: 0;
-        padding-top: 10px;
-        border-top: none;
+    .setting-item {
+      margin-top: 0;
+      padding-top: 10px;
+      border-top: none;
 
-      /* add spacing only between subsequent settings */
-      & + .setting-item {
-        margin-top: 15px;
-      }
-        .setting-header {
-          display: grid;
-          grid-template-columns: 260px 1fr 200px; /* label | slider | value */
+    /* add spacing only between subsequent settings */
+    & + .setting-item {
+      margin-top: 15px;
+    }
+      .setting-header {
+        display: grid;
+        grid-template-columns: 260px 1fr 200px; /* label | slider | value */
+        align-items: center;
+        column-gap: 16px;
+        margin-bottom: 10px;
+
+        .setting-label {
+          display: flex;
           align-items: center;
-          column-gap: 16px;
-          margin-bottom: 10px;
-
-          .setting-label {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0; /* allow text to ellipsize if needed */
-          }
-
-          .setting-icon {
-            width: 40px;
-            height: 40px;
-            color: var(--color-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .setting-icon :deep(svg) {
-            width: 28px;
-            height: 28px;
-            object-fit: contain;
-            stroke-width: 1px;
-          }
-
-          .setting-title {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            h3 { margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--color-head); }
-            .muted { color: var(--color-body-secondary); }
-          }
-
-          .setting-progress {
-            display: flex;
-            align-items: center;
-            min-width: 180px;
-            gap: 8px;
-          }
-
-          .setting-value {
-            justify-self: end;
-            display: flex;
-            gap: 10px;
-            align-items: baseline;
-            .percent { font-weight: 600; color: var(--color-head); }
-            .db { color: var(--color-body-secondary); }
-          }
+          gap: 12px;
+          min-width: 0; /* allow text to ellipsize if needed */
         }
 
-        .setting-control {
-          input[type='range'] {
-            width: 100%;
-          }
+        .setting-icon {
+          width: 40px;
+          height: 40px;
+          color: var(--color-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .setting-icon :deep(svg) {
+          width: 28px;
+          height: 28px;
+          object-fit: contain;
+          stroke-width: 1px;
+        }
 
-          .mode-button-bar {
-            display: flex;
-            flex-wrap: nowrap;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--color-border);
+        .setting-title {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          h3 { margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--color-head); }
+          .muted { color: var(--color-body-secondary); }
+        }
 
-            .mode-btn {
-              flex: 1;
-              padding: 12px 16px;
-              cursor: pointer;
-              font-family: 'Metropolis', sans-serif;
-              font-size: 14px;
-              font-weight: 500;
-              border: none;
-              border-right: 1px solid var(--color-border);
-              transition: all 0.2s ease-in-out;
-              background-color: transparent;
-              color: var(--color-body, #707070);
+        .setting-progress {
+          display: flex;
+          align-items: center;
+          min-width: 180px;
+          gap: 8px;
+        }
 
-              &:last-child {
-                border-right: none;
-              }
+        .setting-value {
+          justify-self: end;
+          display: flex;
+          gap: 10px;
+          align-items: baseline;
+          .percent { font-weight: 600; color: var(--color-head); }
+          .db { color: var(--color-body-secondary); }
+        }
+      }
 
-              &.active {
-                background: var(--color-primary, #e11e4a);
-                color: white;
-              }
+      .setting-control {
+        input[type='range'] {
+          width: 100%;
+        }
 
-              &:hover:not(:disabled):not(.active) {
-                background: var(--background-button-secondary-hover, rgba(225, 30, 74, 0.1));
-                color: var(--color-primary, #e11e4a);
-              }
+        .mode-button-bar {
+          display: flex;
+          flex-wrap: nowrap;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid var(--color-border);
 
-              &:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-              }
+          .mode-btn {
+            flex: 1;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-family: 'Metropolis', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-right: 1px solid var(--color-border);
+            transition: all 0.2s ease-in-out;
+            background-color: transparent;
+            color: var(--color-body, #707070);
+
+            &:last-child {
+              border-right: none;
+            }
+
+            &.active {
+              background: var(--color-primary, #e11e4a);
+              color: white;
+            }
+
+            &:hover:not(:disabled):not(.active) {
+              background: var(--background-button-secondary-hover, rgba(225, 30, 74, 0.1));
+              color: var(--color-primary, #e11e4a);
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
             }
           }
         }

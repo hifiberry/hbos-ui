@@ -1,10 +1,20 @@
 <template>
   <div>
-    <BackRouter v-if="backrouterLink" :to="backrouterLink" class="backrouter">
+    <BackRouter
+      v-if="backrouterLink"
+      :to="backrouterLink"
+      class="backrouter"
+      :class="{'noPadding': headerHasContentBelow}"
+    >
       {{ title }}
     </BackRouter>
 
-    <router-link v-else-if="hintLink" :to="hintLink" class="titleHintLink">
+    <router-link
+      v-else-if="hintLink"
+      :to="hintLink"
+      class="titleHintLink"
+      :class="{'noPadding': headerHasContentBelow}"
+    >
       <h1>
         {{ title }}
       </h1>
@@ -13,7 +23,10 @@
       </span>
     </router-link>
 
-    <h1 v-else>
+    <h1
+      v-else
+      :class="{'noPadding': headerHasContentBelow}"
+    >
       {{ title }}
     </h1>
     <div class="content">
@@ -29,6 +42,7 @@ import BackRouter from '@/components/BackRouter.vue'
     backrouterLink: String,
     hintLink: String,
     hintString: String,
+    headerHasContentBelow: Boolean,
   }>()
 </script>
 
@@ -37,6 +51,9 @@ h1, .backrouter {
   padding-bottom: 25px;
   @include media-down(sm) {
     display: none;
+  }
+  &.noPadding{
+    padding-bottom: 0px;
   }
 }
 

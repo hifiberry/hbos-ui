@@ -1,15 +1,6 @@
 <template>
-  <div class="players">
-    <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'services' }">Players</BackRouter>
-    </div>
-
+  <PageContent title="Players" :backrouterLink="{ name: 'settings' }">
     <div class="players-content">
-      <div class="players-header">
-        <h2>Audio Players</h2>
-        <p>Manage and configure your audio players. We recommend that you only enable services that you regularly use.</p>
-      </div>
-
       <div class="players-list">
         <div v-for="(player, index) in players" :key="player.name" class="card">
           <div class="player-item" :class="{
@@ -133,12 +124,13 @@
         </div>
       </div>
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import Icon from '@/components/Icon.vue'
+import PageContent from '@/components/PageContent.vue'
 import BackRouter from '@/components/BackRouter.vue'
 import {
   getMultipleServiceStatus,
@@ -568,26 +560,6 @@ const saveConfig = async (playerIndex: number) => {
 
 <style scoped lang="scss">
 @use '@/assets/scss/service-item' as *;
-
-.players {
-  .breadcrumbs {
-    margin-bottom: 32px;
-  }
-
-  .players-header {
-    margin-bottom: 32px;
-
-    h2 {
-      margin: 0 0 8px 0;
-      color: var(--color-head);
-    }
-
-    p {
-      margin: 0;
-      color: var(--color-body-secondary);
-    }
-  }
-
   .players-list {
     .card {
       @include service-card-base;
@@ -848,5 +820,4 @@ const saveConfig = async (playerIndex: number) => {
       }
     }
   }
-}
 </style>

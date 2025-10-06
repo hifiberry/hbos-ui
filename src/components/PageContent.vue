@@ -1,9 +1,19 @@
 <template>
   <div>
-    <BackRouter v-if="backrouterLink" :to="backrouterLink" class="backrouter">
+    <BackRouter v-if="backrouterLink" to="backrouterLink" class="backrouter">
       {{ title }}
     </BackRouter>
-    <h1 v-else="backrouterLink">
+
+    <router-link v-if="hintLink" :to="hintLink" class="titleLink">
+      <h1>
+        {{ title }}
+      </h1>
+      <span class="minimalHint">
+        {{ hintString }}
+      </span>
+    </router-link>
+
+    <h1 v-else>
       {{ title }}
     </h1>
     <div class="content">
@@ -17,11 +27,61 @@ import BackRouter from '@/components/BackRouter.vue'
   defineProps<{
     title: String,
     backrouterLink: String,
+    hintLink: String,
+    hintString: String,
   }>()
 </script>
 
 <style scoped lang="scss">
-h1, .backrouter{
+h1, .backrouter {
   padding-bottom: 25px;
+  @include media-down(sm) {
+    display: none;
+  }
+}
+
+.minimalHint {
+  position: absolute;
+  top: 50%;
+  color: var(--color-body);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  /* Create a CSS triangle */
+  &::before {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    border: 4px solid transparent;
+    border-bottom-color: var(--color-body);
+  }
+}
+
+.titleLink {
+  color: var(--color-text);
+  text-decoration: none;
+  position: relative;
+  display: inline-block;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: var(--color-accent);
+    cursor: pointer;
+
+    .minimalHint {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
 }
 </style>

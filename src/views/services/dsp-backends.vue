@@ -1,9 +1,5 @@
 <template>
-  <div class="dsp-backends">
-    <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'services' }">DSP Backends</BackRouter>
-    </div>
-
+  <PageContent title="DSP Backends" :backrouterLink="{ name: 'services' }">
     <div class="dsp-backends-content">
       <div class="dsp-backends-header">
         <p>Select the backend system for digital signal processing. The backend determines how filter changes are applied and managed.</p>
@@ -77,7 +73,7 @@
         </div>
       </div>
     </teleport>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
@@ -86,7 +82,7 @@ import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connec
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import Icon from '@/components/Icon.vue';
-import BackRouter from '@/components/BackRouter.vue';
+import PageContent from '@/components/PageContent.vue';
 
 // Initialize stores
 const filterStore = useFilterStore();
@@ -308,188 +304,183 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 @use '@/assets/scss/service-item' as *;
+.breadcrumbs {
+  margin-bottom: 20px;
+}
 
-.dsp-backends {
-  padding: 20px;
+.dsp-backends-content {
+  .dsp-backends-header {
+    margin-bottom: 30px;
 
-  .breadcrumbs {
-    margin-bottom: 20px;
-  }
-
-  .dsp-backends-content {
-    .dsp-backends-header {
-      margin-bottom: 30px;
-
-      h2 {
-        margin: 0 0 10px 0;
-        font-family: 'Metropolis', sans-serif;
-        font-weight: 500;
-        font-size: 24px;
-        color: var(--color-head);
-      }
-
-      p {
-        margin: 0;
-        color: var(--color-body-secondary);
-        line-height: 1.5;
-      }
+    h2 {
+      margin: 0 0 10px 0;
+      font-family: 'Metropolis', sans-serif;
+      font-weight: 500;
+      font-size: 24px;
+      color: var(--color-head);
     }
 
-    .backends-list {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
+    p {
+      margin: 0;
+      color: var(--color-body-secondary);
+      line-height: 1.5;
+    }
+  }
 
-      .card {
-        @include service-card-base;
-        background: var(--background-card);
-        border-radius: 8px;
-        border: 1px solid var(--color-border);
-        overflow: hidden;
+  .backends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+
+    .card {
+      @include service-card-base;
+      background: var(--background-card);
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+      overflow: hidden;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: var(--color-border-hover);
+      }
+
+      &.active-card {
+        background: rgba(34, 197, 94, 0.05);
+        border-color: #22c55e;
+      }
+
+      .backend-item {
+        @include service-item-base;
         transition: all 0.2s ease;
+        cursor: pointer;
 
-        &:hover {
+        &:hover:not(.active):not(.loading):not(.unavailable) {
+          background: rgba(var(--color-surface-rgb), 0.3);
           border-color: var(--color-border-hover);
         }
 
-        &.active-card {
-          background: rgba(34, 197, 94, 0.05);
-          border-color: #22c55e;
+        &.loading {
+          opacity: 0.7;
+          pointer-events: none;
+          cursor: default;
         }
 
-        .backend-item {
-          @include service-item-base;
-          transition: all 0.2s ease;
-          cursor: pointer;
+        &.unavailable {
+          opacity: 0.6;
+          pointer-events: none;
+          cursor: not-allowed;
 
-          &:hover:not(.active):not(.loading):not(.unavailable) {
-            background: rgba(var(--color-surface-rgb), 0.3);
-            border-color: var(--color-border-hover);
+          .backend-icon {
+            opacity: 0.5;
           }
+        }
 
-          &.loading {
-            opacity: 0.7;
-            pointer-events: none;
-            cursor: default;
-          }
+        .backend-main {
+          @include service-main-layout;
 
-          &.unavailable {
-            opacity: 0.6;
-            pointer-events: none;
-            cursor: not-allowed;
+          .backend-info {
+            @include service-info-layout;
 
             .backend-icon {
-              opacity: 0.5;
+              @include service-icon-base;
+            }
+
+            .backend-details {
+              @include service-details-base;
+
+              .backend-description {
+                margin: 0 0 8px 0;
+                font-size: 14px;
+                color: var(--color-body-secondary);
+                line-height: 1.4;
+              }
+
+              .backend-status {
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+
+                .status-badge {
+                  @include status-indicator-base;
+
+                  &.active {
+                    background: rgba(34, 197, 94, 0.2);
+                    color: #22c55e;
+                  }
+
+                  &.inactive {
+                    background: rgba(112, 112, 112, 0.2);
+                    color: var(--color-body-secondary);
+                  }
+
+                  &.unavailable {
+                    background: rgba(255, 107, 107, 0.2);
+                    color: #ff6b6b;
+                  }
+                }
+
+                .switching-indicator {
+                  font-size: 14px;
+                  color: var(--color-body-secondary);
+                  font-style: italic;
+                }
+              }
+
+              .backend-capabilities {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+
+                .capability-item {
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  padding: 6px 10px;
+                  background: rgba(128, 128, 128, 0.1);
+                  border-radius: 4px;
+                  font-size: 13px;
+
+                  .capability-name {
+                    font-weight: 500;
+                    color: var(--color-head);
+                  }
+
+                  .capability-value {
+                    color: var(--color-body-secondary);
+                    font-weight: 500;
+                  }
+                }
+              }
             }
           }
 
-          .backend-main {
-            @include service-main-layout;
+          .backend-actions {
+            @include service-actions-base;
 
-            .backend-info {
-              @include service-info-layout;
+            .backend-info-action {
+              display: flex;
+              align-items: center;
 
-              .backend-icon {
-                @include service-icon-base;
-              }
-
-              .backend-details {
-                @include service-details-base;
-
-                .backend-description {
-                  margin: 0 0 8px 0;
-                  font-size: 14px;
-                  color: var(--color-body-secondary);
-                  line-height: 1.4;
-                }
-
-                .backend-status {
-                  margin-bottom: 8px;
-                  display: flex;
-                  align-items: center;
-                  gap: 12px;
-
-                  .status-badge {
-                    @include status-indicator-base;
-
-                    &.active {
-                      background: rgba(34, 197, 94, 0.2);
-                      color: #22c55e;
-                    }
-
-                    &.inactive {
-                      background: rgba(112, 112, 112, 0.2);
-                      color: var(--color-body-secondary);
-                    }
-
-                    &.unavailable {
-                      background: rgba(255, 107, 107, 0.2);
-                      color: #ff6b6b;
-                    }
-                  }
-
-                  .switching-indicator {
-                    font-size: 14px;
-                    color: var(--color-body-secondary);
-                    font-style: italic;
-                  }
-                }
-
-                .backend-capabilities {
-                  display: flex;
-                  flex-wrap: wrap;
-                  gap: 12px;
-
-                  .capability-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 6px 10px;
-                    background: rgba(128, 128, 128, 0.1);
-                    border-radius: 4px;
-                    font-size: 13px;
-
-                    .capability-name {
-                      font-weight: 500;
-                      color: var(--color-head);
-                    }
-
-                    .capability-value {
-                      color: var(--color-body-secondary);
-                      font-weight: 500;
-                    }
-                  }
-                }
-              }
-            }
-
-            .backend-actions {
-              @include service-actions-base;
-
-              .backend-info-action {
+              .info-btn {
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+                transition: background-color 0.2s ease;
                 display: flex;
                 align-items: center;
+                justify-content: center;
+                border: none;
+                background: transparent;
 
-                .info-btn {
-                  cursor: pointer;
-                  padding: 4px;
-                  border-radius: 4px;
-                  transition: background-color 0.2s ease;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  border: none;
-                  background: transparent;
+                &:hover {
+                  background-color: rgba(var(--color-surface-rgb), 0.5);
+                }
 
-                  &:hover {
-                    background-color: rgba(var(--color-surface-rgb), 0.5);
-                  }
-
-                  svg {
-                    width: 16px;
-                    height: 16px;
-                    color: var(--color-text-secondary);
-                  }
+                svg {
+                  width: 16px;
+                  height: 16px;
+                  color: var(--color-text-secondary);
                 }
               }
             }

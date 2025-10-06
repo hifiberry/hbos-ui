@@ -1,6 +1,9 @@
 <template>
   <PageContent title="Players" :backrouterLink="{ name: 'services' }">
     <div class="players-content">
+      <div class="players-header">
+        <p>Manage and configure your audio players. We recommend that you only enable services that you regularly use.</p>
+      </div>
       <div class="players-list">
         <div v-for="(player, index) in players" :key="player.name" class="card">
           <div class="player-item" :class="{
@@ -559,264 +562,277 @@ const saveConfig = async (playerIndex: number) => {
 
 <style scoped lang="scss">
 @use '@/assets/scss/service-item' as *;
-  .players-list {
-    .card {
-      @include service-card-base;
+.players-header {
+  margin-bottom: 32px;
+
+  h2 {
+    margin: 0 0 8px 0;
+    color: var(--color-head);
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-body-secondary);
+  }
+}
+.players-list {
+  .card {
+    @include service-card-base;
+  }
+
+  .player-item {
+    @include service-item-base;
+
+    .player-main {
+      @include service-main-layout;
     }
 
-    .player-item {
-      @include service-item-base;
+    &.expanded {
+      @include service-expanded-state;
+    }
 
-      .player-main {
-        @include service-main-layout;
+    .player-info {
+      @include service-info-layout;
+
+      .player-icon {
+        @include service-icon-base;
       }
 
-      &.expanded {
-        @include service-expanded-state;
-      }
+      .player-details {
+        @include service-details-base;
 
-      .player-info {
-        @include service-info-layout;
+        .player-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 4px;
 
-        .player-icon {
-          @include service-icon-base;
-        }
+          .status-badge {
+            @include status-indicator-base;
+            text-transform: capitalize;
 
-        .player-details {
-          @include service-details-base;
-
-          .player-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 4px;
-
-            .status-badge {
-              @include status-indicator-base;
-              text-transform: capitalize;
-
-              &.active {
-                @extend .connected;
-              }
-
-              &.inactive {
-                @extend .disconnected;
-              }
-
-              &.failed {
-                @extend .error;
-              }
+            &.active {
+              @extend .connected;
             }
-          }
 
-          .player-error {
-            margin-top: 4px;
+            &.inactive {
+              @extend .disconnected;
+            }
 
-            .error-message {
-              @include status-indicator-base;
+            &.failed {
               @extend .error;
             }
           }
         }
+
+        .player-error {
+          margin-top: 4px;
+
+          .error-message {
+            @include status-indicator-base;
+            @extend .error;
+          }
+        }
+      }
+    }
+
+    .player-actions {
+      @include service-actions-base;
+
+      .player-toggle {
+        display: flex;
+        align-items: center;
       }
 
-      .player-actions {
-        @include service-actions-base;
+      .player-expand {
+        width: 32px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
 
-        .player-toggle {
-          display: flex;
-          align-items: center;
+        .expand-caret {
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 4px;
+          transition: background-color 0.2s ease;
+
+          &:hover {
+            background: var(--cover-placeholder-bg);
+          }
+
+          .config-caret {
+            width: 16px;
+            height: 16px;
+            color: var(--color-body-secondary);
+            transition: transform 0.2s ease, color 0.2s ease;
+
+            &.expanded {
+              transform: rotate(180deg);
+            }
+          }
+
+          &:hover .config-caret {
+            color: var(--color-head);
+          }
+        }
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        cursor: pointer;
+
+        input {
+          opacity: 0;
+          width: 0;
+          height: 0;
         }
 
-        .player-expand {
-          width: 32px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          flex-shrink: 0;
+        .toggle-slider {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: var(--color-body-secondary);
+          transition: 0.3s;
+          border-radius: 24px;
 
-          .expand-caret {
+          &.loading {
+            opacity: 0.6;
+          }
+
+          &:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+          }
+        }
+
+        input:checked + .toggle-slider {
+          background-color: var(--primary);
+        }
+
+        input:checked + .toggle-slider:before {
+          transform: translateX(20px);
+        }
+
+        input:focus + .toggle-slider {
+          box-shadow: 0 0 1px var(--primary);
+        }
+
+        &.disabled {
+          cursor: not-allowed;
+          opacity: 0.6;
+
+          .toggle-slider {
+            background-color: #e5e5e5;
+            cursor: not-allowed;
+
+            &.not-allowed {
+              background-color: #f0f0f0;
+            }
+
+            &:before {
+              background-color: #d0d0d0;
+            }
+          }
+
+          input:checked + .toggle-slider {
+            background-color: #c0c0c0;
+
+            &:before {
+              background-color: #a0a0a0;
+            }
+          }
+        }
+      }
+    }
+
+    .config-section {
+      width: 100%;
+
+      .config-content {
+        @include service-content-box;
+
+        .config-form {
+          margin-bottom: 16px;
+        }
+
+        .config-option {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 0.875rem;
+          color: var(--color-body-secondary);
+
+          .version-select {
+            padding: 12px 16px;
+            border: 1px solid var(--color-sidebar-border);
+            border-radius: 6px;
+            background: var(--background-card);
+            color: var(--color-body-secondary);
+            font-size: 1rem;
+            font-family: inherit;
             cursor: pointer;
-            padding: 8px;
-            border-radius: 4px;
-            transition: background-color 0.2s ease;
+            min-width: 80px;
+            height: 44px;
+
+            &:focus {
+              outline: none;
+              border-color: var(--primary);
+              color: var(--color-head);
+              box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+            }
 
             &:hover {
-              background: var(--cover-placeholder-bg);
-            }
-
-            .config-caret {
-              width: 16px;
-              height: 16px;
-              color: var(--color-body-secondary);
-              transition: transform 0.2s ease, color 0.2s ease;
-
-              &.expanded {
-                transform: rotate(180deg);
-              }
-            }
-
-            &:hover .config-caret {
+              border-color: var(--color-head);
               color: var(--color-head);
             }
           }
         }
 
-        .toggle-switch {
-          position: relative;
-          display: inline-block;
-          width: 44px;
-          height: 24px;
-          cursor: pointer;
+        .config-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+          padding-top: 16px;
 
-          input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-          }
-
-          .toggle-slider {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--color-body-secondary);
-            transition: 0.3s;
-            border-radius: 24px;
-
-            &.loading {
-              opacity: 0.6;
-            }
-
-            &:before {
-              position: absolute;
-              content: "";
-              height: 18px;
-              width: 18px;
-              left: 3px;
-              bottom: 3px;
-              background-color: white;
-              transition: 0.3s;
-              border-radius: 50%;
-            }
-          }
-
-          input:checked + .toggle-slider {
-            background-color: var(--primary);
-          }
-
-          input:checked + .toggle-slider:before {
-            transform: translateX(20px);
-          }
-
-          input:focus + .toggle-slider {
-            box-shadow: 0 0 1px var(--primary);
-          }
-
-          &.disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-
-            .toggle-slider {
-              background-color: #e5e5e5;
-              cursor: not-allowed;
-
-              &.not-allowed {
-                background-color: #f0f0f0;
-              }
-
-              &:before {
-                background-color: #d0d0d0;
-              }
-            }
-
-            input:checked + .toggle-slider {
-              background-color: #c0c0c0;
-
-              &:before {
-                background-color: #a0a0a0;
-              }
-            }
-          }
-        }
-      }
-
-      .config-section {
-        width: 100%;
-
-        .config-content {
-          @include service-content-box;
-
-          .config-form {
-            margin-bottom: 16px;
-          }
-
-          .config-option {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.875rem;
-            color: var(--color-body-secondary);
-
-            .version-select {
-              padding: 12px 16px;
-              border: 1px solid var(--color-sidebar-border);
-              border-radius: 6px;
-              background: var(--background-card);
-              color: var(--color-body-secondary);
-              font-size: 1rem;
-              font-family: inherit;
-              cursor: pointer;
+          .config-btn {
+            &--cancel {
+              @include service-button-secondary;
               min-width: 80px;
-              height: 44px;
+            }
 
-              &:focus {
-                outline: none;
-                border-color: var(--primary);
-                color: var(--color-head);
-                box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
-              }
-
-              &:hover {
-                border-color: var(--color-head);
-                color: var(--color-head);
-              }
+            &--save {
+              @include service-button-primary;
+              min-width: 80px;
             }
           }
-
-          .config-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            padding-top: 16px;
-
-            .config-btn {
-              &--cancel {
-                @include service-button-secondary;
-                min-width: 80px;
-              }
-
-              &--save {
-                @include service-button-primary;
-                min-width: 80px;
-              }
-            }
-          }
-        }
-      }
-
-      &.not-installed {
-        opacity: 0.6;
-
-        .player-icon {
-          color: #999;
-        }
-
-        .player-details h3 {
-          color: #999;
         }
       }
     }
+
+    &.not-installed {
+      opacity: 0.6;
+
+      .player-icon {
+        color: #999;
+      }
+
+      .player-details h3 {
+        color: #999;
+      }
+    }
   }
+}
 </style>

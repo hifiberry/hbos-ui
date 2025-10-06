@@ -1,8 +1,7 @@
 <template>
-  <div class="room-acoustics-page">
+  <PageContent title="Room Acoustics Correction" :backrouterLink="{ name: 'sound' }">
     <div class="room-acoustics">
       <div class="page-header">
-        <h1>Room Acoustics Correction</h1>
         <button @click="startMeasurement" class="measure-button" title="Start Room Measurement">
           <Icon icon="tabler/microphone" />
           Measure Room
@@ -172,13 +171,14 @@
         </div>
       </div>
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '@/components/Icon.vue'
+import PageContent from '@/components/PageContent.vue'
 import RoomMeasurementWizard from '@/components/RoomMeasurementWizard.vue'
 import RoomEqualisationWizard from '@/components/RoomEqualisationWizard.vue'
 import { useSettingsStore, type RoomMeasurement } from '@/stores/settings'

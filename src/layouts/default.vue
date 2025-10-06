@@ -1,7 +1,7 @@
 <template>
   <div class="wrapper">
-    <AppHeader :isPlayerControls="isPlayerControls" />
-    <AppSidebar :isPlayerControls="isPlayerControls" />
+    <Header :isPlayerControls="isPlayerControls" />
+    <Sidebar :isPlayerControls="isPlayerControls" />
     <main :class="[{ 'no-player-controls': !isPlayerControls }]">
       <router-view v-slot="{ Component }">
         <Transition name="page-opacity" mode="out-in">
@@ -17,8 +17,8 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 
-import AppHeader from '@/components/app-header.vue'
-import AppSidebar from '@/components/app-sidebar.vue'
+import Header from '@/components/Header.vue'
+import Sidebar from '@/components/Sidebar.vue'
 
 const slickPlayerControlsExceptions: string[] = ['now-playing']
 

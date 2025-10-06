@@ -5,6 +5,9 @@ import { useAppConfigStore } from '@/stores/appconfig'
 import { sendPlayerCommand, addTrackToPlayer } from '@/api/player'
 import { getConfigValue, setConfigValue } from '@/api/config'
 
+/**
+ * An interface that holds the data for a radio station.
+ */
 export interface RadioStation {
   id: string
   name: string
@@ -20,6 +23,9 @@ export interface RadioStation {
   isFavorite?: boolean
 }
 
+/**
+ * An interface that holds the data for a favorited radio station.
+ */
 export interface RadioFavorite {
   id: string
   title: string
@@ -37,7 +43,7 @@ export interface RadioFavorite {
     homepage?: string
     [key: string]: string | number | boolean | null | undefined // Allow additional custom metadata
   }
-  // Legacy fields for backward compatibility
+  /* Legacy fields for backward compatibility */
   img?: string
   country?: string
   tags?: string
@@ -49,22 +55,43 @@ export interface RadioSearchResult {
 }
 
 export const useRadioStore = defineStore('radio', () => {
-  // State
+  /**
+   * Define a `Record` using a `string` as the key and a `RadioFavorite` as the value.
+   * It initially stores an empty object.
+   */
   const favorites = ref<Record<string, RadioFavorite>>({})
+
+  /** Empty array of `RadioStaiton`s. */
   const searchResults = ref<RadioStation[]>([])
+  /** Boolean for loading */
   const loading = ref(false)
+  /** Boolean for loaded */
   const loaded = ref(false)
+  /** Base url for the api */
   const radioBrowserBaseUrl = ref('https://de1.api.radio-browser.info')
 
-  // Helper function to parse M3U playlists and extract the actual stream URL
+  /**
+   * Helper function to parse M3U playlist and extract the actual stream URL.
+   * This function uses the `audiocontrol` API as a backend for
+   * getting the stream URL.
+   *
+   * If the parsing fails at any point,
+   * the function will jsut return the original `m3uUrl` string.
+   * This is done to attemt a direct playback.
+   *
+   * @param m3uUrl - A string containing the url to the M3U playlist
+   * @returns the stream URL.
+   */
   const parseM3U = async (m3uUrl: string): Promise<string> => {
     try {
       console.log('Parsing M3U playlist:', m3uUrl)
 
-      // Use the new backend M3U parsing API
       const configStore = useAppConfigStore()
       const backendUrl = configStore.getApiBaseUrl()
 
+      /**
+       * Get the M3U via the `audiocontrol` API.
+       */
       console.log('Using backend M3U parsing API...')
       const response = await fetch(`${backendUrl}/m3u/parse`, {
         method: 'POST',
@@ -88,7 +115,11 @@ export const useRadioStore = defineStore('radio', () => {
         throw new Error(`M3U parsing failed: ${data.error}`)
       }
 
-      // Extract the first URL from the parsed playlist
+      /**
+       * Extract the first URL from the parsed playlist.
+       * This will only happen if there is a playlist and
+       * the playlist has entries and the entries are not empty.
+       */
       if (data.playlist && data.playlist.entries && data.playlist.entries.length > 0) {
         const firstEntry = data.playlist.entries[0]
         const streamUrl = firstEntry.url
@@ -100,41 +131,52 @@ export const useRadioStore = defineStore('radio', () => {
 
     } catch (error) {
       console.error('Failed to parse M3U playlist:', error)
-      // If parsing fails, return the original URL as fallback
       console.log('Falling back to original M3U URL for direct playback attempt')
       return m3uUrl
     }
   }
 
-  // Computed
+  /** Stores the value of `favorites.value` as an array. */
   const favoritesList = computed(() => Object.values(favorites.value))
+  /** Stores the value `true` if the `favoritesList` is not empty. */
   const hasFavorites = computed(() => favoritesList.value.length > 0)
 
-  // Actions
+  /**
+    * Set the `radioBrowserBaseURL` to a random server,
+    * that are returned by [[https://all.api.radio-browser.info/json/servers]] API.
+    *
+    * If no servers are found, it falls back to [[https://de1.api.radio-browser.info]].
+    */
   const setRadioBrowserBaseUrl = async () => {
     try {
-      // Get available Radio-Browser API servers
-      const response = await fetch('https://de1.api.radio-browser.info/json/servers')
+      const response = await fetch('https://all.api.radio-browser.info/json/servers')
       const servers = await response.json()
 
       if (servers && servers.length > 0) {
-        // Pick a random server
         const randomServer = servers[Math.floor(Math.random() * servers.length)]
         radioBrowserBaseUrl.value = `https://${randomServer.name}`
         console.log('Using Radio-Browser API base URL:', radioBrowserBaseUrl.value)
       }
     } catch (error) {
       console.error('Failed to get Radio-Browser servers:', error)
-      // Fallback to default
       radioBrowserBaseUrl.value = 'https://de1.api.radio-browser.info'
     }
   }
 
-  const searchRadioBrowser = async (query: string) => {
+  /**
+    * This function searches for a new radio station via
+    * the [[radio-browser.info]] API.
+    * It also limits the output to 50 radio stations.
+    *
+    * @param query - The search query string
+    */
+  const search = async (query: string) => {
+    /* Return if the query string is empty after being trimmed. */
     if (!query.trim()) return
 
     loading.value = true
     try {
+      /* Encode string into URI so spaces become `%20`. */
       const encodedQuery = encodeURIComponent(query.trim())
       const url = `${radioBrowserBaseUrl.value}/json/stations/byname/${encodedQuery}?hidebroken=true&limit=50`
 
@@ -145,6 +187,7 @@ export const useRadioStore = defineStore('radio', () => {
 
       const data = await response.json()
 
+      /* Writes the servers that are returned from the API into the `searchResults` ref. */
       searchResults.value = data.map((station: {
         stationuuid: string;
         name: string;
@@ -181,10 +224,11 @@ export const useRadioStore = defineStore('radio', () => {
     }
   }
 
-  const search = async (query: string) => {
-    await searchRadioBrowser(query)
-  }
-
+  /**
+    * Adds a radio station to the favorites of the user.
+    *
+    * @param station - The {@link RadioStation} that should be added to favourites.
+    */
   const addToFavorites = (station: RadioStation) => {
     favorites.value[station.id] = {
       id: station.id,
@@ -207,16 +251,20 @@ export const useRadioStore = defineStore('radio', () => {
       tags: station.tags
     }
 
-    // Update the station in search results
+    /* Update the favorite status of the station inside the `searchResults` */
     const stationIndex = searchResults.value.findIndex(s => s.id === station.id)
     if (stationIndex !== -1) {
       searchResults.value[stationIndex].isFavorite = true
     }
 
-    // Save to Config API
     saveFavoritesToConfig()
   }
 
+  /**
+    * Removes a radio staton from the favorites of the user.
+    *
+    * @param stationId - The {@link RadioStation} that should be removed from the favorites.
+    */
   const removeFromFavorites = (stationId: string) => {
     delete favorites.value[stationId]
 
@@ -230,6 +278,12 @@ export const useRadioStore = defineStore('radio', () => {
     saveFavoritesToConfig()
   }
 
+
+  /**
+    * Toggles the favorite state of a radio station.
+    *
+    * @param station - The {@link RadioStation} that should be toggled.
+    */
   const toggleFavorite = (station: RadioStation) => {
     if (favorites.value[station.id]) {
       removeFromFavorites(station.id)
@@ -238,6 +292,12 @@ export const useRadioStore = defineStore('radio', () => {
     }
   }
 
+  /**
+    * Updates the state of an audio station,
+    * that is already in the `favorites` record.
+    *
+    * @param editedStation - The {@link RadioStation} object that was edited.
+    */
   const editFavorite = (editedStation: RadioFavorite) => {
     if (favorites.value[editedStation.id]) {
       favorites.value[editedStation.id] = editedStation
@@ -245,19 +305,28 @@ export const useRadioStore = defineStore('radio', () => {
     }
   }
 
+  /**
+   * This is the function that lets a radio be played.
+   * It first configures the radio player (the default is mpd),
+   * then tries to parse the URL if it is a M3U playlist,
+   * sets the player up for listening to audio and
+   * finally queues and plays the radio station.
+   *
+   * @param {RadioStation | RadioFavorite} station - The station that should be played from.
+   */
   const playStation = async (station: RadioStation | RadioFavorite) => {
     try {
       const playerStore = usePlayerStore()
       const configStore = useAppConfigStore()
 
-      // Get the configured radio player (default: "mpd")
+      /* Get the configured radio player. The default is mpd. */
       const radioPlayerName = configStore.radioPlayer()
       const stationName = 'name' in station ? station.name : station.title
 
       console.log('Playing radio station:', stationName, 'on player:', radioPlayerName)
       console.log('Original station URL:', station.url)
 
-      // Check if the URL is an M3U playlist and parse it if needed
+      /* Check if the URL is an M3U playlist and parse it if needed */
       let finalUrl = station.url
       if (station.url.toLowerCase().endsWith('.m3u')) {
         console.log('Detected M3U playlist, parsing to extract stream URL...')
@@ -266,20 +335,20 @@ export const useRadioStore = defineStore('radio', () => {
 
       console.log('Final stream URL:', finalUrl)
 
-      // Step 1: Pause the current player
-      console.log('Step 1: Pausing current player...')
+      /* Pause the current player */
+      console.log('Pausing current player...')
       await playerStore.sendCommand('pause')
-      console.log('Step 1: Current player paused')
+      console.log('Current player paused')
 
-      // Step 2: Clear the queue of the radioPlayer
-      console.log('Step 2: Clearing radio player queue...')
+      /* Clear the queue of the radioPlayer */
+      console.log('Clearing radio player queue...')
       await sendPlayerCommand(radioPlayerName, 'clear_queue')
-      console.log('Step 2: Radio player queue cleared')
+      console.log('Radio player queue cleared')
 
-      // Step 3: Add the URL of the radio station to the queue of the radioPlayer
-      console.log('Step 3: Adding station URL to radio player queue...')
+      /* Add the URL of the radio station to the queue of the radioPlayer */
+      console.log('Adding station URL to radio player queue...')
 
-      // Prepare metadata for the radio station
+      /* Prepare metadata for the radio station */
       const metadata = {
         title: stationName,
         artist: 'name' in station ? (station.country || 'Radio Station') : (station.metadata?.country || station.country || 'Radio Station'),
@@ -299,14 +368,14 @@ export const useRadioStore = defineStore('radio', () => {
         } : {})
       }
 
-      // Use the final URL (parsed from M3U if necessary) with metadata
+      /* Use the final URL (parsed from M3U if necessary) with metadata */
       await addTrackToPlayer(radioPlayerName, finalUrl, metadata)
-      console.log('Step 3: Station URL added to radio player queue')
+      console.log('Station URL added to radio player queue')
 
-      // Step 4: Send a "play" command to the radioPlayer
-      console.log('Step 4: Starting radio player playback...')
+      /* Send play command to the radioPlayer */
+      console.log('Starting radio player playback...')
       await sendPlayerCommand(radioPlayerName, 'play')
-      console.log('Step 4: Radio player playback started')
+      console.log('Radio player playback started')
 
       console.log('Successfully started radio playback')
 
@@ -316,6 +385,9 @@ export const useRadioStore = defineStore('radio', () => {
     }
   }
 
+  /**
+    * Function to save the favorites to the config API.
+    */
   const saveFavoritesToConfig = async () => {
     try {
       const serializedFavorites = JSON.stringify(favorites.value)
@@ -330,17 +402,22 @@ export const useRadioStore = defineStore('radio', () => {
     }
   }
 
+  /**
+    * Function to load the favorites from the config API.
+    * While doing so, it will also migrate old saved favorite radio stations
+    * to a newer format, ensuring compatibility.
+    */
   const loadFavoritesFromConfig = async () => {
     try {
       const response = await getConfigValue('ui.radiostations')
       if (response.status === 'success' && response.data) {
         const loadedFavorites = JSON.parse(response.data.value)
 
-        // Migrate old favorites to new metadata structure while maintaining backward compatibility
+        /* Migrate old favorites to new metadata structure while maintaining backward compatibility */
         for (const favorite of Object.values(loadedFavorites)) {
           const fav = favorite as RadioFavorite
 
-          // Ensure legacy fields are defined for backward compatibility
+          /* Ensure legacy fields are defined for backward compatibility */
           if (typeof fav.country === 'undefined') {
             fav.country = undefined
           }
@@ -348,7 +425,7 @@ export const useRadioStore = defineStore('radio', () => {
             fav.tags = undefined
           }
 
-          // Migrate to new metadata structure if not already present
+          /* Migrate to new metadata structure if not already present */
           if (!fav.metadata && (fav.img || fav.country || fav.tags)) {
             fav.metadata = {
               title: fav.title,
@@ -358,9 +435,9 @@ export const useRadioStore = defineStore('radio', () => {
             }
           }
 
-          // Ensure both metadata and legacy fields are in sync
+          /* Ensure both metadata and legacy fields are in sync */
           if (fav.metadata) {
-            // Update legacy fields from metadata for backward compatibility
+            /* Update legacy fields from metadata for backward compatibility */
             if (!fav.img && fav.metadata.coverart_url) {
               fav.img = fav.metadata.coverart_url
             }
@@ -385,37 +462,42 @@ export const useRadioStore = defineStore('radio', () => {
     }
   }
 
+  /**
+    * Function to clear the search results.
+    */
   const clearSearchResults = () => {
     searchResults.value = []
     loaded.value = false
   }
 
-  // Initialize
+  /**
+    * Initial function of this store.
+    * This should be called before using any other function.
+    */
   const initialize = async () => {
-    // Initialize configuration store
+    /* Initialize configuration store */
     const configStore = useAppConfigStore()
     await configStore.getConfig()
 
-    // Load favorites from Config API (with localStorage fallback)
+    /* Load favorites from Config API (with localStorage fallback) */
     await loadFavoritesFromConfig()
     await setRadioBrowserBaseUrl()
   }
 
   return {
-    // State
+    /* States */
     favorites,
     searchResults,
     loading,
     loaded,
     radioBrowserBaseUrl,
 
-    // Computed
+    /* Computed */
     favoritesList,
     hasFavorites,
 
-    // Actions
+    /* Actions */
     search,
-    searchRadioBrowser,
     addToFavorites,
     removeFromFavorites,
     editFavorite,

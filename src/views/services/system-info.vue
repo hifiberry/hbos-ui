@@ -1,5 +1,5 @@
 <template>
-  <PageContent title="System Information" :backlinkRouter="{ name: 'services' }">
+  <PageContent title="System Information" :backrouterLink="{ name: 'services' }">
     <div class="page-header">
       <div
         class="auto-update-indicator"

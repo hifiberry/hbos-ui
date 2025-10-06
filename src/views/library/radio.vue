@@ -1,9 +1,5 @@
 <template>
-  <div class="radio">
-    <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'library' }">Radio</BackRouter>
-    </div>
-
+  <PageContent title="Radio" :backrouterLink="{ name: 'library' }">
     <div class="radio-content">
       <!-- Search Section -->
       <div class="search-section">
@@ -111,14 +107,14 @@
     <!-- Edit Popup -->
     <RadioEditPopup :is-visible="showEditPopup" :station="editingStation" @close="closeEditPopup"
       @save="saveEditedStation" />
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
-import BackRouter from '@/components/BackRouter.vue'
+import PageContent from '@/components/PageContent.vue'
 import CustomSearchField from '@/components/CustomSearchField.vue'
 import CustomMarquee from '@/components/CustomMarquee.vue'
 import RadioEditPopup from '@/components/RadioEditPopup.vue'
@@ -219,252 +215,241 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.radio {
-  .breadcrumbs {
-    margin-bottom: 32px;
+.radio-content {
+  .search-section {
+    margin-bottom: 40px;
 
-    h1 {
-      margin: 0;
+    .search-container {
+      margin-bottom: 20px;
+    }
+  }
+
+  .favorites-section,
+  .search-results-section {
+    margin-bottom: 40px;
+
+    h2 {
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      font-weight: 600;
       color: var(--color-head);
     }
   }
 
-  .radio-content {
-    .search-section {
-      margin-bottom: 40px;
+  .stations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 20px;
 
-      .search-container {
-        margin-bottom: 20px;
+    @include media-down(lg) {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 15px;
+    }
+
+    @include media-down(md) {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+  }
+
+  .station-poster {
+    color: var(--color-body-secondary);
+    cursor: pointer;
+    transition: all 0.2s linear;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 14px;
+    position: relative;
+
+    &:hover {
+      color: var(--color-primary);
+
+      .station-title,
+      .station-subtitle {
+        color: var(--color-primary);
+      }
+
+      .station-poster-img img {
+        transform: scale(1.2);
       }
     }
 
-    .favorites-section,
-    .search-results-section {
-      margin-bottom: 40px;
-
-      h2 {
-        margin-bottom: 20px;
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--color-head);
+    &.favorite {
+      .station-actions .favorite-btn {
+        color: var(--color-primary);
       }
     }
 
-    .stations-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 20px;
+    .station-poster-img {
+      width: 140px;
+      height: 140px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      border-radius: 8px;
 
       @include media-down(lg) {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 15px;
+        width: 100px;
+        height: 100px;
       }
 
-      @include media-down(md) {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      }
-    }
-
-    .station-poster {
-      color: var(--color-body-secondary);
-      cursor: pointer;
-      transition: all 0.2s linear;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 14px;
-      position: relative;
-
-      &:hover {
-        color: var(--color-primary);
-
-        .station-title,
-        .station-subtitle {
-          color: var(--color-primary);
-        }
-
-        .station-poster-img img {
-          transform: scale(1.2);
-        }
-      }
-
-      &.favorite {
-        .station-actions .favorite-btn {
-          color: var(--color-primary);
-        }
-      }
-
-      .station-poster-img {
-        width: 140px;
-        height: 140px;
-        margin-bottom: 10px;
-        overflow: hidden;
-        border-radius: 8px;
-
-        @include media-down(lg) {
-          width: 100px;
-          height: 100px;
-        }
-
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: all 0.2s linear;
-        }
-
-        .station-poster-placeholder {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background-color: var(--cover-placeholder-bg);
-
-          svg {
-            width: 50px;
-            height: 50px;
-            color: var(--color-icon-primary);
-          }
-        }
-      }
-
-      .station-poster-attr {
+      img {
         width: 100%;
-        text-align: center;
-        font-size: 12px;
-        margin-bottom: 8px;
-
-        .station-title,
-        .station-subtitle {
-          transition: all 0.2s linear;
-          margin-bottom: 3px;
-        }
-
-        .station-title {
-          @include poster-title;
-        }
-
-        .station-subtitle {
-          @include poster-subtitle;
-        }
-
-        .station-tags {
-          @include poster-note;
-          display: flex;
-          gap: 4px;
-          flex-wrap: wrap;
-          justify-content: center;
-          margin-top: 4px;
-
-          .tag {
-            padding: 1px 4px;
-            background: var(--color-background-tag);
-            color: var(--color-text-tag);
-            border-radius: 3px;
-            font-size: inherit;
-            border: 1px solid var(--color-border-tag);
-          }
-        }
+        height: 100%;
+        object-fit: cover;
+        transition: all 0.2s linear;
       }
 
-      .station-actions {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        opacity: 0;
-        transition: opacity 0.2s ease;
+      .station-poster-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--cover-placeholder-bg);
 
-        .favorite-btn {
-          @include edit-overlay-background;
-          border: none;
-          padding: 6px;
-          cursor: pointer;
-          border-radius: 50%;
+        svg {
+          width: 50px;
+          height: 50px;
+          color: var(--color-icon-primary);
+        }
+      }
+    }
+
+    .station-poster-attr {
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      margin-bottom: 8px;
+
+      .station-title,
+      .station-subtitle {
+        transition: all 0.2s linear;
+        margin-bottom: 3px;
+      }
+
+      .station-title {
+        @include poster-title;
+      }
+
+      .station-subtitle {
+        @include poster-subtitle;
+      }
+
+      .station-tags {
+        @include poster-note;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 4px;
+
+        .tag {
+          padding: 1px 4px;
+          background: var(--color-background-tag);
+          color: var(--color-text-tag);
+          border-radius: 3px;
+          font-size: inherit;
+          border: 1px solid var(--color-border-tag);
+        }
+      }
+    }
+
+    .station-actions {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+
+      .favorite-btn {
+        @include edit-overlay-background;
+        border: none;
+        padding: 6px;
+        cursor: pointer;
+        border-radius: 50%;
+        color: white;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.3);
+          transform: scale(1.1);
+        }
+
+        &.active {
           color: white;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        }
 
-          &:hover {
-            background: rgba(0, 0, 0, 0.3);
-            transform: scale(1.1);
-          }
-
-          &.active {
-            color: white;
-          }
-
-          svg {
-            width: 16px;
-            height: 16px;
-            color: white !important;
-          }
+        svg {
+          width: 16px;
+          height: 16px;
+          color: white !important;
         }
       }
-
-      &:hover .station-actions {
-        opacity: 1;
-      }
     }
 
-    .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      padding: 60px 20px;
+    &:hover .station-actions {
+      opacity: 1;
+    }
+  }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 60px 20px;
+    color: var(--color-body-secondary);
+
+    .app-icon {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--color-body-secondary);
+
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 1.25rem;
+      color: var(--color-body-primary);
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    text-align: center;
+    max-width: 400px;
+    margin: 0 auto;
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 24px;
       color: var(--color-body-secondary);
-
-      .app-icon {
-        animation: spin 1s linear infinite;
-      }
+      opacity: 0.5;
     }
 
-    .no-results {
-      text-align: center;
-      padding: 60px 20px;
+    h2 {
+      margin-bottom: 12px;
+      color: var(--color-body-primary);
+    }
+
+    p {
       color: var(--color-body-secondary);
-
-      h3 {
-        margin: 0 0 8px 0;
-        font-size: 1.25rem;
-        color: var(--color-body-primary);
-      }
-
-      p {
-        margin: 0;
-      }
-    }
-
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 50vh;
-      text-align: center;
-      max-width: 400px;
-      margin: 0 auto;
-
-      .empty-icon {
-        width: 80px;
-        height: 80px;
-        margin-bottom: 24px;
-        color: var(--color-body-secondary);
-        opacity: 0.5;
-      }
-
-      h2 {
-        margin-bottom: 12px;
-        color: var(--color-body-primary);
-      }
-
-      p {
-        color: var(--color-body-secondary);
-        line-height: 1.5;
-      }
+      line-height: 1.5;
     }
   }
 }

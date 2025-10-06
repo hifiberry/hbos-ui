@@ -4,7 +4,7 @@
       {{ title }}
     </BackRouter>
 
-    <router-link v-if="hintLink" :to="hintLink" class="titleHintLink">
+    <router-link v-else-if="hintLink" :to="hintLink" class="titleHintLink">
       <h1>
         {{ title }}
       </h1>

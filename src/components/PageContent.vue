@@ -4,7 +4,7 @@
       {{ title }}
     </BackRouter>
 
-    <router-link v-if="hintLink" :to="hintLink" class="titleLink">
+    <router-link v-if="hintLink" :to="hintLink" class="titleHintLink">
       <h1>
         {{ title }}
       </h1>
@@ -40,6 +40,24 @@ h1, .backrouter {
   }
 }
 
+.titleHintLink {
+  color: var(--color-text);
+  text-decoration: none;
+  position: relative;
+  display: inline-block;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: var(--color-accent);
+    cursor: pointer;
+
+    .minimalHint {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}
+
 .minimalHint {
   position: absolute;
   top: 50%;
@@ -64,24 +82,6 @@ h1, .backrouter {
     left: 50%;
     border: 4px solid transparent;
     border-bottom-color: var(--color-body);
-  }
-}
-
-.titleLink {
-  color: var(--color-text);
-  text-decoration: none;
-  position: relative;
-  display: inline-block;
-  transition: color 0.3s ease;
-
-  &:hover {
-    color: var(--color-accent);
-    cursor: pointer;
-
-    .minimalHint {
-      opacity: 1;
-      visibility: visible;
-    }
   }
 }
 </style>

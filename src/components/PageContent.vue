@@ -49,9 +49,6 @@ import BackRouter from '@/components/BackRouter.vue'
 <style scoped lang="scss">
 h1, .backrouter {
   padding-bottom: 25px;
-  @include media-down(sm) {
-    display: none;
-  }
   &.noPadding{
     padding-bottom: 0px;
   }

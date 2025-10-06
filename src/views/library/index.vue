@@ -1,7 +1,5 @@
 <template>
-  <div class="library">
-    <h1>Music Library</h1>
-
+  <PageContent title="Music Library">
     <ContentBox>
       <div class="libaryCard">
         <div class="title">
@@ -41,11 +39,12 @@
           @click="playStation" />
       </div>
     </ContentBox>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import ContentBox from "@/components/ContentBox.vue"
+import PageContent from "@/components/PageContent.vue"
 import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
@@ -110,36 +109,34 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.library {
-  .title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 25px;
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
 
-    h2 {
-      margin-bottom: 0;
-    }
+  h2 {
+    margin-bottom: 0;
   }
-  .libaryCard{
-    padding: 25px;
+}
+.libaryCard{
+  padding: 25px;
+}
+
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+
+  .empty-icon {
+    margin-bottom: 16px;
+    opacity: 0.6;
   }
 
-
-  .empty-state {
-    padding: 40px 20px;
-    text-align: center;
-    color: var(--color-text-secondary);
-
-    .empty-icon {
-      margin-bottom: 16px;
-      opacity: 0.6;
-    }
-
-    p {
-      margin: 0;
-      font-size: 16px;
-    }
+  p {
+    margin: 0;
+    font-size: 16px;
   }
 }
 </style>

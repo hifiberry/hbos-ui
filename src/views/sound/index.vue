@@ -1,7 +1,5 @@
 <template>
-  <div class="sound">
-    <h1>Sound</h1>
-
+  <PageContent title="Sound">
     <div class="soundOverview">
       <ContentBoxLink :to="{ name: 'general-sound' }"  height=150>
         <div class="soundCardHeader">
@@ -39,12 +37,13 @@
         <p class="soundCardDescription">Automatically analyze and correct room acoustics for optimal sound reproduction</p>
       </ContentBoxLink>
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue'
 import ContentBoxLink from "@/components/ContentBoxLink.vue"
+import PageContent from "@/components/PageContent.vue"
 </script>
 
 <style scoped lang="scss">

@@ -1,9 +1,12 @@
 <template>
-<div class="sound-page">
+<PageContent
+  :title="`Speaker Equalizer ${channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right')}`"
+  :backrouterLink="{ name: 'sound' }"
+  :headerHasContentBelow=true
+>
   <div class="sound">
     <div class="page-header">
       <div class="title-section">
-        <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
         <div class="backend-info" v-if="backendName">
           <span class="backend-name" @click="showBackendInfoModal = true">{{ backendName }}</span>
           <span class="filter-limits" v-if="currentChannelFilterInfo">
@@ -308,13 +311,14 @@
         </div>
       </div>
     </teleport>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import Icon from '@/components/Icon.vue';
+import PageContent from '@/components/PageContent.vue';
 import FilterGraph from '@/components/FilterGraph.vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { type Filter } from '@/utils/filtercalc';
@@ -1190,14 +1194,6 @@ watch(activeChannel, async () => {
       display: flex;
       flex-direction: column;
       gap: 5px;
-
-      h1 {
-        margin: 0;
-        font-family: 'Metropolis', sans-serif;
-        font-weight: 500;
-        font-size: 28px;
-        line-height: 1.2;
-      }
 
       .backend-info {
         display: flex;

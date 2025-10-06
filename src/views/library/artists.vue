@@ -1,7 +1,6 @@
 <template>
-  <div class="artists">
+  <PageContent title="Artists" :backrouterLink="{ name: 'library' }">
     <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'library' }">Artists</BackRouter>
       <div class="search-bar">
         <CustomSearchField
           v-model="search"
@@ -28,7 +27,7 @@
       :items="sortedArtists"
       @letter-click="scrollToLetter"
     />
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
@@ -36,7 +35,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import BackRouter from '@/components/BackRouter.vue'
+import PageContent from '@/components/PageContent.vue'
 import CustomSearchField from '@/components/CustomSearchField.vue'
 import PosterGrid from '@/components/PosterGrid.vue'
 import AlphabetIndex from '@/components/AlphabetIndex.vue'

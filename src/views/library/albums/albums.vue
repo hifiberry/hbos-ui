@@ -1,7 +1,6 @@
 <template>
-  <div class="albums">
+  <PageContent title="Albums" :backrouterLink="{ name: 'library' }">
     <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'library' }">Albums</BackRouter>
       <div class="controls">
         <SortSelector
           :sort-by="sortBy"
@@ -27,7 +26,7 @@
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id }, query: { from: 'albums' } })"
       />
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
@@ -38,7 +37,7 @@ const router = useRouter()
 
 import { storeToRefs } from 'pinia'
 
-import BackRouter from '@/components/BackRouter.vue'
+import PageContent from '@/components/PageContent.vue'
 import CustomSearchField from '@/components/CustomSearchField.vue'
 import SortSelector from '@/components/SortSelector.vue'
 

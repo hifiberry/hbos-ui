@@ -1,6 +1,5 @@
 <template>
-  <div class="settings">
-    <h1>Settings</h1>
+  <PageContent title="Settings">
     <div class="settingsOverview">
       <ContentBoxLink :to="{ name: 'players' }" height=150>
         <div class="settingsCardHeader">
@@ -62,12 +61,13 @@
         </p>
       </ContentBoxLink>
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue'
 import ContentBoxLink from "@/components/ContentBoxLink.vue"
+import PageContent from "@/components/PageContent.vue"
 </script>
 
 <style scoped lang="scss">

@@ -1,141 +1,141 @@
 <template>
-  <div class="sound-page">
-    <div class="sound">
-      <div class="page-header">
-        <div class="title-section">
-          <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
-          <div class="backend-info" v-if="backendName">
-            <span class="backend-name" @click="showBackendInfoModal = true">{{ backendName }}</span>
-            <span class="filter-limits" v-if="currentChannelFilterInfo">
-              • {{ currentChannelFilterInfo.currentFilterCount }}/{{ currentChannelFilterInfo.maxFilters }} filters
-            </span>
-          </div>
-        </div>
-        <div class="header-actions">
-          <img src="/images/svg/link.svg"
-            @click="toggleChannelMode"
-            title="Channel Mode"
-            :class="{ linked: channelMode === 'both' }"
-            class="icon-btn" />
-          <img src="/images/svg/ear.svg"
-            @mousedown="startBypass"
-            @mouseup="endBypass"
-            @mouseleave="endBypass"
-            @touchstart="startBypass"
-            @touchend="endBypass"
-            :class="{ bypassed: isBypassed }"
-            class="icon-btn"
-            title="Bypass" />
-          <img src="/images/svg/tabler/armchair.svg" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
-          <img src="/images/svg/folder_open.svg" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
-          <img src="/images/svg/save.svg" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
+<div class="sound-page">
+  <div class="sound">
+    <div class="page-header">
+      <div class="title-section">
+        <h1>Speaker Equaliser {{ channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right') }}</h1>
+        <div class="backend-info" v-if="backendName">
+          <span class="backend-name" @click="showBackendInfoModal = true">{{ backendName }}</span>
+          <span class="filter-limits" v-if="currentChannelFilterInfo">
+            • {{ currentChannelFilterInfo.currentFilterCount }}/{{ currentChannelFilterInfo.maxFilters }} filters
+          </span>
         </div>
       </div>
-      <div class="card">
-        <div class="graph">
-          <FilterGraph
-            :filters="filters"
-            :active-filter-id="activeFilterId"
-            :show-bandwidth-lines="true"
-            :sample-rate="SAMPLE_RATE"
-            @set-active-filter="setActiveFilter"
-            @update:freq-gain="onGraphUpdateFreqGain"
-            @update:q="onGraphUpdateQ"
-            @drag-start="onGraphDragStart"
-            @drag-end="onGraphDragEnd"
-          />
+      <div class="header-actions">
+        <Icon icon="link"
+          @click="toggleChannelMode"
+          title="Channel Mode"
+          :class="{ linked: channelMode === 'both' }"
+          class="icon-btn" />
+        <Icon icon="ear"
+          @mousedown="startBypass"
+          @mouseup="endBypass"
+          @mouseleave="endBypass"
+          @touchstart="startBypass"
+          @touchend="endBypass"
+          :class="{ bypassed: isBypassed }"
+          class="icon-btn"
+          title="Bypass" />
+        <Icon icon="armchair" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
+        <Icon icon="folder_open" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
+        <Icon icon="save" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
+      </div>
+    </div>
+    <div class="card">
+      <div class="graph">
+        <FilterGraph
+          :filters="filters"
+          :active-filter-id="activeFilterId"
+          :show-bandwidth-lines="true"
+          :sample-rate="SAMPLE_RATE"
+          @set-active-filter="setActiveFilter"
+          @update:freq-gain="onGraphUpdateFreqGain"
+          @update:q="onGraphUpdateQ"
+          @drag-start="onGraphDragStart"
+          @drag-end="onGraphDragEnd"
+        />
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="equaliser-panel">
+        <div class="tabs">
+        <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'left' }]" @click="setActiveChannel('left')">
+          Left
+        </button>
+        <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'right' }]" @click="setActiveChannel('right')">
+          Right
+        </button>
+      </div>
+
+      <div class="filters">
+        <div class="filter-header-wrapper">
         </div>
       </div>
 
-      <div class="card mt-3">
-        <div class="equaliser-panel">
-          <div class="tabs">
-          <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'left' }]" @click="setActiveChannel('left')">
-            Left
-          </button>
-          <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'right' }]" @click="setActiveChannel('right')">
-            Right
-          </button>
-        </div>
-
-        <div class="filters">
-          <div class="filter-header-wrapper">
-          </div>
-        </div>
-
-        <div class="filters-list">
-          <div v-for="filter in filters" :key="filter.id" class="card">
-            <div class="filter-item" :class="{ active: activeFilterId === filter.id }" @click="setActiveFilter(filter.id)">
-              <div class="filter-main">
-                <div class="filter-info">
-                  <AppIcon :icon="getFilterIconName(filter.icon)" class="filter-icon"
-                    :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
-                  <div class="filter-details">
-                    <h3 v-if="filter.icon === 'generic_normalized'">
-                      {{ formatFilterTypeName(filter.icon) }} |
-                      b0={{ filter.genericCoeffs?.b0 || 1 }}
-                      b1={{ filter.genericCoeffs?.b1 || 0 }}
-                      b2={{ filter.genericCoeffs?.b2 || 0 }}
-                      a1={{ filter.genericCoeffs?.a1 || 0 }}
-                      a2={{ filter.genericCoeffs?.a2 || 0 }}
-                    </h3>
-                    <h3 v-else>
-                      {{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}
-                    </h3>
-                  </div>
-                </div>
-                <div class="filter-actions" @click.stop>
-                  <div class="filter-toggle">
-                    <label class="toggle-switch">
-                      <input type="checkbox" :checked="filter.enabled" @change="toggleFilterEnabled(filter)" />
-                      <span class="toggle-slider"></span>
-                    </label>
-                  </div>
-                  <div class="filter-remove" @click="removeFilter(filter.id)">
-                    <AppIcon icon="close" />
-                  </div>
+      <div class="filters-list">
+        <div v-for="filter in filters" :key="filter.id" class="card">
+          <div class="filter-item" :class="{ active: activeFilterId === filter.id }" @click="setActiveFilter(filter.id)">
+            <div class="filter-main">
+              <div class="filter-info">
+                <Icon :icon="getFilterIconName(filter.icon)" class="filter-icon"
+                  :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
+                <div class="filter-details">
+                  <h3 v-if="filter.icon === 'generic_normalized'">
+                    {{ formatFilterTypeName(filter.icon) }} |
+                    b0={{ filter.genericCoeffs?.b0 || 1 }}
+                    b1={{ filter.genericCoeffs?.b1 || 0 }}
+                    b2={{ filter.genericCoeffs?.b2 || 0 }}
+                    a1={{ filter.genericCoeffs?.a1 || 0 }}
+                    a2={{ filter.genericCoeffs?.a2 || 0 }}
+                  </h3>
+                  <h3 v-else>
+                    {{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}
+                  </h3>
                 </div>
               </div>
+              <div class="filter-actions" @click.stop>
+                <div class="filter-toggle">
+                  <label class="toggle-switch">
+                    <input type="checkbox" :checked="filter.enabled" @change="toggleFilterEnabled(filter)" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="filter-remove" @click="removeFilter(filter.id)">
+                  <Icon icon="close" />
+                </div>
+              </div>
+            </div>
 
-              <div class="filter-controls" @click.stop>
-                <!-- Standard filter controls for non-generic filters -->
-                <template v-if="filter.icon !== 'generic_normalized'">
-                  <div class="standard-controls">
-                    <div class="control-group">
-                      <label>Frequency</label>
-                      <div class="control-buttons">
-                        <button @click="decrementFilterFrequency(filter)" class="control-btn">
-                          <AppIcon icon="minus-small" />
-                        </button>
-                        <span class="control-value">{{ filter.frequency }} Hz</span>
-                        <button @click="incrementFilterFrequency(filter)" class="control-btn">
-                          <AppIcon icon="plus-small" />
-                        </button>
-                      </div>
+            <div class="filter-controls" @click.stop>
+              <!-- Standard filter controls for non-generic filters -->
+              <template v-if="filter.icon !== 'generic_normalized'">
+                <div class="standard-controls">
+                  <div class="control-group">
+                    <label>Frequency</label>
+                    <div class="control-buttons">
+                      <button @click="decrementFilterFrequency(filter)" class="control-btn">
+                        <Icon icon="minus-small" />
+                      </button>
+                      <span class="control-value">{{ filter.frequency }} Hz</span>
+                      <button @click="incrementFilterFrequency(filter)" class="control-btn">
+                        <Icon icon="plus-small" />
+                      </button>
                     </div>
+                  </div>
 
-                    <div class="control-group">
-                      <label>Gain</label>
-                      <div class="control-buttons">
-                        <button @click="decrementFilterGain(filter)" class="control-btn">
-                          <AppIcon icon="minus-small" />
-                        </button>
-                        <span class="control-value">{{ filter.gain }} dB</span>
-                        <button @click="incrementFilterGain(filter)" class="control-btn">
-                          <AppIcon icon="plus-small" />
-                        </button>
-                      </div>
+                  <div class="control-group">
+                    <label>Gain</label>
+                    <div class="control-buttons">
+                      <button @click="decrementFilterGain(filter)" class="control-btn">
+                        <Icon icon="minus-small" />
+                      </button>
+                      <span class="control-value">{{ filter.gain }} dB</span>
+                      <button @click="incrementFilterGain(filter)" class="control-btn">
+                        <Icon icon="plus-small" />
+                      </button>
                     </div>
+                  </div>
 
                     <div class="control-group">
                       <label>Q (width)</label>
                       <div class="control-buttons">
                         <button @click="widenFilterBand(filter)" class="control-btn">
-                          <AppIcon icon="minus-small" />
+                          <Icon icon="minus-small" />
                         </button>
                         <span class="control-value">{{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</span>
                         <button @click="narrowFilterBand(filter)" class="control-btn">
-                          <AppIcon icon="plus-small" />
+                          <Icon icon="plus-small" />
                         </button>
                       </div>
                     </div>
@@ -194,7 +194,7 @@
                  @click="canAddFilterToCurrentChannel && (showAddFilterModal = true)">
               <div class="filter-main">
                 <div class="filter-info">
-                  <AppIcon icon="plus" class="filter-icon" />
+                  <Icon icon="plus" class="filter-icon" />
                   <div class="filter-details">
                     <h3>{{ canAddFilterToCurrentChannel ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
                     <div class="filter-frequency">
@@ -225,7 +225,7 @@
             <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
               :class="['filter-type-option']"
               @click="addFilterOfType(type)">
-              <AppIcon :icon="getFilterIconName(type)" class="filter-icon" />
+              <Icon :icon="getFilterIconName(type)" class="filter-icon" />
               <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
             </button>
           </div>
@@ -314,8 +314,8 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
-import AppIcon from '@/components/app-icon.vue';
-import FilterGraph from '@/components/filter-graph.vue';
+import Icon from '@/components/Icon.vue';
+import FilterGraph from '@/components/FilterGraph.vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { type Filter } from '@/utils/filtercalc';
 
@@ -1233,16 +1233,11 @@ watch(activeChannel, async () => {
         cursor: pointer;
         width: 24px;
         height: 24px;
-        fill: #707070;
         transition: fill 0.2s ease;
-
-        &:hover {
-          fill: #e11e4a;
-        }
+        stroke: var(--color-icon);
 
         &.bypassed {
-          fill: #00b8ff;
-          filter: drop-shadow(0 0 4px rgba(0, 184, 255, 0.5));
+          stroke: blue;
         }
       }
 
@@ -1250,19 +1245,14 @@ watch(activeChannel, async () => {
         cursor: pointer;
         width: 24px;
         height: 24px;
-        filter: invert(44%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(1);
-        transition: filter 0.2s ease;
+        transition: opacity 0.2s ease;
 
         &:hover {
-          filter: invert(23%) sepia(89%) saturate(1352%) hue-rotate(340deg) brightness(99%) contrast(80%);
-        }
-
-        &.bypassed {
-          filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(186deg) brightness(118%) contrast(119%) drop-shadow(0 0 4px rgba(0, 184, 255, 0.5));
+          opacity: 0.5;
         }
 
         &.linked {
-          filter: invert(23%) sepia(89%) saturate(1352%) hue-rotate(340deg) brightness(99%) contrast(80%);
+          stroke: red;
         }
       }
     }
@@ -1596,7 +1586,7 @@ watch(activeChannel, async () => {
                 font-size: 18px;
                 font-weight: 500;
                 margin: 0 0 5px 0;
-                color: #333;
+                color: #color-text;
               }
 
               .filter-frequency {
@@ -1714,7 +1704,7 @@ watch(activeChannel, async () => {
                 font-weight: 500;
                 min-width: 60px;
                 text-align: center;
-                color: #333;
+                color: var(--color-text);
               }
             }
           }
@@ -1900,7 +1890,7 @@ watch(activeChannel, async () => {
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--background-card);
   padding: 30px;
   border-radius: 10px;
   width: max-content;
@@ -1911,16 +1901,15 @@ watch(activeChannel, async () => {
   border: 1px solid #333;
   color: white;
 
-  h2 {
+  h2, p {
     font-size: 22px;
     margin-bottom: 15px;
-    color: black;
+    color: var(--color-text);
   }
 
   p {
     font-size: 16px;
     margin-bottom: 20px;
-    color: black;
   }
 
   .filter-type-selector {
@@ -1941,7 +1930,7 @@ watch(activeChannel, async () => {
       background-color: transparent;
       cursor: pointer;
       transition: all 0.3s ease;
-      color: #333; // Text color for default state
+      color: var(--color-text); // Text color for default state
       min-width: 120px; // Set a minimum width to make boxes more compact
       max-width: 140px; // Set a maximum width
 
@@ -1995,7 +1984,7 @@ watch(activeChannel, async () => {
 
     h2 {
       margin: 0;
-      color: black;
+      color: var(--color-head);
     }
 
     .close-btn {
@@ -2022,48 +2011,8 @@ watch(activeChannel, async () => {
   }
 
   .modal-body {
-    color: #333;
+    color: var(--color-text);
     line-height: 1.6;
-
-    h4 {
-      color: #e11e4a;
-      font-size: 16px;
-      margin-top: 20px;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-
-    ul {
-      margin: 10px 0;
-      padding-left: 20px;
-
-      li {
-        margin-bottom: 8px;
-      }
-    }
-
-    code {
-      background-color: #f5f5f5;
-      color: #d63384;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-    }
-
-    strong {
-      color: #000;
-    }
-
-    em {
-      color: #666;
-      font-style: italic;
-    }
-
-    p:first-child strong {
-      color: #e11e4a;
-      font-size: 18px;
-    }
   }
 }
 

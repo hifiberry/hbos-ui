@@ -30,6 +30,37 @@ export interface VolumeResponse {
   new_state: VolumeState | null
 }
 
+// Headphone Volume API Interfaces
+export interface HeadphoneControlsResponse {
+  status: 'success' | 'error'
+  data?: {
+    controls: string[]
+    count: number
+  }
+  message?: string
+}
+
+export interface HeadphoneVolumeResponse {
+  status: 'success' | 'error'
+  data?: {
+    volume: number
+    control?: string
+  }
+  message?: string
+}
+
+export interface HeadphoneVolumeSetRequest {
+  volume: number
+}
+
+export interface HeadphoneVolumeSetResponse {
+  status: 'success' | 'error'
+  message: string
+  data?: {
+    volume: number
+  }
+}
+
 /**
  * Build volume API URL using audiocontrol base URL
  */
@@ -38,6 +69,17 @@ const buildVolumeApiUrl = (endpoint: string): string => {
   const apiBaseUrl = configStore.getApiBaseUrl()
   const url = `${apiBaseUrl}/volume${endpoint}`
   console.log('Volume API URL:', url)
+  return url
+}
+
+/**
+ * Build headphone volume API URL using configurator base URL
+ */
+const buildHeadphoneVolumeApiUrl = (endpoint: string): string => {
+  const configStore = useAppConfigStore()
+  const configApiBaseUrl = configStore.getConfigApiBaseUrl()
+  const url = `${configApiBaseUrl}/volume/headphone${endpoint}`
+  console.log('Headphone Volume API URL:', url)
   return url
 }
 
@@ -181,5 +223,160 @@ export const toggleMute = async (): Promise<VolumeResponse | null> => {
   } catch (error) {
     console.error('Error toggling mute:', error)
     return null
+  }
+}
+
+// Headphone Volume Control APIs
+
+/**
+ * Get available headphone volume controls on the current sound card
+ */
+export const getHeadphoneControls = async (): Promise<HeadphoneControlsResponse> => {
+  try {
+    const url = buildHeadphoneVolumeApiUrl('/controls')
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      console.error('Failed to get headphone controls:', response.status, response.statusText)
+      return {
+        status: 'error',
+        message: `HTTP ${response.status}: ${response.statusText}`
+      }
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error getting headphone controls:', error)
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Get current headphone volume
+ */
+export const getHeadphoneVolume = async (): Promise<HeadphoneVolumeResponse> => {
+  try {
+    const url = buildHeadphoneVolumeApiUrl('')
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
+      console.error('Failed to get headphone volume:', response.status, errorData.message || response.statusText)
+      return {
+        status: 'error',
+        message: errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      }
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error getting headphone volume:', error)
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Set headphone volume
+ */
+export const setHeadphoneVolume = async (volume: number): Promise<HeadphoneVolumeSetResponse> => {
+  try {
+    if (volume < 0 || volume > 100) {
+      return {
+        status: 'error',
+        message: 'Volume must be between 0 and 100'
+      }
+    }
+
+    const url = buildHeadphoneVolumeApiUrl('')
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        volume: Math.round(volume) // Ensure integer value
+      } as HeadphoneVolumeSetRequest)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
+      console.error('Failed to set headphone volume:', response.status, errorData.message || response.statusText)
+      return {
+        status: 'error',
+        message: errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      }
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error setting headphone volume:', error)
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Store current headphone volume setting
+ */
+export const storeHeadphoneVolume = async (): Promise<HeadphoneVolumeSetResponse> => {
+  try {
+    const url = buildHeadphoneVolumeApiUrl('/store')
+    const response = await fetch(url, {
+      method: 'POST'
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
+      console.error('Failed to store headphone volume:', response.status, errorData.message || response.statusText)
+      return {
+        status: 'error',
+        message: errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      }
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error storing headphone volume:', error)
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
+/**
+ * Restore previously stored headphone volume setting
+ */
+export const restoreHeadphoneVolume = async (): Promise<HeadphoneVolumeSetResponse> => {
+  try {
+    const url = buildHeadphoneVolumeApiUrl('/restore')
+    const response = await fetch(url, {
+      method: 'POST'
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
+      console.error('Failed to restore headphone volume:', response.status, errorData.message || response.statusText)
+      return {
+        status: 'error',
+        message: errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      }
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error restoring headphone volume:', error)
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
   }
 }

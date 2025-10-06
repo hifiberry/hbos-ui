@@ -2,13 +2,21 @@
   <div class="system-info">
     <div class="page-header">
       <h1>System Information</h1>
-      <div class="auto-update-indicator" :class="{
-        'countdown-low': countdownSeconds <= 10 && !isAutoUpdatePaused,
-        'paused': isAutoUpdatePaused
-      }">
-        <AppIcon icon="activity" :width="16" :height="16" />
+      <div
+        class="auto-update-indicator"
+        :class="{
+          'countdown-low': countdownSeconds <= 10 && isAutoUpdateEnabled && !isAutoUpdatePaused,
+          'paused': isAutoUpdatePaused,
+          'disabled': !isAutoUpdateEnabled,
+          'clickable': true
+        }"
+        @click="toggleAutoUpdate"
+        title="Click to toggle auto-update"
+      >
+        <Icon icon="activity" :width="16" :height="16" />
         <span v-if="isAutoUpdatePaused">Auto-update paused</span>
-        <span v-else>Auto-updates in {{ countdownSeconds }}s</span>
+        <span v-else-if="!isAutoUpdateEnabled">Click to enable auto-update</span>
+        <span v-else>Auto-update in {{ countdownSeconds }}s</span>
       </div>
     </div>
 
@@ -30,7 +38,7 @@
         <!-- Raspberry Pi Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="computer" class="card-icon" />
+            <Icon icon="computer" class="card-icon" />
             <h2>Raspberry Pi</h2>
           </div>
           <table class="info-table">
@@ -45,7 +53,7 @@
                       class="edit-button"
                       :disabled="loading"
                     >
-                      <AppIcon icon="edit" :width="16" :height="16" />
+                      <Icon icon="edit" :width="16" :height="16" />
                     </button>
                   </div>
                   <div v-else class="hostname-edit">
@@ -65,7 +73,7 @@
                         :disabled="savingHostname || !editHostname.trim()"
                         :title="savingHostname ? 'Saving...' : 'Save'"
                       >
-                        <AppIcon icon="checkmark" :width="16" :height="16" />
+                        <Icon icon="checkmark" :width="16" :height="16" />
                       </button>
                       <button
                         @click="cancelEditingHostname"
@@ -73,7 +81,7 @@
                         :disabled="savingHostname"
                         title="Cancel"
                       >
-                        <AppIcon icon="close" :width="16" :height="16" />
+                        <Icon icon="close" :width="16" :height="16" />
                       </button>
                     </div>
                   </div>
@@ -82,6 +90,10 @@
               <tr>
                 <td class="label">Model</td>
                 <td class="value">{{ systemInfo.pi_model.name }}</td>
+              </tr>
+              <tr v-if="systemInfo.pi_model.memory">
+                <td class="label">Memory</td>
+                <td class="value">{{ systemInfo.pi_model.memory.total_gb }} GB</td>
               </tr>
               <tr>
                 <td class="label">System UUID</td>
@@ -94,7 +106,7 @@
         <!-- Network Configuration -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="network" class="card-icon" />
+            <Icon icon="network" class="card-icon" />
             <h2>Network</h2>
           </div>
           <div v-if="networkLoading" class="loading-message">
@@ -145,7 +157,7 @@
         <!-- HAT Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="hifiberry" class="card-icon" />
+            <Icon icon="hifiberry" class="card-icon" />
             <h2>HAT Information</h2>
           </div>
           <table class="info-table">
@@ -169,7 +181,7 @@
         <!-- Sound Card Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="volume" class="card-icon" />
+            <Icon icon="volume" class="card-icon" />
             <h2>Sound Card</h2>
           </div>
           <table class="info-table">
@@ -184,7 +196,7 @@
                       class="edit-button"
                       :disabled="loading"
                     >
-                      <AppIcon icon="edit" :width="16" :height="16" />
+                      <Icon icon="edit" :width="16" :height="16" />
                     </button>
                   </div>
                   <div v-else class="soundcard-edit">
@@ -208,7 +220,7 @@
                         :disabled="savingSoundCard || !selectedSoundCard"
                         :title="savingSoundCard ? 'Saving...' : 'Save'"
                       >
-                        <AppIcon icon="checkmark" :width="16" :height="16" />
+                        <Icon icon="checkmark" :width="16" :height="16" />
                       </button>
                       <button
                         @click="cancelEditingSoundCard"
@@ -216,7 +228,7 @@
                         :disabled="savingSoundCard"
                         title="Cancel"
                       >
-                        <AppIcon icon="close" :width="16" :height="16" />
+                        <Icon icon="close" :width="16" :height="16" />
                       </button>
                     </div>
                   </div>
@@ -250,10 +262,91 @@
           </table>
         </div>
 
+        <!-- Volume Control Information -->
+        <div class="info-card">
+          <div class="card-header">
+            <Icon icon="volume" class="card-icon" />
+            <h2>Volume Control</h2>
+          </div>
+          <div v-if="volumeLoading" class="loading-message">
+            Loading volume information...
+          </div>
+          <div v-else-if="volumeError" class="error-message">
+            {{ volumeError }}
+          </div>
+          <div v-else-if="!volumeInfo || !volumeInfo.available" class="info-message">
+            Volume control not available
+          </div>
+          <table v-else class="info-table">
+            <tbody>
+              <tr v-if="volumeInfo.control_info">
+                <td class="label">Control Name</td>
+                <td class="value">{{ volumeInfo.control_info.display_name }}</td>
+              </tr>
+              <tr v-if="volumeInfo.current_state">
+                <td class="label">Main Volume</td>
+                <td class="value">
+                  <span>{{ Math.round(volumeInfo.current_state.percentage) }}%</span>
+                  <span v-if="volumeInfo.current_state.decibels !== undefined">
+                    ({{ volumeInfo.current_state.decibels > 0 ? '+' : '' }}{{ Math.round(volumeInfo.current_state.decibels) }} dB)
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="volumeInfo.control_info?.decibel_range">
+                <td class="label">Range</td>
+                <td class="value">
+                  {{ volumeInfo.control_info.decibel_range.min_db }} dB to {{ volumeInfo.control_info.decibel_range.max_db }} dB
+                </td>
+              </tr>
+              <tr>
+                <td class="label">Change Monitoring</td>
+                <td class="value">{{ volumeInfo.supports_change_monitoring ? 'Yes' : 'No' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- DSP Program Information -->
+        <div class="info-card">
+          <div class="card-header">
+            <Icon icon="processor" class="card-icon" />
+            <h2>DSP Program</h2>
+          </div>
+          <div v-if="dspProgramLoading" class="loading-message">
+            Loading DSP program information...
+          </div>
+          <div v-else-if="dspProgramError" class="info-message">
+            {{ dspProgramError }}
+          </div>
+          <table v-else-if="dspProgramInfo" class="info-table">
+            <tbody>
+              <tr>
+                <td class="label">Program Length</td>
+                <td class="value">{{ dspProgramInfo.program_length }} bytes</td>
+              </tr>
+              <tr v-if="dspProgramInfo.checksums?.md5">
+                <td class="label">MD5 Checksum</td>
+                <td class="value uuid">{{ formatChecksum(dspProgramInfo.checksums.md5) }}</td>
+              </tr>
+              <tr v-if="dspProgramInfo.checksums?.sha1">
+                <td class="label">SHA1 Checksum</td>
+                <td class="value uuid">{{ formatChecksum(dspProgramInfo.checksums.sha1) }}</td>
+              </tr>
+              <tr v-if="!dspProgramInfo.checksums?.md5 && !dspProgramInfo.checksums?.sha1">
+                <td class="label">Checksums</td>
+                <td class="value">Not available</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="info-message">
+            DSP program information not available
+          </div>
+        </div>
+
         <!-- Favourites Information -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="heart" class="card-icon" />
+            <Icon icon="heart" class="card-icon" />
             <h2>Favourites</h2>
           </div>
           <div v-if="favouritesLoading" class="loading-message">
@@ -284,7 +377,7 @@
         <!-- Cover Art Providers -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="database_star" class="card-icon" />
+            <Icon icon="database_star" class="card-icon" />
             <h2>Cover Art Providers</h2>
           </div>
           <div v-if="coverArtLoading" class="loading-message">
@@ -310,7 +403,7 @@
         <!-- Cache Statistics -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="database" class="card-icon" />
+            <Icon icon="database" class="card-icon" />
             <h2>Cache Statistics</h2>
           </div>
           <div v-if="cacheLoading" class="loading-message">
@@ -355,10 +448,44 @@
           </table>
         </div>
 
+        <!-- Background Services -->
+        <div class="info-card">
+          <div class="card-header">
+            <Icon icon="server" class="card-icon" />
+            <h2>Background Services</h2>
+          </div>
+          <div v-if="backgroundServicesLoading" class="loading-message">
+            Checking background services...
+          </div>
+          <div v-else-if="backgroundServicesError" class="error-message">
+            {{ backgroundServicesError }}
+          </div>
+          <table v-else-if="backgroundServices.length > 0" class="info-table">
+            <tbody>
+              <tr v-for="service in backgroundServices" :key="service.name">
+                <td class="label">{{ service.name }}</td>
+                <td class="value">
+                  <div class="service-info">
+                    <span v-if="service.status === 'available' && service.version" class="version-info">
+                      {{ service.version }}
+                    </span>
+                    <span v-else-if="service.status === 'available'" class="service-status status-available">
+                      Available
+                    </span>
+                    <span v-else :class="['service-status', `status-${service.status}`]">
+                      {{ service.status === 'unavailable' ? 'Unavailable' : 'Checking...' }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Background Jobs -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="activity" class="card-icon" />
+            <Icon icon="activity" class="card-icon" />
             <h2>Background Jobs</h2>
           </div>
           <div v-if="jobsLoading" class="loading-message">
@@ -413,7 +540,7 @@
         <!-- I2C Devices -->
         <div class="info-card">
           <div class="card-header">
-            <AppIcon icon="binary" class="card-icon" />
+            <Icon icon="binary" class="card-icon" />
             <h2>I2C Devices</h2>
           </div>
           <div v-if="i2cLoading" class="loading-message">
@@ -455,9 +582,9 @@
         <!-- Pipewire Filter Chain -->
         <div class="info-card clickable" @click="$router.push({ name: 'pipewire-filter-chain' })">
           <div class="card-header">
-            <AppIcon icon="tabler/schema" class="card-icon" />
+            <Icon icon="tabler/schema" class="card-icon" />
             <h2>Pipewire Filter Chain</h2>
-            <AppIcon icon="chevron-right" class="chevron-icon" />
+            <Icon icon="chevron-right" class="chevron-icon" />
           </div>
           <div class="card-description">
             <p>Show filter chain</p>
@@ -470,7 +597,7 @@
     <div v-if="showSoundCardWarning" class="warning-overlay">
       <div class="warning-dialog">
         <div class="warning-header">
-          <AppIcon icon="bell" class="warning-icon" />
+          <Icon icon="bell" class="warning-icon" />
           <h3>Warning: Sound Card Change</h3>
         </div>
         <div class="warning-content">
@@ -502,7 +629,7 @@
     <div v-if="showRebootDialog" class="warning-overlay">
       <div class="warning-dialog">
         <div class="warning-header">
-          <AppIcon icon="checkmark" class="success-icon" />
+          <Icon icon="checkmark" class="success-icon" />
           <h3>Sound Card Updated</h3>
         </div>
         <div class="warning-content">
@@ -535,7 +662,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import AppIcon from '@/components/app-icon.vue'
+import Icon from '@/components/Icon.vue'
 import {
   getSystemInfo,
   updateHostname,
@@ -560,14 +687,27 @@ import {
   type BackgroundJob
 } from '@/api/system'
 import { getNetworkConfiguration, scanI2CDevices, type NetworkConfiguration, type I2CDeviceInfo } from '@/api/config'
+import { getVolumeInfo, type VolumeInfo } from '@/api/volume'
+import { getDSPProgramInfo, type DSPProgramInfo } from '@/api/dsptoolkit'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
+import { useAppConfigStore } from '@/stores/appconfig'
 
 // State
 const loading = ref(true)
 const error = ref('')
 const systemInfo = ref<SystemInfo | null>(null)
+
+// Volume info state
+const volumeInfo = ref<VolumeInfo | null>(null)
+const volumeLoading = ref(false)
+const volumeError = ref('')
+
+// DSP program info state
+const dspProgramInfo = ref<DSPProgramInfo | null>(null)
+const dspProgramLoading = ref(false)
+const dspProgramError = ref('')
 
 // Soundcard editing state
 const isEditingSoundCard = ref(false)
@@ -612,6 +752,20 @@ const networkConfig = ref<NetworkConfiguration | null>(null)
 const i2cLoading = ref(true)
 const i2cError = ref('')
 const i2cDevices = ref<I2CDeviceInfo | null>(null)
+
+// Background services state
+interface BackgroundService {
+  name: string
+  url: string
+  status: 'available' | 'unavailable' | 'checking'
+  responseTime?: number
+  lastChecked?: Date
+  version?: string
+}
+
+const backgroundServicesLoading = ref(true)
+const backgroundServicesError = ref('')
+const backgroundServices = ref<BackgroundService[]>([])
 
 // Computed ref for hostname
 const currentHostname = computed(() => systemInfo.value?.system?.pretty_hostname)
@@ -675,6 +829,12 @@ const formatDuration = (seconds: number): string => {
   } else {
     return `${remainingSeconds}s`
   }
+}
+
+// Format checksum with dashes for better readability
+const formatChecksum = (checksum: string): string => {
+  // Add dashes every 8 characters for MD5/SHA1 checksums
+  return checksum.replace(/(.{8})/g, '$1-').slice(0, -1)
 }
 
 // Format timestamp to relative time
@@ -926,6 +1086,45 @@ const fetchCoverArtMethods = async () => {
   }
 }
 
+const fetchVolumeInfo = async () => {
+  volumeLoading.value = true
+  volumeError.value = ''
+
+  try {
+    const data = await getVolumeInfo()
+    volumeInfo.value = data
+  } catch (err) {
+    console.error('Error fetching volume info:', err)
+    volumeError.value = err instanceof Error ? err.message : 'Failed to retrieve volume information'
+  } finally {
+    volumeLoading.value = false
+  }
+}
+
+const fetchDSPProgramInfo = async () => {
+  dspProgramLoading.value = true
+  dspProgramError.value = ''
+
+  try {
+    const data = await getDSPProgramInfo()
+    dspProgramInfo.value = data
+  } catch (err) {
+    console.error('Error fetching DSP program info:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Failed to retrieve DSP program information'
+
+    // Check if the error indicates no DSP detected
+    if (errorMessage.includes('DSP software not available') ||
+        errorMessage.includes('not available') ||
+        errorMessage.includes('not detected')) {
+      dspProgramError.value = 'No DSP detected'
+    } else {
+      dspProgramError.value = errorMessage
+    }
+  } finally {
+    dspProgramLoading.value = false
+  }
+}
+
 const fetchCacheStats = async () => {
   console.log('fetchCacheStats: Starting...')
   cacheLoading.value = true
@@ -1062,19 +1261,116 @@ const fetchI2CDevices = async () => {
   }
 }
 
+const fetchBackgroundServices = async () => {
+  console.log('fetchBackgroundServices: Starting...')
+  backgroundServicesLoading.value = true
+  backgroundServicesError.value = ''
+
+  try {
+    const appConfigStore = useAppConfigStore()
+
+    // Define the services to check (only those with version endpoints for now)
+    const servicesToCheck = [
+      {
+        name: 'Audio control',
+        url: `${appConfigStore.getApiBaseUrl()}/version`
+      },
+      {
+        name: 'Configuration',
+        url: `${appConfigStore.getConfigApiBaseUrl()}/version`
+      },
+      {
+        name: 'DSP backend',
+        url: `${appConfigStore.getDSPToolkitApiBaseUrl()}/version`
+      }
+    ]
+
+    backgroundServices.value = []
+
+    // Check each service
+    for (const service of servicesToCheck) {
+      const serviceCheck: BackgroundService = {
+        name: service.name,
+        url: service.url,
+        status: 'checking'
+      }
+
+      backgroundServices.value.push(serviceCheck)
+
+      try {
+        const startTime = Date.now()
+        console.log(`Checking ${service.name} at ${service.url}`)
+
+        const response = await fetch(service.url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        })
+
+        const responseTime = Date.now() - startTime
+        serviceCheck.responseTime = responseTime
+        serviceCheck.lastChecked = new Date()
+
+        if (response.ok) {
+          serviceCheck.status = 'available'
+
+          // Try to extract version information for APIs that support it
+          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend') {
+            try {
+              const data = await response.json()
+              if (data && data.version) {
+                serviceCheck.version = data.version
+                console.log(`${service.name} is available (${responseTime}ms) - Version: ${data.version}`)
+              } else {
+                console.log(`${service.name} is available (${responseTime}ms) - No version info`)
+              }
+            } catch (jsonError) {
+              console.log(`${service.name} is available (${responseTime}ms) - Could not parse version info`)
+            }
+          } else {
+            console.log(`${service.name} is available (${responseTime}ms)`)
+          }
+        } else {
+          serviceCheck.status = 'unavailable'
+          console.log(`${service.name} returned HTTP ${response.status}: ${response.statusText}`)
+        }
+      } catch (err) {
+        serviceCheck.status = 'unavailable'
+        serviceCheck.lastChecked = new Date()
+        console.error(`${service.name} is unavailable:`, err)
+        if (err instanceof Error) {
+          console.error(`Error details for ${service.name}:`, {
+            message: err.message,
+            name: err.name,
+            stack: err.stack
+          })
+        }
+      }
+    }
+
+    console.log('fetchBackgroundServices: All services checked')
+  } catch (err) {
+    console.error('fetchBackgroundServices: Error occurred:', err)
+    backgroundServicesError.value = err instanceof Error ? err.message : 'Failed to check background services'
+  } finally {
+    backgroundServicesLoading.value = false
+    console.log('fetchBackgroundServices: Completed')
+  }
+}
+
 // Auto-update state
 const autoUpdateInterval = ref<number | null>(null)
 const countdownInterval = ref<number | null>(null)
-const AUTO_UPDATE_INTERVAL = 30000 // 30 seconds in milliseconds
+const AUTO_UPDATE_INTERVAL = 60000 // 60 seconds in milliseconds
 const AUTO_UPDATE_SECONDS = AUTO_UPDATE_INTERVAL / 1000 // Convert to seconds for countdown
 const countdownSeconds = ref<number>(AUTO_UPDATE_SECONDS)
+const isAutoUpdateEnabled = ref<boolean>(false) // Disabled by default
 const isAutoUpdatePaused = ref<boolean>(false)
 
 // Auto-update function to refresh data
 const refreshData = async () => {
-  // Skip refresh if auto-update is paused (user is editing)
-  if (isAutoUpdatePaused.value) {
-    console.log('System Info: Auto-refresh skipped - user is editing')
+  // Skip refresh if auto-update is disabled or paused (user is editing)
+  if (!isAutoUpdateEnabled.value || isAutoUpdatePaused.value) {
+    console.log('System Info: Auto-refresh skipped - disabled or user is editing')
     return
   }
 
@@ -1091,9 +1387,12 @@ const refreshData = async () => {
     fetchCacheStats(),
     fetchBackgroundJobs(),
     fetchNetworkConfiguration(),
-    fetchI2CDevices()
+    fetchI2CDevices(),
+    fetchVolumeInfo(),
+    fetchDSPProgramInfo(),
+    fetchBackgroundServices()
   ]).then(results => {
-    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices']
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info', 'background services']
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
@@ -1106,6 +1405,28 @@ const refreshData = async () => {
 }
 
 // Functions to control auto-update behavior
+const toggleAutoUpdate = () => {
+  isAutoUpdateEnabled.value = !isAutoUpdateEnabled.value
+
+  if (isAutoUpdateEnabled.value) {
+    console.log('System Info: Auto-update enabled')
+    // Reset countdown when enabling
+    countdownSeconds.value = AUTO_UPDATE_SECONDS
+
+    // Start the auto-update interval if not already running
+    if (!autoUpdateInterval.value) {
+      autoUpdateInterval.value = window.setInterval(refreshData, AUTO_UPDATE_INTERVAL)
+    }
+  } else {
+    console.log('System Info: Auto-update disabled')
+    // Clear the interval when disabling
+    if (autoUpdateInterval.value) {
+      clearInterval(autoUpdateInterval.value)
+      autoUpdateInterval.value = null
+    }
+  }
+}
+
 const pauseAutoUpdate = () => {
   console.log('System Info: Pausing auto-update (user started editing)')
   isAutoUpdatePaused.value = true
@@ -1115,7 +1436,9 @@ const resumeAutoUpdate = () => {
   console.log('System Info: Resuming auto-update (user finished editing)')
   isAutoUpdatePaused.value = false
   // Reset countdown when resuming
-  countdownSeconds.value = AUTO_UPDATE_SECONDS
+  if (isAutoUpdateEnabled.value) {
+    countdownSeconds.value = AUTO_UPDATE_SECONDS
+  }
 }
 
 // Lifecycle
@@ -1150,10 +1473,22 @@ onMounted(async () => {
     fetchI2CDevices().then(result => {
       console.log('fetchI2CDevices result:', result)
       return result
+    }),
+    fetchVolumeInfo().then(result => {
+      console.log('fetchVolumeInfo result:', result)
+      return result
+    }),
+    fetchDSPProgramInfo().then(result => {
+      console.log('fetchDSPProgramInfo result:', result)
+      return result
+    }),
+    fetchBackgroundServices().then(result => {
+      console.log('fetchBackgroundServices result:', result)
+      return result
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info', 'background services']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {
@@ -1163,14 +1498,10 @@ onMounted(async () => {
     console.log('System Info: All loading completed')
   })
 
-  // Set up auto-update interval
-  console.log(`System Info: Setting up auto-update every ${AUTO_UPDATE_INTERVAL / 1000} seconds`)
-  autoUpdateInterval.value = window.setInterval(refreshData, AUTO_UPDATE_INTERVAL)
-
   // Set up countdown interval (updates every second)
   countdownInterval.value = window.setInterval(() => {
-    // Don't count down if auto-update is paused
-    if (isAutoUpdatePaused.value) {
+    // Don't count down if auto-update is disabled or paused
+    if (!isAutoUpdateEnabled.value || isAutoUpdatePaused.value) {
       return
     }
 
@@ -1251,6 +1582,32 @@ onUnmounted(() => {
 
         svg {
           opacity: 0.5;
+        }
+      }
+
+      &.disabled {
+        background: rgba(156, 163, 175, 0.1);
+        border-color: rgba(156, 163, 175, 0.3);
+        color: #6b7280;
+
+        svg {
+          opacity: 0.5;
+        }
+      }
+
+      &.clickable {
+        cursor: pointer;
+        user-select: none;
+
+        &:hover {
+          background: rgba(34, 197, 94, 0.15);
+          border-color: rgba(34, 197, 94, 0.3);
+          transform: translateY(-1px);
+        }
+
+        &.disabled:hover {
+          background: rgba(156, 163, 175, 0.15);
+          border-color: rgba(156, 163, 175, 0.4);
         }
       }
     }
@@ -1615,7 +1972,6 @@ onUnmounted(() => {
 
   .favourites-count {
     color: var(--color-body-secondary);
-    font-size: 0.875em;
   }
 }
 
@@ -1786,6 +2142,40 @@ onUnmounted(() => {
 .status-disabled {
   color: #dc2626;
   font-weight: 600;
+}
+
+// Service status styles
+.service-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .service-status {
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.875em;
+
+    &.status-available {
+      background: var(--background-success, rgba(34, 197, 94, 0.1));
+      color: var(--color-success, #16a34a);
+    }
+
+    &.status-unavailable {
+      background: var(--background-error, rgba(239, 68, 68, 0.1));
+      color: var(--color-error, #dc2626);
+    }
+
+    &.status-checking {
+      background: var(--background-warning, rgba(245, 158, 11, 0.1));
+      color: var(--color-warning, #d97706);
+    }
+  }
+
+  .response-time {
+    color: var(--color-body-secondary);
+    font-size: 0.8em;
+  }
 }
 
 @media (max-width: 768px) {

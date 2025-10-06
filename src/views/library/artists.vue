@@ -1,7 +1,7 @@
 <template>
   <div class="artists">
     <div class="breadcrumbs">
-      <AppBackRouter :to="{ name: 'library' }">Artists</AppBackRouter>
+      <BackRouter :to="{ name: 'library' }">Artists</BackRouter>
       <div class="search-bar">
         <AppSearch
           v-model="search"
@@ -12,7 +12,7 @@
       </div>
     </div>
     <div class="card">
-      <AppPosterGrid
+      <PosterGrid
         ref="posterGrid"
         :loading="loading"
         :loaded="loaded"
@@ -24,7 +24,7 @@
     </div>
 
     <!-- Alphabet Index -->
-    <AppAlphabetIndex
+    <AlphabetIndex
       :items="sortedArtists"
       @letter-click="scrollToLetter"
     />
@@ -36,10 +36,10 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import AppBackRouter from '@/components/app-back-router.vue'
-import AppSearch from '@/components/app-search.vue'
-import AppPosterGrid from '@/components/app-poster-grid.vue'
-import AppAlphabetIndex from '@/components/app-alphabet-index.vue'
+import BackRouter from '@/components/BackRouter.vue'
+import AppSearch from '@/components/AppSearch.vue'
+import PosterGrid from '@/components/PosterGrid.vue'
+import AlphabetIndex from '@/components/AlphabetIndex.vue'
 
 import { storeToRefs } from 'pinia'
 

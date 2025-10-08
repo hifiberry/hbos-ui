@@ -1,6 +1,9 @@
 <template>
-  <PageContent title="System Information" :backrouterLink="{ name: 'services' }">
+  <PageContent>
     <div class="page-header">
+      <BackRouter :to="{name: 'services'}">
+        System Information
+      </BackRouter>
       <div
         class="auto-update-indicator"
         :class="{
@@ -660,6 +663,7 @@
 </template>
 
 <script setup lang="ts">
+import BackRouter from '@/components/BackRouter.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'

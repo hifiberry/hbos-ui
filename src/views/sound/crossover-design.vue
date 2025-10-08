@@ -2,7 +2,7 @@
   <PageContent>
     <div class="header">
       <BackRouter :to="{name: 'sound'}">
-        Room Acoustics
+        Crossover Design
       </BackRouter>
       <div class="header-actions">
         <button class="btn" @click="refresh">

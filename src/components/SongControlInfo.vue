@@ -24,21 +24,21 @@
         <!-- Two-line layout when both title and artist are available -->
         <template v-if="song.title && song.artist">
           <div class="h3">
-            <AppMarquee>
+            <CustomMarquee>
               {{ song.title }}
-            </AppMarquee>
+            </CustomMarquee>
           </div>
           <p>
-            <AppMarquee>{{ song.artist }}</AppMarquee>
+            <CustomMarquee>{{ song.artist }}</CustomMarquee>
           </p>
         </template>
 
         <!-- Single-line layout when only one or neither is available -->
         <template v-else>
           <div class="h3 single-line">
-            <AppMarquee>
+            <CustomMarquee>
               {{ song.title || song.artist || 'Unknown' }}
-            </AppMarquee>
+            </CustomMarquee>
           </div>
         </template>
       </div>
@@ -60,7 +60,7 @@ import AudioControls from '@/components/AudioControls.vue'
 import AudioControlsHeader from '@/components/AudioControlsHeader.vue'
 import ProgressControl from '@/components/ProgressControl.vue'
 import Cover from '@/components/Cover.vue'
-import AppMarquee from '@/components/AppMarquee.vue'
+import CustomMarquee from '@/components/CustomMarquee.vue'
 import MetadataTooltip from '@/components/MetadataTooltip.vue'
 import { rewriteAudiocontrolApiUrl } from '@/api/utils'
 import type { Song } from '@/types/player'

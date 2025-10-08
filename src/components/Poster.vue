@@ -10,19 +10,19 @@
     </div>
     <div class="poster-attr">
       <div class="h4">
-        <AppMarquee>
+        <CustomMarquee>
           {{ title }}
-        </AppMarquee>
+        </CustomMarquee>
       </div>
       <div class="h5">
-        <AppMarquee>
+        <CustomMarquee>
           {{ subtitle }}
-        </AppMarquee>
+        </CustomMarquee>
       </div>
       <div v-if="note" class="note">
-        <AppMarquee>
+        <CustomMarquee>
           {{ note }}
-        </AppMarquee>
+        </CustomMarquee>
       </div>
     </div>
   </div>
@@ -33,7 +33,7 @@ import { ref as deepRef, watch } from 'vue'
 import { useImage } from '@vueuse/core'
 
 import Icon from '@/components/Icon.vue'
-import AppMarquee from '@/components/AppMarquee.vue'
+import CustomMarquee from '@/components/CustomMarquee.vue'
 
 type PoserForm = 'square' | 'circle'
 

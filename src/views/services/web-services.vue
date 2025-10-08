@@ -1,12 +1,6 @@
 <template>
-  <div class="web-services">
-    <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'services' }">Web Services</BackRouter>
-    </div>
-
-    <div class="web-services-content">
+  <PageContent title="Web Services" :backrouterLink="{ name: 'services' }">
       <div class="services-header">
-        <h2>Web Services</h2>
         <p>Connect and manage web-based music streaming services</p>
       </div>
 
@@ -24,12 +18,11 @@
 
       <!-- Fanart.tv Integration -->
       <FanartTvIntegration />
-    </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
-import BackRouter from '@/components/BackRouter.vue'
+import PageContent from '@/components/PageContent.vue'
 import LastFMIntegration from '@/components/Lastfm.vue'
 import SpotifyIntegration from '@/components/Spotify.vue'
 import MusicBrainzIntegration from '@/components/Musicbrainz.vue'
@@ -38,23 +31,17 @@ import FanartTvIntegration from '@/components/Fanarttv.vue'
 </script>
 
 <style scoped lang="scss">
-.web-services {
-  .breadcrumbs {
-    margin-bottom: 32px;
+.services-header {
+  margin-bottom: 32px;
+
+  h2 {
+    margin: 0 0 8px 0;
+    color: var(--color-head);
   }
 
-  .services-header {
-    margin-bottom: 32px;
-
-    h2 {
-      margin: 0 0 8px 0;
-      color: var(--color-head);
-    }
-
-    p {
-      margin: 0;
-      color: var(--color-body-secondary);
-    }
+  p {
+    margin: 0;
+    color: var(--color-body-secondary);
   }
 }
 </style>

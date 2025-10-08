@@ -5,7 +5,6 @@ h1, .h1 {
   font: 600 28px $font-family-base;
   line-height: $font-line-height-base;
   color: var(--color-head);
-  margin-bottom: 25px;
   @include media-down(lg) {
     font-size: 22px;
   }
@@ -14,7 +13,6 @@ h2, .h2 {
   font: 600 20px $font-family-base;
   line-height: $font-line-height-base;
   color: var(--color-head);
-  margin-bottom: 12px;
   @include media-down(lg) {
     font-size: 18px;
   }
@@ -23,20 +21,17 @@ h3, .h3 {
   font: 600 18px $font-family-base;
   line-height: $font-line-height-base;
   color: var(--color-head);
-  margin-bottom: 12px;
   @include media-down(lg) {
     font-size: 16px;
   }
 }
- h4, .h4 {
-   font: 500 16px $font-family-base;
-   line-height: $font-line-height-base;
-   color: var(--color-head);
-   margin-bottom: 8px;
- }
- h5, .h5 {
-   font: 400 16px $font-family-base;
-   line-height: $font-line-height-base;
-   color: var(--color-head);
-   margin-bottom: 8px;
- }
+h4, .h4 {
+ font: 500 16px $font-family-base;
+ line-height: $font-line-height-base;
+ color: var(--color-head);
+}
+h5, .h5 {
+ font: 400 16px $font-family-base;
+ line-height: $font-line-height-base;
+ color: var(--color-head);
+}

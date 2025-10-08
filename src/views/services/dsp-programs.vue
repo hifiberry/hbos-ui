@@ -1,10 +1,6 @@
 <template>
-  <div class="dsp-programs-page">
+  <PageContent title="DSP Programs" :backrouterLink="{ name: 'services' }">
     <div class="dsp-programs">
-    <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'services' }">DSP Programs</BackRouter>
-    </div>
-
     <div class="dsp-programs-content">
       <div class="dsp-programs-header">
         <p>Here you can download the software to your digital sound processor. When it is installed, you can change the sound settings in the "Sound" menu.</p>
@@ -144,13 +140,13 @@
       @close="closeDeployModal"
       @confirm="deployProfile"
     />
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import Icon from '@/components/Icon.vue'
-import BackRouter from '@/components/BackRouter.vue'
+import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
 import { detectSoundCard, type SoundCardDetectionResponse } from '@/api/system'
@@ -508,24 +504,17 @@ onMounted(() => {
 
 <style scoped lang="scss">
 @use '@/assets/scss/service-item' as *;
+.dsp-programs-header {
+  margin-bottom: 32px;
 
-.dsp-programs {
-  .breadcrumbs {
-    margin-bottom: 32px;
+  h2 {
+    margin: 0 0 8px 0;
+    color: var(--color-head);
   }
 
-  .dsp-programs-header {
-    margin-bottom: 32px;
-
-    h2 {
-      margin: 0 0 8px 0;
-      color: var(--color-head);
-    }
-
-    p {
-      margin: 0;
-      color: var(--color-body-secondary);
-    }
+  p {
+    margin: 0;
+    color: var(--color-body-secondary);
   }
 }
 

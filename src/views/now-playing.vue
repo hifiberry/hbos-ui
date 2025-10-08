@@ -1,12 +1,5 @@
 <template>
-  <div class="now-playing">
-    <h1 class="now-playing__title">
-      <router-link to="/now-playing-minimal" class="title-link">
-        Now Playing
-        <span class="minimal-hint">Switch to minimal view</span>
-      </router-link>
-    </h1>
-
+  <PageContent title="Now Playing" hintLink="/now-playing-minimal" hintString="Switch to minimal view">
     <div class="now-playing__player">
       <div
         class="now-playing__cover-container"
@@ -46,12 +39,13 @@
         <VolumeControl size="wide" />
       </div>
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import CoverArt from '@/components/CoverArt.vue'
+import PageContent from '@/components/PageContent.vue'
 import ProgressControl from '@/components/ProgressControl.vue'
 import AudioControls from '@/components/AudioControls.vue'
 import VolumeControl from '@/components/VolumeControl.vue'
@@ -125,61 +119,6 @@ const tooltipStyles = computed(() => {
   flex-direction: column;
   min-width: 100%;
   height: 100%;
-
-  &__title {
-    @include media-down(sm) {
-      display: none;
-    }
-
-    .title-link {
-      color: var(--color-text);
-      text-decoration: none;
-      position: relative;
-      display: inline-block;
-      transition: color 0.3s ease;
-
-      &:hover {
-        color: var(--color-accent);
-        cursor: pointer;
-
-        .minimal-hint {
-          opacity: 1;
-          visibility: visible;
-        }
-      }
-    }
-
-    .minimal-hint {
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--background-secondary);
-      color: var(--color-text-secondary);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 400;
-      white-space: nowrap;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-      margin-top: 8px;
-      z-index: 10;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: -4px;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 4px solid transparent;
-        border-bottom-color: var(--background-secondary);
-      }
-    }
-  }
-
   &__player {
     display: flex;
     flex-grow: 1;

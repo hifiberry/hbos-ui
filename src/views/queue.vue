@@ -1,7 +1,6 @@
 <template>
-  <div class="playlist">
+  <PageContent title="Queue" :backrouterLink="{ name: 'now-playing' }">
     <div class="queue-header">
-      <h1>Queue</h1>
       <button
         v-if="queue.length > 0 && playerCapabilities.hasQueue"
         @click="clearQueue"
@@ -75,7 +74,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
@@ -84,6 +83,7 @@ import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { usePlaylistStore } from '@/stores/playlist'
 import Icon from '@/components/Icon.vue'
+import PageContent from '@/components/PageContent.vue'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
 
 import type { Track } from '@/types/library'
@@ -160,7 +160,6 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.playlist {
   .queue-header {
     display: flex;
     justify-content: space-between;
@@ -332,5 +331,4 @@ onMounted(async () => {
       }
     }
   }
-}
 </style>

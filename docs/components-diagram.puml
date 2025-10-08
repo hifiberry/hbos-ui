@@ -1,0 +1,26 @@
+@startuml
+class ContentBox {
+}
+
+class ContentBoxLink {
+  + to: any
+}
+
+class CustomSearchField {
+}
+
+class MusicBrainz {
+}
+
+class TheAudioDB {
+}
+
+class Fanarttv {
+}
+
+ContentBoxLink --|> ContentBox
+CustomSearchField --|> ContentBox
+MusicBrainz --|> ContentBox
+TheAudioDB --|> ContentBox
+Fanarttv --|> ContentBox
+@enduml

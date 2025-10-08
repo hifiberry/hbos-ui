@@ -49,7 +49,7 @@
  
 # Phase 5
 
-* Reset systen **started**
+* Reset system **started**
 * Auto-detect sound card **done**
 * Force sound card detection or select sound card **done**
 * Lyrics support - display lyrics in "Now playing" **done**

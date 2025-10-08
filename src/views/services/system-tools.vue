@@ -1,9 +1,5 @@
 <template>
-  <div class="system-tools">
-    <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'services' }">System Tools</BackRouter>
-    </div>
-
+  <PageContent title="System Tools" :backrouterLink="{ name: 'services' }">
     <div class="system-tools-content">
       <div class="services-header">
         <h2>System Tools</h2>
@@ -126,14 +122,14 @@ Would you like to reboot now?"
       @close="handleRebootLater"
       @confirm="executeReboot"
     />
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
-import BackRouter from '@/components/BackRouter.vue'
+import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
@@ -293,201 +289,195 @@ const toggleExpertMode = async () => {
 </script>
 
 <style scoped lang="scss">
-.system-tools {
-  .breadcrumbs {
-    margin-bottom: 32px;
+.services-header {
+  margin-bottom: 32px;
+
+  h2 {
+    margin: 0 0 8px 0;
+    color: var(--color-head);
   }
 
-  .services-header {
-    margin-bottom: 32px;
+  p {
+    margin: 0;
+    color: var(--color-body-secondary);
+  }
+}
 
-    h2 {
-      margin: 0 0 8px 0;
-      color: var(--color-head);
-    }
+.tool-section {
+  margin-bottom: 16px;
 
-    p {
-      margin: 0;
-      color: var(--color-body-secondary);
-    }
+  &:last-child {
+    margin-bottom: 0;
   }
 
-  .tool-section {
-    margin-bottom: 16px;
+  .tool-card {
+    background: var(--background-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
 
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    .tool-card {
-      background: var(--background-card);
-      border: 1px solid var(--color-border);
-      border-radius: 8px;
-      padding: 24px;
+    .tool-info {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 24px;
+      gap: 16px;
+      flex: 1;
 
-      .tool-info {
-        display: flex;
-        align-items: center;
-        gap: 16px;
+      .tool-icon {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+      }
+
+      .tool-details {
         flex: 1;
 
-        .tool-icon {
-          width: 32px;
-          height: 32px;
-          flex-shrink: 0;
+        h3 {
+          margin: 0 0 4px 0;
+          color: var(--color-head);
+          font-size: 1.1rem;
+          font-weight: 600;
         }
 
-        .tool-details {
-          flex: 1;
-
-          h3 {
-            margin: 0 0 4px 0;
-            color: var(--color-head);
-            font-size: 1.1rem;
-            font-weight: 600;
-          }
-
-          .tool-description {
-            margin: 0;
-            color: var(--color-body-secondary);
-            font-size: 0.9rem;
-            line-height: 1.4;
-          }
-        }
-      }
-
-      &.reset-tool .tool-info .tool-icon {
-        color: var(--color-error);
-      }
-
-      &.detect-tool .tool-info .tool-icon {
-        color: var(--color-primary);
-      }
-
-      &.expert-tool .tool-info .tool-icon {
-        color: var(--color-icon);
-      }
-
-      .tool-actions {
-        flex-shrink: 0;
-
-        button {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 20px;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: 500;
+        .tool-description {
+          margin: 0;
+          color: var(--color-body-secondary);
           font-size: 0.9rem;
-          transition: background-color 0.2s ease;
+          line-height: 1.4;
+        }
+      }
+    }
 
-          &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
+    &.reset-tool .tool-info .tool-icon {
+      color: var(--color-error);
+    }
 
-          svg {
-            width: 16px;
-            height: 16px;
-          }
+    &.detect-tool .tool-info .tool-icon {
+      color: var(--color-primary);
+    }
+
+    &.expert-tool .tool-info .tool-icon {
+      color: var(--color-icon);
+    }
+
+    .tool-actions {
+      flex-shrink: 0;
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: background-color 0.2s ease;
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
-        .reset-button {
-          background: var(--color-error, #ef4444);
-
-          &:hover:not(:disabled) {
-            background: var(--color-error-dark, #dc2626);
-          }
-        }
-
-        .detect-button {
-          background: var(--color-error, #ef4444);
-
-          &:hover:not(:disabled) {
-            background: var(--color-error-dark, #dc2626);
-          }
+        svg {
+          width: 16px;
+          height: 16px;
         }
       }
 
-      .expert-toggle {
-        .toggle-switch {
-          position: relative;
-          display: inline-block;
-          width: 44px;
-          height: 24px;
-          cursor: pointer;
+      .reset-button {
+        background: var(--color-error, #ef4444);
 
-          input {
-            opacity: 0;
-            width: 0;
-            height: 0;
+        &:hover:not(:disabled) {
+          background: var(--color-error-dark, #dc2626);
+        }
+      }
+
+      .detect-button {
+        background: var(--color-error, #ef4444);
+
+        &:hover:not(:disabled) {
+          background: var(--color-error-dark, #dc2626);
+        }
+      }
+    }
+
+    .expert-toggle {
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        cursor: pointer;
+
+        input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .toggle-slider {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: var(--color-body-secondary);
+          transition: 0.3s;
+          border-radius: 24px;
+
+          &.loading {
+            opacity: 0.6;
           }
+
+          &:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+          }
+        }
+
+        input:checked + .toggle-slider {
+          background-color: var(--primary);
+        }
+
+        input:checked + .toggle-slider:before {
+          transform: translateX(20px);
+        }
+
+        input:focus + .toggle-slider {
+          box-shadow: 0 0 1px var(--primary);
+        }
+
+        &.disabled {
+          cursor: not-allowed;
+          opacity: 0.6;
 
           .toggle-slider {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--color-body-secondary);
-            transition: 0.3s;
-            border-radius: 24px;
-
-            &.loading {
-              opacity: 0.6;
-            }
+            background-color: #e5e5e5;
+            cursor: not-allowed;
 
             &:before {
-              position: absolute;
-              content: "";
-              height: 18px;
-              width: 18px;
-              left: 3px;
-              bottom: 3px;
-              background-color: white;
-              transition: 0.3s;
-              border-radius: 50%;
+              background-color: #d0d0d0;
             }
           }
 
           input:checked + .toggle-slider {
-            background-color: var(--primary);
-          }
+            background-color: #c0c0c0;
 
-          input:checked + .toggle-slider:before {
-            transform: translateX(20px);
-          }
-
-          input:focus + .toggle-slider {
-            box-shadow: 0 0 1px var(--primary);
-          }
-
-          &.disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-
-            .toggle-slider {
-              background-color: #e5e5e5;
-              cursor: not-allowed;
-
-              &:before {
-                background-color: #d0d0d0;
-              }
-            }
-
-            input:checked + .toggle-slider {
-              background-color: #c0c0c0;
-
-              &:before {
-                background-color: #a0a0a0;
-              }
+            &:before {
+              background-color: #a0a0a0;
             }
           }
         }

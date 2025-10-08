@@ -1,7 +1,8 @@
 <template>
-  <div class="crossover-design">
+  <PageContent title="Crossover Design"
+  :backrouterLink="{ name: 'sound' }"
+  >
     <div class="header">
-      <h1>Crossover Design</h1>
       <div class="header-actions">
         <button class="btn" @click="refresh">
           <Icon icon="refresh" />
@@ -135,12 +136,13 @@
         </div>
       </div>
     </teleport>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import Icon from '@/components/Icon.vue'
+import PageContent from '@/components/PageContent.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector'
 import { type Filter } from '@/utils/filtercalc'
@@ -408,9 +410,6 @@ const onDragEnd = async (id: number) => {
 </script>
 
 <style scoped>
-.crossover-design { padding: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.header h1 { margin: 0; font-size: 24px; font-weight: 600; }
 .header-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
 
 .channel-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }

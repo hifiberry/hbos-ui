@@ -1,7 +1,6 @@
 <template>
-  <div class="system-info">
+  <PageContent title="System Information" :backrouterLink="{ name: 'services' }">
     <div class="page-header">
-      <h1>System Information</h1>
       <div
         class="auto-update-indicator"
         :class="{
@@ -657,12 +656,13 @@
         </div>
       </div>
     </div>
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Icon from '@/components/Icon.vue'
+import PageContent from '@/components/PageContent.vue'
 import {
   getSystemInfo,
   updateHostname,
@@ -1538,227 +1538,224 @@ onUnmounted(() => {
 
 <style scoped lang="scss">
 @use '@/assets/scss/mixins' as *;
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
 
-.system-info {
-  .page-header {
+  h1 {
+    margin: 0;
+    color: var(--color-head);
+  }
+
+  .auto-update-indicator {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 32px;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 20px;
+    color: #16a34a;
+    font-size: 0.85em;
+    font-weight: 500;
+    transition: all 0.3s ease;
 
-    h1 {
-      margin: 0;
-      color: var(--color-head);
+    svg {
+      opacity: 0.8;
     }
 
-    .auto-update-indicator {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid rgba(34, 197, 94, 0.2);
-      border-radius: 20px;
-      color: #16a34a;
-      font-size: 0.85em;
-      font-weight: 500;
-      transition: all 0.3s ease;
+    &.countdown-low {
+      background: rgba(251, 146, 60, 0.1);
+      border-color: rgba(251, 146, 60, 0.3);
+      color: #ea580c;
+      animation: pulse-subtle 2s infinite;
+    }
+
+    &.paused {
+      background: rgba(156, 163, 175, 0.1);
+      border-color: rgba(156, 163, 175, 0.3);
+      color: #6b7280;
 
       svg {
-        opacity: 0.8;
+        opacity: 0.5;
+      }
+    }
+
+    &.disabled {
+      background: rgba(156, 163, 175, 0.1);
+      border-color: rgba(156, 163, 175, 0.3);
+      color: #6b7280;
+
+      svg {
+        opacity: 0.5;
+      }
+    }
+
+    &.clickable {
+      cursor: pointer;
+      user-select: none;
+
+      &:hover {
+        background: rgba(34, 197, 94, 0.15);
+        border-color: rgba(34, 197, 94, 0.3);
+        transform: translateY(-1px);
       }
 
-      &.countdown-low {
-        background: rgba(251, 146, 60, 0.1);
-        border-color: rgba(251, 146, 60, 0.3);
-        color: #ea580c;
-        animation: pulse-subtle 2s infinite;
+      &.disabled:hover {
+        background: rgba(156, 163, 175, 0.15);
+        border-color: rgba(156, 163, 175, 0.4);
+      }
+    }
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+}
+
+.system-info-content {
+  .loading-section {
+    text-align: center;
+    padding: 40px;
+    color: var(--color-body-secondary);
+  }
+
+  .error-section {
+    .error-content {
+      background: var(--background-error);
+      border: 1px solid var(--color-error);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+
+      .error-message {
+        color: var(--color-error);
+        margin-bottom: 16px;
       }
 
-      &.paused {
-        background: rgba(156, 163, 175, 0.1);
-        border-color: rgba(156, 163, 175, 0.3);
-        color: #6b7280;
-
-        svg {
-          opacity: 0.5;
-        }
-      }
-
-      &.disabled {
-        background: rgba(156, 163, 175, 0.1);
-        border-color: rgba(156, 163, 175, 0.3);
-        color: #6b7280;
-
-        svg {
-          opacity: 0.5;
-        }
-      }
-
-      &.clickable {
+      .retry-button {
+        background: var(--color-error);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
         cursor: pointer;
-        user-select: none;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
 
         &:hover {
-          background: rgba(34, 197, 94, 0.15);
-          border-color: rgba(34, 197, 94, 0.3);
-          transform: translateY(-1px);
-        }
-
-        &.disabled:hover {
-          background: rgba(156, 163, 175, 0.15);
-          border-color: rgba(156, 163, 175, 0.4);
+          background: var(--color-error-dark);
         }
       }
     }
   }
 
-  @keyframes pulse-subtle {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.02);
-      opacity: 0.9;
-    }
-  }
+  .info-tables {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
 
-  .system-info-content {
-    .loading-section {
-      text-align: center;
-      padding: 40px;
-      color: var(--color-body-secondary);
-    }
-
-    .error-section {
-      .error-content {
-        background: var(--background-error);
-        border: 1px solid var(--color-error);
+      .info-card {
+        background: var(--background-card);
+        border: 1px solid var(--color-border);
         border-radius: 8px;
-        padding: 20px;
-        text-align: center;
+        padding: 24px;
 
-        .error-message {
-          color: var(--color-error);
-          margin-bottom: 16px;
-        }
-
-        .retry-button {
-          background: var(--color-error);
-          color: white;
-          border: none;
-          padding: 8px 16px;
-          border-radius: 4px;
+        &.clickable {
           cursor: pointer;
-          font-weight: 500;
-          transition: background-color 0.2s ease;
+          transition: all 0.2s ease;
 
           &:hover {
-            background: var(--color-error-dark);
+            background: var(--background-card-hover);
+            border-color: var(--color-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
           }
         }
-      }
-    }
 
-    .info-tables {
-      display: grid;
-      gap: 24px;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        .card-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
 
-        .info-card {
-          background: var(--background-card);
-          border: 1px solid var(--color-border);
-          border-radius: 8px;
-          padding: 24px;
-
-          &.clickable {
-            cursor: pointer;
-            transition: all 0.2s ease;
-
-            &:hover {
-              background: var(--background-card-hover);
-              border-color: var(--color-primary);
-              transform: translateY(-1px);
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }
-          }
-
-          .card-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-
-            .card-icon {
-              width: 20px;
-              height: 20px;
-              color: var(--color-primary);
-            }
-
-            h2 {
-              margin: 0;
-              color: var(--color-head);
-              font-size: 1.25rem;
-              font-weight: 600;
-              flex: 1;
-            }
-
-            .chevron-icon {
-              width: 16px;
-              height: 16px;
-              color: var(--color-body-secondary);
-              transition: transform 0.2s ease;
-            }
-          }
-
-          &.clickable:hover .chevron-icon {
-            transform: translateX(2px);
+          .card-icon {
+            width: 20px;
+            height: 20px;
             color: var(--color-primary);
           }
 
-          .card-description {
-            p {
-              margin: 0;
-              color: var(--color-body-secondary);
-              font-size: 0.95rem;
-              line-height: 1.4;
+          h2 {
+            margin: 0;
+            color: var(--color-head);
+            font-size: 1.25rem;
+            font-weight: 600;
+            flex: 1;
+          }
+
+          .chevron-icon {
+            width: 16px;
+            height: 16px;
+            color: var(--color-body-secondary);
+            transition: transform 0.2s ease;
+          }
+        }
+
+        &.clickable:hover .chevron-icon {
+          transform: translateX(2px);
+          color: var(--color-primary);
+        }
+
+        .card-description {
+          p {
+            margin: 0;
+            color: var(--color-body-secondary);
+            font-size: 0.95rem;
+            line-height: 1.4;
+          }
+        }        .info-table {
+        width: 100%;
+        border-collapse: collapse;
+
+        tbody {
+          tr {
+            border-bottom: 1px solid var(--color-border);
+
+            &:last-child {
+              border-bottom: none;
             }
-          }        .info-table {
-          width: 100%;
-          border-collapse: collapse;
 
-          tbody {
-            tr {
-              border-bottom: 1px solid var(--color-border);
+            td {
+              padding: 5px 0;
+              vertical-align: top;
 
-              &:last-child {
-                border-bottom: none;
+              &.label {
+                font-weight: 500;
+                color: var(--color-body-secondary);
+                width: 40%;
+                padding-right: 16px;
+                vertical-align: top;
+                line-height: 1.5;
               }
 
-              td {
-                padding: 5px 0;
+              &.value {
+                color: var(--color-body);
+                font-family: 'Metropolis', sans-serif;
                 vertical-align: top;
+                line-height: 1.5;
 
-                &.label {
-                  font-weight: 500;
-                  color: var(--color-body-secondary);
-                  width: 40%;
-                  padding-right: 16px;
-                  vertical-align: top;
-                  line-height: 1.5;
-                }
-
-                &.value {
-                  color: var(--color-body);
-                  font-family: 'Metropolis', sans-serif;
-                  vertical-align: top;
-                  line-height: 1.5;
-
-                  &.uuid {
-                    font-size: 0.9em;
-                    word-break: break-all;
-                  }
+                &.uuid {
+                  font-size: 0.9em;
+                  word-break: break-all;
                 }
               }
             }

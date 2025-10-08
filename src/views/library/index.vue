@@ -1,45 +1,50 @@
 <template>
-  <div class="library">
-    <h1>Music Library</h1>
-
-    <div class="card">
-      <div class="title">
-        <h2>Artists</h2>
-        <router-link v-if="artists.length > 0" :to="{ name: 'artists' }" class="text-link">View All</router-link>
+  <PageContent title="Music Library">
+    <ContentBox>
+      <div class="libaryCard">
+        <div class="title">
+          <h2>Artists</h2>
+          <router-link v-if="artists.length > 0" :to="{ name: 'artists' }" class="text-link">View All</router-link>
+        </div>
+        <PosterGrid :loading="loadingArtists" :loaded="loadedArtists" :items="artists" poster-form="circle" in-row
+          @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })" />
       </div>
-      <PosterGrid :loading="loadingArtists" :loaded="loadedArtists" :items="artists" poster-form="circle" in-row
-        @click="(artist) => router.push({ name: 'artist-album', params: { artistId: artist.id } })" />
-    </div>
+    </ContentBox>
 
-    <div class="card">
-      <div class="title">
-        <h2>Albums</h2>
-        <router-link v-if="sortedAlbumsByReleaseDate.length > 0" :to="{ name: 'albums' }" class="text-link">View
-          All</router-link>
+    <ContentBox class="libaryContentBox">
+      <div class="libaryCard">
+        <div class="title">
+          <h2>Albums</h2>
+          <router-link v-if="sortedAlbumsByReleaseDate.length > 0" :to="{ name: 'albums' }" class="text-link">View
+            All</router-link>
+        </div>
+        <PosterGrid :loading="loadingAlbums" :loaded="loadedAlbums" :items="sortedAlbumsByReleaseDate" in-row
+          @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })" />
       </div>
+    </ContentBox>
 
-      <PosterGrid :loading="loadingAlbums" :loaded="loadedAlbums" :items="sortedAlbumsByReleaseDate" in-row
-        @click="(album) => router.push({ name: 'album', params: { albumId: album.id } })" />
-    </div>
+    <ContentBox class="libaryContentBox">
+      <div class="libaryCard">
+        <div class="title">
+          <h2>Radio</h2>
+          <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
+        </div>
 
-    <div class="card radio-section">
-      <div class="title">
-        <h2>Radio</h2>
-        <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
+        <div v-if="favoritesList.length === 0" class="empty-state">
+          <Icon icon="radio" class="empty-icon" />
+          <p>No favorite radio stations saved</p>
+        </div>
+
+        <PosterGrid v-else :loading="loading" :loaded="loaded" :items="favoriteStationsForDisplay" in-row
+          @click="playStation" />
       </div>
-
-      <div v-if="favoritesList.length === 0 && loaded" class="empty-state">
-        <Icon icon="radio" class="empty-icon" />
-        <p>No favorite radio stations saved</p>
-      </div>
-
-      <PosterGrid v-else :loading="loading" :loaded="loaded" :items="favoriteStationsForDisplay" in-row
-        @click="playStation" />
-    </div>
-  </div>
+    </ContentBox>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
+import ContentBox from "@/components/ContentBox.vue"
+import PageContent from "@/components/PageContent.vue"
 import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
@@ -104,51 +109,34 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.library {
-  .card {
-    &:not(:last-of-type) {
-      margin-bottom: 55px;
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
 
-      @include media-down(lg) {
-        margin-bottom: 24px;
-      }
-    }
+  h2 {
+    margin-bottom: 0;
+  }
+}
+.libaryCard{
+  padding: 25px;
+}
+
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+
+  .empty-icon {
+    margin-bottom: 16px;
+    opacity: 0.6;
   }
 
-  .title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 25px;
-
-    h2 {
-      margin-bottom: 0;
-    }
-  }
-
-  .empty-state {
-    padding: 40px 20px;
-    text-align: center;
-    color: var(--color-text-secondary);
-
-    .empty-icon {
-      margin-bottom: 16px;
-      opacity: 0.6;
-    }
-
-    p {
-      margin: 0;
-      font-size: 16px;
-    }
-  }
-
-  // Radio section specific styling
-  .radio-section {
-    :deep(.app-poster-grid .poster-grid.row) {
-      @include media-down(md) {
-        justify-items: start;
-      }
-    }
+  p {
+    margin: 0;
+    font-size: 16px;
   }
 }
 </style>

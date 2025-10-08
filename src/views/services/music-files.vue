@@ -1,7 +1,6 @@
 <template>
-  <div class="music-files">
+  <PageContent title="Music Files" :backrouterLink="{ name: 'services' }">
     <div class="breadcrumbs">
-      <BackRouter :to="{ name: 'services' }">Music Files</BackRouter>
       <button @click="rescanLibrary" :disabled="rescanning" class="rescan-button" title="Rescan Music Library">
         <Icon icon="refresh" />
         Rescan Library
@@ -144,13 +143,13 @@
       @close="showAddDialog = false"
       @mount-created="handleMountCreated"
     />
-  </div>
+  </PageContent>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import Icon from '@/components/Icon.vue'
-import BackRouter from '@/components/BackRouter.vue'
+import PageContent from '@/components/PageContent.vue'
 import AddSmbMountDialog from '@/components/AddSmbMountDialog.vue'
 import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
 import { useAppConfigStore } from '@/stores/appconfig'
@@ -276,415 +275,412 @@ onMounted(() => {
 <style scoped lang="scss">
 @use '@/assets/scss/service-item' as *;
 @use '@/assets/scss/mixins' as *;
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
 
-.music-files {
-  .breadcrumbs {
+  .rescan-button {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
 
-    .rescan-button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
+    &:hover:not(:disabled) {
       background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 0.9rem;
-      transition: background-color 0.2s ease;
+    }
 
-      &:hover:not(:disabled) {
-        background: var(--primary);
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.music-files-content {
+  .service-info-section {
+    margin-bottom: 40px;
+
+    .info-card {
+      background: var(--background-card);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 20px;
+
+      .info-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+
+        .info-icon {
+          width: 20px;
+          height: 20px;
+          color: var(--primary);
+        }
+
+        h3 {
+          margin: 0;
+          color: var(--color-head);
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
       }
 
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
+      .info-content {
+        p {
+          margin: 0 0 12px 0;
+          color: var(--color-body);
+          line-height: 1.5;
 
-      svg {
-        width: 16px;
-        height: 16px;
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          code {
+            background: var(--color-bg-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Metropolis', monospace;
+            font-size: 0.9em;
+            color: var(--color-body);
+          }
+        }
+
+        .service-url {
+          margin: 12px 0;
+          padding: 12px;
+          background: var(--color-bg-secondary);
+          border-radius: 6px;
+          border-left: 3px solid var(--primary);
+
+          code {
+            background: none;
+            padding: 0;
+            color: var(--primary);
+            font-weight: 500;
+          }
+        }
       }
     }
   }
 
-  .music-files-content {
-    .service-info-section {
-      margin-bottom: 40px;
+  .section {
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      width: 100%;
 
-      .info-card {
-        background: var(--background-card);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        padding: 20px;
-
-        .info-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 16px;
-
-          .info-icon {
-            width: 20px;
-            height: 20px;
-            color: var(--primary);
-          }
-
-          h3 {
-            margin: 0;
-            color: var(--color-head);
-            font-size: 1.1rem;
-            font-weight: 600;
-          }
+      .header-title {
+        h2 {
+          margin: 0 0 4px 0;
+          color: var(--color-head);
+          font-size: 1.5rem;
+          font-weight: 600;
         }
 
-        .info-content {
-          p {
-            margin: 0 0 12px 0;
-            color: var(--color-body);
-            line-height: 1.5;
+        .mounts-summary {
+          margin: 0;
+          color: var(--color-body-secondary);
+          font-size: 0.9rem;
+          font-weight: 400;
+        }
+      }
 
-            &:last-child {
-              margin-bottom: 0;
-            }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
 
-            code {
-              background: var(--color-bg-secondary);
-              padding: 2px 6px;
-              border-radius: 4px;
-              font-family: 'Metropolis', monospace;
-              font-size: 0.9em;
-              color: var(--color-body);
-            }
-          }
+        .add-button {
+          @include service-button-small;
+        }
 
-          .service-url {
-            margin: 12px 0;
-            padding: 12px;
-            background: var(--color-bg-secondary);
-            border-radius: 6px;
-            border-left: 3px solid var(--primary);
-
-            code {
-              background: none;
-              padding: 0;
-              color: var(--primary);
-              font-weight: 500;
-            }
-          }
+        .refresh-button {
+          @include service-button-small;
         }
       }
     }
 
-    .section {
-      .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 24px;
-        width: 100%;
+    .loading-section {
+      text-align: center;
+      padding: 40px;
+      color: var(--color-body-secondary);
+    }
 
-        .header-title {
-          h2 {
-            margin: 0 0 4px 0;
-            color: var(--color-head);
-            font-size: 1.5rem;
-            font-weight: 600;
-          }
-
-          .mounts-summary {
-            margin: 0;
-            color: var(--color-body-secondary);
-            font-size: 0.9rem;
-            font-weight: 400;
-          }
-        }
-
-        .header-actions {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-
-          .add-button {
-            @include service-button-small;
-          }
-
-          .refresh-button {
-            @include service-button-small;
-          }
-        }
-      }
-
-      .loading-section {
-        text-align: center;
-        padding: 40px;
-        color: var(--color-body-secondary);
-      }
-
-      .error-section {
-        .error-content {
-          background: var(--background-error);
-          border: 1px solid var(--color-error);
-          border-radius: 8px;
-          padding: 20px;
-          text-align: center;
-
-          .error-message {
-            color: var(--color-error);
-            margin-bottom: 16px;
-          }
-
-          .retry-button {
-            background: var(--color-error);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s ease;
-
-            &:hover {
-              background: var(--color-error-dark);
-            }
-          }
-        }
-      }
-
-      .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 60px 24px;
-        text-align: center;
-        background: var(--background-card);
-        border: 1px solid var(--color-border);
+    .error-section {
+      .error-content {
+        background: var(--background-error);
+        border: 1px solid var(--color-error);
         border-radius: 8px;
+        padding: 20px;
+        text-align: center;
 
-        .empty-icon {
-          width: 48px;
-          height: 48px;
+        .error-message {
+          color: var(--color-error);
           margin-bottom: 16px;
-          color: var(--color-body-secondary);
-          opacity: 0.6;
         }
 
-        h3 {
-          margin: 0 0 8px 0;
-          color: var(--color-head);
-          font-size: 1.25rem;
-          font-weight: 600;
-        }
-
-        p {
-          margin: 0 0 20px 0;
-          color: var(--color-body-secondary);
-          max-width: 400px;
-          line-height: 1.5;
-        }
-
-        .discover-button {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 20px;
-          background: var(--color-primary);
+        .retry-button {
+          background: var(--color-error);
           color: white;
           border: none;
+          padding: 8px 16px;
           border-radius: 4px;
           cursor: pointer;
           font-weight: 500;
           transition: background-color 0.2s ease;
 
           &:hover {
-            background: var(--color-primary-dark);
-          }
-
-          svg {
-            width: 16px;
-            height: 16px;
+            background: var(--color-error-dark);
           }
         }
       }
+    }
 
-      .mounts-list {
-        display: grid;
-        gap: 16px;
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      text-align: center;
+      background: var(--background-card);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
 
-        .mount-item {
-          @include service-item-base;
-          // Remove the service-card-base to eliminate extra bottom margin
+      .empty-icon {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        color: var(--color-body-secondary);
+        opacity: 0.6;
+      }
 
-          // Override any extra padding from service-item-base
-          & {
-            padding-bottom: 20px;
-          }
+      h3 {
+        margin: 0 0 8px 0;
+        color: var(--color-head);
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
 
-          &.expanded {
-            @include service-expanded-state;
-            // When expanded, remove bottom padding from main section
-            .mount-main {
-              margin-bottom: 0;
-              padding-bottom: 0;
-            }
-          }
+      p {
+        margin: 0 0 20px 0;
+        color: var(--color-body-secondary);
+        max-width: 400px;
+        line-height: 1.5;
+      }
 
+      .discover-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--color-primary);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background: var(--color-primary-dark);
+        }
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+
+    .mounts-list {
+      display: grid;
+      gap: 16px;
+
+      .mount-item {
+        @include service-item-base;
+        // Remove the service-card-base to eliminate extra bottom margin
+
+        // Override any extra padding from service-item-base
+        & {
+          padding-bottom: 20px;
+        }
+
+        &.expanded {
+          @include service-expanded-state;
+          // When expanded, remove bottom padding from main section
           .mount-main {
-            @include service-main-layout;
+            margin-bottom: 0;
+            padding-bottom: 0;
+          }
+        }
 
-            .mount-info {
-              @include service-info-layout;
+        .mount-main {
+          @include service-main-layout;
 
-              .mount-icon {
-                @include service-icon-base;
-              }
+          .mount-info {
+            @include service-info-layout;
 
-              .mount-details {
-                @include service-details-base;
-
-                h3 {
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                  flex-wrap: wrap;
-
-                  .mount-source {
-                    color: var(--color-body);
-                    font-weight: 600;
-                  }
-
-                  .mount-separator {
-                    color: var(--color-body-secondary);
-                    font-weight: 400;
-                    font-size: 1.1em;
-                  }
-
-                  .mount-target {
-                    color: var(--color-body-secondary);
-                    font-weight: 400;
-                    font-family: 'Metropolis', monospace;
-                    background: var(--color-bg-secondary);
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    font-size: 0.9em;
-                  }
-                }
-
-                .mount-path {
-                  margin: 0;
-                  color: var(--color-body-secondary);
-                  font-size: 0.9rem;
-                  font-family: 'Metropolis', sans-serif;
-                }
-              }
+            .mount-icon {
+              @include service-icon-base;
             }
 
-            .mount-actions {
-              @include service-actions-base;
-              display: flex;
-              align-items: center;
-              gap: 12px;
+            .mount-details {
+              @include service-details-base;
 
-              .mount-status {
-                .status-badge {
-                  display: inline-block;
-                  padding: 4px 12px;
-                  border-radius: 12px;
-                  font-size: 0.75rem;
-                  font-weight: 500;
-                  text-transform: uppercase;
-                  letter-spacing: 0.5px;
-
-                  &.mounted {
-                    background-color: rgba(34, 197, 94, 0.1);
-                    color: #22c55e;
-                  }
-
-                  &.unmounted {
-                    background-color: rgba(156, 163, 175, 0.1);
-                    color: #9ca3af;
-                  }
-                }
-              }
-
-              .mount-controls {
+              h3 {
                 display: flex;
                 align-items: center;
                 gap: 8px;
+                flex-wrap: wrap;
 
-                .delete-button {
-                  @include delete-button(24px, 14px);
+                .mount-source {
+                  color: var(--color-body);
+                  font-weight: 600;
                 }
 
-                .expand-caret {
-                  width: 24px;
-                  height: 24px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  cursor: pointer;
+                .mount-separator {
+                  color: var(--color-body-secondary);
+                  font-weight: 400;
+                  font-size: 1.1em;
+                }
 
-                  .config-caret {
-                    width: 16px;
-                    height: 16px;
-                    color: var(--color-body-secondary);
-                    transition: transform 0.2s ease;
+                .mount-target {
+                  color: var(--color-body-secondary);
+                  font-weight: 400;
+                  font-family: 'Metropolis', monospace;
+                  background: var(--color-bg-secondary);
+                  padding: 2px 6px;
+                  border-radius: 4px;
+                  font-size: 0.9em;
+                }
+              }
 
-                    &.expanded {
-                      transform: rotate(180deg);
-                    }
+              .mount-path {
+                margin: 0;
+                color: var(--color-body-secondary);
+                font-size: 0.9rem;
+                font-family: 'Metropolis', sans-serif;
+              }
+            }
+          }
+
+          .mount-actions {
+            @include service-actions-base;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            .mount-status {
+              .status-badge {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+
+                &.mounted {
+                  background-color: rgba(34, 197, 94, 0.1);
+                  color: #22c55e;
+                }
+
+                &.unmounted {
+                  background-color: rgba(156, 163, 175, 0.1);
+                  color: #9ca3af;
+                }
+              }
+            }
+
+            .mount-controls {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              .delete-button {
+                @include delete-button(24px, 14px);
+              }
+
+              .expand-caret {
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+
+                .config-caret {
+                  width: 16px;
+                  height: 16px;
+                  color: var(--color-body-secondary);
+                  transition: transform 0.2s ease;
+
+                  &.expanded {
+                    transform: rotate(180deg);
                   }
                 }
               }
             }
           }
+        }
 
-          .details-section {
-            // Only apply section styles when expanded
-            .details-content {
-              @include service-content-section;
-              @include service-content-box;
-              // Remove default bottom padding/margin
-              margin-bottom: 0;
+        .details-section {
+          // Only apply section styles when expanded
+          .details-content {
+            @include service-content-section;
+            @include service-content-box;
+            // Remove default bottom padding/margin
+            margin-bottom: 0;
 
-              .mount-info-table {
-                margin-bottom: 0; // Remove margin since there are no actions below
+            .mount-info-table {
+              margin-bottom: 0; // Remove margin since there are no actions below
 
-                table {
-                  width: 100%;
-                  border-collapse: collapse;
+              table {
+                width: 100%;
+                border-collapse: collapse;
 
-                  tbody {
-                    tr {
-                      border-bottom: 1px solid var(--color-border);
+                tbody {
+                  tr {
+                    border-bottom: 1px solid var(--color-border);
 
-                      &:last-child {
-                        border-bottom: none;
+                    &:last-child {
+                      border-bottom: none;
+                    }
+
+                    td {
+                      padding: 8px 0;
+                      vertical-align: top;
+
+                      &.label {
+                        font-weight: 500;
+                        color: var(--color-body-secondary);
+                        width: 30%;
+                        padding-right: 16px;
                       }
 
-                      td {
-                        padding: 8px 0;
-                        vertical-align: top;
-
-                        &.label {
-                          font-weight: 500;
-                          color: var(--color-body-secondary);
-                          width: 30%;
-                          padding-right: 16px;
-                        }
-
-                        &.value {
-                          color: var(--color-body);
-                          font-family: 'Metropolis', sans-serif;
-                          word-break: break-word;
-                        }
+                      &.value {
+                        color: var(--color-body);
+                        font-family: 'Metropolis', sans-serif;
+                        word-break: break-word;
                       }
                     }
                   }

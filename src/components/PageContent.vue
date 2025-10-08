@@ -24,7 +24,7 @@
     </router-link>
 
     <h1
-      v-else
+      v-else-if="title"
       :class="{'noPadding': headerHasContentBelow}"
     >
       {{ title }}

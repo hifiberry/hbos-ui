@@ -157,7 +157,7 @@ const tooltipStyles = computed(() => {
   }
 
   &__cover {
-    max-height: calc(100vh - 500px);
+    max-height: calc(100vh - 420px);
     min-height: 120px;
     overflow: hidden;
 
@@ -176,7 +176,7 @@ const tooltipStyles = computed(() => {
   }
 
   &__cover-container {
-    max-height: calc(100vh - 500px);
+    max-height: calc(100vh - 420px);
     min-height: 120px;
     overflow: hidden;
     position: relative;

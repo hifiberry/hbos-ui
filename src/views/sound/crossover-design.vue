@@ -1,8 +1,9 @@
 <template>
-  <PageContent title="Crossover Design"
-  :backrouterLink="{ name: 'sound' }"
-  >
+  <PageContent>
     <div class="header">
+      <BackRouter :to="{name: 'sound'}">
+        Crossover Design
+      </BackRouter>
       <div class="header-actions">
         <button class="btn" @click="refresh">
           <Icon icon="refresh" />
@@ -140,6 +141,7 @@
 </template>
 
 <script setup lang="ts">
+import BackRouter from '@/components/BackRouter.vue'
 import { ref, computed, onMounted } from 'vue'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
@@ -410,6 +412,7 @@ const onDragEnd = async (id: number) => {
 </script>
 
 <style scoped>
+.header{ display: flex; flex-direction: row; justify-content: space-between;}
 .header-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
 
 .channel-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }

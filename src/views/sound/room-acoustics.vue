@@ -1,7 +1,10 @@
 <template>
-  <PageContent title="Room Acoustics Correction" :backrouterLink="{ name: 'sound' }">
+  <PageContent>
     <div class="room-acoustics">
       <div class="page-header">
+        <BackRouter :to="{name: 'sound'}">
+          Room Acoustics
+        </BackRouter>
         <button @click="startMeasurement" class="measure-button" title="Start Room Measurement">
           <Icon icon="tabler/microphone" />
           Measure Room
@@ -175,6 +178,7 @@
 </template>
 
 <script setup lang="ts">
+import BackRouter from '@/components/BackRouter.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '@/components/Icon.vue'

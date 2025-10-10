@@ -1,45 +1,52 @@
 <template>
-  <PageContent title="Now Playing" hintLink="/now-playing-minimal" hintString="Switch to minimal view">
-    <div class="now-playing__player">
-      <div
-        class="now-playing__cover-container"
-        @mouseenter="showTooltip = true"
-        @mouseleave="showTooltip = false"
-        @mousemove="updateTooltipPosition"
-      >
-        <CoverArt
-          class="now-playing__cover"
-          :song="song"
-          size="large"
-          :adaptToContainer="true"
-          @loaded="onCoverArtLoaded"
-          @error="onCoverArtError"
-        />
+  <div class="now-playing">
+    <PageContent
+      title="Now Playing"
+      hintLink="/now-playing-minimal"
+      hintString="Switch to minimal view"
+      class="now-playing__page-content"
+    >
+      <div class="now-playing__player">
+        <div
+          class="now-playing__cover-container"
+          @mouseenter="showTooltip = true"
+          @mouseleave="showTooltip = false"
+          @mousemove="updateTooltipPosition"
+        >
+          <CoverArt
+            class="now-playing__cover"
+            :song="song"
+            size="large"
+            :adaptToContainer="true"
+            @loaded="onCoverArtLoaded"
+            @error="onCoverArtError"
+          />
 
-        <!-- Metadata Tooltip -->
-        <MetadataTooltip
-          v-if="showTooltip && song"
-          :song="song"
-          class="now-playing__metadata-tooltip"
-          :style="tooltipStyles"
-        />
+          <!-- Metadata Tooltip -->
+          <MetadataTooltip
+            v-if="showTooltip && song"
+            :song="song"
+            class="now-playing__metadata-tooltip"
+            :style="tooltipStyles"
+          />
+        </div>
+
+        <div class="now-playing__info">
+          <h2 v-if="song?.title">{{ song.title }}</h2>
+          <p v-if="song?.artist">{{ song.artist }}</p>
+        </div>
+
+        <AudioControls class="now-playing__audio-controls" />
+
+        <ProgressControl class="now-playing__progress-control" isDraggable />
+
+        <!-- Volume control -->
+        <div class="now-playing__volume">
+          <VolumeControl size="wide" />
+        </div>
       </div>
-
-      <div class="now-playing__info">
-        <h2 v-if="song?.title">{{ song.title }}</h2>
-        <p v-if="song?.artist">{{ song.artist }}</p>
-      </div>
-
-      <AudioControls class="now-playing__audio-controls" />
-
-      <ProgressControl class="now-playing__progress-control" isDraggable />
-
-      <!-- Volume control -->
-      <div class="now-playing__volume">
-        <VolumeControl size="wide" />
-      </div>
-    </div>
-  </PageContent>
+    </PageContent>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -119,6 +126,19 @@ const tooltipStyles = computed(() => {
   flex-direction: column;
   min-width: 100%;
   height: 100%;
+
+  &__page-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    .content {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+  }
+
   &__player {
     display: flex;
     flex-grow: 1;
@@ -137,7 +157,7 @@ const tooltipStyles = computed(() => {
   }
 
   &__cover {
-    max-height: calc(100vh - 500px);
+    max-height: calc(100vh - 420px);
     min-height: 120px;
     overflow: hidden;
 
@@ -156,7 +176,7 @@ const tooltipStyles = computed(() => {
   }
 
   &__cover-container {
-    max-height: calc(100vh - 500px);
+    max-height: calc(100vh - 420px);
     min-height: 120px;
     overflow: hidden;
     position: relative;

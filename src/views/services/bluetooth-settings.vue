@@ -4,9 +4,9 @@
         <p>Adjust bluetooth settings</p>
       </div>
       <BluetoothSettings>
-        <div>
-        </div>
       </BluetoothSettings>
+      <BluetoothDevices>
+      </BluetoothDevices>
 
   </PageContent>
 </template>
@@ -15,6 +15,7 @@
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
 import BluetoothSettings from '@/components/BluetoothSettings.vue'
+import BluetoothDevices from '@/components/BluetoothDevices.vue'
 </script>
 
 <style scoped lang="scss">

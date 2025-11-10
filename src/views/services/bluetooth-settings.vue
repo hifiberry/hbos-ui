@@ -3,10 +3,10 @@
       <div class="bluetooth-header">
         <p>Adjust bluetooth settings</p>
       </div>
-      <ContentBox class="card-content">
+      <BluetoothSettings>
         <div>
         </div>
-      </ContentBox>
+      </BluetoothSettings>
 
   </PageContent>
 </template>
@@ -14,6 +14,7 @@
 <script setup lang="ts">
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
+import BluetoothSettings from '@/components/BluetoothSettings.vue'
 </script>
 
 <style scoped lang="scss">
@@ -29,8 +30,5 @@ import ContentBox from '@/components/ContentBox.vue'
     margin: 0;
     color: var(--color-body-secondary);
   }
-}
-.card-content{
-  padding: 20px;
 }
 </style>

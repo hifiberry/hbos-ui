@@ -1,5 +1,5 @@
 <template>
-  <div class="card-content">
+  <ContentBox class="card-content">
     <div class="bluetooth-devices-div">
       <h2>Bluetooth Devices</h2>
 
@@ -21,12 +21,13 @@
         <p v-else>No paired devices found.</p>
       </div>
     </div>
-  </div>
+  </ContentBox>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import BluetoothDeviceEntry from '@/components/BluetoothDeviceEntry.vue'
+import ContentBox from '@/components/ContentBox.vue'
 
 interface BluetoothDevice {
   address: string

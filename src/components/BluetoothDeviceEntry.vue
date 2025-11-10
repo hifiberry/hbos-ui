@@ -3,11 +3,10 @@
     <div class="bluetooth-device-entry-info-div">
       <h3>{{ name }}</h3>
       <span>{{ connected ? "Connected" : "Disconnected" }}</span>
-      <p>{{ address }}</p>
-      <span>{{ trusted ? "Trusted" : "Untrusted" }}</span>
     </div>
     <div class="bluetooth-device-entry-controls-div">
-      <button @click="handleDisconnect">Unpair</button>
+      <button @click="handleDisconnect"
+        class="btn-action btn-disconnect">Unpair</button>
     </div>
   </div>
 </template>
@@ -45,7 +44,9 @@ const handleDisconnect = async () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '@/assets/scss/service-item' as *;
+
 .bluetooth-device-entry-div {
   display: flex;
   flex-direction: row;
@@ -77,4 +78,19 @@ const handleDisconnect = async () => {
 
   width: 100%;
 }
+
+.btn-action {
+  &.btn-connect {
+    @include service-button-primary;
+  }
+
+  &.btn-disconnect {
+    @include service-button-danger;
+  }
+
+  &.btn-cancel {
+    @include service-button-secondary;
+  }
+}
+
 </style>

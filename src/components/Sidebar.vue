@@ -158,6 +158,11 @@ const routes = computed(() => {
           icon: 'computer',
         },
         {
+          name: 'bluetooth-settings',
+          title: 'Bluetooth',
+          icon: 'bluetooth',
+        },
+        {
           name: 'system-tools',
           title: 'System Tools',
           icon: 'tool',
@@ -274,7 +279,7 @@ const routes = computed(() => {
         }
 
         &+.nav-item__dropdown {
-          max-height: 300px;
+          max-height: 400px;
           padding-top: 12px;
           opacity: 1;
 

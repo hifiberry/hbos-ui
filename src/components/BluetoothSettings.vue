@@ -4,42 +4,11 @@
       <h2>Bluetooth Settings</h2>
 
       <div class="bluetooth-settings-pairs-div">
-        <p>Bluetooth agent capability</p>
-        <select v-model="capability" @change="updateSetting('capability', capability)">
-          <option value="DisplayOnly">DisplayOnly</option>
-          <option value="DisplayYesNo">DisplayYesNo</option>
-          <option value="KeyboardDisplay">KeyboardDisplay</option>
-          <option value="KeyboardOnly">KeyboardOnly</option>
-          <option value="NoInputNoOutput">NoInputNoOutput</option>
-        </select>
-
         <p>Discoverable</p>
         <select v-model="discoverableString" @change="updateSetting('discoverable', discoverableString)">
           <option value="true">true</option>
           <option value="false">false</option>
         </select>
-
-        <p>Discoverable timeout</p>
-        <input
-          type="number"
-          min="0"
-          v-model.number="discoverableTimeout"
-          @change="updateSetting('discoverable_timeout', discoverableTimeout)"
-        />
-
-        <p>Pairable</p>
-        <select v-model="pairableString" @change="updateSetting('pairable', pairableString)">
-          <option value="true">true</option>
-          <option value="false">false</option>
-        </select>
-
-        <p>Pairable timeout</p>
-        <input
-          type="number"
-          min="0"
-          v-model.number="pairableTimeout"
-          @change="updateSetting('pairable_timeout', pairableTimeout)"
-        />
       </div>
     </div>
   </ContentBox>
@@ -102,20 +71,21 @@ async function updateSetting(key: string, newValue: string | number) {
   padding: 20px;
 }
 
-.bluetooth-settings-div {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .bluetooth-settings-pairs-div {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  select,
-  input {
-    max-width: 200px;
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1fr 1fr;
+  justify-items: center;
+}
+.bluetooth-settings-pairs-div p:nth-child(odd) {
+  font-weight: bold;
+}
+@media (max-width: 600px) {
+  .bluetooth-settings-pairs-div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    justify-items: center;
   }
 }
 </style>

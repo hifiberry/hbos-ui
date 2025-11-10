@@ -1,8 +1,7 @@
 <template>
   <ContentBox class="card-content">
+    <h2>Devices</h2>
     <div class="bluetooth-devices-div">
-      <h2>Bluetooth Devices</h2>
-
       <p v-if="loading">Loading devices...</p>
       <p v-if="error" class="error">{{ error }}</p>
 

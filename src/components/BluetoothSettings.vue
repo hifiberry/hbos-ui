@@ -1,8 +1,7 @@
 <template>
   <ContentBox class="card-content">
+    <h2>Settings</h2>
     <div class="bluetooth-settings-div">
-      <h2>Bluetooth Settings</h2>
-
       <div class="bluetooth-settings-pairs-div">
         <p>Discoverable</p>
         <select v-model="discoverableString" @change="updateSetting('discoverable', discoverableString)">

@@ -13,6 +13,10 @@
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
+import { useAppConfigStore } from '@/stores/appconfig'
+
+const configStore = useAppConfigStore()
+const apiBaseUrl = configStore.getConfigApiBaseUrl()
 
 const props = defineProps<{
   name: string
@@ -24,9 +28,8 @@ const props = defineProps<{
 
 const handleDisconnect = async () => {
   try {
-    console.log("Trying to unpair device:", props.address)
     const response = await fetch(
-      `/bluetooth/unpair?address=${props.address}`,
+      `${apiBaseUrl}/bluetooth/unpair?address=${props.address}`,
       { method: "POST" }
     )
 

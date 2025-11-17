@@ -53,23 +53,30 @@ onMounted(async () => {
   }
 })
 
+
 async function updateSetting(key: string, newValue: boolean | number) {
-  try {
-    const res = await fetch(`${apiBaseUrl}/bluetooth/settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [key]: newValue })
-    })
+    // Convert booleans to lowercase strings for Flask
+    const valueString = typeof newValue === "boolean" ? String(newValue).toLowerCase() : newValue;
 
-    if (!res.ok) {
-      throw new Error(`Server error: ${res.status}`)
+    // Build query string
+    const url = `${apiBaseUrl}/bluetooth/settings?${key}=${valueString}`;
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Update successful:", data);
+        return data;
+    } catch (error) {
+        console.error("Failed to update setting:", error);
+        throw error;
     }
-
-    console.log(`${key} updated: ${newValue}`)
-  } catch (error) {
-    console.error(`Failed to update ${key}:`, error)
-    alert(`Failed to update ${key} on server.`)
-  }
 }
 </script>
 

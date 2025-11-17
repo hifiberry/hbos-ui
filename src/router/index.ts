@@ -99,6 +99,11 @@ const router = createRouter({
               name: 'pipewire-filter-chain',
               component: () => import('@/views/services/pipewire-filter-chain.vue'),
             },
+            {
+              path: 'bluetooth-settings',
+              name: 'bluetooth-settings',
+              component: () => import('@/views/services/bluetooth-settings.vue'),
+            },
           ],
         },
         {

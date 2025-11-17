@@ -16,6 +16,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import ContentBox from '@/components/ContentBox.vue'
+import { useAppConfigStore } from '@/stores/appconfig'
+
+const configStore = useAppConfigStore()
+const apiBaseUrl = configStore.getConfigApiBaseUrl()
 
 const capability = ref('')
 const discoverable = ref(true)
@@ -35,22 +39,26 @@ const pairableString = computed({
 
 onMounted(async () => {
   try {
-    const response = await fetch('/bluetooth/settings')
+    const response = await fetch(`${apiBaseUrl}/bluetooth/settings`)
     const data = await response.json()
-    capability.value = data.capability
-    discoverable.value = data.discoverable
-    discoverableTimeout.value = data.discoverableTimeout
-    pairable.value = data.pairable
-    pairableTimeout.value = data.pairableTimeout
+
+    // All the settings are inside data.data
+    capability.value = data.data.capability
+    discoverable.value = data.data.discoverable
+    discoverableTimeout.value = data.data.discoverableTimeout
+    pairable.value = data.data.pairable
+    pairableTimeout.value = data.data.pairableTimeout
   } catch (error) {
     console.error('Failed to fetch bluetooth config:', error)
   }
 })
 
-async function updateSetting(key: string, newValue: string | number) {
+async function updateSetting(key: string, newValue: boolean | number) {
   try {
-    const res = await fetch(`/bluetooth/settings/?${key}=${encodeURIComponent(newValue)}`, {
-      method: 'POST'
+    const res = await fetch(`${apiBaseUrl}/bluetooth/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [key]: newValue })
     })
 
     if (!res.ok) {

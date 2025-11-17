@@ -25,8 +25,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useAppConfigStore } from '@/stores/appconfig'
 import BluetoothDeviceEntry from '@/components/BluetoothDeviceEntry.vue'
 import ContentBox from '@/components/ContentBox.vue'
+
+const configStore = useAppConfigStore()
+const apiBaseUrl = configStore.getConfigApiBaseUrl()
+
 
 interface BluetoothDevice {
   address: string
@@ -44,9 +49,11 @@ const fetchDevices = async () => {
   error.value = null
 
   try {
-    const response = await fetch('/bluetooth/paired_devices')
+    const response = await fetch(`${apiBaseUrl}/bluetooth/paired-devices`)
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-    const data: BluetoothDevice[] = await response.json()
+    const result = await response.json()
+    console.log(result);
+    const data: BluetoothDevice[] = result.data
     devices.value = data
   } catch (err) {
     console.error(err)

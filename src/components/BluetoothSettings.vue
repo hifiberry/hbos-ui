@@ -1,6 +1,5 @@
 <template>
   <ContentBox class="card-content">
-    <h2>Settings</h2>
     <div class="bluetooth-settings-div">
       <div class="bluetooth-settings-pairs-div">
         <p>Enable pairing</p>
@@ -143,11 +142,9 @@ function resetCountdown() {
 }
 
 .bluetooth-settings-pairs-div {
-  display: grid;
+  display: flex;
+  justify-content: space-between;
   width: 100%;
-  grid-template-columns: 1fr 1fr;
-  justify-items: center;
-  align-items: center;
 }
 .bluetooth-settings-pairs-div p:nth-child(odd) {
   font-weight: bold;

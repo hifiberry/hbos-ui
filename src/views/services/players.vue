@@ -49,6 +49,11 @@
                        @click="toggleConfigExpanded(index)">
                     <Icon :icon="'caret-down'" class="config-caret" :class="{ expanded: isConfigExpanded(index) }" />
                   </div>
+
+                  <!-- Bluetooth button -->
+                  <div v-if="player.name === 'Bluetooth'" class="expand-caret" @click="goToBluetoothSettings">
+                    <Icon icon="caret-down" class="config-caret" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -134,6 +139,14 @@
 import { ref, onMounted } from 'vue'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const goToBluetoothSettings = () => {
+  router.push('/services/bluetooth-settings')
+}
+
 import {
   getMultipleServiceStatus,
   enableService,

@@ -4,14 +4,6 @@
       <div class="bluetooth-settings-pairs-div">
         <p>Enable pairing</p>
         <div class="toggle-container">
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              :checked="discoverable"
-              @change="toggleDiscoverable"
-            >
-            <span class="toggle-slider"></span>
-          </label>
           <span
             v-if="discoverable && isCountdownActive"
             @click="resetCountdown"
@@ -20,6 +12,14 @@
           >
             {{ discoverableCountdown }}s
           </span>
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              :checked="discoverable"
+              @change="toggleDiscoverable"
+            >
+            <span class="toggle-slider"></span>
+          </label>
         </div>
       </div>
     </div>

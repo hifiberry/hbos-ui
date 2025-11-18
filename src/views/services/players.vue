@@ -240,6 +240,19 @@ const players = ref<Player[]>([
     error: undefined,
     allow_change: false,
     exists: false
+  },
+  {
+  name: 'Bluetooth',
+  providedBy: 'hbos-bluetooth',
+  systemdService: 'hbos-bluetooth.service',
+  config: 'none',
+  status: 'inactive',
+  icon: 'bluetooth',
+  enabled: false,
+  loading: false,
+  error: undefined,
+  allow_change: true,
+  exists: true
   }
 ])
 

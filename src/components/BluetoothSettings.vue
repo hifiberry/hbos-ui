@@ -4,17 +4,21 @@
     <div class="bluetooth-settings-div">
       <div class="bluetooth-settings-pairs-div">
         <p>Discoverable</p>
-        <select v-model="discoverableString" @change="updateSetting('discoverable', discoverableString)">
-          <option value="true">true</option>
-          <option value="false">false</option>
-        </select>
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            :checked="discoverable"
+            @change="updateSetting('discoverable', !discoverable)"
+          >
+          <span class="toggle-slider"></span>
+        </label>
       </div>
     </div>
   </ContentBox>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import ContentBox from '@/components/ContentBox.vue'
 import { useAppConfigStore } from '@/stores/appconfig'
 
@@ -26,16 +30,6 @@ const discoverable = ref(true)
 const discoverableTimeout = ref(0)
 const pairable = ref(true)
 const pairableTimeout = ref(0)
-
-// For easy v-model binding with string booleans
-const discoverableString = computed({
-  get: () => (discoverable.value ? 'true' : 'false'),
-  set: (val) => (discoverable.value = val === 'true')
-})
-const pairableString = computed({
-  get: () => (pairable.value ? 'true' : 'false'),
-  set: (val) => (pairable.value = val === 'true')
-})
 
 onMounted(async () => {
   try {
@@ -72,6 +66,10 @@ async function updateSetting(key: string, newValue: boolean | number) {
 
         const data = await response.json();
         console.log("Update successful:", data);
+        // Update local state after successful API call
+        if (key === 'discoverable' && typeof newValue === 'boolean') {
+          discoverable.value = newValue;
+        }
         return data;
     } catch (error) {
         console.error("Failed to update setting:", error);
@@ -90,6 +88,7 @@ async function updateSetting(key: string, newValue: boolean | number) {
   width: 100%;
   grid-template-columns: 1fr 1fr;
   justify-items: center;
+  align-items: center;
 }
 .bluetooth-settings-pairs-div p:nth-child(odd) {
   font-weight: bold;
@@ -100,6 +99,55 @@ async function updateSetting(key: string, newValue: boolean | number) {
     flex-direction: column;
     width: 100%;
     justify-items: center;
+  }
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--color-body-secondary);
+    transition: 0.3s;
+    border-radius: 24px;
+
+    &:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+  }
+
+  input:checked + .toggle-slider {
+    background-color: var(--primary);
+  }
+
+  input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+  }
+
+  input:focus + .toggle-slider {
+    box-shadow: 0 0 1px var(--primary);
   }
 }
 </style>

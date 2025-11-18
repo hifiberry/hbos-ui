@@ -3,30 +3,44 @@
     <h2>Settings</h2>
     <div class="bluetooth-settings-div">
       <div class="bluetooth-settings-pairs-div">
-        <p>Discoverable</p>
-        <label class="toggle-switch">
-          <input
-            type="checkbox"
-            :checked="discoverable"
-            @change="updateSetting('discoverable', !discoverable)"
+        <p>Enable pairing</p>
+        <div class="toggle-container">
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              :checked="discoverable"
+              @change="toggleDiscoverable"
+            >
+            <span class="toggle-slider"></span>
+          </label>
+          <span
+            v-if="discoverable && isCountdownActive"
+            @click="resetCountdown"
+            class="countdown"
+            title="Click to reset timer"
           >
-          <span class="toggle-slider"></span>
-        </label>
+            {{ discoverableCountdown }}s
+          </span>
+        </div>
       </div>
     </div>
   </ContentBox>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import ContentBox from '@/components/ContentBox.vue'
 import { useAppConfigStore } from '@/stores/appconfig'
 
 const configStore = useAppConfigStore()
 const apiBaseUrl = configStore.getConfigApiBaseUrl()
 
+const discoverable = ref(false)
+const discoverableCountdown = ref(60)
+const countdownInterval = ref<number | null>(null)
+const isCountdownActive = ref(false)
+
 const capability = ref('')
-const discoverable = ref(true)
 const discoverableTimeout = ref(0)
 const pairable = ref(true)
 const pairableTimeout = ref(0)
@@ -36,45 +50,90 @@ onMounted(async () => {
     const response = await fetch(`${apiBaseUrl}/bluetooth/settings`)
     const data = await response.json()
 
-    // All the settings are inside data.data
     capability.value = data.data.capability
     discoverable.value = data.data.discoverable
     discoverableTimeout.value = data.data.discoverableTimeout
     pairable.value = data.data.pairable
     pairableTimeout.value = data.data.pairableTimeout
+
+    if (discoverable.value) {
+      startCountdown()
+    }
   } catch (error) {
     console.error('Failed to fetch bluetooth config:', error)
   }
 })
 
+onUnmounted(() => {
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value)
+  }
+})
 
 async function updateSetting(key: string, newValue: boolean | number) {
-    // Convert booleans to lowercase strings for Flask
-    const valueString = typeof newValue === "boolean" ? String(newValue).toLowerCase() : newValue;
+  const valueString = typeof newValue === "boolean" ? String(newValue).toLowerCase() : newValue
+  const url = `${apiBaseUrl}/bluetooth/settings?${key}=${valueString}`
 
-    // Build query string
-    const url = `${apiBaseUrl}/bluetooth/settings?${key}=${valueString}`;
+  try {
+    const response = await fetch(url, { method: "POST" })
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    const data = await response.json()
+    console.log("Update successful:", data)
+    return data
+  } catch (error) {
+    console.error("Failed to update setting:", error)
+    throw error
+  }
+}
 
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-        });
+function startCountdown() {
+  isCountdownActive.value = true
+  discoverableCountdown.value = 60
+  updateSetting('discoverable_timeout', 60)
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value)
+  }
 
-        const data = await response.json();
-        console.log("Update successful:", data);
-        // Update local state after successful API call
-        if (key === 'discoverable' && typeof newValue === 'boolean') {
-          discoverable.value = newValue;
-        }
-        return data;
-    } catch (error) {
-        console.error("Failed to update setting:", error);
-        throw error;
+  countdownInterval.value = window.setInterval(() => {
+    if (discoverableCountdown.value > 0) {
+      discoverableCountdown.value--
+    } else {
+      discoverable.value = false
+      isCountdownActive.value = false
+      updateSetting('discoverable', false)
+      if (countdownInterval.value) {
+        clearInterval(countdownInterval.value)
+      }
     }
+  }, 1000)
+}
+
+function stopCountdown() {
+  isCountdownActive.value = false
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value)
+  }
+}
+
+async function toggleDiscoverable() {
+  const newState = !discoverable.value
+  try {
+    await updateSetting('discoverable', newState)
+    discoverable.value = newState
+    if (newState) {
+      startCountdown()
+    } else {
+      stopCountdown()
+    }
+  } catch (error) {
+    console.error("Failed to toggle discoverable state:", error)
+  }
+}
+
+function resetCountdown() {
+  discoverableCountdown.value = 60
+  updateSetting('discoverable_timeout', 60)
 }
 </script>
 
@@ -99,6 +158,24 @@ async function updateSetting(key: string, newValue: boolean | number) {
     flex-direction: column;
     width: 100%;
     justify-items: center;
+  }
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.countdown {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-body-secondary);
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--primary);
   }
 }
 

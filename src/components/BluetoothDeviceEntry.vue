@@ -1,7 +1,7 @@
 <template>
   <div class="bluetooth-device-entry-div">
     <div class="bluetooth-device-entry-info-div">
-      <h3>{{ name }}</h3>
+      <h3><u>{{ name }}</u></h3>
       <span>{{ connected ? "Connected" : "Disconnected" }}</span>
     </div>
     <div class="bluetooth-device-entry-controls-div">
@@ -71,6 +71,9 @@ const handleDisconnect = async () => {
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
+}
+.bluetooth-device-entry-info-div>*{
+  padding: 5px;
 }
 
 .bluetooth-device-entry-controls-div {

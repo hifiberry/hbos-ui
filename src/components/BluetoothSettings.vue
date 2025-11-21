@@ -137,8 +137,10 @@ function resetCountdown() {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/scss/service-item' as *;
 .card-content {
   padding: 20px;
+  @include service-item-base;
 }
 
 .bluetooth-settings-pairs-div {

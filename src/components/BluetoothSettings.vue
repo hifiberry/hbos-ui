@@ -26,6 +26,7 @@
         <p>Latest passkey</p>
         <p>{{ passkey ?? "--" }}</p>
       </div>
+      <BluetoothSettingsModal />
     </div>
   </ContentBox>
 </template>
@@ -33,6 +34,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import ContentBox from '@/components/ContentBox.vue'
+import BluetoothSettingsModal from '@/components/BluetoothSettings/BluetoothSettingsModal.vue'
 import { useAppConfigStore } from '@/stores/appconfig'
 
 const configStore = useAppConfigStore()

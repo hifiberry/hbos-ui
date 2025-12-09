@@ -22,10 +22,6 @@
           </label>
         </div>
       </div>
-      <div class="bluetooth-settings-pairs-div">
-        <p>Latest passkey</p>
-        <p>{{ passkey ?? "--" }}</p>
-      </div>
       <BluetoothSettingsModal />
     </div>
   </ContentBox>
@@ -50,20 +46,7 @@ const discoverableTimeout = ref(0)
 const pairable = ref(true)
 const pairableTimeout = ref(0)
 
-const passkey = ref<string | null>(null)
-let passkeyInterval: number | null = null
 
-async function fetchPasskey() {
-  try {
-    const response = await fetch(`${apiBaseUrl}/bluetooth/settings`)
-    const data = await response.json()
-
-    // adjust this if the backend uses a different field name
-    passkey.value = data.data.passkey
-  } catch (error) {
-    console.error("Failed to fetch passkey:", error)
-  }
-}
 
 onMounted(async () => {
   try {
@@ -76,14 +59,9 @@ onMounted(async () => {
     pairable.value = data.data.pairable
     pairableTimeout.value = data.data.pairableTimeout
 
-    passkey.value = data.data.passkey
-
     if (discoverable.value) {
       startCountdown()
     }
-
-    // Start passkey polling every 10s
-    passkeyInterval = window.setInterval(fetchPasskey, 1000)
 
   } catch (error) {
     console.error('Failed to fetch bluetooth config:', error)
@@ -92,7 +70,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (countdownInterval.value) clearInterval(countdownInterval.value)
-  if (passkeyInterval) clearInterval(passkeyInterval)
 })
 
 async function updateSetting(key: string, newValue: boolean | number) {

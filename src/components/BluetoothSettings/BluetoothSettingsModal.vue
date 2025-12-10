@@ -1,6 +1,10 @@
 <script setup>
 import { ref } from 'vue'
 import ContentBox from '@/components/ContentBox.vue'
+import { useAppConfigStore } from '@/stores/appconfig'
+
+const configStore = useAppConfigStore()
+const apiBaseUrl = configStore.getConfigApiBaseUrl()
 
 const props = defineProps({
   open: { type: Boolean, required: true }
@@ -74,10 +78,6 @@ async function sendPasskey() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-input {
-  color: var(--color-body);
 }
 
 .modal-buttons-div {

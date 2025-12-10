@@ -22,7 +22,7 @@
           </label>
         </div>
       </div>
-      <BluetoothSettingsModal />
+      <BluetoothSettingsModal v-model:open="modalOpen" />
     </div>
   </ContentBox>
 </template>
@@ -45,6 +45,7 @@ const capability = ref('')
 const discoverableTimeout = ref(0)
 const pairable = ref(true)
 const pairableTimeout = ref(0)
+const modalOpen = ref(false)
 
 
 
@@ -120,14 +121,18 @@ function stopCountdown() {
 
 async function toggleDiscoverable() {
   const newState = !discoverable.value
+
+  // Example: open modal when user enables pairing
+  if (newState === true) {
+    modalOpen.value = true
+  }
+
   try {
     await updateSetting('discoverable', newState)
     discoverable.value = newState
-    if (newState) {
-      startCountdown()
-    } else {
-      stopCountdown()
-    }
+
+    if (newState) startCountdown()
+    else stopCountdown()
   } catch (error) {
     console.error("Failed to toggle discoverable state:", error)
   }

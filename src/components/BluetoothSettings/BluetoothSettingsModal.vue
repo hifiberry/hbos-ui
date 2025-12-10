@@ -1,28 +1,29 @@
 <script setup>
 import { ref } from 'vue'
 import ContentBox from '@/components/ContentBox.vue'
-import { useAppConfigStore } from '@/stores/appconfig'
 
-const configStore = useAppConfigStore()
-const apiBaseUrl = configStore.getConfigApiBaseUrl()
+const props = defineProps({
+  open: { type: Boolean, required: true }
+})
 
-const open = ref(false)
+const emit = defineEmits(['update:open'])
+
 const passkey = ref("")
+
+function close() {
+  emit('update:open', false)
+}
 
 async function sendPasskey() {
   try {
     const response = await fetch(`${apiBaseUrl}/bluetooth/passkey`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        passkey: passkey.value,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passkey: passkey.value })
     })
 
-    const data = await response.json()
-    return data
+    await response.json()
+    emit('update:open', false)
   } catch (error) {
     console.error("Failed to send passkey:", error)
   }
@@ -30,8 +31,6 @@ async function sendPasskey() {
 </script>
 
 <template>
-  <button @click="open = true">Open Modal</button>
-
   <Teleport to="body">
     <div v-if="open" class="modal">
       <ContentBox>
@@ -40,20 +39,14 @@ async function sendPasskey() {
 
           <input
             v-model="passkey"
-            type="text"
             maxlength="6"
-            pattern="\d{6}"
             inputmode="numeric"
-            placeholder="Enter 6 digits"
             @input="passkey = passkey.replace(/[^0-9]/g, '')"
           />
 
           <div class="modal-buttons-div">
-            <button @click="open = false">Close</button>
-            <button
-              :disabled="passkey.length !== 6"
-              @click="sendPasskey(); open = false"
-            >
+            <button @click="close()">Close</button>
+            <button :disabled="passkey.length !== 6" @click="sendPasskey()">
               Enter
             </button>
           </div>

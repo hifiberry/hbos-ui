@@ -129,8 +129,8 @@ function stopCountdown() {
 async function toggleDiscoverable() {
   const newState = !discoverable.value
 
-  // Example: open modal when user enables pairing
-  if (newState === true) {
+  // Open modal only if "Pairing with password" is enabled
+  if (newState === true && capability.value === "KeyboardOnly") {
     modalOpen.value = true
   }
 

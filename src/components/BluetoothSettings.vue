@@ -22,6 +22,19 @@
           </label>
         </div>
       </div>
+      <div class="bluetooth-settings-pairs-div">
+        <p>Pairing with password</p>
+        <div class="toggle-container">
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              :checked="capability === 'KeyboardOnly'"
+              @change="togglePairingWithPassword"
+            >
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
       <BluetoothSettingsModal v-model:open="modalOpen" />
     </div>
   </ContentBox>
@@ -41,12 +54,9 @@ const discoverableCountdown = ref(60)
 const countdownInterval = ref<number | null>(null)
 const isCountdownActive = ref(false)
 
-const capability = ref('')
-const discoverableTimeout = ref(0)
-const pairable = ref(true)
-const pairableTimeout = ref(0)
 const modalOpen = ref(false)
 
+const capability = ref("KeyboardOnly")
 
 
 onMounted(async () => {
@@ -56,9 +66,6 @@ onMounted(async () => {
 
     capability.value = data.data.capability
     discoverable.value = data.data.discoverable
-    discoverableTimeout.value = data.data.discoverableTimeout
-    pairable.value = data.data.pairable
-    pairableTimeout.value = data.data.pairableTimeout
 
     if (discoverable.value) {
       startCountdown()
@@ -135,6 +142,20 @@ async function toggleDiscoverable() {
     else stopCountdown()
   } catch (error) {
     console.error("Failed to toggle discoverable state:", error)
+  }
+}
+
+async function togglePairingWithPassword() {
+  try {
+    if (capability.value === "NoInputNoOutput") {
+      await updateSetting("capability", "KeyboardOnly")
+      capability.value = "KeyboardOnly"
+    } else {
+      await updateSetting("capability", "NoInputNoOutput")
+      capability.value = "NoInputNoOutput"
+    }
+  } catch (error) {
+    console.log("Failed to toggle pairing with password:", error)
   }
 }
 

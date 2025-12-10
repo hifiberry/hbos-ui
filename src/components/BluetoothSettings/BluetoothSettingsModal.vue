@@ -61,6 +61,20 @@ async function sendPasskey() {
 </template>
 
 <style>
+button {
+  color: var(--color-body);
+  transition: all 0.25s;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:hover {
+  color: var(--primary);
+}
+
 .modal {
   position: fixed;
   inset: 0;

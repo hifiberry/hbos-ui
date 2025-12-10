@@ -194,12 +194,6 @@ function resetCountdown() {
   height: 24px;
   cursor: pointer;
 
-  input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
   .toggle-slider {
     position: absolute;
     top: 0;

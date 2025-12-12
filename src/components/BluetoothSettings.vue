@@ -90,7 +90,7 @@ onMounted(async () => {
   * is not visible anymore.
   */
 onUnmounted(() => {
-  if (countdownInterval.value) clearInterval(countdownInterval.value)
+  stopCountdown();
 })
 
 /**

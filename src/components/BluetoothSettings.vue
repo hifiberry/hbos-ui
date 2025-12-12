@@ -115,6 +115,7 @@ function startCountdown() {
       if (countdownInterval.value) {
         clearInterval(countdownInterval.value)
       }
+      modalOpen.value = false
     }
   }, 1000)
 }

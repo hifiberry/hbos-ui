@@ -37,43 +37,24 @@ import FilterGraph from '@/components/FilterGraph.vue'
 /* GLOBAL DEFINITIONS */
 const activeFilterId = ref<number | null>(1)
 const filters = ref([
-  {
-    id: 1,
-    icon: 'peaking',
-    text: 'Band 1',
-    frequency: 1000,
-    gain: 0,
-    Q: 1.0,
-    enabled: true
-  },
-  {
-    id: 2,
-    icon: 'peaking',
-    text: 'Band 2',
-    frequency: 5000,
-    gain: -6,
-    Q: 1.2,
-    enabled: true
-  }
 ])
 
 
 /* FUNCTIONS */
 
+/**
+  * Adds a filter to the global `filters` array.
+  */
 function addItemToFilters() {
   // Get current filter length so the id can be calculated later on
   const filterLength = filters.value.length;
-
-  // Generate random frequency and gain
-  const frequency = Math.random() * (15000-20);
-  const gain = (Math.random() * 12)-6;
 
   filters.value.push({
     id: filterLength+1,
     icon: 'peaking',
     text: 'Band ' + filterLength+1,
-    frequency: frequency,
-    gain: gain,
+    frequency: 800,
+    gain: 0,
     Q: 1.2,
     enabled: true
   });

@@ -18,6 +18,9 @@
         />
       </ContentBox>
       <ContentBox>
+        <button @click="addItemToFilters">
+          add filter
+        </button>
       </ContentBox>
     </div>
   </PageContent>
@@ -56,6 +59,19 @@ const filters = ref([
 
 
 /* FUNCTIONS */
+
+function addItemToFilters() {
+  const filterLength = filters.value.length;
+  filters.value.push({
+    id: filterLength+1,
+    icon: 'peaking',
+    text: 'Band ' + filterLength+1,
+    frequency: 200,
+    gain: -6,
+    Q: 1.2,
+    enabled: true
+  });
+}
 
 /**
   * Updates a filter's frequency and gain in the global `filters`

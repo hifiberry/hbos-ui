@@ -29,6 +29,7 @@
 <script setup lang="ts">
 /* IMPORTS */
 import { ref } from 'vue'
+import { type Filter } from '@/utils/filtercalc';
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
@@ -36,8 +37,7 @@ import FilterGraph from '@/components/FilterGraph.vue'
 
 /* GLOBAL DEFINITIONS */
 const activeFilterId = ref<number | null>(1)
-const filters = ref([
-])
+const filters = ref<Filter[]>([]);
 
 
 /* FUNCTIONS */

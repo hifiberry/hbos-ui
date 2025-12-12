@@ -55,6 +55,7 @@ const countdownInterval = ref<number | null>(null)
 const isCountdownActive = ref(false)
 
 const modalOpen = ref(false)
+const modalShouldRequest = ref(false);
 
 const capability = ref("KeyboardOnly")
 
@@ -100,6 +101,7 @@ function startCountdown() {
   isCountdownActive.value = true
   discoverableCountdown.value = 60
   updateSetting('discoverable_timeout', 60)
+  modalShouldRequest.value = true;
 
   if (countdownInterval.value) {
     clearInterval(countdownInterval.value)
@@ -108,6 +110,9 @@ function startCountdown() {
   countdownInterval.value = window.setInterval(() => {
     if (discoverableCountdown.value > 0) {
       discoverableCountdown.value--
+      if (modalShouldRequest.value == true) {
+        showModalIfTrue();
+      }
     } else {
       discoverable.value = false
       isCountdownActive.value = false
@@ -120,6 +125,22 @@ function startCountdown() {
   }, 1000)
 }
 
+async function showModalIfTrue()
+{
+  try {
+    const response = await fetch(`${apiBaseUrl}/bluetooth/modal`);
+    const data = await response.json();
+
+    console.log(data.modal);
+    if (data.modal === "true") {
+      modalOpen.value = true;
+      modalShouldRequest.value = false;
+    }
+  } catch (error) {
+    console.error("Failed to fetch bluetooth modal:", error);
+  }
+}
+
 function stopCountdown() {
   isCountdownActive.value = false
   if (countdownInterval.value) {
@@ -129,11 +150,6 @@ function stopCountdown() {
 
 async function toggleDiscoverable() {
   const newState = !discoverable.value
-
-  // Open modal only if "Pairing with password" is enabled
-  if (newState === true && capability.value === "KeyboardOnly") {
-    modalOpen.value = true
-  }
 
   try {
     await updateSetting('discoverable', newState)

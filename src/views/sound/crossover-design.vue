@@ -61,13 +61,19 @@ const filters = ref([
 /* FUNCTIONS */
 
 function addItemToFilters() {
+  // Get current filter length so the id can be calculated later on
   const filterLength = filters.value.length;
+
+  // Generate random frequency and gain
+  const frequency = Math.random() * (15000-20);
+  const gain = (Math.random() * 12)-6;
+
   filters.value.push({
     id: filterLength+1,
     icon: 'peaking',
     text: 'Band ' + filterLength+1,
-    frequency: 200,
-    gain: -6,
+    frequency: frequency,
+    gain: gain,
     Q: 1.2,
     enabled: true
   });

@@ -24,15 +24,15 @@
 </template>
 
 <script setup lang="ts">
+/* IMPORTS */
 import { ref } from 'vue'
-
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
 
 
+/* GLOBAL DEFINITIONS */
 const activeFilterId = ref<number | null>(1)
-
 const filters = ref([
   {
     id: 1,
@@ -54,23 +54,63 @@ const filters = ref([
   }
 ])
 
+
+/* FUNCTIONS */
+
+/**
+  * Updates a filter's frequency and gain in the global `filters`
+  * array.
+  *
+  * @param {Object} payload
+  * @param {string|number} payload.id - The unique identifier of the filter to edit.
+  * @param {number} payload.frequency - The new frequency value (in Hz).
+  * @param {number} payload.gain - The new gain value (in dB).
+  */
 const onUpdateFreqGain = ({ id, frequency, gain }) => {
-  const target = filters.value.find(f => f.id === id)
-  if (!target) return
-  target.frequency = frequency
-  target.gain = gain
+  // Find the filter object that matches the supplied id.
+  const target = filters.value.find(f => f.id === id);
+
+  // Return if no matching filter was found.
+  if (!target) {
+    return;
+  }
+
+  // Update the properties.
+  target.frequency = frequency;
+  target.gain = gain;
 }
 
+/**
+  * Updates a filter's q in the global `filters` array.
+  * @param {Object} payload
+  * @param {string|number} payload.id
+  * @param {number} payload.Q
+  */
 const onUpdateQ = ({ id, Q }) => {
-  const target = filters.value.find(f => f.id === id)
-  if (!target) return
-  target.Q = Q
+  // Find the filter that matches the supplied id.
+  const target = filters.value.find(f => f.id === id);
+
+  // Return if no matching filter was found
+  if (!target) {
+    return;
+  }
+
+  // Update the property.
+  target.Q = Q;
 }
 
+/**
+  * Function that will be called when a filter is dragged.
+  * @param {number} id
+  */
 const onDragStart = (id: number) => {
   console.log('drag start', id)
 }
 
+/**
+  * Function that will be called when a filter is let go.
+  * @param {number} id
+  */
 const onDragEnd = (id: number) => {
   console.log('drag end', id)
 }

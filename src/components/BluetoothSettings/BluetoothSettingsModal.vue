@@ -1,39 +1,3 @@
-<script setup>
-import { ref } from 'vue'
-import ContentBox from '@/components/ContentBox.vue'
-import { useAppConfigStore } from '@/stores/appconfig'
-
-const configStore = useAppConfigStore()
-const apiBaseUrl = configStore.getConfigApiBaseUrl()
-
-const props = defineProps({
-  open: { type: Boolean, required: true }
-})
-
-const emit = defineEmits(['update:open'])
-
-const passkey = ref("")
-
-function close() {
-  emit('update:open', false)
-}
-
-async function sendPasskey() {
-  try {
-    const response = await fetch(`${apiBaseUrl}/bluetooth/passkey`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ passkey: passkey.value })
-    })
-
-    await response.json()
-    emit('update:open', false)
-  } catch (error) {
-    console.error("Failed to send passkey:", error)
-  }
-}
-</script>
-
 <template>
   <Teleport to="body">
     <div v-if="open" class="modal">
@@ -60,6 +24,54 @@ async function sendPasskey() {
   </Teleport>
 </template>
 
+<script setup>
+/* IMPORTS */
+import { ref } from 'vue'
+import { useAppConfigStore } from '@/stores/appconfig'
+import ContentBox from '@/components/ContentBox.vue'
+
+/* PROPS */
+const props = defineProps({
+  open: { type: Boolean, required: true }
+})
+
+/* GLOBAL DEFINITIONS */
+const configStore = useAppConfigStore()
+const apiBaseUrl = configStore.getConfigApiBaseUrl()
+const emit = defineEmits(['update:open'])
+const passkey = ref("")
+
+/* FUNCTIONS */
+
+/**
+  * This function will be run when the "close" button is clicked.
+  * It is not used anywhere else and is just here, so the code is
+  * not directly inside of the button.
+  */
+function close() {
+  emit('update:open', false)
+}
+
+/**
+  * Sends the passkey to the config-server.
+  * This function is called when the "send" button is pressed.
+  */
+async function sendPasskey() {
+  try {
+    const response = await fetch(`${apiBaseUrl}/bluetooth/passkey`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passkey: passkey.value })
+    })
+
+    await response.json()
+    emit('update:open', false)
+  } catch (error) {
+    console.error("Failed to send passkey:", error)
+  }
+}
+</script>
+
 <style>
 button {
   color: var(--color-body);
@@ -84,15 +96,17 @@ button:hover {
   align-items: center;
   justify-content: center;
 }
-.modal-content > * {
-  margin: 10px;
-}
+
 .modal-content {
   padding: 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.modal-content > * {
+  margin: 10px;
 }
 
 .modal-buttons-div {

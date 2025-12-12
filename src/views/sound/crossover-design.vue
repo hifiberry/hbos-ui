@@ -62,7 +62,7 @@ const filters = ref([
   * array.
   *
   * @param {Object} payload
-  * @param {string|number} payload.id - The unique identifier of the filter to edit.
+  * @param {number} payload.id - The unique identifier of the filter to edit.
   * @param {number} payload.frequency - The new frequency value (in Hz).
   * @param {number} payload.gain - The new gain value (in dB).
   */
@@ -83,7 +83,7 @@ const onUpdateFreqGain = ({ id, frequency, gain }) => {
 /**
   * Updates a filter's q in the global `filters` array.
   * @param {Object} payload
-  * @param {string|number} payload.id
+  * @param {number} payload.id
   * @param {number} payload.Q
   */
 const onUpdateQ = ({ id, Q }) => {

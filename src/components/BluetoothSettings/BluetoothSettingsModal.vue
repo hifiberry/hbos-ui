@@ -39,7 +39,7 @@ async function sendPasskey() {
     <div v-if="open" class="modal">
       <ContentBox>
         <div class="modal-content">
-          <h1>enter pincode</h1>
+          <h1>Enter Pincode</h1>
 
           <input
             v-model="passkey"

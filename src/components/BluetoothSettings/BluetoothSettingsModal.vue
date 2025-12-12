@@ -66,7 +66,8 @@ button {
   transition: all 0.25s;
 }
 
-button:disabled {
+button:disabled, button:disabled:hover {
+  color: var(--color-body);
   opacity: 0.5;
   cursor: not-allowed;
 }

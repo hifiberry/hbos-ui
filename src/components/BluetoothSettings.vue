@@ -41,25 +41,32 @@
 </template>
 
 <script setup lang="ts">
+/* IMPORTS */
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useAppConfigStore } from '@/stores/appconfig'
+const configStore = useAppConfigStore()
 import ContentBox from '@/components/ContentBox.vue'
 import BluetoothSettingsModal from '@/components/BluetoothSettings/BluetoothSettingsModal.vue'
-import { useAppConfigStore } from '@/stores/appconfig'
 
-const configStore = useAppConfigStore()
+
+/* GLOBAL DEFINITIONS */
 const apiBaseUrl = configStore.getConfigApiBaseUrl()
-
 const discoverable = ref(false)
 const discoverableCountdown = ref(60)
 const countdownInterval = ref<number | null>(null)
 const isCountdownActive = ref(false)
-
 const modalOpen = ref(false)
 const modalShouldRequest = ref(false);
-
 const capability = ref("KeyboardOnly")
 
 
+/* FUNCTIONS */
+
+/**
+  * Callback function called after the component has been mounted.
+  * This will get the bluetooth settings from the config-server
+  * and adjust the values accordingly.
+  */
 onMounted(async () => {
   try {
     const response = await fetch(`${apiBaseUrl}/bluetooth/settings`)
@@ -77,10 +84,23 @@ onMounted(async () => {
   }
 })
 
+/**
+  * Callback function called after the component has been unmounted.
+  * This will stop the interval from continuing after the component
+  * is not visible anymore.
+  */
 onUnmounted(() => {
   if (countdownInterval.value) clearInterval(countdownInterval.value)
 })
 
+/**
+  * Updates a setting in the hbos-bluetooth-service via the config-server.
+  *
+  * @param {string} key - The key of the setting.
+  * @param {boolean | number} newValue - The new value that should be written into the config-server.
+  * @throws Will throw an error if the http response status code is not `response.ok`.
+  * @throws Will throw an error if it could not update the setting inside the config-server.
+  */
 async function updateSetting(key: string, newValue: boolean | number) {
   const valueString = typeof newValue === "boolean" ? String(newValue).toLowerCase() : newValue
   const url = `${apiBaseUrl}/bluetooth/settings?${key}=${valueString}`
@@ -97,6 +117,13 @@ async function updateSetting(key: string, newValue: boolean | number) {
   }
 }
 
+/**
+  * Starts the countdown inside the frontend. This will display
+  * the countdown and also request the modal backend API each second.
+  * If the time has ran out, it will close the modal and set the
+  * discoverable value to false. This will also update the setting
+  * inside the backend.
+  */
 function startCountdown() {
   isCountdownActive.value = true
   discoverableCountdown.value = 60
@@ -125,6 +152,9 @@ function startCountdown() {
   }, 1000)
 }
 
+/**
+  * Request the backend modal API. Show the modal if it returns `"true"`.
+  */
 async function showModalIfTrue()
 {
   try {
@@ -141,6 +171,9 @@ async function showModalIfTrue()
   }
 }
 
+/**
+  * Stops the countdown inside the frontend.
+  */
 function stopCountdown() {
   isCountdownActive.value = false
   if (countdownInterval.value) {
@@ -148,6 +181,12 @@ function stopCountdown() {
   }
 }
 
+/**
+  * Toggles the discoverable mode (pairing mode).
+  * If the pairing mode is set to false, it will
+  * also stop the countdown using the
+  * `stopCountdown()` function.
+  */
 async function toggleDiscoverable() {
   const newState = !discoverable.value
 
@@ -162,6 +201,16 @@ async function toggleDiscoverable() {
   }
 }
 
+/**
+  * Update the capability (pairing with password)
+  * in the backend. It can either be `"NoInputNoOutput"`
+  * or `"KeyboardOnly"`.
+  * `"KeyboardOnly"` is with the passkey and
+  * `"NoInputNoOutput"` without the passkey.
+  *
+  * Please look at the [hbos-bluetooth-service](https://github.com/arcathrax/hbos-bluetooth-service)
+  * for all the available options.
+  */
 async function togglePairingWithPassword() {
   try {
     if (capability.value === "NoInputNoOutput") {
@@ -176,6 +225,14 @@ async function togglePairingWithPassword() {
   }
 }
 
+/**
+  * Resets the countdown. This is called
+  * when the user presses on the visible countdown,
+  * so it will go back to 60.
+  *
+  * This will simply update the ui and send the
+  * setting to the backend.
+  */
 function resetCountdown() {
   discoverableCountdown.value = 60
   updateSetting('discoverable_timeout', 60)
@@ -197,14 +254,6 @@ function resetCountdown() {
 }
 .bluetooth-settings-pairs-div p:nth-child(odd) {
   font-weight: bold;
-}
-@media (max-width: 600px) {
-  .bluetooth-settings-pairs-div {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    justify-items: center;
-  }
 }
 
 .toggle-container {

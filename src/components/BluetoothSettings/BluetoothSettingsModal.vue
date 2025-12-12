@@ -30,16 +30,19 @@ import { ref } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
 import ContentBox from '@/components/ContentBox.vue'
 
+
 /* PROPS */
 const props = defineProps({
   open: { type: Boolean, required: true }
 })
+
 
 /* GLOBAL DEFINITIONS */
 const configStore = useAppConfigStore()
 const apiBaseUrl = configStore.getConfigApiBaseUrl()
 const emit = defineEmits(['update:open'])
 const passkey = ref("")
+
 
 /* FUNCTIONS */
 

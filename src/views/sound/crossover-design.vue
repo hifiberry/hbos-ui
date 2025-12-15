@@ -4,38 +4,50 @@
   :backrouterLink="{ name: 'sound' }">
     <div class="main-container">
       <ContentBox>
-        <div class="filtergraph-header">
-          <h2>
-            {{ currentChannel }}
-          </h2>
-          <p>
-            {{ backendName }}
-          </p>
-        </div>
-        <FilterGraph
-          :filters="currentFilterArray"
-          :activeFilterId="activeFilterId"
-          :showBandwidthLines="true"
-          :sampleRate="48000"
+        <div class="filtergraph-container">
+          <div class="filtergraph-header">
+            <h2>
+              {{ currentChannel }}
+            </h2>
+            <p>
+              {{ backendName }}
+            </p>
+          </div>
+          <FilterGraph
+            :filters="currentFilterArray"
+            :activeFilterId="activeFilterId"
+            :showBandwidthLines="true"
+            :sampleRate="48000"
 
-          @set-active-filter="activeFilterId = $event"
-          @update:freq-gain="onUpdateFreqGain"
-          @update:q="onUpdateQ"
-          @drag-start="onDragStart"
-          @drag-end="onDragEnd"
-        />
-        <button @click="currentChannel='Channel A'">
-          Channel A
-        </button>
-        <button @click="currentChannel='Channel B'">
-          Channel B
-        </button>
-        <button @click="currentChannel='Channel C'">
-          Channel C
-        </button>
-        <button @click="currentChannel='Channel D'">
-          Channel D
-        </button>
+            @set-active-filter="activeFilterId = $event"
+            @update:freq-gain="onUpdateFreqGain"
+            @update:q="onUpdateQ"
+            @drag-start="onDragStart"
+            @drag-end="onDragEnd"
+          />
+          <div class="filtergraph-channel-selector">
+            <button
+              :class="{ 'channel-selector-active': currentChannel === 'Channel A' }"
+              @click="currentChannel='Channel A'">
+              Channel A
+            </button>
+            <button
+              :class="{ 'channel-selector-active': currentChannel === 'Channel B' }"
+              @click="currentChannel='Channel B'">
+              Channel B
+            </button>
+            <button
+              :class="{ 'channel-selector-active': currentChannel === 'Channel C' }"
+              @click="currentChannel='Channel C'">
+              Channel C
+            </button>
+            <button
+              :class="{ 'channel-selector-active': currentChannel === 'Channel D' }"
+              @click="currentChannel='Channel D'">
+              Channel D
+            </button>
+          </div>
+        </div>
       </ContentBox>
       <ContentBox>
         <button @click="addItemToFilters">
@@ -236,17 +248,49 @@ const onDragStart = (id: number) => {
 const onDragEnd = (id: number) => {
   console.log('drag end', id)
 }
-
 </script>
 
 <style scoped>
+button {
+  padding: 10px;
+  width: 100%;
+}
+
 .main-container {
   display: flex;
   flex-direction: column;
 }
+
+.filtergraph-container {
+  padding: 10px;
+}
+
 .filtergraph-header {
   display: flex;
   width: 100%;
   justify-content: space-between;
+  padding: 10px;
+}
+
+.filtergraph-channel-selector {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px;
+  border: 1px solid var(--color-body);
+  border-radius: 5px;
+}
+
+.filtergraph-channel-selector button:first-child {
+  border-radius: 5px 0 0 5px;
+}
+
+.filtergraph-channel-selector button:last-child {
+  border-radius: 0 20px 20px 0;
+}
+
+.channel-selector-active {
+  background: var(--primary);
+  color: var(--color-body);
+  border-color: var(--primary);
 }
 </style>

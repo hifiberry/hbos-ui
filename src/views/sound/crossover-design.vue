@@ -285,7 +285,7 @@ button {
 }
 
 .filtergraph-channel-selector button:last-child {
-  border-radius: 0 20px 20px 0;
+  border-radius: 0 5px 5px 0;
 }
 
 .channel-selector-active {

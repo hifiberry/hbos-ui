@@ -4,9 +4,14 @@
   :backrouterLink="{ name: 'sound' }">
     <div class="main-container">
       <ContentBox>
-        <h2>
-          {{ currentChannel }}
-        </h2>
+        <div class="filtergraph-header">
+          <h2>
+            {{ currentChannel }}
+          </h2>
+          <p>
+            {{ backendName }}
+          </p>
+        </div>
         <FilterGraph
           :filters="currentFilterArray"
           :activeFilterId="activeFilterId"
@@ -43,8 +48,9 @@
 
 <script setup lang="ts">
 /* IMPORTS */
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { type Filter } from '@/utils/filtercalc';
+import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
@@ -61,8 +67,31 @@ const currentFilterArray = computed(() => {
   return getCurrentFilterArray();
 });
 
+const filterStore = useFilterStore();
+const backendCapabilities = ref<BackendCapabilities | null>(null);
+const backendName = ref("");
+
 
 /* FUNCTIONS */
+onMounted(() => {
+  loadBackendCapabilities();
+})
+
+/**
+  * Loads the backend capabilities using the `filterStore` and
+  * stores it inside `const backendCapabilities`. The backend name
+  * also gets saved into `const backendName`.
+  */
+const loadBackendCapabilities = async () => {
+  try {
+    backendCapabilities.value = await filterStore.getBackendCapabilities();
+    backendName.value = backendCapabilities.value?.backendName || "";
+    console.log("Backend capabilities loaded:", backendCapabilities.value);
+  } catch (error) {
+    console.error("Failed to load backend capabilities:", error);
+  }
+}
+
 /**
   * Returns the current filter array based on the `currentChannel` string.
   * @returns {Filter[]} the `channelXFilters.value` where `X` is the current channels letter.
@@ -170,5 +199,10 @@ const onDragEnd = (id: number) => {
 .main-container {
   display: flex;
   flex-direction: column;
+}
+.filtergraph-header {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
 }
 </style>

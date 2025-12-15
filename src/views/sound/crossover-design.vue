@@ -51,6 +51,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { type Filter } from '@/utils/filtercalc';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
+import { convertStoreFilterToUI } from '@/utils/filter-conversions';
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
@@ -73,8 +74,14 @@ const backendName = ref("");
 
 
 /* FUNCTIONS */
+
+/**
+  * This function will be run after the component has been mounted.
+  * Initialisations should be done here.
+  */
 onMounted(() => {
   loadBackendCapabilities();
+  loadFiltersFromBackend();
 })
 
 /**
@@ -89,6 +96,43 @@ const loadBackendCapabilities = async () => {
     console.log("Backend capabilities loaded:", backendCapabilities.value);
   } catch (error) {
     console.error("Failed to load backend capabilities:", error);
+  }
+}
+
+/**
+  * Loads the filters from the given backend and stores them in
+  * the according `channelX` filter array, where `X` is the
+  * channel letter.
+  */
+const loadFiltersFromBackend = async () => {
+  try {
+    await filterStore.syncFromBackend();
+    const backendFilters = filterStore.filterBanks;
+
+    if (backendFilters.channelA?.filters) {
+      channelAFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelA_${index + 1}`));
+    }
+
+    if (backendFilters.channelB?.filters) {
+      channelBFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelB_${index + 1}`));
+    }
+
+    if (backendFilters.channelC?.filters) {
+      channelCFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelC_${index + 1}`));
+    }
+
+    if (backendFilters.channelD?.filters) {
+      channelDFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelD_${index + 1}`));
+    }
+
+    console.log("Loaded filters from backend:", {
+      channelACount: channelAFilters.value.length,
+      channelBCount: channelBFilters.value.length,
+      channelCCount: channelCFilters.value.length,
+      channelDCount: channelDFilters.value.length
+    });
+  } catch (error) {
+    console.error("Failed to load filters from backend:", error);
   }
 }
 

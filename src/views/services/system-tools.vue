@@ -46,6 +46,26 @@
         </div>
       </div>
 
+      <!-- Stop All Music Players Tool -->
+      <div class="tool-section">
+        <div class="tool-card reset-tool">
+          <div class="tool-info">
+            <Icon icon="lucide/pause" class="tool-icon" />
+            <div class="tool-details">
+              <h3>Stop All Music Players</h3>
+              <p class="tool-description">
+                Stop all currently running music players to free up resources.
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions">
+            <button @click="stopAllMusicPlayers" :disabled="stoppingPlayers" class="reset-button">
+              {{ stoppingPlayers ? 'Stopping...' : 'Stop All Players' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Expert Mode Toggle Tool -->
       <div class="tool-section">
         <div class="tool-card expert-tool">
@@ -73,6 +93,7 @@
           </div>
         </div>
       </div>
+
     </div>
 
     <!-- Reset System Confirmation Dialog -->
@@ -134,11 +155,13 @@ import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
 import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay } from '@/api/system'
+import { stopAllPlayers } from '@/api/player'
 
 // State
 const resetting = ref(false)
 const detectingSoundCard = ref(false)
 const updatingExpertMode = ref(false)
+const stoppingPlayers = ref(false)
 const showResetConfirmation = ref(false)
 const showDetectConfirmation = ref(false)
 const showRebootConfirmation = ref(false)
@@ -286,6 +309,25 @@ const toggleExpertMode = async () => {
     updatingExpertMode.value = false
   }
 }
+
+const stopAllMusicPlayers = async () => {
+  stoppingPlayers.value = true
+
+  try {
+    const success = await stopAllPlayers()
+
+    if (success) {
+      toastStore.showSuccessToast('All music players stopped successfully')
+    } else {
+      toastStore.showErrorToast('Failed to stop all music players')
+    }
+  } catch (err) {
+    console.error('Error stopping all music players:', err)
+    toastStore.showErrorToast('Failed to stop all music players')
+  } finally {
+    stoppingPlayers.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -361,6 +403,10 @@ const toggleExpertMode = async () => {
 
     &.expert-tool .tool-info .tool-icon {
       color: var(--color-icon);
+    }
+
+    &.stop-players-tool .tool-info .tool-icon {
+      color: var(--color-warning);
     }
 
     .tool-actions {

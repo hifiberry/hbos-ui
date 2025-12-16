@@ -1,32 +1,22 @@
 <template>
-  <header :class="{ 'header--simple': !isPlayerControls }">
-    <!-- Column 1: Logo -->
-    <div class="header-column header-column--logo">
-      <router-link to="/">
-        <img :src="logoUrl" alt="" />
-      </router-link>
-    </div>
-
-    <!-- Spacer 1 -->
-    <div class="header-spacer"></div>
-
-    <!-- Column 2: Song Info + Player Controls Combined -->
-    <div v-if="isPlayerControls" class="header-column header-column--player">
+  <header class="app-header">
+    <!-- Player (left side) -->
+    <div class="header-column header-column--player">
       <SongControlInfo isOnHeader />
     </div>
 
-    <!-- Spacer 2 (only show when player controls are visible) -->
-    <div v-if="isPlayerControls" class="header-spacer"></div>
+    <!-- Spacer -->
+    <div class="header-spacer"></div>
 
-    <!-- Column 3: Volume Control (only show when player controls are visible) -->
-    <div v-if="isPlayerControls" class="header-column header-column--volume">
+    <!-- Volume -->
+    <div class="header-column header-column--volume">
       <VolumeControl size="compact" />
     </div>
 
-    <!-- Spacer 3 (only show when player controls are visible) -->
-    <div v-if="isPlayerControls" class="header-spacer"></div>
+    <!-- Spacer -->
+    <div class="header-spacer"></div>
 
-    <!-- Column 4: Dark Mode Toggle -->
+    <!-- Dark Mode Toggle -->
     <div class="header-column header-column--actions">
       <button @click="toggleDark()">
         <svg class="dark-mode-icon" width="27" height="27" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -40,29 +30,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
-
-const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
-
 import SongControlInfo from '@/components/SongControlInfo.vue'
 import VolumeControl from '@/components/VolumeControl.vue'
 
-interface HeaderProps {
-  isPlayerControls?: boolean
-}
-const { isPlayerControls = true } = defineProps<HeaderProps>()
+// Dark mode
+const isDark = useDark()
+const toggleDark = useToggle(isDark)
+
+// Logo URL (optional)
+const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 </script>
 
 <style scoped lang="scss">
-@use '@/assets/scss/mixins' as *;
-
-header {
+.app-header {
   background-color: var(--background-header);
   padding: 20px 15px;
   border-bottom: 1px solid var(--color-header-border);
   display: grid;
-  grid-template-columns: 160px 1fr auto 1fr 200px 1fr 160px; // Logo (147px + padding), spacer, player, spacer, volume, spacer, dark-mode (same width as logo)
+  grid-template-columns: auto 1fr auto 1fr 80px; /* player | spacer | volume | spacer | actions */
   align-items: center;
   height: 80px;
   position: fixed;
@@ -71,19 +56,8 @@ header {
   z-index: 9;
   width: 100%;
 
-  // Simple layout for now-playing screen (no player controls, no volume)
-  &.header--simple {
-    grid-template-columns: 160px 1fr 160px; // Logo, spacer, dark-mode
-  }
-
-  @include media-down(lg) {
-    background-color: transparent;
-    border: none;
-    padding: 10px 15px;
-    height: auto;
-    position: static;
-    display: flex;
-    gap: 12px;
+  @media (max-width: 1024px) { /* breakpoint for tablets/mobiles */
+    display: none; /* hide completely */
   }
 }
 
@@ -91,87 +65,20 @@ header {
   display: flex;
   align-items: center;
 
-  @include media-down(lg) {
-    display: flex;
-    align-items: center;
-  }
-
-  &--logo {
-    justify-content: flex-start;
-
-    @include media-down(lg) {
-      width: auto;
-      flex: 0 0 auto;
-    }
-
-    a {
-      display: flex;
-      align-items: center;
-      padding: 0;
-      margin: 0;
-      height: 100%; // Fill the full header height
-    }
-
-    img {
-      margin: 0;
-      padding: 0;
-      height: 40px; // Set a proper height instead of max-width
-      width: auto; // Let width adjust proportionally
-    }
-  }
-
   &--player {
-    justify-content: center;
-
-    @include media-down(lg) {
-      display: none;
-    }
+    justify-content: flex-start;
   }
 
   &--volume {
     justify-content: center;
-
-    @include media-down(lg) {
-      flex: 0 0 auto;
-    }
   }
 
   &--actions {
     justify-content: flex-end;
-
-    @include media-down(lg) {
-      flex: 1;
-      justify-content: flex-end;
-    }
   }
 }
 
-// Spacer columns that expand
 .header-spacer {
-  @include media-down(lg) {
-    display: none;
-  }
-}
-</style>
-
-<!-- Global styles for header button -->
-<style lang="scss">
-@use '@/assets/scss/mixins' as *;
-
-.header-column--actions button {
-  padding: 0 !important;
-  margin: 0 !important;
-  background: none !important;
-  border: none !important;
-  min-width: auto !important;
-  width: auto !important;
-  height: auto !important;
-
-  .dark-mode-icon {
-    color: var(--color-icon);
-    opacity: 0.8;
-    transition: all 0.2s linear;
-    @include audio-control-stroke;
-  }
+  /* hidden on small screens via parent */
 }
 </style>

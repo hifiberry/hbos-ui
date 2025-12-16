@@ -46,9 +46,19 @@
         <circle v-for="band in nonGenericFilters" :key="'node-' + band.id"
                 :cx="frequencyToXLocal(band.frequency)" :cy="gainToYLocal(band.gain)" r="6"
                 :fill="band.id === activeFilterId ? '#00b8ff' : '#999'" />
-        <circle v-for="band in nonGenericFilters" :key="'hit-area-' + band.id"
-                :cx="frequencyToXLocal(band.frequency)" :cy="gainToYLocal(band.gain)" r="12" fill="transparent"
-                @mousedown.prevent="startDrag($event, band)" @dragstart.prevent style="cursor: grab;" />
+        <circle
+          v-for="band in nonGenericFilters"
+          :key="'hit-area-' + band.id"
+          :cx="frequencyToXLocal(band.frequency)"
+          :cy="gainToYLocal(band.gain)"
+          r="12"
+          fill="none"
+          stroke="none"
+          pointer-events="all"
+          @mousedown.prevent="startDrag($event, band)"
+          @dragstart.prevent
+          style="cursor: grab;"
+        />
       </g>
 
       <g class="x-axis-labels" :transform="`translate(${margin.left}, ${svgHeight - margin.bottom + 20})`">

@@ -51,6 +51,14 @@
         <p>View system details including Pi model, HAT information, and system UUID</p>
       </ContentBoxLink>
 
+      <ContentBoxLink :to="{ name: 'bluetooth-settings' }" height=150>
+        <div class="settingsCardHeader">
+          <Icon icon="bluetooth" class="settingsCardHeaderIcon" />
+          <h2>Bluetooth</h2>
+        </div>
+        <p>Manage Bluetooth settings</p>
+      </ContentBoxLink>
+
       <ContentBoxLink :to="{ name: 'system-tools'}" height=150>
         <div class="settingsCardHeader">
           <Icon icon="tool" class="settingsCardHeaderIcon" />

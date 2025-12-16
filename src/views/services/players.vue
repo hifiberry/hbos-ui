@@ -6,17 +6,17 @@
       </div>
       <div class="players-list">
         <PlayerCard
-          v-for="(player, index) in players"
+          v-for="player in visiblePlayers"
           :key="player.name"
           :player="player"
-          :is-expanded="isConfigExpanded(index)"
-          @toggle="handleToggleClick($event, index)"
-          @toggle-config="toggleConfigExpanded(index)"
+          :is-expanded="isConfigExpanded(player.name)"
+          @toggle="handleToggleClick($event, player.name)"
+          @toggle-config="toggleConfigExpanded(player.name)"
           @navigate-bluetooth="goToBluetoothSettings"
-          @update-airplay-version="(version) => updateAirplayVersion(index, version)"
-          @update-toslink-sensitivity="(sensitivity) => updateTOSLinkSensitivity(index, sensitivity)"
-          @cancel-config="cancelConfig(index)"
-          @save-config="saveConfig(index)"
+          @update-airplay-version="(version) => updateAirplayVersion(player.name, version)"
+          @update-toslink-sensitivity="(sensitivity) => updateTOSLinkSensitivity(player.name, sensitivity)"
+          @cancel-config="cancelConfig(player.name)"
+          @save-config="saveConfig(player.name)"
         />
       </div>
     </div>
@@ -24,12 +24,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import PlayerCard from '@/components/PlayerCard.vue'
 import PageContent from '@/components/PageContent.vue'
 import { useRouter } from 'vue-router'
+import { useSettingsStore } from '@/stores/settings'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
+const settingsStore = useSettingsStore()
+const { getExpertMode } = storeToRefs(settingsStore)
 
 const goToBluetoothSettings = () => {
   router.push('/services/bluetooth-settings')
@@ -156,8 +160,28 @@ const players = ref<Player[]>([
   }
 ])
 
+// Filter out non-installed players unless in expert mode
+const visiblePlayers = computed(() => {
+  console.log('[visiblePlayers] Expert mode:', getExpertMode.value)
+  console.log('[visiblePlayers] All players:', players.value.map(p => ({ name: p.name, exists: p.exists })))
+
+  if (getExpertMode.value) {
+    console.log('[visiblePlayers] Showing all players (expert mode enabled)')
+    return players.value
+  }
+
+  const filtered = players.value.filter(player => player.exists !== false)
+  console.log('[visiblePlayers] Filtered players:', filtered.map(p => p.name))
+  return filtered
+})
+
 // State for tracking which config sections are expanded
 const expandedConfigs = ref<Set<number>>(new Set())
+
+// Helper function to find player index by name
+const findPlayerIndex = (playerName: string): number => {
+  return players.value.findIndex(p => p.name === playerName)
+}
 
 // Load service status on component mount
 onMounted(async () => {
@@ -326,9 +350,12 @@ const refreshSingleServiceStatus = async (serviceName: string, playerIndex: numb
   }
 }
 
-const handleToggleClick = async (event: Event, playerIndex: number) => {
+const handleToggleClick = async (event: Event, playerName: string) => {
   // Prevent the default checkbox behavior
   event.preventDefault()
+
+  const playerIndex = findPlayerIndex(playerName)
+  if (playerIndex === -1) return
 
   const player = players.value[playerIndex]
   if (player.loading) return
@@ -416,7 +443,10 @@ const handleToggleClick = async (event: Event, playerIndex: number) => {
   }
 }
 
-const updateAirplayVersion = (playerIndex: number, version: number) => {
+const updateAirplayVersion = (playerName: string, version: number) => {
+  const playerIndex = findPlayerIndex(playerName)
+  if (playerIndex === -1) return
+
   const player = players.value[playerIndex]
   if (player.name === 'Airplay' && typeof player.config === 'object') {
     (player.config as Record<string, number>).airplayVersion = version
@@ -424,7 +454,10 @@ const updateAirplayVersion = (playerIndex: number, version: number) => {
   }
 }
 
-const updateTOSLinkSensitivity = (playerIndex: number, sensitivity: string) => {
+const updateTOSLinkSensitivity = (playerName: string, sensitivity: string) => {
+  const playerIndex = findPlayerIndex(playerName)
+  if (playerIndex === -1) return
+
   const player = players.value[playerIndex]
   if (player.name === 'TOSLink' && typeof player.config === 'object') {
     (player.config as Record<string, string>).inputSensitivity = sensitivity
@@ -432,7 +465,10 @@ const updateTOSLinkSensitivity = (playerIndex: number, sensitivity: string) => {
   }
 }
 
-const toggleConfigExpanded = (playerIndex: number) => {
+const toggleConfigExpanded = (playerName: string) => {
+  const playerIndex = findPlayerIndex(playerName)
+  if (playerIndex === -1) return
+
   if (expandedConfigs.value.has(playerIndex)) {
     expandedConfigs.value.delete(playerIndex)
   } else {
@@ -440,18 +476,27 @@ const toggleConfigExpanded = (playerIndex: number) => {
   }
 }
 
-const isConfigExpanded = (playerIndex: number) => {
+const isConfigExpanded = (playerName: string) => {
+  const playerIndex = findPlayerIndex(playerName)
+  if (playerIndex === -1) return false
+
   return expandedConfigs.value.has(playerIndex)
 }
 
-const cancelConfig = (playerIndex: number) => {
+const cancelConfig = (playerName: string) => {
+  const playerIndex = findPlayerIndex(playerName)
+  if (playerIndex === -1) return
+
   // Close the configuration section without saving changes
   expandedConfigs.value.delete(playerIndex)
   const player = players.value[playerIndex]
   console.log(`Configuration cancelled for ${player.name}`)
 }
 
-const saveConfig = async (playerIndex: number) => {
+const saveConfig = async (playerName: string) => {
+  const playerIndex = findPlayerIndex(playerName)
+  if (playerIndex === -1) return
+
   // Save the configuration and close the section
   expandedConfigs.value.delete(playerIndex)
   const player = players.value[playerIndex]

@@ -37,13 +37,15 @@
 
 <script setup lang="ts">
 import BackRouter from '@/components/BackRouter.vue'
-  defineProps<{
-    title: String,
-    backrouterLink: String,
-    hintLink: String,
-    hintString: String,
-    headerHasContentBelow: Boolean,
-  }>()
+import type { RouteLocationRaw } from 'vue-router'
+
+defineProps<{
+  title?: string
+  backrouterLink?: RouteLocationRaw
+  hintLink?: string
+  hintString?: string
+  headerHasContentBelow?: boolean
+}>()
 </script>
 
 <style scoped lang="scss">

@@ -1,0 +1,431 @@
+<template>
+  <div class="card">
+    <div class="player-item" :class="{
+      expanded: isExpanded,
+      'not-installed': player.exists === false
+    }">
+      <div class="player-main">
+        <div class="player-info">
+          <Icon :icon="player.icon" class="player-icon" />
+          <div class="player-details">
+            <h3>{{ player.name }} ({{ player.providedBy }})</h3>
+            <div class="player-status">
+              <span :class="['status-badge', player.exists === false ? 'not-installed' : player.status]">
+                {{ player.exists === false ? 'Not installed' : player.status }}
+              </span>
+            </div>
+            <div v-if="player.error" class="player-error">
+              <span class="error-message">{{ player.error }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="player-actions">
+          <div class="player-toggle">
+            <label class="toggle-switch" :class="{
+              'disabled': player.allow_change === false || player.exists === false
+            }">
+              <input
+                type="checkbox"
+                :checked="player.status === 'active'"
+                :disabled="player.loading || player.allow_change === false || player.exists === false"
+                @click="$emit('toggle', $event)"
+              >
+              <span class="toggle-slider" :class="{
+                loading: player.loading,
+                'not-allowed': player.allow_change === false || player.exists === false
+              }"></span>
+            </label>
+          </div>
+          <!-- Caret column for expandable services -->
+          <div class="player-expand">
+            <div v-if="hasConfig"
+                 class="expand-caret"
+                 @click="$emit('toggle-config')">
+              <Icon :icon="'caret-down'" class="config-caret" :class="{ expanded: isExpanded }" />
+            </div>
+
+            <!-- Bluetooth button -->
+            <div v-if="player.name === 'Bluetooth'"
+                 class="expand-caret"
+                 @click="$emit('navigate-bluetooth')">
+              <Icon icon="caret-down" class="config-caret" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuration section that expands the whole card -->
+      <div v-if="player.name === 'Airplay' && typeof player.config === 'object'" class="config-section">
+        <div v-if="isExpanded" class="config-content">
+          <div class="config-form">
+            <label class="config-option">
+              Airplay version:
+              <select
+                :value="(player.config as Record<string, number>).airplayVersion"
+                @change="$emit('update-airplay-version', parseInt(($event.target as HTMLSelectElement).value))"
+                class="version-select"
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </label>
+          </div>
+          <div class="config-actions">
+            <button
+              class="config-btn config-btn--cancel"
+              @click="$emit('cancel-config')"
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              class="config-btn config-btn--save"
+              @click="$emit('save-config')"
+              type="button"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOSLink Configuration section that expands the whole card -->
+      <div v-if="player.name === 'TOSLink' && typeof player.config === 'object'" class="config-section">
+        <div v-if="isExpanded" class="config-content">
+          <div class="config-form">
+            <label class="config-option">
+              Input sensitivity:
+              <select
+                :value="(player.config as Record<string, string>).inputSensitivity"
+                @change="$emit('update-toslink-sensitivity', ($event.target as HTMLSelectElement).value)"
+                class="version-select"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+          </div>
+          <div class="config-actions">
+            <button
+              class="config-btn config-btn--cancel"
+              @click="$emit('cancel-config')"
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              class="config-btn config-btn--save"
+              @click="$emit('save-config')"
+              type="button"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import Icon from '@/components/Icon.vue'
+
+interface Player {
+  name: string
+  providedBy: string
+  systemdService: string
+  config: string | Record<string, string | number>
+  status: 'active' | 'inactive' | 'failed'
+  icon: string
+  enabled: boolean
+  loading?: boolean
+  error?: string
+  allow_change?: boolean
+  exists?: boolean
+}
+
+const props = defineProps<{
+  player: Player
+  isExpanded: boolean
+}>()
+
+defineEmits<{
+  toggle: [event: Event]
+  'toggle-config': []
+  'navigate-bluetooth': []
+  'update-airplay-version': [version: number]
+  'update-toslink-sensitivity': [sensitivity: string]
+  'cancel-config': []
+  'save-config': []
+}>()
+
+const hasConfig = computed(() => {
+  return (props.player.name === 'Airplay' || props.player.name === 'TOSLink') &&
+         typeof props.player.config === 'object'
+})
+</script>
+
+<style scoped lang="scss">
+@use '@/assets/scss/service-item' as *;
+
+.card {
+  @include service-card-base;
+}
+
+.player-item {
+  @include service-item-base;
+
+  .player-main {
+    @include service-main-layout;
+  }
+
+  &.expanded {
+    @include service-expanded-state;
+  }
+
+  .player-info {
+    @include service-info-layout;
+
+    .player-icon {
+      @include service-icon-base;
+    }
+
+    .player-details {
+      @include service-details-base;
+
+      .player-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+
+        .status-badge {
+          @include status-indicator-base;
+          text-transform: capitalize;
+
+          &.active {
+            @extend .connected;
+          }
+
+          &.inactive {
+            @extend .disconnected;
+          }
+
+          &.failed {
+            @extend .error;
+          }
+        }
+      }
+
+      .player-error {
+        margin-top: 4px;
+
+        .error-message {
+          @include status-indicator-base;
+          @extend .error;
+        }
+      }
+    }
+  }
+
+  .player-actions {
+    @include service-actions-base;
+
+    .player-toggle {
+      display: flex;
+      align-items: center;
+    }
+
+    .player-expand {
+      width: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+
+      .expand-caret {
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background: var(--cover-placeholder-bg);
+        }
+
+        .config-caret {
+          width: 16px;
+          height: 16px;
+          color: var(--color-body-secondary);
+          transition: transform 0.2s ease, color 0.2s ease;
+
+          &.expanded {
+            transform: rotate(180deg);
+          }
+        }
+
+        &:hover .config-caret {
+          color: var(--color-head);
+        }
+      }
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--color-body-secondary);
+        transition: 0.3s;
+        border-radius: 24px;
+
+        &.loading {
+          opacity: 0.6;
+        }
+
+        &:before {
+          position: absolute;
+          content: "";
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: 0.3s;
+          border-radius: 50%;
+        }
+      }
+
+      input:checked + .toggle-slider {
+        background-color: var(--primary);
+      }
+
+      input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+      }
+
+      input:focus + .toggle-slider {
+        box-shadow: 0 0 1px var(--primary);
+      }
+
+      &.disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+
+        .toggle-slider {
+          background-color: #e5e5e5;
+          cursor: not-allowed;
+
+          &.not-allowed {
+            background-color: #f0f0f0;
+          }
+
+          &:before {
+            background-color: #d0d0d0;
+          }
+        }
+
+        input:checked + .toggle-slider {
+          background-color: #c0c0c0;
+
+          &:before {
+            background-color: #a0a0a0;
+          }
+        }
+      }
+    }
+  }
+
+  .config-section {
+    width: 100%;
+
+    .config-content {
+      @include service-content-box;
+
+      .config-form {
+        margin-bottom: 16px;
+      }
+
+      .config-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.875rem;
+        color: var(--color-body-secondary);
+
+        .version-select {
+          padding: 12px 16px;
+          border: 1px solid var(--color-sidebar-border);
+          border-radius: 6px;
+          background: var(--background-card);
+          color: var(--color-body-secondary);
+          font-size: 1rem;
+          font-family: inherit;
+          cursor: pointer;
+          min-width: 80px;
+          height: 44px;
+
+          &:focus {
+            outline: none;
+            border-color: var(--primary);
+            color: var(--color-head);
+            box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+          }
+
+          &:hover {
+            border-color: var(--color-head);
+            color: var(--color-head);
+          }
+        }
+      }
+
+      .config-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        padding-top: 16px;
+
+        .config-btn {
+          &--cancel {
+            @include service-button-secondary;
+            min-width: 80px;
+          }
+
+          &--save {
+            @include service-button-primary;
+            min-width: 80px;
+          }
+        }
+      }
+    }
+  }
+
+  &.not-installed {
+    opacity: 0.6;
+
+    .player-icon {
+      color: #999;
+    }
+
+    .player-details h3 {
+      color: #999;
+    }
+  }
+}
+</style>

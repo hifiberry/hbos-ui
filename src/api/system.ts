@@ -292,6 +292,30 @@ export const detectSoundCard = async (): Promise<SoundCardDetectionResponse> => 
 }
 
 /**
+ * Enable or disable automatic sound card detection
+ */
+export const setSoundCardDetection = async (enabled: boolean): Promise<{ status: string; message: string }> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/soundcard/detection`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ enabled }),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
+/**
  * Reboot the system after an optional delay
  */
 export const rebootSystem = async (request?: RebootRequest): Promise<RebootResponse> => {

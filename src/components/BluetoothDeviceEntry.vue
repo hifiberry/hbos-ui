@@ -1,7 +1,7 @@
 <template>
   <div class="bluetooth-device-entry-div">
     <div class="bluetooth-device-entry-info-div">
-      <h3>{{ name }}</h3>
+      <h3><u>{{ name }}</u></h3>
       <span>{{ connected ? "Connected" : "Disconnected" }}</span>
     </div>
     <div class="bluetooth-device-entry-controls-div">
@@ -14,6 +14,7 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
+import { useToastStore } from '@/stores/toast'
 
 const configStore = useAppConfigStore()
 const apiBaseUrl = configStore.getConfigApiBaseUrl()
@@ -27,6 +28,7 @@ const props = defineProps<{
 }>()
 
 const handleDisconnect = async () => {
+  const toastStore = useToastStore()
   try {
     const response = await fetch(
       `${apiBaseUrl}/bluetooth/unpair?address=${props.address}`,
@@ -36,10 +38,10 @@ const handleDisconnect = async () => {
     const data = await response.json()
 
     if (response.ok) {
-      alert(`Device ${props.address} unpaired successfully.`)
+      toastStore.showSuccessToast(`Device ${props.address} unpaired successfully.`)
       props.onUpdate?.()
     } else {
-      alert(`Failed to unpair: ${data.error}`)
+      toastStore.showErrorToast(`Failed to unpair: ${data.error}`)
     }
   } catch (err) {
     alert(`Error: ${err}`)
@@ -68,18 +70,17 @@ const handleDisconnect = async () => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-
-  width: 100%;
+  align-items: flex-start;
+}
+.bluetooth-device-entry-info-div>*{
+  padding: 5px;
 }
 
 .bluetooth-device-entry-controls-div {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-
-  width: 100%;
+  align-items: flex-end;
 }
 
 .btn-action {

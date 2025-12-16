@@ -169,3 +169,65 @@ export const pauseAllPlayers = async (): Promise<boolean> => {
     }
   }
 }
+
+/**
+ * Stop all available players.
+ * @returns Promise<boolean> - Success or failure
+ */
+export const stopAllPlayers = async (): Promise<boolean> => {
+  try {
+    const configStore = useAppConfigStore()
+    const apiBaseUrl = configStore.getApiBaseUrl()
+
+    // Primary (documented) endpoint
+    const url = `${apiBaseUrl}/players/stop-all`
+    console.log('Stopping all players (bulk endpoint):', url)
+
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+
+    if (response.ok) {
+      const result = await response.json().catch(() => ({}))
+      console.log('Stop all players response:', result)
+      return true
+    }
+
+    // Fall-through to per-player fallback on non-OK
+    console.warn('Bulk stop-all failed, attempting per-player fallback:', response.status, response.statusText)
+    throw new Error(`stop-all failed: ${response.status} ${response.statusText}`)
+
+  } catch (error) {
+    console.error('Error stopping all players (will try fallback):', error)
+
+    // Fallback: enumerate players and send stop to each
+    try {
+      const configStore = useAppConfigStore()
+      const apiBaseUrl = configStore.getApiBaseUrl()
+
+      const listResp = await fetch(`${apiBaseUrl}/players`)
+      if (!listResp.ok) {
+        throw new Error(`Failed to list players: ${listResp.status} ${listResp.statusText}`)
+      }
+      const listJson = await listResp.json()
+      const players: Array<{ name: string }> = listJson?.players || []
+
+      let succeeded = 0
+      for (const p of players) {
+        const stopUrl = `${apiBaseUrl}/player/${encodeURIComponent(p.name)}/command/stop`
+        try {
+          const r = await fetch(stopUrl, { method: 'POST' })
+          if (r.ok) {
+            succeeded++
+          }
+        } catch (e) {
+          console.warn(`Failed to stop player '${p.name}':`, e)
+        }
+      }
+
+      console.log(`Per-player stop succeeded for ${succeeded}/${players.length} players`)
+      return succeeded > 0
+    } catch (fallbackErr) {
+      console.error('Fallback stop-all failed:', fallbackErr)
+      return false
+    }
+  }
+}

@@ -3,16 +3,6 @@
     <div class="app-audio-controls-header">
       <!-- All controls in one centered main section -->
       <div class="app-audio-controls-header--main">
-        <!-- Lyrics button -->
-        <button
-          class="app-audio-controls__secondary lyrics-button"
-          :class="{ 'lyrics-button--active': song?.metadata?.lyrics_available }"
-          :disabled="!song?.metadata?.lyrics_available"
-          @click="openLyrics"
-        >
-          <img src="/images/svg/tabler/lyrics.svg" alt="Lyrics" />
-        </button>
-
         <!-- Shuffle button -->
         <IconButton
           class="app-audio-controls__secondary"
@@ -62,20 +52,6 @@
           :disabled="isSendingCommand || !caps.canLoop"
           @click="audioControls.cycleLoopMode"
         />
-
-        <!-- Heart button -->
-        <button
-          class="app-audio-controls__secondary heart-button"
-          :class="{ 'heart-button--active': currentSongIsFavourite }"
-          :title="heartButtonTitle"
-          :disabled="isSendingCommand || checkingFavourite"
-          @click="toggleCurrentSongFavourite"
-        >
-          <img
-            :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'"
-            alt="Favorite"
-          />
-        </button>
       </div>
     </div>
 

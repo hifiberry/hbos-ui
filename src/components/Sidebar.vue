@@ -3,8 +3,10 @@
     <div v-if="isPlayerControls" class="sidebar-controls">
       <SongControlInfo isOnSticky />
     </div>
+
     <div class="nav">
       <template v-for="route in routes" :key="route.name">
+        <!-- existing nav code -->
         <div v-if="route.children && route.children.length" :class="['nav-item__parent']">
           <router-link :to="{ name: route.name }" :class="['nav-item']">
             <span class="nav-item__icon">
@@ -15,9 +17,14 @@
               <Icon icon="caret-down" />
             </span>
           </router-link>
+
           <div class="nav-item__dropdown">
-            <router-link v-for="childrenRoute in route.children" :key="childrenRoute.name"
-              :to="{ name: childrenRoute.name }" class="nav-item">
+            <router-link
+              v-for="childrenRoute in route.children"
+              :key="childrenRoute.name"
+              :to="{ name: childrenRoute.name }"
+              class="nav-item"
+            >
               <span class="nav-item__icon">
                 <Icon :icon="childrenRoute.icon" />
               </span>
@@ -25,6 +32,7 @@
             </router-link>
           </div>
         </div>
+
         <router-link v-else :to="{ name: route.name }" :class="['nav-item']">
           <span class="nav-item__icon">
             <Icon :icon="route.icon" />
@@ -33,6 +41,12 @@
         </router-link>
       </template>
     </div>
+
+    <!-- ✅ Logo at bottom -->
+    <div class="sidebar-logo">
+      <img :src="logoUrl" alt="Logo" />
+    </div>
+
   </aside>
 </template>
 
@@ -42,6 +56,8 @@ import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
 import SongControlInfo from '@/components/SongControlInfo.vue'
 import { usePlayerStore } from '@/stores/player'
+
+const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 
 interface SidebarProps {
   isPlayerControls?: boolean
@@ -416,6 +432,38 @@ const routes = computed(() => {
     @include media-down(lg) {
       display: block;
     }
+  }
+}
+
+.sidebar-logo {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  /* Hidden by default */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(5px);
+  transition: opacity 0.2s linear, transform 0.2s linear;
+
+  img {
+    width: 120px; // expanded size
+    height: auto;
+  }
+
+  /* ✔ Show only when sidebar is expanded */
+  .sidebar:hover & {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* 🔥 still hide completely on mobile/tablet */
+  @include media-down(lg) {
+    display: none !important;
   }
 }
 </style>

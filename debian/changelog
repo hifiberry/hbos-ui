@@ -1,3 +1,12 @@
+hifiberry-webui (0.13) stable; urgency=medium
+
+  * Hide non-installed players unless expert mode is enabled
+  * Add fixed sound card configuration tool in system-tools
+  * Auto-disable sound card detection when fixed configuration is set
+  * Fix PageContent component TypeScript prop types
+
+ -- HiFiBerry <info@hifiberry.com>  Tue, 16 Dec 2024 00:00:00 +0000
+
 hifiberry-webui (0.12) stable; urgency=medium
 
   * Added system memory display in GB to Raspberry Pi system information

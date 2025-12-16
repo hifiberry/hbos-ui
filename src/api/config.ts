@@ -353,7 +353,7 @@ export const checkSystemdServiceExists = async (service: string): Promise<Config
  */
 export const executeSystemdOperation = async (
   service: string,
-  operation: 'start' | 'stop' | 'restart' | 'enable' | 'disable' | 'status'
+  operation: 'start' | 'stop' | 'restart' | 'enable' | 'disable' | 'enable-now' | 'disable-now' | 'status'
 ): Promise<ConfigApiResponse<SystemdOperationResult>> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
@@ -424,6 +424,34 @@ export const disableService = async (service: string): Promise<boolean> => {
   } catch (error) {
     console.error(`Failed to stop and disable service ${service}:`, error)
     // Re-throw the error so the caller can handle it
+    throw error
+  }
+}
+
+/**
+ * Enable and start a systemd service immediately
+ * @param service - Service name
+ */
+export const enableNowService = async (service: string): Promise<boolean> => {
+  try {
+    const response = await executeSystemdOperation(service, 'enable-now')
+    return response.status === 'success'
+  } catch (error) {
+    console.error(`Failed to enable-now service ${service}:`, error)
+    throw error
+  }
+}
+
+/**
+ * Disable and stop a systemd service immediately
+ * @param service - Service name
+ */
+export const disableNowService = async (service: string): Promise<boolean> => {
+  try {
+    const response = await executeSystemdOperation(service, 'disable-now')
+    return response.status === 'success'
+  } catch (error) {
+    console.error(`Failed to disable-now service ${service}:`, error)
     throw error
   }
 }

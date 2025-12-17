@@ -6,7 +6,7 @@
   border-radius: 12px;
   font-size: 0.75em;
   font-weight: 600;
-  font-family: var(--font-mono, 'Monaco', 'Consolas', 'Courier New', monospace);
+  font-family: var(--font-mono, 'Monaco', 'Consolas', 'Courier New', monospace) !important;
   text-transform: uppercase;
 
   &.green {

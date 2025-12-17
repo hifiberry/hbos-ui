@@ -1,6 +1,9 @@
 <template>
   <div>
     <div class="app-audio-controls-header">
+      <!-- Left placeholder (keeps layout symmetry) -->
+    <div class="audio-controls-placeholder" aria-hidden="true"></div>
+
       <!-- All controls in one centered main section -->
       <div class="app-audio-controls-header--main">
         <!-- Shuffle button -->
@@ -52,6 +55,20 @@
           :disabled="isSendingCommand || !caps.canLoop"
           @click="audioControls.cycleLoopMode"
         />
+
+        <!-- Heart button -->
+        <button
+          class="app-audio-controls__secondary heart-button"
+          :class="{ 'heart-button--active': currentSongIsFavourite }"
+          :title="heartButtonTitle"
+          :disabled="isSendingCommand || checkingFavourite"
+          @click="toggleCurrentSongFavourite"
+        >
+          <img
+            :src="currentSongIsFavourite ? '/images/svg/lucide/heart-filled.svg' : '/images/svg/lucide/heart-outline.svg'"
+            alt="Favorite"
+          />
+        </button>
       </div>
     </div>
 
@@ -226,6 +243,16 @@ const heartButtonTitle = computed(() => {
         filter: invert(17%) sepia(89%) saturate(6472%) hue-rotate(342deg) brightness(92%) contrast(89%) !important;
       }
     }
+  }
+}
+.audio-controls-placeholder {
+  width: 50px;
+  height: 20px;
+  flex-shrink: 0;
+
+  @include media-down(md) {
+    width: 48px;
+    height: 18px;
   }
 }
 </style>

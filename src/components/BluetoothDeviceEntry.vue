@@ -2,7 +2,9 @@
   <div class="bluetooth-device-entry-div">
     <div class="bluetooth-device-entry-info-div">
       <h3><u>{{ name }}</u></h3>
-      <span>{{ connected ? "Connected" : "Disconnected" }}</span>
+      <span :class="['status-badge', connected ? 'green' : 'gray']">
+        {{ connected ? "Connected" : "Disconnected" }}
+      </span>
     </div>
     <div class="bluetooth-device-entry-controls-div">
       <button @click="handleDisconnect"

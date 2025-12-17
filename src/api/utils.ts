@@ -32,14 +32,13 @@ export const rewriteImageUrl = (url: string): string => {
 
   // If URL already starts with /api/audiocontrol/, it's already been rewritten
   let correctedUrl = url
-  if (url.startsW🖼️ SKIP - already has /api/audiocontrol/ prefix')
+  if (url.startsWith('/api/audiocontrol/')) {
+    console.log('🖼️ SKIP - already has /api/audiocontrol/ prefix')
     correctedUrl = url
   } else {
     // Check if URL matches any of the image proxy prefixes
     const matchedPrefix = IMAGE_PROXY_PREFIXES.find(prefix => url.startsWith(prefix))
     console.log('🖼️ Matched prefix:', matchedPrefix)
-
-    const matchedPrefix = IMAGE_PROXY_PREFIXES.find(prefix => url.startsWith(prefix))
     if (!matchedPrefix) {
       // URL doesn't need proxying, return as-is
       return url

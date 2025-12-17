@@ -73,7 +73,7 @@ const { currentSong: song } = storeToRefs(usePlayerStore())
 
 // Function to get the best available cover image URL
 const getCoverImageUrl = (song: Song): string => {
-  console.log('🎵 getCoverImageUrl called with song:', {
+  console.log('[COVER] getCoverImageUrl called with song:', {
     cover_art_url: song.cover_art_url,
     metadata: song.metadata
   })
@@ -84,31 +84,31 @@ const getCoverImageUrl = (song: Song): string => {
 
     // Check for logo_url first (preferred for radio stations)
     if (metadata.logo_url && typeof metadata.logo_url === 'string') {
-      console.log('🎵 Using metadata.logo_url:', metadata.logo_url)
+      console.log('[COVER] Using metadata.logo_url:', metadata.logo_url)
       const rewritten = rewriteImageUrl(metadata.logo_url)
-      console.log('🎵 Rewritten to:', rewritten)
+      console.log('[COVER] Rewritten to:', rewritten)
       return rewritten
     }
 
     // Then check for coverart_url in metadata
     if (metadata.coverart_url && typeof metadata.coverart_url === 'string') {
-      console.log('🎵 Using metadata.coverart_url:', metadata.coverart_url)
+      console.log('[COVER] Using metadata.coverart_url:', metadata.coverart_url)
       const rewritten = rewriteImageUrl(metadata.coverart_url)
-      console.log('🎵 Rewritten to:', rewritten)
+      console.log('[COVER] Rewritten to:', rewritten)
       return rewritten
     }
   }
 
   // Fall back to song's cover art URL if no metadata image found
   if (song.cover_art_url) {
-    console.log('🎵 Using song.cover_art_url:', song.cover_art_url)
+    console.log('[COVER] Using song.cover_art_url:', song.cover_art_url)
     const rewritten = rewriteImageUrl(song.cover_art_url)
-    console.log('🎵 Rewritten to:', rewritten)
+    console.log('[COVER] Rewritten to:', rewritten)
     return rewritten
   }
 
   // Return empty string if no image found
-  console.log('🎵 No cover art URL found')
+  console.log('[COVER] No cover art URL found')
   return ''
 }
 

@@ -15,7 +15,7 @@ const IMAGE_PROXY_PREFIXES = [
  * @returns The rewritten URL that can be accessed from the browser
  */
 export const rewriteImageUrl = (url: string): string => {
-  console.log('🖼️ rewriteImageUrl START:', url)
+  console.log('[IMG] rewriteImageUrl START:', url)
 
   if (!url) {
     return url
@@ -28,17 +28,17 @@ export const rewriteImageUrl = (url: string): string => {
 
   const configStore = useAppConfigStore()
   const { useProxy } = configStore.apiConfig()
-  console.log('🖼️ useProxy:', useProxy)
+  console.log('[IMG] useProxy:', useProxy)
 
   // If URL already starts with /api/audiocontrol/, it's already been rewritten
   let correctedUrl = url
   if (url.startsWith('/api/audiocontrol/')) {
-    console.log('🖼️ SKIP - already has /api/audiocontrol/ prefix')
+    console.log('[IMG] SKIP - already has /api/audiocontrol/ prefix')
     correctedUrl = url
   } else {
     // Check if URL matches any of the image proxy prefixes
     const matchedPrefix = IMAGE_PROXY_PREFIXES.find(prefix => url.startsWith(prefix))
-    console.log('🖼️ Matched prefix:', matchedPrefix)
+    console.log('[IMG] Matched prefix:', matchedPrefix)
     if (!matchedPrefix) {
       // URL doesn't need proxying, return as-is
       return url
@@ -77,6 +77,12 @@ export const rewriteImageUrl = (url: string): string => {
     rewritten: rewrittenUrl,
     deviceIP,
     devicePort,
+  })
+
+  return rewrittenUrl
+}
+
+/**
  * This function helps to deal with reverse proxies that rewrite the API url without the API
  * server knowing the full path.
  * @param url - The URL to rewrite

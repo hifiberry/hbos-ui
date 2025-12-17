@@ -3,6 +3,9 @@ hifiberry-webui (0.14) stable; urgency=medium
   * Improve styling consistency
   * Added file existence checker to system-info page for config files
   * Added new Display section under configuration
+  * Hide non-installed players unless expert mode is enabled
+  * Add fixed sound card configuration tool in system-tools
+  * Auto-disable sound card detection when fixed configuration is set
 
  -- HiFiBerry <info@hifiberry.com>  Tue, 17 Dec 2024 00:00:00 +0000
 

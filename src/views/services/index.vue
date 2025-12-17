@@ -51,6 +51,14 @@
         <p>View system details including Pi model, HAT information, and system UUID</p>
       </ContentBoxLink>
 
+      <ContentBoxLink :to="{ name: 'display' }" height=150>
+        <div class="settingsCardHeader">
+          <Icon icon="tv" class="settingsCardHeaderIcon" />
+          <h2>Display</h2>
+        </div>
+        <p>Configure display settings and screen options</p>
+      </ContentBoxLink>
+
       <ContentBoxLink :to="{ name: 'bluetooth-settings' }" height=150>
         <div class="settingsCardHeader">
           <Icon icon="bluetooth" class="settingsCardHeaderIcon" />

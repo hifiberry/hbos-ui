@@ -174,6 +174,11 @@ const routes = computed(() => {
           icon: 'computer',
         },
         {
+          name: 'display',
+          title: 'Display',
+          icon: 'tv',
+        },
+        {
           name: 'bluetooth-settings',
           title: 'Bluetooth',
           icon: 'bluetooth',

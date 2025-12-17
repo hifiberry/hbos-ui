@@ -1,14 +1,100 @@
 import { useAppConfigStore } from '@/stores/appconfig'
 
 /**
- * Rewrite URLs that start with /api/ to use the full audiocontrol API prefix
+ * List of image URL prefixes that need to be proxied through the audiocontrol API
+ */
+const IMAGE_PROXY_PREFIXES = [
+  '/api/library/',     // MPD/library images: /api/library/mpd/image/...
+  '/api/coverart/',    // Cover art API: /api/coverart/...
+] as const
+
+/**
+ * Rewrite image URLs to be accessible through the proxy or production API
+ * This is specifically for images returned by the audiocontrol API
+ * @param url - The image URL to rewrite
+ * @returns The rewritten URL that can be accessed from the browser
+ */
+export const rewriteImageUrl = (url: string): string => {
+  console.log('🖼️ rewriteImageUrl START:', url)
+
+  if (!url) {
+    return url
+  }
+
+  // Handle external URLs (http://, https://) - return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+
+  const configStore = useAppConfigStore()
+  const { useProxy } = configStore.apiConfig()
+  console.log('🖼️ useProxy:', useProxy)
+
+  // If URL already starts with /api/audiocontrol/, it's already been rewritten
+  let correctedUrl = url
+  if (url.startsW🖼️ SKIP - already has /api/audiocontrol/ prefix')
+    correctedUrl = url
+  } else {
+    // Check if URL matches any of the image proxy prefixes
+    const matchedPrefix = IMAGE_PROXY_PREFIXES.find(prefix => url.startsWith(prefix))
+    console.log('🖼️ Matched prefix:', matchedPrefix)
+
+    const matchedPrefix = IMAGE_PROXY_PREFIXES.find(prefix => url.startsWith(prefix))
+    if (!matchedPrefix) {
+      // URL doesn't need proxying, return as-is
+      return url
+    }
+
+    // Convert /api/library/ to /api/audiocontrol/library/ and similar
+    if (url.startsWith('/api/library/')) {
+      correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
+      console.log('Fixed library image URL:', { original: url, corrected: correctedUrl })
+    } else if (url.startsWith('/api/coverart/')) {
+      correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
+      console.log('Fixed coverart image URL:', { original: url, corrected: correctedUrl })
+    }
+  }
+
+  if (useProxy) {
+    // In development with proxy, return the corrected URL
+    // The Vite proxy will handle routing this to the actual device
+    console.log('Image URL (proxy mode):', { original: url, final: correctedUrl })
+    return correctedUrl
+  }
+
+  // In production (or when not using proxy), prepend the device base URL
+  const deviceIP = configStore.config.audiocontrol_api.deviceIP
+  const devicePort = configStore.config.audiocontrol_api.devicePort
+
+  // Build full URL with device IP/port
+  // correctedUrl is like: /api/audiocontrol/library/mpd/image/...
+  // We want: http://192.168.1.67/api/audiocontrol/library/mpd/image/...
+  const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
+  const rewrittenUrl = `http://${deviceIP}${portSuffix}${correctedUrl}`
+
+  console.log('Image URL rewriting:', {
+    original: url,
+    corrected: correctedUrl,
+    rewritten: rewrittenUrl,
+    deviceIP,
+    devicePort,
  * This function helps to deal with reverse proxies that rewrite the API url without the API
  * server knowing the full path.
  * @param url - The URL to rewrite
  * @returns The rewritten URL with full API prefix
  */
 export const rewriteAudiocontrolApiUrl = (url: string): string => {
-  if (!url || !url.startsWith('/api/')) {
+  if (!url) {
+    return url
+  }
+
+  // Handle external URLs (http://, https://) - return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+
+  // Only process URLs that start with /api/
+  if (!url.startsWith('/api/')) {
     return url
   }
 

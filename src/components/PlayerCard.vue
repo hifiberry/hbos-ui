@@ -10,8 +10,8 @@
           <div class="player-details">
             <h3>{{ player.name }} ({{ player.providedBy }})</h3>
             <div class="player-status">
-              <span :class="['status-badge', player.exists === false ? 'not-installed' : player.status]">
-                {{ player.exists === false ? 'Not installed' : player.status }}
+              <span :class="['status-badge', getStatusClass(player)]">
+                {{ getStatusText(player) }}
               </span>
             </div>
             <div v-if="player.error" class="player-error">
@@ -165,6 +165,18 @@ const hasConfig = computed(() => {
   return (props.player.name === 'Airplay' || props.player.name === 'TOSLink') &&
          typeof props.player.config === 'object'
 })
+
+const getStatusClass = (player: Player) => {
+  if (player.exists === false) return 'gray'
+  if (player.status === 'active') return 'green'
+  if (player.status === 'failed') return 'red'
+  return 'gray'
+}
+
+const getStatusText = (player: Player) => {
+  if (player.exists === false) return 'Not installed'
+  return player.status
+}
 </script>
 
 <style scoped lang="scss">
@@ -200,31 +212,19 @@ const hasConfig = computed(() => {
         align-items: center;
         gap: 8px;
         margin-top: 4px;
-
-        .status-badge {
-          @include status-indicator-base;
-          text-transform: capitalize;
-
-          &.active {
-            @extend .connected;
-          }
-
-          &.inactive {
-            @extend .disconnected;
-          }
-
-          &.failed {
-            @extend .error;
-          }
-        }
       }
 
       .player-error {
         margin-top: 4px;
 
         .error-message {
-          @include status-indicator-base;
-          @extend .error;
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 0.75em;
+          font-weight: 600;
+          background-color: rgba(239, 68, 68, 0.1);
+          color: #dc2626;
         }
       }
     }

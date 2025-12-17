@@ -138,7 +138,11 @@
                     <div class="interface-header">
                       <strong>{{ iface.name }}</strong>
                       <span class="interface-type">({{ iface.type }})</span>
-                      <span class="interface-state" :class="`state-${iface.state}`">
+                      <span class="interface-state" :class="{
+                        'green': iface.state === 'up',
+                        'red': iface.state === 'down',
+                        'gray': iface.state !== 'up' && iface.state !== 'down'
+                      }">
                         {{ iface.state }}
                       </span>
                     </div>
@@ -363,7 +367,11 @@
                 <td class="label">{{ provider.display_name || provider.name }}</td>
                 <td class="value">
                   <div class="provider-info">
-                    <span :class="['provider-status', getProviderStatusClass(provider)]">
+                    <span :class="['status-badge', {
+                      'green': getProviderStatusClass(provider) === 'status-active',
+                      'orange': getProviderStatusClass(provider) === 'status-inactive',
+                      'red': getProviderStatusClass(provider) === 'status-disabled'
+                    }]">
                       {{ getProviderStatusText(provider) }}
                     </span>
                     <span v-if="provider.favourite_count !== null" class="favourites-count">
@@ -509,7 +517,10 @@
                 <td class="value">
                   <div class="job-info">
                     <div class="job-header">
-                      <span class="job-status" :class="`status-${getJobStatus(job)}`">
+                      <span class="job-status" :class="{
+                        'green': getJobStatus(job) === 'running' || getJobStatus(job) === 'finished' || getJobStatus(job) === 'completed',
+                        'red': getJobStatus(job) === 'failed'
+                      }">
                         {{ formatJobStatus(getJobStatus(job)) }}
                       </span>
                       <span class="job-time">
@@ -557,7 +568,7 @@
                 <td class="label">Kernel</td>
                 <td class="value">
                   <div class="i2c-addresses">
-                    <span v-for="addr in i2cDevices.kernel_used" :key="addr" class="i2c-address kernel-used">
+                    <span v-for="addr in i2cDevices.kernel_used" :key="addr" class="i2c-address orange">
                       {{ addr }}
                     </span>
                   </div>
@@ -567,7 +578,7 @@
                 <td class="label">Other</td>
                 <td class="value">
                   <div class="i2c-addresses">
-                    <span v-for="addr in i2cDevices.detected_devices" :key="addr" class="i2c-address detected">
+                    <span v-for="addr in i2cDevices.detected_devices" :key="addr" class="i2c-address green">
                       {{ addr }}
                     </span>
                   </div>
@@ -576,6 +587,32 @@
               <tr v-else-if="i2cDevices.bus_exists !== false">
                 <td class="label">Other</td>
                 <td class="value">No devices detected</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- File Existence -->
+        <div class="info-card">
+          <div class="card-header">
+            <Icon icon="document" class="card-icon" />
+            <h2>System Files</h2>
+          </div>
+          <div v-if="fileExistenceLoading" class="loading-message">
+            Checking files...
+          </div>
+          <div v-else-if="fileExistenceError" class="error-message">
+            {{ fileExistenceError }}
+          </div>
+          <table v-else-if="fileExistence && fileExistence.length > 0" class="info-table">
+            <tbody>
+              <tr v-for="file in fileExistence" :key="file.path">
+                <td class="label">{{ file.filename }}</td>
+                <td class="value">
+                  <span :class="['status-badge', file.exists ? 'green' : 'red']">
+                    {{ file.exists ? 'EXISTS' : 'MISSING' }}
+                  </span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -688,7 +725,9 @@ import {
   type CacheStatsResponse,
   type ImageCacheStats,
   type BackgroundJobsResponse,
-  type BackgroundJob
+  type BackgroundJob,
+  checkFileExistence,
+  type FileExistence
 } from '@/api/system'
 import { getNetworkConfiguration, scanI2CDevices, type NetworkConfiguration, type I2CDeviceInfo } from '@/api/config'
 import { getVolumeInfo, type VolumeInfo } from '@/api/volume'
@@ -756,6 +795,15 @@ const networkConfig = ref<NetworkConfiguration | null>(null)
 const i2cLoading = ref(true)
 const i2cError = ref('')
 const i2cDevices = ref<I2CDeviceInfo | null>(null)
+
+// File existence state
+const fileExistenceLoading = ref(true)
+const fileExistenceError = ref('')
+const fileExistence = ref<FileExistence[]>([])
+const filesToCheck = [
+  '/etc/uuid',
+  '/etc/hifiberry.user'
+]
 
 // Background services state
 interface BackgroundService {
@@ -1265,6 +1313,33 @@ const fetchI2CDevices = async () => {
   }
 }
 
+const fetchFileExistence = async () => {
+  console.log('fetchFileExistence: Starting...')
+  fileExistenceLoading.value = true
+  fileExistenceError.value = ''
+
+  try {
+    console.log('fetchFileExistence: Calling checkFileExistence API...')
+
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('File existence check timeout after 10 seconds')), 10000)
+    )
+
+    const results = await Promise.race([checkFileExistence(filesToCheck), timeoutPromise])
+    console.log('fetchFileExistence: API call completed, results:', results)
+
+    fileExistence.value = results
+    console.log('fetchFileExistence: Successfully set fileExistence to:', fileExistence.value)
+  } catch (err) {
+    console.error('fetchFileExistence: Error occurred:', err)
+    fileExistenceError.value = err instanceof Error ? err.message : 'Failed to check file existence'
+  } finally {
+    fileExistenceLoading.value = false
+    console.log('fetchFileExistence: Completed')
+  }
+}
+
 const fetchBackgroundServices = async () => {
   console.log('fetchBackgroundServices: Starting...')
   backgroundServicesLoading.value = true
@@ -1392,11 +1467,12 @@ const refreshData = async () => {
     fetchBackgroundJobs(),
     fetchNetworkConfiguration(),
     fetchI2CDevices(),
+    fetchFileExistence(),
     fetchVolumeInfo(),
     fetchDSPProgramInfo(),
     fetchBackgroundServices()
   ]).then(results => {
-    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info', 'background services']
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'system files', 'volume info', 'DSP program info', 'background services']
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
@@ -1476,6 +1552,10 @@ onMounted(async () => {
     }),
     fetchI2CDevices().then(result => {
       console.log('fetchI2CDevices result:', result)
+      return result
+    }),
+    fetchFileExistence().then(result => {
+      console.log('fetchFileExistence result:', result)
       return result
     }),
     fetchVolumeInfo().then(result => {
@@ -1949,28 +2029,6 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
 
-  .provider-status {
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.875em;
-
-    &.status-active {
-      background: var(--background-success);
-      color: var(--color-success);
-    }
-
-    &.status-inactive {
-      background: var(--background-warning);
-      color: var(--color-warning);
-    }
-
-    &.status-disabled {
-      background: var(--background-error);
-      color: var(--color-error);
-    }
-  }
-
   .favourites-count {
     color: var(--color-body-secondary);
   }
@@ -1999,30 +2057,6 @@ onUnmounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2px;
-
-    .job-status {
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.75em;
-      font-weight: 600;
-      text-transform: uppercase;
-
-      &.status-running {
-        background-color: rgba(34, 197, 94, 0.1);
-        color: #16a34a;
-      }
-
-      &.status-finished,
-      &.status-completed {
-        background-color: rgba(59, 130, 246, 0.1);
-        color: #2563eb;
-      }
-
-      &.status-failed {
-        background-color: rgba(239, 68, 68, 0.1);
-        color: #dc2626;
-      }
-    }
 
     .job-time {
       font-size: 0.75em;
@@ -2071,29 +2105,6 @@ onUnmounted(() => {
       font-size: 0.85em;
       color: var(--color-text-muted);
     }
-
-    .interface-state {
-      padding: 2px 6px;
-      border-radius: 8px;
-      font-size: 0.75em;
-      font-weight: 600;
-      text-transform: uppercase;
-
-      &.state-up {
-        background-color: rgba(34, 197, 94, 0.1);
-        color: #16a34a;
-      }
-
-      &.state-down {
-        background-color: rgba(239, 68, 68, 0.1);
-        color: #dc2626;
-      }
-
-      &.state-unknown {
-        background-color: rgba(156, 163, 175, 0.1);
-        color: #6b7280;
-      }
-    }
   }
 
   .interface-details {
@@ -2112,26 +2123,6 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-
-  .i2c-address {
-    padding: 2px 6px;
-    border-radius: 6px;
-    font-size: 0.8em;
-    font-family: var(--font-mono, 'Monaco', 'Consolas', 'Courier New', monospace);
-    font-weight: 500;
-
-    &.kernel-used {
-      background-color: rgba(245, 158, 11, 0.1);
-      color: #d97706;
-      border: 1px solid rgba(245, 158, 11, 0.2);
-    }
-
-    &.detected {
-      background-color: rgba(34, 197, 94, 0.1);
-      color: #16a34a;
-      border: 1px solid rgba(34, 197, 94, 0.2);
-    }
-  }
 }
 
 // Status indicator styles

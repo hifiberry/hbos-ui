@@ -77,7 +77,7 @@ const getCoverImageUrl = (song: Song): string => {
     cover_art_url: song.cover_art_url,
     metadata: song.metadata
   })
-  
+
   // For radio stations, prefer logo_url from metadata first
   if (song.metadata && typeof song.metadata === 'object') {
     const metadata = song.metadata as Record<string, unknown>

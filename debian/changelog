@@ -1,3 +1,12 @@
+hifiberry-webui (0.15) stable; urgency=medium
+
+  * Unified status badge styling across system-info page
+  * Applied consistent badge style to Network, Background Jobs, and I2C Devices sections
+  * Re-enabled console.log removal in production builds
+  * Simplified image URL rewriting debug logs
+
+ -- HiFiBerry <info@hifiberry.com>  Wed, 18 Dec 2024 00:00:00 +0000
+
 hifiberry-webui (0.14) stable; urgency=medium
 
   * Improve styling consistency

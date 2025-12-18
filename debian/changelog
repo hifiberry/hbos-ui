@@ -1,9 +1,16 @@
+hifiberry-webui (0.15.2) stable; urgency=medium
+
+  * Added Pipewire monostereo mode and balance display to system-info page
+  * Display devices, mode, and balance with graceful fallback to "Not available"
+
+ -- HiFiBerry <info@hifiberry.com>  Tue, 18 Dec 2024 18:00:00 +0000
+
 hifiberry-webui (0.15.1) stable; urgency=medium
 
   * Added Pipewire devices display to system-info page
   * Logging cleanup
 
- -- HiFiBerry <info@hifiberry.com>  Wed, 18 Dec 2024 00:00:00 +0000
+ -- HiFiBerry <info@hifiberry.com>  Wed, 18 Dec 2024 12:00:00 +0000
 
 hifiberry-webui (0.15) stable; urgency=medium
 

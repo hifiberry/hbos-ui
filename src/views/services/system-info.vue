@@ -138,11 +138,11 @@
                     <div class="interface-header">
                       <strong>{{ iface.name }}</strong>
                       <span class="interface-type">({{ iface.type }})</span>
-                      <span class="interface-state" :class="{
+                      <span :class="['status-badge', {
                         'green': iface.state === 'up',
                         'red': iface.state === 'down',
                         'gray': iface.state !== 'up' && iface.state !== 'down'
-                      }">
+                      }]">
                         {{ iface.state }}
                       </span>
                     </div>
@@ -517,10 +517,10 @@
                 <td class="value">
                   <div class="job-info">
                     <div class="job-header">
-                      <span class="job-status" :class="{
+                      <span :class="['status-badge', {
                         'green': getJobStatus(job) === 'running' || getJobStatus(job) === 'finished' || getJobStatus(job) === 'completed',
                         'red': getJobStatus(job) === 'failed'
-                      }">
+                      }]">
                         {{ formatJobStatus(getJobStatus(job)) }}
                       </span>
                       <span class="job-time">
@@ -568,7 +568,7 @@
                 <td class="label">Kernel</td>
                 <td class="value">
                   <div class="i2c-addresses">
-                    <span v-for="addr in i2cDevices.kernel_used" :key="addr" class="i2c-address orange">
+                    <span v-for="addr in i2cDevices.kernel_used" :key="addr" class="status-badge orange">
                       {{ addr }}
                     </span>
                   </div>
@@ -578,7 +578,7 @@
                 <td class="label">Other</td>
                 <td class="value">
                   <div class="i2c-addresses">
-                    <span v-for="addr in i2cDevices.detected_devices" :key="addr" class="i2c-address green">
+                    <span v-for="addr in i2cDevices.detected_devices" :key="addr" class="status-badge green">
                       {{ addr }}
                     </span>
                   </div>

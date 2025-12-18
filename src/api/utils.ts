@@ -15,8 +15,6 @@ const IMAGE_PROXY_PREFIXES = [
  * @returns The rewritten URL that can be accessed from the browser
  */
 export const rewriteImageUrl = (url: string): string => {
-  console.log('[IMG] rewriteImageUrl START:', url)
-
   if (!url) {
     return url
   }
@@ -28,17 +26,14 @@ export const rewriteImageUrl = (url: string): string => {
 
   const configStore = useAppConfigStore()
   const { useProxy } = configStore.apiConfig()
-  console.log('[IMG] useProxy:', useProxy)
 
   // If URL already starts with /api/audiocontrol/, it's already been rewritten
   let correctedUrl = url
   if (url.startsWith('/api/audiocontrol/')) {
-    console.log('[IMG] SKIP - already has /api/audiocontrol/ prefix')
     correctedUrl = url
   } else {
     // Check if URL matches any of the image proxy prefixes
     const matchedPrefix = IMAGE_PROXY_PREFIXES.find(prefix => url.startsWith(prefix))
-    console.log('[IMG] Matched prefix:', matchedPrefix)
     if (!matchedPrefix) {
       // URL doesn't need proxying, return as-is
       return url
@@ -47,17 +42,15 @@ export const rewriteImageUrl = (url: string): string => {
     // Convert /api/library/ to /api/audiocontrol/library/ and similar
     if (url.startsWith('/api/library/')) {
       correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
-      console.log('Fixed library image URL:', { original: url, corrected: correctedUrl })
     } else if (url.startsWith('/api/coverart/')) {
       correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
-      console.log('Fixed coverart image URL:', { original: url, corrected: correctedUrl })
     }
   }
 
   if (useProxy) {
     // In development with proxy, return the corrected URL
     // The Vite proxy will handle routing this to the actual device
-    console.log('Image URL (proxy mode):', { original: url, final: correctedUrl })
+    console.log('[IMG]', url, '->', correctedUrl)
     return correctedUrl
   }
 
@@ -71,13 +64,7 @@ export const rewriteImageUrl = (url: string): string => {
   const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
   const rewrittenUrl = `http://${deviceIP}${portSuffix}${correctedUrl}`
 
-  console.log('Image URL rewriting:', {
-    original: url,
-    corrected: correctedUrl,
-    rewritten: rewrittenUrl,
-    deviceIP,
-    devicePort,
-  })
+  console.log('[IMG]', url, '->', rewrittenUrl)
 
   return rewrittenUrl
 }

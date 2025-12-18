@@ -618,16 +618,51 @@
           </table>
         </div>
 
-        <!-- Pipewire Filter Chain -->
-        <div class="info-card clickable" @click="$router.push({ name: 'pipewire-filter-chain' })">
+        <!-- Pipewire -->
+        <div class="info-card">
           <div class="card-header">
             <Icon icon="tabler/schema" class="card-icon" />
-            <h2>Pipewire Filter Chain</h2>
-            <Icon icon="chevron-right" class="chevron-icon" />
+            <h2>Pipewire</h2>
           </div>
-          <div class="card-description">
-            <p>Show filter chain</p>
+          <div v-if="pipewireLoading" class="loading-message">
+            Loading Pipewire devices...
           </div>
+          <div v-else-if="pipewireError" class="error-message">
+            {{ pipewireError }}
+          </div>
+          <table v-else class="info-table">
+            <tbody>
+              <tr v-if="pipewireDevices && pipewireDevices.devices.sinks.length > 0">
+                <td class="label">Sinks</td>
+                <td class="value">
+                  <span class="providers-list">
+                    {{ pipewireDevices.devices.sinks.join(', ') }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="pipewireDevices && pipewireDevices.devices.sources.length > 0">
+                <td class="label">Sources</td>
+                <td class="value">
+                  <span class="providers-list">
+                    {{ pipewireDevices.devices.sources.join(', ') }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="!pipewireDevices || (pipewireDevices.devices.sinks.length === 0 && pipewireDevices.devices.sources.length === 0)">
+                <td class="label" colspan="2">
+                  <span class="info-message">No Pipewire devices available</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="label">Filter Chain</td>
+                <td class="value">
+                  <span class="pipewire-link" @click="$router.push({ name: 'pipewire-filter-chain' })">
+                    Show
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -735,6 +770,7 @@ import { getDSPProgramInfo, type DSPProgramInfo } from '@/api/dsptoolkit'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
+import { listPipewireDevices, type PipewireDevices } from '@/api/pipewire'
 import { useAppConfigStore } from '@/stores/appconfig'
 
 // State
@@ -804,6 +840,11 @@ const filesToCheck = [
   '/etc/uuid',
   '/etc/hifiberry.user'
 ]
+
+// Pipewire devices state
+const pipewireLoading = ref(true)
+const pipewireError = ref('')
+const pipewireDevices = ref<PipewireDevices | null>(null)
 
 // Background services state
 interface BackgroundService {
@@ -1340,6 +1381,37 @@ const fetchFileExistence = async () => {
   }
 }
 
+const fetchPipewireDevices = async () => {
+  console.log('fetchPipewireDevices: Starting...')
+  pipewireLoading.value = true
+  pipewireError.value = ''
+
+  try {
+    console.log('fetchPipewireDevices: Calling listPipewireDevices API...')
+
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Pipewire devices request timeout after 10 seconds')), 10000)
+    )
+
+    const response = await Promise.race([listPipewireDevices(), timeoutPromise])
+    console.log('fetchPipewireDevices: API call completed, response:', response)
+
+    if (response.status === 'success' && response.data) {
+      pipewireDevices.value = response.data
+      console.log('fetchPipewireDevices: Successfully set pipewireDevices to:', pipewireDevices.value)
+    } else {
+      throw new Error(response.message || 'Failed to retrieve Pipewire devices')
+    }
+  } catch (err) {
+    console.error('fetchPipewireDevices: Error occurred:', err)
+    pipewireError.value = err instanceof Error ? err.message : 'Failed to retrieve Pipewire devices'
+  } finally {
+    pipewireLoading.value = false
+    console.log('fetchPipewireDevices: Completed')
+  }
+}
+
 const fetchBackgroundServices = async () => {
   console.log('fetchBackgroundServices: Starting...')
   backgroundServicesLoading.value = true
@@ -1470,9 +1542,10 @@ const refreshData = async () => {
     fetchFileExistence(),
     fetchVolumeInfo(),
     fetchDSPProgramInfo(),
-    fetchBackgroundServices()
+    fetchBackgroundServices(),
+    fetchPipewireDevices()
   ]).then(results => {
-    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'system files', 'volume info', 'DSP program info', 'background services']
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'system files', 'volume info', 'DSP program info', 'background services', 'Pipewire devices']
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
@@ -1569,10 +1642,14 @@ onMounted(async () => {
     fetchBackgroundServices().then(result => {
       console.log('fetchBackgroundServices result:', result)
       return result
+    }),
+    fetchPipewireDevices().then(result => {
+      console.log('fetchPipewireDevices result:', result)
+      return result
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'volume info', 'DSP program info', 'background services']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'file existence', 'volume info', 'DSP program info', 'background services', 'Pipewire devices']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {
@@ -2123,6 +2200,25 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+// Pipewire devices styles
+.pipewire-devices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pipewire-link {
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+
+  &:hover {
+    color: var(--color-primary-dark, #1e40af);
+    text-decoration: underline;
+  }
 }
 
 // Status indicator styles

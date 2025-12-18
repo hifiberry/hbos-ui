@@ -1,3 +1,10 @@
+hifiberry-webui (0.15.1) stable; urgency=medium
+
+  * Added Pipewire devices display to system-info page
+  * Logging cleanup
+
+ -- HiFiBerry <info@hifiberry.com>  Wed, 18 Dec 2024 00:00:00 +0000
+
 hifiberry-webui (0.15) stable; urgency=medium
 
   * Unified status badge styling across system-info page

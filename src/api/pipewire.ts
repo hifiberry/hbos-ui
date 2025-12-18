@@ -6,9 +6,12 @@ export interface ConfigApiEnvelope<T = unknown> {
   message?: string
 }
 
-export interface PipewireControlList {
-  controls: string[]
+export interface PipewireDevices {
   count: number
+  devices: {
+    sinks: string[]
+    sources: string[]
+  }
 }
 
 export interface PipewireDefaultSink {
@@ -71,8 +74,8 @@ async function requestWithFallback<T = unknown>(path: string, init?: RequestInit
   }
 
   throw new Error(`PipeWire API request failed: ${res.status} ${res.statusText}`)
-}export const listPipewireControls = async (): Promise<ConfigApiEnvelope<PipewireControlList>> => {
-  return requestWithFallback(`/controls`)
+}export const listPipewireDevices = async (): Promise<ConfigApiEnvelope<PipewireDevices>> => {
+  return requestWithFallback(`/devices`)
 }
 
 export const getPipewireDefaultSink = async (): Promise<ConfigApiEnvelope<PipewireDefaultSink>> => {

@@ -654,6 +654,14 @@
                 </td>
               </tr>
               <tr>
+                <td class="label">Mode</td>
+                <td class="value">{{ pipewireMonoStereo || 'Not available' }}</td>
+              </tr>
+              <tr>
+                <td class="label">Balance</td>
+                <td class="value">{{ pipewireBalance !== null ? pipewireBalance : 'Not available' }}</td>
+              </tr>
+              <tr>
                 <td class="label">Filter Chain</td>
                 <td class="value">
                   <span class="pipewire-link" @click="$router.push({ name: 'pipewire-filter-chain' })">
@@ -770,7 +778,7 @@ import { getDSPProgramInfo, type DSPProgramInfo } from '@/api/dsptoolkit'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
-import { listPipewireDevices, type PipewireDevices } from '@/api/pipewire'
+import { listPipewireDevices, getPipewireMonoStereo, getPipewireBalance, type PipewireDevices } from '@/api/pipewire'
 import { useAppConfigStore } from '@/stores/appconfig'
 
 // State
@@ -845,6 +853,8 @@ const filesToCheck = [
 const pipewireLoading = ref(true)
 const pipewireError = ref('')
 const pipewireDevices = ref<PipewireDevices | null>(null)
+const pipewireMonoStereo = ref<string | null>(null)
+const pipewireBalance = ref<number | null>(null)
 
 // Background services state
 interface BackgroundService {
@@ -1387,25 +1397,54 @@ const fetchPipewireDevices = async () => {
   pipewireError.value = ''
 
   try {
-    console.log('fetchPipewireDevices: Calling listPipewireDevices API...')
+    console.log('fetchPipewireDevices: Calling Pipewire APIs...')
 
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Pipewire devices request timeout after 10 seconds')), 10000)
+      setTimeout(() => reject(new Error('Pipewire request timeout after 10 seconds')), 10000)
     )
 
-    const response = await Promise.race([listPipewireDevices(), timeoutPromise])
-    console.log('fetchPipewireDevices: API call completed, response:', response)
+    // Fetch devices, monostereo mode, and balance in parallel
+    const [devicesResponse, monoStereoResponse, balanceResponse] = await Promise.race([
+      Promise.all([
+        listPipewireDevices(),
+        getPipewireMonoStereo().catch(err => {
+          console.warn('getPipewireMonoStereo failed:', err)
+          return { status: 'error' as const, message: 'Not available' }
+        }),
+        getPipewireBalance().catch(err => {
+          console.warn('getPipewireBalance failed:', err)
+          return { status: 'error' as const, message: 'Not available' }
+        })
+      ]),
+      timeoutPromise
+    ])
 
-    if (response.status === 'success' && response.data) {
-      pipewireDevices.value = response.data
+    console.log('fetchPipewireDevices: API calls completed')
+
+    if (devicesResponse.status === 'success' && devicesResponse.data) {
+      pipewireDevices.value = devicesResponse.data
       console.log('fetchPipewireDevices: Successfully set pipewireDevices to:', pipewireDevices.value)
     } else {
-      throw new Error(response.message || 'Failed to retrieve Pipewire devices')
+      throw new Error(devicesResponse.message || 'Failed to retrieve Pipewire devices')
+    }
+
+    if (monoStereoResponse.status === 'success' && monoStereoResponse.data) {
+      pipewireMonoStereo.value = monoStereoResponse.data.monostereo_mode
+      console.log('fetchPipewireDevices: Successfully set monoStereo to:', pipewireMonoStereo.value)
+    } else {
+      pipewireMonoStereo.value = null
+    }
+
+    if (balanceResponse.status === 'success' && balanceResponse.data) {
+      pipewireBalance.value = balanceResponse.data.balance
+      console.log('fetchPipewireDevices: Successfully set balance to:', pipewireBalance.value)
+    } else {
+      pipewireBalance.value = null
     }
   } catch (err) {
     console.error('fetchPipewireDevices: Error occurred:', err)
-    pipewireError.value = err instanceof Error ? err.message : 'Failed to retrieve Pipewire devices'
+    pipewireError.value = err instanceof Error ? err.message : 'Failed to retrieve Pipewire data'
   } finally {
     pipewireLoading.value = false
     console.log('fetchPipewireDevices: Completed')

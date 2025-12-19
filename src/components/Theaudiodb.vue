@@ -7,10 +7,9 @@
       <p class="webServiceDescription">
         TheAudioDB is used to retrieve additional artist images and biographies
       </p>
-      <a href="https://www.theaudiodb.com" target="_blank" rel="noopener noreferrer"
-        class="webServiceStatusLink connected">
+      <span class="status-badge green">
         Active
-      </a>
+      </span>
     </div>
   </div>
   </ContentBox>
@@ -44,14 +43,6 @@ import ContentBox from "@/components/ContentBox.vue"
 
   .webServiceDescription{
     color: var(--color-body-secondary);
-  }
-
-  .webServiceStatusLink{
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background-color: #e6f7e6;
-    color: #2d7d2d;
   }
 }
 </style>

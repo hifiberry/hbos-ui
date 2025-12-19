@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router'
 import { useToastStore } from '@/stores/toast'
 import { useLibraryStore } from '@/stores/library'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
-import { rewriteAudiocontrolApiUrl } from '@/api/utils'
+import { rewriteImageUrl } from '@/api/utils'
 
 export const useArtistStore = defineStore('artist', () => {
   const libraryFetch = useLibraryFetch()
@@ -68,7 +68,7 @@ export const useArtistStore = defineStore('artist', () => {
         // Process the cover art URL through the rewrite function
         let coverSrc = null
         if (artist.thumb_url && artist.thumb_url.length > 0) {
-          coverSrc = rewriteAudiocontrolApiUrl(artist.thumb_url[0])
+          coverSrc = rewriteImageUrl(artist.thumb_url[0])
           console.log('Rewritten cover URL:', { original: artist.thumb_url[0], rewritten: coverSrc })
         }
 

@@ -182,7 +182,7 @@ import Icon from '@/components/Icon.vue'
 import ArtistImageSelector from '@/components/ArtistImageSelector.vue'
 
 import { updateArtistImage } from '@/api/coverart'
-import { rewriteAudiocontrolApiUrl } from '@/api/utils'
+import { rewriteImageUrl } from '@/api/utils'
 
 import { useRoute } from 'vue-router'
 const route = useRoute()
@@ -224,7 +224,7 @@ const artistImageUrl = computed(() => {
     return null // Don't show image if there was an error loading it
   }
   if (artistByName.value?.thumb_url?.[0]) {
-    return rewriteAudiocontrolApiUrl(artistByName.value.thumb_url[0])
+    return rewriteImageUrl(artistByName.value.thumb_url[0])
   }
   return null
 })

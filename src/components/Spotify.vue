@@ -137,11 +137,11 @@ let authPollInterval: number | null = null
 // Computed
 const statusIndicatorClass = computed(() => {
   if (isConnected.value) {
-    return 'status-indicator connected';
+    return 'status-badge green';
   } else if (errorMessage.value) {
-    return 'status-indicator error';
+    return 'status-badge red';
   } else {
-    return 'status-indicator disconnected';
+    return 'status-badge gray';
   }
 });
 
@@ -472,10 +472,6 @@ onUnmounted(() => {
     .service-actions {
       @include service-actions-base;
     }
-  }
-
-  .status-indicator {
-    @include status-indicator-base;
   }
 
   .btn-action {

@@ -1,0 +1,36 @@
+// Status badge component styles
+// Reusable badge component for displaying status indicators with color variants
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  font-weight: 600;
+  font-family: var(--font-mono, 'Monaco', 'Consolas', 'Courier New', monospace) !important;
+  text-transform: uppercase;
+
+  &.green {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+  }
+
+  &.red {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+  }
+
+  &.orange {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+  }
+
+  &.blue {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+  }
+
+  &.gray {
+    background-color: rgba(156, 163, 175, 0.1);
+    color: #6b7280;
+  }
+}

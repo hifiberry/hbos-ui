@@ -1,3 +1,9 @@
+hifiberry-webui (0.16.0) stable; urgency=medium
+
+  * Updated many icons for consistency
+
+ -- HiFiBerry <info@hifiberry.com>  Thu, 19 Dec 2024 12:00:00 +0000
+
 hifiberry-webui (0.15.3) stable; urgency=medium
 
   * Removed nginx-webui systemd unit

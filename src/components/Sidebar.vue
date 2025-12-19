@@ -42,9 +42,11 @@
       </template>
     </div>
 
-    <!-- ✅ Logo at bottom -->
     <div class="sidebar-logo">
       <img :src="logoUrl" alt="Logo" />
+    </div>
+    <div class="sidebar-logo-small">
+      <img :src="logoSmallUrl" alt="Logo" />
     </div>
 
   </aside>
@@ -58,6 +60,7 @@ import SongControlInfo from '@/components/SongControlInfo.vue'
 import { usePlayerStore } from '@/stores/player'
 
 const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
+const logoSmallUrl = computed(() => `${import.meta.env.BASE_URL}images/logo-small.svg`)
 
 interface SidebarProps {
   isPlayerControls?: boolean
@@ -466,7 +469,36 @@ const routes = computed(() => {
     pointer-events: auto;
   }
 
-  /* 🔥 still hide completely on mobile/tablet */
+  @include media-down(lg) {
+    display: none !important;
+  }
+}
+
+.sidebar-logo-small {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+
+  /* Hidden by default */
+  transition: opacity 0.2s linear, transform 0.2s linear;
+
+  img {
+    width: 32px; // expanded size
+  }
+
+  .sidebar:hover & {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(5px);
+  }
+
   @include media-down(lg) {
     display: none !important;
   }

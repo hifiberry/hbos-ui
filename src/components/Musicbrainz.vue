@@ -1,8 +1,8 @@
 <template>
   <ContentBox>
     <div class="webServiceContainer">
-      <Icon icon="database" class="webServiceIcon" />
-      <div class="webServiceDetails">
+      <Icon icon="database" class="service-icon" />
+    <div class="webServiceDetails">
         <h3>MusicBrainz</h3>
         <p class="webServiceDescription">
           MusicBrainz is used to retrieve additional artist, song and album metadata
@@ -34,10 +34,11 @@ import ContentBox from "@/components/ContentBox.vue"
     padding: 20px;
   }
 
-  .webServiceIcon{
+  .service-icon{
     margin-right: 15px;
     width: 40px;
     height: 40px;
+    color: var(--color-icon-primary);
     object-fit: contain;
   }
 

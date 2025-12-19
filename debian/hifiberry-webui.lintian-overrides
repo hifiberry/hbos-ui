@@ -1,6 +1,3 @@
 # These are built JavaScript and CSS files from Vue.js compilation, not missing source
-hifiberry-webui source: source-is-missing [*/assets/*.js]
-hifiberry-webui source: source-is-missing [*/assets/*.css]
-
 # configure-webui is a system configuration script that needs full path
 hifiberry-webui: command-with-path-in-maintainer-script [/usr/sbin/configure-webui] *

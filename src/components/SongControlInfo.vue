@@ -62,7 +62,7 @@ import ProgressControl from '@/components/ProgressControl.vue'
 import Cover from '@/components/Cover.vue'
 import CustomMarquee from '@/components/CustomMarquee.vue'
 import MetadataTooltip from '@/components/MetadataTooltip.vue'
-import { rewriteAudiocontrolApiUrl } from '@/api/utils'
+import { rewriteImageUrl } from '@/api/utils'
 import type { Song } from '@/types/player'
 
 import { storeToRefs } from 'pinia'
@@ -79,18 +79,18 @@ const getCoverImageUrl = (song: Song): string => {
 
     // Check for logo_url first (preferred for radio stations)
     if (metadata.logo_url && typeof metadata.logo_url === 'string') {
-      return metadata.logo_url
+      return rewriteImageUrl(metadata.logo_url)
     }
 
     // Then check for coverart_url in metadata
     if (metadata.coverart_url && typeof metadata.coverart_url === 'string') {
-      return metadata.coverart_url
+      return rewriteImageUrl(metadata.coverart_url)
     }
   }
 
   // Fall back to song's cover art URL if no metadata image found
   if (song.cover_art_url) {
-    return rewriteAudiocontrolApiUrl(song.cover_art_url)
+    return rewriteImageUrl(song.cover_art_url)
   }
 
   // Return empty string if no image found

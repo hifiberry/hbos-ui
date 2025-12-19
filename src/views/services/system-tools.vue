@@ -46,6 +46,64 @@
         </div>
       </div>
 
+      <!-- Sound Card Selection Tool -->
+      <div class="tool-section">
+        <div class="tool-card soundcard-tool">
+          <div class="tool-info">
+            <Icon icon="volume" class="tool-icon" />
+            <div class="tool-details">
+              <h3>Fixed sound card configuration</h3>
+              <p class="tool-description">
+                Manually select your sound card. Requires a system reboot to take effect. Incorrect configuration will make your audio device unusable.
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions soundcard-actions">
+            <select
+              v-model="selectedSoundCard"
+              class="soundcard-select"
+              :disabled="savingSoundCard || loadingSoundCards"
+            >
+              <option value="" disabled>{{ loadingSoundCards ? 'Loading...' : 'Select a sound card' }}</option>
+              <option
+                v-for="card in availableSoundCards"
+                :key="card.dtoverlay"
+                :value="card.dtoverlay"
+              >
+                {{ transformSoundCardName(card.name) }}
+              </option>
+            </select>
+            <button
+              @click="saveSoundCardSelection"
+              :disabled="savingSoundCard || !selectedSoundCard || loadingSoundCards"
+              class="save-button"
+            >
+              {{ savingSoundCard ? 'Saving...' : 'Save' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stop All Music Players Tool -->
+      <div class="tool-section">
+        <div class="tool-card reset-tool">
+          <div class="tool-info">
+            <Icon icon="lucide/pause" class="tool-icon" />
+            <div class="tool-details">
+              <h3>Stop All Music Players</h3>
+              <p class="tool-description">
+                Stop all currently running music players to free up resources.
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions">
+            <button @click="stopAllMusicPlayers" :disabled="stoppingPlayers" class="reset-button">
+              {{ stoppingPlayers ? 'Stopping...' : 'Stop All Players' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Expert Mode Toggle Tool -->
       <div class="tool-section">
         <div class="tool-card expert-tool">
@@ -73,6 +131,7 @@
           </div>
         </div>
       </div>
+
     </div>
 
     <!-- Reset System Confirmation Dialog -->
@@ -133,22 +192,57 @@ import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
-import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay } from '@/api/system'
+import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection } from '@/api/system'
+import { stopAllPlayers } from '@/api/player'
+import type { SoundCard } from '@/api/system'
 
 // State
 const resetting = ref(false)
 const detectingSoundCard = ref(false)
 const updatingExpertMode = ref(false)
+const stoppingPlayers = ref(false)
 const showResetConfirmation = ref(false)
 const showDetectConfirmation = ref(false)
 const showRebootConfirmation = ref(false)
 const detectedCardName = ref<string | null>(null)
 const detectedDtoverlay = ref<string | null>(null)
+const availableSoundCards = ref<SoundCard[]>([])
+const selectedSoundCard = ref('')
+const savingSoundCard = ref(false)
+const loadingSoundCards = ref(false)
 
 // Stores
 const toastStore = useToastStore()
 const settingsStore = useSettingsStore()
 const { getExpertMode } = storeToRefs(settingsStore)
+
+// Helper function to transform sound card names
+const transformSoundCardName = (name: string): string => {
+  const transformations: Record<string, string> = {
+    'Beocreate 4-Channel Amplifier': 'Beocreate',
+    'DAC+ Zero/Light/MiniAmp': 'DAC+ Zero'
+  }
+  return transformations[name] || name
+}
+
+// Load available sound cards on mount
+const loadSoundCards = async () => {
+  loadingSoundCards.value = true
+  try {
+    const response = await getSoundCards()
+    if (response.status === 'success' && response.data) {
+      availableSoundCards.value = response.data.soundcards
+    }
+  } catch (err) {
+    console.error('Error loading sound cards:', err)
+    toastStore.showErrorToast('Failed to load available sound cards')
+  } finally {
+    loadingSoundCards.value = false
+  }
+}
+
+// Load sound cards when component mounts
+loadSoundCards()
 
 // Methods
 const executeReset = async () => {
@@ -250,6 +344,42 @@ const handleDetectConfirmation = async () => {
   }
 }
 
+const saveSoundCardSelection = async () => {
+  if (!selectedSoundCard.value) return
+
+  savingSoundCard.value = true
+  try {
+    const response = await setSoundCardDtoverlay({
+      dtoverlay: selectedSoundCard.value,
+      remove_existing: true
+    })
+
+    if (response.status === 'success') {
+      // Disable automatic sound card detection when setting a fixed configuration
+      try {
+        await setSoundCardDetection(false)
+      } catch (detectionErr) {
+        console.warn('Failed to disable sound card detection:', detectionErr)
+        // Don't fail the whole operation if this fails
+      }
+
+      const cardName = availableSoundCards.value.find(c => c.dtoverlay === selectedSoundCard.value)?.name || 'Sound card'
+      toastStore.showSuccessToast(`${cardName} configured successfully!`)
+
+      if (response.data?.reboot_required) {
+        showRebootConfirmation.value = true
+      }
+    } else {
+      throw new Error(response.message || 'Failed to update sound card')
+    }
+  } catch (err) {
+    console.error('Error updating sound card:', err)
+    toastStore.showErrorToast(err instanceof Error ? err.message : 'Failed to update sound card')
+  } finally {
+    savingSoundCard.value = false
+  }
+}
+
 const executeReboot = async () => {
   showRebootConfirmation.value = false
 
@@ -284,6 +414,25 @@ const toggleExpertMode = async () => {
     toastStore.showErrorToast('Failed to update expert mode')
   } finally {
     updatingExpertMode.value = false
+  }
+}
+
+const stopAllMusicPlayers = async () => {
+  stoppingPlayers.value = true
+
+  try {
+    const success = await stopAllPlayers()
+
+    if (success) {
+      toastStore.showSuccessToast('All music players stopped successfully')
+    } else {
+      toastStore.showErrorToast('Failed to stop all music players')
+    }
+  } catch (err) {
+    console.error('Error stopping all music players:', err)
+    toastStore.showErrorToast('Failed to stop all music players')
+  } finally {
+    stoppingPlayers.value = false
   }
 }
 </script>
@@ -359,8 +508,16 @@ const toggleExpertMode = async () => {
       color: var(--color-primary);
     }
 
+    &.soundcard-tool .tool-info .tool-icon {
+      color: var(--color-primary);
+    }
+
     &.expert-tool .tool-info .tool-icon {
       color: var(--color-icon);
+    }
+
+    &.stop-players-tool .tool-info .tool-icon {
+      color: var(--color-warning);
     }
 
     .tool-actions {
@@ -403,6 +560,62 @@ const toggleExpertMode = async () => {
 
         &:hover:not(:disabled) {
           background: var(--color-error-dark, #dc2626);
+        }
+      }
+
+      &.soundcard-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+
+        .soundcard-select {
+          padding: 10px 16px;
+          border: 1px solid var(--color-sidebar-border);
+          border-radius: 6px;
+          background: var(--background-card);
+          color: var(--color-body-secondary);
+          font-size: 0.9rem;
+          font-family: inherit;
+          cursor: pointer;
+          min-width: 250px;
+
+          &:focus {
+            outline: none;
+            border-color: var(--primary);
+            color: var(--color-head);
+            box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+          }
+
+          &:hover:not(:disabled) {
+            border-color: var(--color-head);
+            color: var(--color-head);
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+        }
+
+        .save-button {
+          background: var(--primary);
+          padding: 10px 24px;
+          border: none;
+          border-radius: 6px;
+          color: white;
+          cursor: pointer;
+          font-weight: 500;
+          font-size: 0.9rem;
+          transition: background-color 0.2s ease;
+
+          &:hover:not(:disabled) {
+            background: var(--primary-dark);
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
         }
       }
     }
@@ -500,6 +713,20 @@ const toggleExpertMode = async () => {
           button {
             width: 100%;
             justify-content: center;
+          }
+
+          &.soundcard-actions {
+            flex-direction: column;
+            gap: 12px;
+
+            .soundcard-select {
+              width: 100%;
+              min-width: unset;
+            }
+
+            .save-button {
+              width: 100%;
+            }
           }
         }
       }

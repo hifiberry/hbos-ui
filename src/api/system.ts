@@ -179,6 +179,21 @@ export interface BackgroundJobsResponse {
   message: string | null
 }
 
+// Types for File Existence Check
+export interface FileExistence {
+  path: string
+  exists: boolean
+  filename: string
+}
+
+export interface FileExistenceCheckResponse {
+  status: 'success' | 'error'
+  data: {
+    exists: boolean
+  }
+  message: string
+}
+
 /**
  * Get system information including Pi model, HAT details, and system UUID
  */
@@ -292,6 +307,30 @@ export const detectSoundCard = async (): Promise<SoundCardDetectionResponse> => 
 }
 
 /**
+ * Enable or disable automatic sound card detection
+ */
+export const setSoundCardDetection = async (enabled: boolean): Promise<{ status: string; message: string }> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/soundcard/detection`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ enabled }),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
+/**
  * Reboot the system after an optional delay
  */
 export const rebootSystem = async (request?: RebootRequest): Promise<RebootResponse> => {
@@ -378,4 +417,41 @@ export const getBackgroundJobs = async (): Promise<BackgroundJobsResponse> => {
   }
 
   return await response.json()
+}
+
+/**
+ * Check if specific files exist on the system
+ */
+export const checkFileExistence = async (filePaths: string[]): Promise<FileExistence[]> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const results: FileExistence[] = []
+
+  for (const filePath of filePaths) {
+    const response = await fetch(`${baseUrl}/filesystem/file-exists`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ path: filePath }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data: FileExistenceCheckResponse = await response.json()
+
+    // Extract filename from path
+    const filename = filePath.split('/').pop() || filePath
+
+    results.push({
+      path: filePath,
+      exists: data.data.exists,
+      filename: filename
+    })
+  }
+
+  return results
 }

@@ -90,6 +90,11 @@ const router = createRouter({
               component: () => import('@/views/services/system-info.vue'),
             },
             {
+              path: 'display',
+              name: 'display',
+              component: () => import('@/views/services/display.vue'),
+            },
+            {
               path: 'system-tools',
               name: 'system-tools',
               component: () => import('@/views/services/system-tools.vue'),

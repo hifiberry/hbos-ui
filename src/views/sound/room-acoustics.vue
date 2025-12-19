@@ -31,7 +31,7 @@
                 </p>
               </div>
               <button @click.stop="deleteMeasurement(measurement.id)" class="delete-button" title="Delete Measurement">
-                <Icon icon="close" />
+                <Icon icon="tabler/x" />
               </button>
             </div>
             <div class="measurement-preview">
@@ -73,7 +73,7 @@
                 </p>
               </div>
               <button @click.stop="deleteEqualisationConfig(config.key)" class="delete-button" title="Delete Configuration">
-                <Icon icon="close" />
+                <Icon icon="tabler/x" />
               </button>
             </div>
             <div class="equalisation-response">
@@ -122,7 +122,7 @@
         <div class="modal-header">
           <h2>Apply Room EQ Configuration</h2>
           <button @click="closeChannelSelectionDialog" class="close-button" title="Close">
-            <Icon icon="close" />
+            <Icon icon="tabler/x" />
           </button>
         </div>
 

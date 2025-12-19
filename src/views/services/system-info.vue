@@ -15,7 +15,7 @@
         @click="toggleAutoUpdate"
         title="Click to toggle auto-update"
       >
-        <Icon icon="activity" :width="16" :height="16" />
+        <Icon icon="tabler/activity" :width="16" :height="16" />
         <span v-if="isAutoUpdatePaused">Auto-update paused</span>
         <span v-else-if="!isAutoUpdateEnabled">Click to enable auto-update</span>
         <span v-else>Auto-update in {{ countdownSeconds }}s</span>
@@ -40,7 +40,7 @@
         <!-- Raspberry Pi Information -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="computer" class="card-icon" />
+            <Icon icon="tabler/device-desktop" class="card-icon" />
             <h2>Raspberry Pi</h2>
           </div>
           <table class="info-table">
@@ -55,7 +55,7 @@
                       class="edit-button"
                       :disabled="loading"
                     >
-                      <Icon icon="edit" :width="16" :height="16" />
+                      <Icon icon="tabler/edit" :width="16" :height="16" />
                     </button>
                   </div>
                   <div v-else class="hostname-edit">
@@ -75,7 +75,7 @@
                         :disabled="savingHostname || !editHostname.trim()"
                         :title="savingHostname ? 'Saving...' : 'Save'"
                       >
-                        <Icon icon="checkmark" :width="16" :height="16" />
+                        <Icon icon="tabler/check" :width="16" :height="16" />
                       </button>
                       <button
                         @click="cancelEditingHostname"
@@ -83,7 +83,7 @@
                         :disabled="savingHostname"
                         title="Cancel"
                       >
-                        <Icon icon="close" :width="16" :height="16" />
+                        <Icon icon="tabler/x" :width="16" :height="16" />
                       </button>
                     </div>
                   </div>
@@ -108,7 +108,7 @@
         <!-- Network Configuration -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="network" class="card-icon" />
+            <Icon icon="tabler/wifi" class="card-icon" />
             <h2>Network</h2>
           </div>
           <div v-if="networkLoading" class="loading-message">
@@ -163,7 +163,7 @@
         <!-- HAT Information -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="hifiberry" class="card-icon" />
+            <Icon icon="tabler/circuit-board" class="card-icon" />
             <h2>HAT Information</h2>
           </div>
           <table class="info-table">
@@ -187,7 +187,7 @@
         <!-- Sound Card Information -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="volume" class="card-icon" />
+            <Icon icon="tabler/volume" class="card-icon" />
             <h2>Sound Card</h2>
           </div>
           <table class="info-table">
@@ -202,7 +202,7 @@
                       class="edit-button"
                       :disabled="loading"
                     >
-                      <Icon icon="edit" :width="16" :height="16" />
+                      <Icon icon="tabler/edit" :width="16" :height="16" />
                     </button>
                   </div>
                   <div v-else class="soundcard-edit">
@@ -226,7 +226,7 @@
                         :disabled="savingSoundCard || !selectedSoundCard"
                         :title="savingSoundCard ? 'Saving...' : 'Save'"
                       >
-                        <Icon icon="checkmark" :width="16" :height="16" />
+                        <Icon icon="tabler/check" :width="16" :height="16" />
                       </button>
                       <button
                         @click="cancelEditingSoundCard"
@@ -234,7 +234,7 @@
                         :disabled="savingSoundCard"
                         title="Cancel"
                       >
-                        <Icon icon="close" :width="16" :height="16" />
+                        <Icon icon="tabler/x" :width="16" :height="16" />
                       </button>
                     </div>
                   </div>
@@ -271,7 +271,7 @@
         <!-- Volume Control Information -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="volume" class="card-icon" />
+            <Icon icon="tabler/volume" class="card-icon" />
             <h2>Volume Control</h2>
           </div>
           <div v-if="volumeLoading" class="loading-message">
@@ -315,7 +315,7 @@
         <!-- DSP Program Information -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="processor" class="card-icon" />
+            <Icon icon="tabler/cpu" class="card-icon" />
             <h2>DSP Program</h2>
           </div>
           <div v-if="dspProgramLoading" class="loading-message">
@@ -352,7 +352,7 @@
         <!-- Favourites Information -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="heart" class="card-icon" />
+            <Icon icon="tabler/heart" class="card-icon" />
             <h2>Favourites</h2>
           </div>
           <div v-if="favouritesLoading" class="loading-message">
@@ -387,7 +387,7 @@
         <!-- Cover Art Providers -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="database_star" class="card-icon" />
+            <Icon icon="tabler/stack" class="card-icon" />
             <h2>Cover Art Providers</h2>
           </div>
           <div v-if="coverArtLoading" class="loading-message">
@@ -413,7 +413,7 @@
         <!-- Cache Statistics -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="database" class="card-icon" />
+            <Icon icon="tabler/database" class="card-icon" />
             <h2>Cache Statistics</h2>
           </div>
           <div v-if="cacheLoading" class="loading-message">
@@ -461,7 +461,7 @@
         <!-- Background Services -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="server" class="card-icon" />
+            <Icon icon="tabler/server" class="card-icon" />
             <h2>Background Services</h2>
           </div>
           <div v-if="backgroundServicesLoading" class="loading-message">
@@ -495,7 +495,7 @@
         <!-- Background Jobs -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="activity" class="card-icon" />
+            <Icon icon="tabler/activity" class="card-icon" />
             <h2>Background Jobs</h2>
           </div>
           <div v-if="jobsLoading" class="loading-message">
@@ -553,7 +553,7 @@
         <!-- I2C Devices -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="binary" class="card-icon" />
+            <Icon icon="tabler/binary" class="card-icon" />
             <h2>I2C Devices</h2>
           </div>
           <div v-if="i2cLoading" class="loading-message">
@@ -595,7 +595,7 @@
         <!-- File Existence -->
         <div class="info-card">
           <div class="card-header">
-            <Icon icon="document" class="card-icon" />
+            <Icon icon="tabler/file-text" class="card-icon" />
             <h2>System Files</h2>
           </div>
           <div v-if="fileExistenceLoading" class="loading-message">
@@ -679,7 +679,7 @@
     <div v-if="showSoundCardWarning" class="warning-overlay">
       <div class="warning-dialog">
         <div class="warning-header">
-          <Icon icon="bell" class="warning-icon" />
+          <Icon icon="tabler/bell" class="warning-icon" />
           <h3>Warning: Sound Card Change</h3>
         </div>
         <div class="warning-content">
@@ -711,7 +711,7 @@
     <div v-if="showRebootDialog" class="warning-overlay">
       <div class="warning-dialog">
         <div class="warning-header">
-          <Icon icon="checkmark" class="success-icon" />
+          <Icon icon="tabler/check" class="success-icon" />
           <h3>Sound Card Updated</h3>
         </div>
         <div class="warning-content">

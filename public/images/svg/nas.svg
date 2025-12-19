@@ -1,17 +1,8 @@
-<svg
-  class="filter-icon"
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 23 23"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="1"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
+<svg class="css-icon" viewBox="-1 -1 23 23" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
   <path d="M20.5,4.487C20.5,4.226 20.396,3.974 20.211,3.789C20.026,3.604 19.774,3.5 19.513,3.5C16.371,3.5 6.629,3.5 3.487,3.5C3.226,3.5 2.974,3.604 2.789,3.789C2.604,3.974 2.5,4.226 2.5,4.487C2.5,7.353 2.5,15.647 2.5,18.513C2.5,18.774 2.604,19.026 2.789,19.211C2.974,19.396 3.226,19.5 3.487,19.5C6.629,19.5 16.371,19.5 19.513,19.5C19.774,19.5 20.026,19.396 20.211,19.211C20.396,19.026 20.5,18.774 20.5,18.513C20.5,15.647 20.5,7.353 20.5,4.487Z" />
   <rect x="16.5" y="5.5" width="2" height="12" />
   <rect x="12.5" y="5.5" width="2" height="12" />
   <rect x="8.5" y="5.5" width="2" height="12" />
   <rect x="4.5" y="5.5" width="2" height="12" />
 </svg>
-
+</svg>

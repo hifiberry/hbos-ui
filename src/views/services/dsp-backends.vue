@@ -51,7 +51,7 @@
                     @click.stop="showBackendDetails(backendId)"
                     :title="`View ${backend.name} details`"
                   >
-                    <Icon icon="info" />
+                    <Icon icon="tabler/info-circle" />
                   </button>
                 </div>
               </div>
@@ -151,9 +151,9 @@ const getBackendStatus = (backendId: string): string => {
 const getBackendIcon = (backendId: 'console' | 'dspToolkit'): string => {
   switch (backendId) {
     case 'console':
-      return 'balloon'; // Balloon icon for console demo backend
+      return 'tabler/flask'; // Flask icon for demo/testing backend
     case 'dspToolkit':
-      return 'processor'; // DSP hardware icon using processor/CPU icon
+      return 'tabler/server'; // Server icon for DSP hardware
     default:
       return 'filter-peak';
   }

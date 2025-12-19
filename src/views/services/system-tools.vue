@@ -10,7 +10,7 @@
       <div class="tool-section">
         <div class="tool-card reset-tool">
           <div class="tool-info">
-            <Icon icon="reset" class="tool-icon" />
+            <Icon icon="tabler/rotate-clockwise" class="tool-icon" />
             <div class="tool-details">
               <h3>Reset System</h3>
               <p class="tool-description">
@@ -30,7 +30,7 @@
       <div class="tool-section">
         <div class="tool-card detect-tool">
           <div class="tool-info">
-            <Icon icon="search" class="tool-icon" />
+            <Icon icon="tabler/search" class="tool-icon" />
             <div class="tool-details">
               <h3>Auto-detect Sound Card</h3>
               <p class="tool-description">
@@ -50,7 +50,7 @@
       <div class="tool-section">
         <div class="tool-card soundcard-tool">
           <div class="tool-info">
-            <Icon icon="volume" class="tool-icon" />
+            <Icon icon="tabler/volume" class="tool-icon" />
             <div class="tool-details">
               <h3>Fixed sound card configuration</h3>
               <p class="tool-description">
@@ -88,7 +88,7 @@
       <div class="tool-section">
         <div class="tool-card reset-tool">
           <div class="tool-info">
-            <Icon icon="lucide/pause" class="tool-icon" />
+            <Icon icon="tabler/player-pause" class="tool-icon" />
             <div class="tool-details">
               <h3>Stop All Music Players</h3>
               <p class="tool-description">
@@ -148,7 +148,7 @@ This will:
 This action CANNOT BE UNDONE!"
       confirm-button-text="Reset System"
       :is-dangerous="true"
-      icon="reset"
+      icon="tabler/rotate-clockwise"
       :requires-text-confirmation="true"
       confirmation-text="RESET"
       @close="showResetConfirmation = false"
@@ -162,7 +162,7 @@ This action CANNOT BE UNDONE!"
       :message="getDetectConfirmationMessage()"
       :confirm-button-text="detectedCardName ? 'Configure Sound Card' : 'Continue'"
       :is-dangerous="true"
-      icon="search"
+      icon="tabler/search"
       @close="showDetectConfirmation = false"
       @confirm="handleDetectConfirmation"
     />
@@ -177,7 +177,7 @@ Would you like to reboot now?"
       confirm-button-text="Reboot Now"
       cancel-button-text="Reboot Later"
       :is-dangerous="true"
-      icon="refresh"
+      icon="tabler/refresh"
       @close="handleRebootLater"
       @confirm="executeReboot"
     />

@@ -82,30 +82,30 @@ const routes = computed(() => {
     {
       name: 'now-playing',
       title: 'Now Playing',
-      icon: 'play-light',
+      icon: 'tabler/player-play',
       children: [
         // Only include Queue if player supports it
         ...(playerCapabilities.value.hasQueue ? [{
           name: 'playlist',
           title: 'Queue',
-          icon: 'playlist-light',
+          icon: 'tabler/playlist',
         }] : []),
       ],
     },
     {
       name: 'library',
       title: 'Music Library',
-      icon: 'playlist-light',
+      icon: 'tabler/playlist',
       children: [
         {
           name: 'albums',
           title: 'Albums',
-          icon: 'notebook-thin',
+          icon: 'cd',
         },
         {
           name: 'artists',
           title: 'Artists',
-          icon: 'users-thin',
+          icon: 'tabler/users',
         },
         {
           name: 'radio',
@@ -117,7 +117,7 @@ const routes = computed(() => {
     {
       name: 'sound',
       title: 'Sound',
-      icon: 'music-note-simple-light',
+      icon: 'tabler/volume',
       children: [
         {
           name: 'general-sound',
@@ -144,17 +144,17 @@ const routes = computed(() => {
     {
       name: 'services',
       title: 'Settings',
-      icon: 'settings',
+      icon: 'gear',
       children: [
         {
           name: 'players',
           title: 'Players',
-          icon: 'play',
+          icon: 'tabler/player-play',
         },
         {
           name: 'web-services',
           title: 'Web Services',
-          icon: 'cloud',
+          icon: 'tabler/cloud',
         },
         {
           name: 'music-files',
@@ -164,12 +164,12 @@ const routes = computed(() => {
         {
           name: 'dsp-backends',
           title: 'DSP Backends',
-          icon: 'processor',
+          icon: 'tabler/server',
         },
         {
           name: 'dsp-programs',
           title: 'DSP Programs',
-          icon: 'download',
+          icon: 'tabler/download',
         },
         {
           name: 'system-info',
@@ -184,7 +184,7 @@ const routes = computed(() => {
         {
           name: 'bluetooth-settings',
           title: 'Bluetooth',
-          icon: 'bluetooth',
+          icon: 'tabler/bluetooth',
         },
         {
           name: 'system-tools',

@@ -1,24 +1,14 @@
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="-0.5 -0.5 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-linecap="round"
-  stroke-linejoin="round"
-  class="cpu-icon"
-  height="24"
-  width="24"
->
+<svg class="css-icon" viewBox="-1 -1 23 23" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
   <desc>Cpu Streamline Icon: https://streamlinehq.com</desc>
-  <path d="M4.7917 5.75a0.9583 0.9583 0 0 1 0.9583-0.9583h11.5a0.9583 0.9583 0 0 1 0.9583 0.9583v11.5a0.9583 0.9583 0 0 1 -0.9583 0.9583H5.75a0.9583 0.9583 0 0 1 -0.9583-0.9583z" stroke-width="1" />
-  <path d="M8.625 8.625h5.75v5.75H8.625z" stroke-width="1" />
-  <path d="M2.875 9.5833h1.9167" stroke-width="1" />
-  <path d="M2.875 13.4167h1.9167" stroke-width="1" />
-  <path d="M9.5833 2.875v1.9167" stroke-width="1" />
-  <path d="M13.4167 2.875v1.9167" stroke-width="1" />
-  <path d="M20.125 9.5833h-1.9167" stroke-width="1" />
-  <path d="M20.125 13.4167h-1.9167" stroke-width="1" />
-  <path d="M13.4167 20.125v-1.9167" stroke-width="1" />
-  <path d="M9.5833 20.125v-1.9167" stroke-width="1" />
+  <path d="M4.7917 5.75a0.9583 0.9583 0 0 1 0.9583-0.9583h11.5a0.9583 0.9583 0 0 1 0.9583 0.9583v11.5a0.9583 0.9583 0 0 1 -0.9583 0.9583H5.75a0.9583 0.9583 0 0 1 -0.9583-0.9583z" />
+  <path d="M8.625 8.625h5.75v5.75H8.625z" />
+  <path d="M2.875 9.5833h1.9167" />
+  <path d="M2.875 13.4167h1.9167" />
+  <path d="M9.5833 2.875v1.9167" />
+  <path d="M13.4167 2.875v1.9167" />
+  <path d="M20.125 9.5833h-1.9167" />
+  <path d="M20.125 13.4167h-1.9167" />
+  <path d="M13.4167 20.125v-1.9167" />
+  <path d="M9.5833 20.125v-1.9167" />
 </svg>
-
+</svg>

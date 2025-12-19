@@ -3,7 +3,7 @@
     <div class="settingsOverview">
       <ContentBoxLink :to="{ name: 'players' }" height=150>
         <div class="settingsCardHeader">
-          <Icon icon="play" class="settingsCardHeaderIcon" />
+          <Icon icon="tabler/player-play" class="settingsCardHeaderIcon" />
           <h2>Players</h2>
         </div>
         <p>
@@ -13,7 +13,7 @@
 
       <ContentBoxLink :to="{ name: 'web-services' }" height=150>
         <div class="settingsCardHeader">
-          <Icon icon="cloud" class="settingsCardHeaderIcon" />
+          <Icon icon="tabler/cloud" class="settingsCardHeaderIcon" />
           <h2>Web Services</h2>
         </div>
         <p>Connect and manage web-based music services</p>
@@ -29,7 +29,7 @@
 
       <ContentBoxLink :to="{ name: 'dsp-programs' }" height=150>
         <div class="settingsCardHeader">
-          <Icon icon="download" class="settingsCardHeaderIcon" />
+          <Icon icon="tabler/download" class="settingsCardHeaderIcon" />
           <h2>DSP Programs</h2>
         </div>
         <p>Download and manage digital signal processing programs</p>
@@ -37,7 +37,7 @@
 
       <ContentBoxLink :to="{ name: 'dsp-backends' }" height=150>
         <div class="settingsCardHeader">
-          <Icon icon="processor" class="settingsCardHeaderIcon" />
+          <Icon icon="tabler/server" class="settingsCardHeaderIcon" />
           <h2>DSP Backends</h2>
         </div>
         <p>Select and configure digital signal processing backends</p>
@@ -61,7 +61,7 @@
 
       <ContentBoxLink :to="{ name: 'bluetooth-settings' }" height=150>
         <div class="settingsCardHeader">
-          <Icon icon="bluetooth" class="settingsCardHeaderIcon" />
+          <Icon icon="tabler/bluetooth" class="settingsCardHeaderIcon" />
           <h2>Bluetooth</h2>
         </div>
         <p>Manage Bluetooth settings</p>

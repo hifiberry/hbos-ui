@@ -151,7 +151,7 @@ const players = ref<Player[]>([
   systemdService: 'hbos-bluetooth.service',
   config: 'none',
   status: 'inactive',
-  icon: 'bluetooth',
+  icon: 'tabler/bluetooth',
   enabled: false,
   loading: false,
   error: undefined,

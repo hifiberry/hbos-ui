@@ -1,7 +1,7 @@
 <template>
   <ContentBox>
     <div class="webServiceContainer">
-      <Icon icon="database" class="webServiceIcon" />
+      <Icon icon="database" class="service-icon" />
       <div class="webServiceDetails">
         <h3>Fanart.tv</h3>
         <p class="webServiceDescription">
@@ -34,10 +34,11 @@ import ContentBox from "@/components/ContentBox.vue"
     padding: 20px;
   }
 
-  .webServiceIcon{
+  .service-icon{
     margin-right: 15px;
     width: 40px;
     height: 40px;
+    color: var(--color-icon-primary);
     object-fit: contain;
   }
 

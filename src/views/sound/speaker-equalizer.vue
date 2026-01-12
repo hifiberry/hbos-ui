@@ -1571,7 +1571,6 @@ watch(activeChannel, async () => {
             .filter-icon {
               width: 32px;
               height: 32px;
-              fill: #e11e4a;
             }
 
             .filter-details {
@@ -1931,7 +1930,6 @@ watch(activeChannel, async () => {
         width: 40px; // Make icon big
         height: 40px; // Make icon big
         margin-bottom: 8px; // Space between icon and name
-        fill: #707070; // Default icon color
         transition: fill 0.3s ease;
       }
 

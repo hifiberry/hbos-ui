@@ -323,10 +323,7 @@ import FilterGraph from '@/components/FilterGraph.vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { type Filter } from '@/utils/filtercalc';
 
-import {
-  type BiquadFilterType,
-
-} from '@/utils/biquad';
+import { type BiquadFilterType } from '@/utils/biquad';
 import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
 
 import {

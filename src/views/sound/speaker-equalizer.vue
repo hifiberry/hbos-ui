@@ -903,10 +903,33 @@ async function endBypass() {
   }
 }
 
+/**
+  * Sets the value of the `activeFilterId` ref object.
+  *
+  * @param {number} id - The id that should be written into the `activeFilterId`
+  */
 function setActiveFilter(id: number) {
   activeFilterId.value = id;
 }
 
+/**
+  * Adds a filter of a given type. This function is run
+  * when pressing onto a button (a filter type) inside
+  * of the add filter modal. The available filter types
+  * are stored inside the `AVAILABLE_FILTER_TYPES` variable.
+  *
+  * This function is basically a wrapper around the
+  * `addFilterToCurrentChannel()` function. It just creates
+  * the filter of a given type and passes it into the previously
+  * mentioned function.
+  *
+  * It also handles the ui by setting the newly added filter
+  * as the active one, reloading the backend's capabilities
+  * so it shows the filter count correctly and also closes
+  * the add filter modal.
+  *
+  * @param {BiquadFilterType} type - The type that the new filter should be
+  */
 const addFilterOfType = async (type: BiquadFilterType) => {
   try {
     const newId = Date.now();

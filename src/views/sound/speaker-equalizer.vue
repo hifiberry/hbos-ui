@@ -551,11 +551,6 @@ const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
 
 const isDragging = ref(false);
 
-// Helper functions for managing channel-specific filters
-const getCurrentFilterArray = () => {
-  return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
-};
-
 const setCurrentFilterArray = (newFilters: Filter[]) => {
   if (channelMode.value === 'both') {
     // When in both mode, update both channels
@@ -617,7 +612,7 @@ const onGraphUpdateFreqGain = ({ id, frequency, gain }: { id: number, frequency:
     if (lf) { lf.frequency = frequency; lf.gain = gain }
     if (rf) { rf.frequency = frequency; rf.gain = gain }
   } else {
-    const f = getCurrentFilterArray().find(f => f.id === id)
+    const f = filters.value.find(f => f.id === id)
     if (f) { f.frequency = frequency; f.gain = gain }
   }
 }
@@ -629,7 +624,7 @@ const onGraphUpdateQ = ({ id, Q }: { id: number, Q: number }) => {
     if (lf && typeof lf.Q === 'number') lf.Q = Q
     if (rf && typeof rf.Q === 'number') rf.Q = Q
   } else {
-    const f = getCurrentFilterArray().find(f => f.id === id)
+    const f = filters.value.find(f => f.id === id)
     if (f && typeof f.Q === 'number') f.Q = Q
   }
 }
@@ -828,7 +823,7 @@ const removeFilter = async (filterId: number) => {
 
   // If we removed the active filter, set active to first available filter or null
   if (activeFilterId.value === filterId) {
-    const currentFilters = getCurrentFilterArray();
+    const currentFilters = filters.value;
     activeFilterId.value = currentFilters[0]?.id || null;
   }
 
@@ -892,7 +887,7 @@ const loadEQSettings = () => {
             }
 
             // Set the first filter as active if any exist
-            const currentFilters = getCurrentFilterArray();
+            const currentFilters = filters.value;
             if (currentFilters.length > 0) {
               activeFilterId.value = currentFilters[0].id;
             }

@@ -372,7 +372,7 @@ const backendName = ref('');
 /**
   * Loads the backend capabilities from the backend
   * pinia store called `useFilterStore()`.
-  * logs either `'Backend capabilities loaded:', backendCapabilities.value`
+  * Logs either `'Backend capabilities loaded:', backendCapabilities.value`
   * when the loading was successful or `'Failed to load backend capabilities:', error`
   * when the loading wasn't successful.
   *
@@ -556,7 +556,7 @@ const isDragging = ref(false);
   * as an argument. Determinates the current filter array using the `channelMode.value`
   * ref object.
   *
-  * @param {Filter[]} the filter array that should be written into the filter array.
+  * @param {Filter[]} newFilters - the filter array that should be written into the filter array.
   */
 const setCurrentFilterArray = (newFilters: Filter[]) => {
   if (channelMode.value === 'both') {
@@ -614,17 +614,40 @@ const createLinkedChannelConfig = (): LinkedChannelConfig => {
   };
 };
 
+/**
+  * Adds a new filter to the current linked channels. In here,
+  * the *linked channels* will always be `leftChannel.value`
+  * and `rightChannel.value`.
+  *
+  * @param {Filter} filter - The filter that should be added to the linked channels
+  */
 const addFilterToCurrentChannel = async (filter: Filter) => {
   const config = createLinkedChannelConfig();
   await addFilterToLinkedChannels(config, filter);
 };
 
+/**
+  * Removes a filter from the linked channels by id.
+  *
+  * @param {number} filterId - The filter that should be added to the linked channels
+  */
 const removeFilterFromCurrentChannel = async (filterId: number) => {
   const config = createLinkedChannelConfig();
   await removeFilterFromLinkedChannels(config, filterId);
 };
 
-// Graph handlers from reusable FilterGraph
+/**
+  * Callback function for what the `FilterGraph` should do on an frequency
+  * gain change. This function should not be called on it's own but rather
+  * passed into the `FilterGraph` object:
+  * ```typescript
+  * <FilterGraph
+  * ...
+  * @update:freq-gain="onGraphUpdateFreqGain"
+  * ...
+  * />
+  * ```
+  */
 const onGraphUpdateFreqGain = ({ id, frequency, gain }: { id: number, frequency: number, gain: number }) => {
   if (channelMode.value === 'both') {
     const lf = leftFilters.value.find(f => f.id === id)
@@ -637,6 +660,18 @@ const onGraphUpdateFreqGain = ({ id, frequency, gain }: { id: number, frequency:
   }
 }
 
+/**
+  * Callback function for what the `FilterGraph` should do when updating
+  * the `q` of a filter. This function should not be called on it's own
+  * but rather passed into the `FilterGraph` object:
+  * ```typescript
+  * <FilterGraph
+  * ...
+  * @update:q="onGraphUpdateQ"
+  * ...
+  * />
+  * ```
+  */
 const onGraphUpdateQ = ({ id, Q }: { id: number, Q: number }) => {
   if (channelMode.value === 'both') {
     const lf = leftFilters.value.find(f => f.id === id)
@@ -649,24 +684,63 @@ const onGraphUpdateQ = ({ id, Q }: { id: number, Q: number }) => {
   }
 }
 
+/**
+  * This is a callback function. Gets called when a filter is
+  * started dragging in the `FilterGraph` object.
+  * ```typescript
+  * <FilterGraph
+  * ...
+  * @drag-start="onGraphDragStart"
+  * ...
+  * />
+  * ```
+  */
 const onGraphDragStart = () => {
   isDragging.value = true
 }
 
+/**
+  * This is a callback function. Gets called when a filter is
+  * stopped dragging in the `FilterGraph` object.
+  * ```typescript
+  * <FilterGraph
+  * ...
+  * @drag-end="onGraphDragEnd"
+  * ...
+  * />
+  * ```
+  */
 const onGraphDragEnd = async (id: number) => {
   const config = createLinkedChannelConfig();
   await updateFilterPropertyLinked(config, id, () => { /* persist current values */ })
   isDragging.value = false
 }
 
+/**
+  * Sets the active channel (`activeMode` ref object). This
+  * function can only set the active channel to `left` or
+  * `right`.
+  *
+  * Also it sets the `activeFilterId` ref object to
+  * the first one in the new filter array, so it doesn't
+  * store an old value, that might not be available.
+  * If no filter is in this filter array, the `activeFilterId`
+  * is set to `null`.
+  *
+  * @param { Channel } channel - The new channel that should be set
+  */
 function setActiveChannel(channel: Channel) {
+  // Return to individual mode since this function is only run to switch to
+  // or between individual modes and not back into both mode.
   if (channelMode.value === 'both') {
-    // In "both" mode, clicking a channel tab should switch back to individual mode
     channelMode.value = 'individual';
   }
+
+  // Set the global `activeChannel` ref object to the passed `channel` object.
   activeChannel.value = channel;
 
-  // Update activeFilterId to match the first filter in the new channel, if any
+  // Update `activeFilterId` ref object to the first filter in the new channel.
+  // This is to prevent `activeFilterId` to contain false information.
   const currentFilters = channel === 'left' ? leftFilters.value : rightFilters.value;
   if (currentFilters.length > 0) {
     activeFilterId.value = currentFilters[0].id;
@@ -675,6 +749,15 @@ function setActiveChannel(channel: Channel) {
   }
 }
 
+/**
+  * Toggles the `channelMode` ref object between `'individual'` and `'both'`.
+  *
+  * When switching from `'individual'` mode to `'both'` mode, it copies the
+  * current filter array (for example the left one) into the other one
+  * (for example the right one).
+  *
+  * Logs if the filters were synced correctly or if they failed.
+  */
 async function toggleChannelMode() {
   const previousMode = channelMode.value;
   channelMode.value = channelMode.value === 'individual' ? 'both' : 'individual';
@@ -695,7 +778,18 @@ async function toggleChannelMode() {
   }
 }
 
-// Bypass functionality using REST API - bypass entire filter banks while pressed
+/**
+  * Starts bypassing the current filter bank. If channel mode is set to both,
+  * it bypasses both filter banks. This function uses the function `setFilterBankBypassState()`
+  * from `src/api/dsptoolkit.ts` to send a post request to the dsp backend.
+  *
+  * This will store the current bank/s names inside of the `previousFilterStates`.
+  * This is a `Map<string, boolean>` object, which just stores the `bankName`
+  * (the name of the current active filter bank/s).
+  *
+  * If the request fails, it will `console.error` with an error message. Also it will throw
+  * this but not always. Only in the `bypassPromises()` arrow function.
+  */
 async function startBypass() {
   if (isBypassed.value || isDragging.value) return;
 
@@ -749,6 +843,14 @@ async function startBypass() {
   }
 }
 
+/**
+  * Ends the bypass mode using `setFilterBankBypassState()`
+  * from `src/api/dsptoolkit.ts` for the request. The bypass mode was most
+  * likely set from the function `startBypass()` function.
+  *
+  * This function will only restore the filter banks that have the `wasPreviouslyBypassed`
+  * boolean set to false.
+  */
 async function endBypass() {
   if (!isBypassed.value) return;
 

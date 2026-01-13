@@ -545,7 +545,7 @@ const roomEQChannelMode = ref<'left' | 'right' | 'both'>('both');
 
 // Bypass functionality state
 const isBypassed = ref(false);
-const previousFilterStates = ref<Map<string, boolean>>(new Map());
+const previousFilterStates = ref<string[]>;
 
 const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
 
@@ -811,9 +811,9 @@ async function startBypass() {
     }
 
     // Store the previous bypass states (assuming all banks are currently enabled)
-    previousFilterStates.value.clear();
+    previousFilterStates.value = [];
     for (const bankName of banksToBypass) {
-      previousFilterStates.value.set(bankName, false); // false = not previously bypassed
+      previousFilterStates.value.push(bankName);
     }
 
     // Bypass all filter banks using the REST API
@@ -866,16 +866,14 @@ async function endBypass() {
     // Restore all filter banks from bypass using the REST API
     const restorePromises: Promise<FilterBypassSetResponse>[] = [];
 
-    for (const [bankName, wasPreviouslyBypassed] of previousFilterStates.value.entries()) {
+    for (const [bankName] of previousFilterStates.value.entries()) {
       // Only restore banks that were not originally bypassed
-      if (wasPreviouslyBypassed === false) {
-        restorePromises.push(
-          setFilterBankBypassState(bankName, false).catch((error: Error) => {
-            console.error(`Failed to restore filter bank ${bankName}:`, error);
-            throw error;
-          })
-        );
-      }
+      restorePromises.push(
+        setFilterBankBypassState(bankName, false).catch((error: Error) => {
+          console.error(`Failed to restore filter bank ${bankName}:`, error);
+          throw error;
+        })
+      );
     }
 
     // Wait for all restore operations to complete
@@ -891,7 +889,7 @@ async function endBypass() {
     console.log(`Successfully restored ${successfulOperations}/${totalFilters} filters across ${restorePromises.length} banks`);
 
     // Clear the stored states
-    previousFilterStates.value.clear();
+    previousFilterStates.value = [];
 
   } catch (error) {
     console.error('Failed to end bypass:', error);

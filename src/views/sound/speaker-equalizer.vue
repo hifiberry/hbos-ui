@@ -545,6 +545,14 @@ const roomEQChannelMode = ref<'left' | 'right' | 'both'>('both');
 
 // Bypass functionality state
 const isBypassed = ref(false);
+/** Array ref object containing the names for the filter
+  * states that were bypassed. For example: the left
+  * channel gets bypassed: this ref now stores `['left']`.
+  *
+  * It is an array because there can be both `'left'`
+  * and `'right'` be in this array at once (if linked
+  * mode is activated).
+  */
 const previousFilterStates = ref<string[]>;
 
 const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
@@ -784,7 +792,7 @@ async function toggleChannelMode() {
   * from `src/api/dsptoolkit.ts` to send a post request to the dsp backend.
   *
   * This will store the current bank/s names inside of the `previousFilterStates`.
-  * This is a `Map<string, boolean>` object, which just stores the `bankName`
+  * This is a `string[]` ref object, which just stores the `bankName`
   * (the name of the current active filter bank/s).
   *
   * If the request fails, it will `console.error` with an error message. Also it will throw
@@ -848,8 +856,8 @@ async function startBypass() {
   * from `src/api/dsptoolkit.ts` for the request. The bypass mode was most
   * likely set from the function `startBypass()` function.
   *
-  * This function will only restore the filter banks that have the `wasPreviouslyBypassed`
-  * boolean set to false.
+  * This function will restore the filter banks that are in the
+  * `previousFilterStates` ref object array.
   */
 async function endBypass() {
   if (!isBypassed.value) return;

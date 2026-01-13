@@ -551,6 +551,13 @@ const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
 
 const isDragging = ref(false);
 
+/**
+  * Replaces the current filter array with a new filter array, which is passed in
+  * as an argument. Determinates the current filter array using the `channelMode.value`
+  * ref object.
+  *
+  * @param {Filter[]} the filter array that should be written into the filter array.
+  */
 const setCurrentFilterArray = (newFilters: Filter[]) => {
   if (channelMode.value === 'both') {
     // When in both mode, update both channels
@@ -566,7 +573,20 @@ const setCurrentFilterArray = (newFilters: Filter[]) => {
   }
 };
 
-// Create configuration for linked channel operations
+/**
+  * Returns a config for both channels (linked channels). This is useful
+  * when trying to change both channels at once. For example: i want to
+  * change the frequency of a filter on both channels. Normally i would
+  * first need to read out the `leftFilters.value` and the `rightFilters.value`
+  * to get both the filter arrays. also i would need to write the changes
+  * into both back again.
+  *
+  * This function returns an object, that contains all of this information,
+  * so only one object is used (the returned one) instead of two (`leftFilters.value`
+  * and `rightFilters.value`).
+  *
+  * @returns { LinkedChannelConfig } The channel configuration object.
+  */
 const createLinkedChannelConfig = (): LinkedChannelConfig => {
   return {
     channelMode: channelMode.value as LinkedChannelMode,

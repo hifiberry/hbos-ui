@@ -369,7 +369,15 @@ const filterStore = useFilterStore();
 const backendCapabilities = ref<BackendCapabilities | null>(null);
 const backendName = ref('');
 
-// Load backend capabilities on mount
+/**
+  * Loads the backend capabilities from the backend
+  * pinia store called `useFilterStore()`.
+  * logs either `'Backend capabilities loaded:', backendCapabilities.value`
+  * when the loading was successful or `'Failed to load backend capabilities:', error`
+  * when the loading wasn't successful.
+  *
+  * This function should be run in the `onMount()` function.
+  */
 const loadBackendCapabilities = async () => {
   try {
     backendCapabilities.value = await filterStore.getBackendCapabilities();
@@ -380,7 +388,12 @@ const loadBackendCapabilities = async () => {
   }
 };
 
-// Load existing filters from the backend
+/**
+  * Loads the filters into each filter array from the backend.
+  * Uses the pinia store called `useFilterStore()`.
+  *
+  * This function should be run in the `onMount()` function.
+  */
 const loadFiltersFromBackend = async () => {
   try {
     // Sync from backend to get the current filter configuration
@@ -405,7 +418,11 @@ const loadFiltersFromBackend = async () => {
   }
 };
 
-// Computed property to check if current channel can accept more filters
+/**
+  * Computed property to check if current channel can accept more filters.
+  *
+  * @returns {boolean} false if can't add, true if can add.
+  */
 const canAddFilterToCurrentChannel = computed(() => {
   if (!backendCapabilities.value) return false;
 
@@ -419,7 +436,13 @@ const canAddFilterToCurrentChannel = computed(() => {
   return bankInfo.currentFilterCount < bankInfo.maxFilters;
 });
 
-// Computed property to get current filter count and limit for UI display
+/**
+  * Computed property to get the currently active filter bank information
+  * on the selected channel.
+  *
+  * @returns { FilterBankInfo | null} Returns the filterbankinfo if available and null if it didn't
+  * found anything.
+  */
 const currentChannelFilterInfo = computed(() => {
   if (!backendCapabilities.value) return null;
 
@@ -433,6 +456,12 @@ const currentChannelFilterInfo = computed(() => {
 
 
 // Initialize filter banks in the store
+/**
+  * Initializes the backend, loads the capabilities and loads the filter
+  * banks. Reloads the backend afterwards to update the filter count.
+  *
+  * Also checks for query parameters inside of the url so they can be applied.
+  */
 onMounted(async () => {
   const route = useRoute();
 

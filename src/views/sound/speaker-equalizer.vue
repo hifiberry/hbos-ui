@@ -874,8 +874,7 @@ async function endBypass() {
     // Restore all filter banks from bypass using the REST API
     const restorePromises: Promise<FilterBypassSetResponse>[] = [];
 
-    for (const [bankName] of previousFilterStates.value.entries()) {
-      // Only restore banks that were not originally bypassed
+    for (const bankName of previousFilterStates.value.entries()) {
       restorePromises.push(
         setFilterBankBypassState(bankName, false).catch((error: Error) => {
           console.error(`Failed to restore filter bank ${bankName}:`, error);

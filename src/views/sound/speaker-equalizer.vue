@@ -505,15 +505,14 @@ const channelMode = ref<ChannelMode>('individual');
 const leftFilters = ref<Filter[]>([]);
 const rightFilters = ref<Filter[]>([]);
 
-// Computed property for current filters based on channel mode
+/**
+  * Computed property that returns the current filter bank. The filterbank
+  * that gets returned is based on the `activeChannel.value`.
+
+  * @returns { Filter[] } The current active filter bank.
+  */
 const filters = computed(() => {
-  if (channelMode.value === 'both') {
-    // In both mode, show filters from the active channel
-    return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
-  } else {
-    // In individual mode, show filters from the active channel
-    return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
-  }
+  return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
 });
 
 const showAddFilterModal = ref(false);

@@ -968,6 +968,13 @@ const addFilterOfType = async (type: BiquadFilterType) => {
   }
 };
 
+/**
+  * Removes a filter from the current channel by its index.
+  * It will first delete the filter from the backend and
+  * then sync the frontend with the backend.
+  *
+  * @param {number} filterId - The filter that should be removed
+  */
 const removeFilter = async (filterId: number) => {
   await removeFilterFromCurrentChannel(filterId);
 
@@ -981,7 +988,19 @@ const removeFilter = async (filterId: number) => {
   await loadBackendCapabilities();
 };
 
-// Load EQ settings from a JSON file
+/**
+  * Loads the settings for the roomeq from a json file.
+  * Tells the browser to open a new file explorer and
+  * to only accept `.json` files.
+  *
+  * First reads the json file, then clears the old
+  * filters and then adds the new filters to the
+  * filter store: `filterStore.addFilter()`
+  *
+  * This function is the only function to make use
+  * of the `setCurrentFilterArray()` for legacy formats.
+  * This might be possible to remove in the future.
+  */
 const loadEQSettings = () => {
   const input = document.createElement('input');
   input.type = 'file';
@@ -1057,7 +1076,15 @@ const loadEQSettings = () => {
   input.click();
 };
 
-// Save current EQ settings to a JSON file
+/**
+  * Saves the eq settings into a json file. This json
+  * file is then automatically downloaded via the browser.
+  *
+  * This also stores the current filters (`filters`) into
+  * a seperate variable for legacy code, even though the
+  * left- and right filter banks are stored too. It might
+  * be possible to remove this in the future.
+  */
 const saveEQSettings = () => {
   const data = {
     filters: filters.value, // Keep for legacy compatibility
@@ -1081,7 +1108,11 @@ const saveEQSettings = () => {
   URL.revokeObjectURL(url);
 };
 
-// Load Room EQ configurations from config API
+/**
+  * Loads the eq settings from the room acoustics correction.
+  * If none is set up, or if it can't find any it will print
+  * a console log.
+  */
 const loadRoomEQSettings = async () => {
   showRoomEQModal.value = true;
   loadingRoomEQConfigs.value = true;

@@ -29,7 +29,7 @@
           :class="{ bypassed: isBypassed }"
           class="icon-btn"
           title="Bypass" />
-        <Icon icon="armchair" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
+        <Icon icon="tabler/armchair" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
         <Icon icon="folder_open" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
         <Icon icon="save" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
       </div>

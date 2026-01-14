@@ -174,7 +174,7 @@ function getCurrentFilterArray(): Filter[] {
 }
 
 /**
-  * Adds a filter to the global `filters` array.
+  * Adds a filter to the global `currentFilterArray` array.
   */
 function addItemToFilters() {
   // Get current filter length so the id can be calculated later on

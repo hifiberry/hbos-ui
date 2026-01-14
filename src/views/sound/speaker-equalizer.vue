@@ -1163,11 +1163,11 @@ const loadRoomEQSettings = async () => {
   * Convert room acoustics correction eq to speaker
   * eq filter format (`BiquadFilterType`).
   *
-  * @param {RoomEQConfig['filters'][0]} roomEQFilter - the room acoustics correction filter's string for
+  * @param {string} roomEQFilter - the room acoustics correction filter's string for
   * the type.
   * @param {number} index - the index inside of the filters array
   */
-const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: RoomEQConfig['filters'][0], index: number): Filter => {
+const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: string, index: number): Filter => {
   // Map Room EQ filter types to Speaker EQ filter types
   const filterTypeMap: Record<string, BiquadFilterType> = {
     'hp': 'highpass',        // Room EQ uses 'hp'

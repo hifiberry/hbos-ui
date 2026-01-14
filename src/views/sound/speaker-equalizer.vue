@@ -1159,7 +1159,14 @@ const loadRoomEQSettings = async () => {
   }
 };
 
-// Convert Room EQ filter to Speaker EQ filter format
+/**
+  * Convert room acoustics correction eq to speaker
+  * eq filter format (`BiquadFilterType`).
+  *
+  * @param {RoomEQConfig['filters'][0]} roomEQFilter - the room acoustics correction filter's string for
+  * the type.
+  * @param {number} index - the index inside of the filters array
+  */
 const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: RoomEQConfig['filters'][0], index: number): Filter => {
   // Map Room EQ filter types to Speaker EQ filter types
   const filterTypeMap: Record<string, BiquadFilterType> = {

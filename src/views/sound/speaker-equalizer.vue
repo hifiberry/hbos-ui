@@ -1194,7 +1194,9 @@ const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: string, index: number): Fi
   };
 };
 
-// Load the selected Room EQ configuration
+/**
+  * Loads the selected room acoustics correction eq config.
+  */
 const loadSelectedRoomEQConfig = async () => {
   if (!selectedRoomEQConfig.value) return;
 
@@ -1239,8 +1241,12 @@ const loadSelectedRoomEQConfig = async () => {
   }
 };
 
-// Helper function to apply changes to multiple channels based on current mode
-// Supports future expansion beyond left/right to A,B,C,D,E,F,G,H or C1,C2,C3,C4 etc.
+/**
+  * Increments the filter's frequency. How much the frequency
+  * changes is based on the global const `CONFIG_STEPS_PER_OCTAVE`.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function incrementFilterFrequency(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1254,6 +1260,12 @@ function incrementFilterFrequency(filter: Filter) {
   });
 }
 
+/**
+  * Decrements the filter's frequency. How much the frequency
+  * changes is based on the global const `CONFIG_STEPS_PER_OCTAVE`.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function decrementFilterFrequency(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1267,6 +1279,11 @@ function decrementFilterFrequency(filter: Filter) {
   });
 }
 
+/**
+  * Increments the passed filter's gain by 0.5.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function incrementFilterGain(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1274,6 +1291,11 @@ function incrementFilterGain(filter: Filter) {
   });
 }
 
+/**
+  * Decrements the passed filter's gain by 0.5.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function decrementFilterGain(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1281,6 +1303,13 @@ function decrementFilterGain(filter: Filter) {
   });
 }
 
+/**
+  * Widens the passed filter's band based on the global const
+  * `CONFIG_Q_STEP_FACTOR`. The minimal value that the Q can
+  * go to is `0.1`.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function widenFilterBand(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1291,6 +1320,13 @@ function widenFilterBand(filter: Filter) {
   });
 }
 
+/**
+  * Narrows the passed filter's band based on the global const
+  * `CONFIG_Q_STEP_FACTOR`. The maximum value that the Q can
+  * go to is `25.0`.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function narrowFilterBand(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1301,6 +1337,14 @@ function narrowFilterBand(filter: Filter) {
   });
 }
 
+/**
+  * Updates a generic biquad filter, where the coefficients
+  * can be typed in manually.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  * @param {string} coeffName - The name of the coefficient (B0, B1, B2, A1, A2)
+  * @param {event} event - Event object to find the value of the input field
+  */
 function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
   const target = event.target as HTMLInputElement;
   const value = parseFloat(target.value);
@@ -1314,6 +1358,13 @@ function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
   updateGenericCoeffLinked(config, filter.id, coeffName, value);
 }
 
+/**
+  * Toggles a filter to be either enabled or disabled.
+  * Logs out an error and displays an alert if it failed
+  * to toggle the filter.
+  *
+  * @param {Filter} filter - The filter that should be toggled
+  */
 async function toggleFilterEnabled(filter: Filter) {
   try {
     const config = createLinkedChannelConfig();
@@ -1325,8 +1376,16 @@ async function toggleFilterEnabled(filter: Filter) {
   }
 }
 
-// Inline graph code removed in favor of FilterGraph component
-
+/**
+  * Callback function to handle a keypress event.
+  * Closes theopen modal if the ESC-key is pressed.
+  *
+  * If the spacebar is pressed, it will start the
+  * bypass mode.
+  *
+  * @param {KeyboardEvent} e - Keyboard event that contains more information about what key is being
+  * pressed.
+  */
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     if (showAddFilterModal.value) {
@@ -1345,6 +1404,11 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 };
 
+/**
+  * Callback function to hanlde a key up event.
+  * This will end the bypass that was enabled
+  * using the space key (or any other bypass).
+  */
 const handleKeyup = (e: KeyboardEvent) => {
   // Release spacebar to end bypass
   if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value) {
@@ -1353,18 +1417,31 @@ const handleKeyup = (e: KeyboardEvent) => {
   }
 };
 
+/**
+  * Adds eventlistener for the keydown and keyup events.
+  * Attaches the corresponding callback functions onto
+  * the events.
+  */
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('keyup', handleKeyup);
 });
 
+/**
+  * Removes the eventlisteners from the window when
+  * the component is unloaded.
+  */
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('keyup', handleKeyup);
   document.body.style.userSelect = '';
 });
 
-// Watch both filter arrays for changes
+/**
+  * Watch both filter arrays for changes.
+  * If any change occured, update the filter's
+  * frequency in the ui.
+  */
 watch([leftFilters, rightFilters], () => {
   leftFilters.value.forEach((f) => {
     f.text = `${f.frequency}`;
@@ -1374,7 +1451,10 @@ watch([leftFilters, rightFilters], () => {
   });
 }, { deep: true });
 
-// Watch for active channel changes to reload capabilities
+/**
+  * Reload the backend's capabilities if any
+  * changes happen in the active channel.
+  */
 watch(activeChannel, async () => {
   await loadBackendCapabilities();
 });

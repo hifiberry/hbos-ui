@@ -767,9 +767,9 @@ async function toggleChannelMode() {
       const config = createLinkedChannelConfig();
       await copyFiltersToChannels(config, sourceChannelName, [targetChannelName]);
 
-      console.log(`Synced filters from ${sourceChannelName} to ${targetChannelName} channel when linking channels`);
+      console.log(`speaker-equalizer: Copied filters from ${sourceChannelName} to ${targetChannelName} channel.`);
     } catch (error) {
-      console.error(`Failed to sync filters to ${targetChannelName} channel:`, error);
+      console.error(`speaker-equalizer: Failed to sync filters to ${targetChannelName} channel:`, error);
     }
   }
 }

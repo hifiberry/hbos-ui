@@ -71,6 +71,15 @@ and to find issues that might be overlooked otherwise.
 npm run lint
 ```
 
+### Type checking
+Since TypeScript has a typing system, this should also be taken
+into account while developing. Use the [vue-tsc](https://www.npmjs.com/package/vue-tsc)
+to check if your types are correct:
+
+```bash
+npm run type-check
+```
+
 ### Building
 To build this project, use the following command:
 ```bash

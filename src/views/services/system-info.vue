@@ -752,21 +752,12 @@ import {
   updateHostname,
   getSoundCards,
   setSoundCardDtoverlay,
-  detectSoundCard,
   rebootSystem,
-  executeScript,
   getCacheStats,
   getBackgroundJobs,
   type SystemInfo,
-  type HostnameUpdateRequest,
-  type SoundCardsResponse,
   type SoundCard,
-  type SetDtoverlayRequest,
-  type SoundCardDetectionResponse,
-  type RebootRequest,
-  type ScriptExecutionRequest,
   type CacheStatsResponse,
-  type ImageCacheStats,
   type BackgroundJobsResponse,
   type BackgroundJob,
   checkFileExistence,
@@ -1515,6 +1506,7 @@ const fetchBackgroundServices = async () => {
               }
             } catch (jsonError) {
               console.log(`${service.name} is available (${responseTime}ms) - Could not parse version info`)
+              console.log("system-info:", jsonError)
             }
           } else {
             console.log(`${service.name} is available (${responseTime}ms)`)

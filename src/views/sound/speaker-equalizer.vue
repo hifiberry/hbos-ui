@@ -623,18 +623,6 @@ const createLinkedChannelConfig = (): LinkedChannelConfig => {
 };
 
 /**
-  * Adds a new filter to the current linked channels. In here,
-  * the *linked channels* will always be `leftChannel.value`
-  * and `rightChannel.value`.
-  *
-  * @param {Filter} filter - The filter that should be added to the linked channels
-  */
-const addFilterToCurrentChannel = async (filter: Filter) => {
-  const config = createLinkedChannelConfig();
-  await addFilterToLinkedChannels(config, filter);
-};
-
-/**
   * Removes a filter from the linked channels by id.
   *
   * @param {number} filterId - The filter that should be added to the linked channels
@@ -918,11 +906,6 @@ function setActiveFilter(id: number) {
   * of the add filter modal. The available filter types
   * are stored inside the `AVAILABLE_FILTER_TYPES` variable.
   *
-  * This function is basically a wrapper around the
-  * `addFilterToCurrentChannel()` function. It just creates
-  * the filter of a given type and passes it into the previously
-  * mentioned function.
-  *
   * It also handles the ui by setting the newly added filter
   * as the active one, reloading the backend's capabilities
   * so it shows the filter count correctly and also closes
@@ -954,7 +937,8 @@ const addFilterOfType = async (type: BiquadFilterType) => {
       };
     }
 
-    await addFilterToCurrentChannel(newFilter);
+    const config = createLinkedChannelConfig();
+    await addFilterToLinkedChannels(config, newFilter);
     setActiveFilter(newId); // Make the newly added filter active
 
     // Reload capabilities to update the UI filter counts

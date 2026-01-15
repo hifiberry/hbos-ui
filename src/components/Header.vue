@@ -36,9 +36,6 @@ import VolumeControl from '@/components/VolumeControl.vue'
 // Dark mode
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
-
-// Logo URL (optional)
-const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 </script>
 
 <style scoped lang="scss">

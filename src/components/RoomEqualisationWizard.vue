@@ -791,16 +791,6 @@ const saveConfiguration = async () => {
   }
 }
 
-const finish = () => {
-  emit('equalisationSetup', {
-    targetCurve: targetCurve.value,
-    targetCurvePoints: targets.value[targetCurve.value],
-    range: { min: rangeMin.value, max: rangeMax.value },
-  limits: { maxBoost: maxBoost.value, maxCut: maxCut.value }
-  })
-  closeWizard()
-}
-
 const loadTargets = async () => {
   try {
     loadingTargets.value = true

@@ -112,5 +112,4 @@ The build process includes:
 ### Getting Help
 
 - Check [Known Issues](./fixes-needed.md) for documented problems
-- Review [Development Roadmap](./development.md) for feature status
 - See [Component Documentation](./button-system.md) for usage examples

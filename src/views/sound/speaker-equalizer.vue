@@ -971,12 +971,6 @@ const loadEQSettings = () => {
       reader.onload = async (e) => {
         try {
           const data = JSON.parse(e.target?.result as string);
-          const loadedFilters = data.filters.map((filter: Filter, index: number) => ({
-            ...filter,
-            frequency: Math.round(filter.frequency), // Round frequency to full hertz
-            id: Date.now() + index // Ensure unique IDs
-          }));
-
           // Load filters to current channel or both channels based on mode
           if (data.leftFilters && data.rightFilters) {
             // New format with separate channels

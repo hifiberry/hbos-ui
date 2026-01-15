@@ -13,7 +13,6 @@
 
 <script setup lang="ts">
 import PageContent from '@/components/PageContent.vue'
-import ContentBox from '@/components/ContentBox.vue'
 import BluetoothSettings from '@/components/BluetoothSettings.vue'
 import BluetoothDevices from '@/components/BluetoothDevices.vue'
 </script>

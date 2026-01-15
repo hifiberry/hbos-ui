@@ -7,9 +7,10 @@
 </template>
 
 <script setup lang="ts">
-import ContentBox from "@/components/ContentBox.vue"
+import type { RouteLocationRaw } from 'vue-router';
+import ContentBox from "@/components/ContentBox.vue";
 
-const { to, height } = defineProps<{ to: any, height?: number }>()
+const { to, height } = defineProps<{ to: RouteLocationRaw, height?: number }>()
 </script>
 
 <style scoped lang="scss">

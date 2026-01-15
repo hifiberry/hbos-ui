@@ -560,28 +560,6 @@ const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
 const isDragging = ref(false);
 
 /**
-  * Replaces the current filter array with a new filter array, which is passed in
-  * as an argument. Determinates the current filter array using the `channelMode.value`
-  * ref object.
-  *
-  * @param {Filter[]} newFilters - the filter array that should be written into the filter array.
-  */
-const setCurrentFilterArray = (newFilters: Filter[]) => {
-  if (channelMode.value === 'both') {
-    // When in both mode, update both channels
-    leftFilters.value = [...newFilters];
-    rightFilters.value = [...newFilters];
-  } else {
-    // When in individual mode, update only the active channel
-    if (activeChannel.value === 'left') {
-      leftFilters.value = newFilters;
-    } else {
-      rightFilters.value = newFilters;
-    }
-  }
-};
-
-/**
   * Returns a config for both channels (linked channels). This is useful
   * when trying to change both channels at once. For example: i want to
   * change the frequency of a filter on both channels. Normally i would
@@ -981,9 +959,6 @@ const removeFilter = async (filterId: number) => {
   * filters and then adds the new filters to the
   * filter store: `filterStore.addFilter()`
   *
-  * This function is the only function to make use
-  * of the `setCurrentFilterArray()` for legacy formats.
-  * This might be possible to remove in the future.
   */
 const loadEQSettings = () => {
   const input = document.createElement('input');
@@ -996,47 +971,36 @@ const loadEQSettings = () => {
       reader.onload = async (e) => {
         try {
           const data = JSON.parse(e.target?.result as string);
-          if (data.filters && Array.isArray(data.filters)) {
-            const loadedFilters = data.filters.map((filter: Filter, index: number) => ({
+          const loadedFilters = data.filters.map((filter: Filter, index: number) => ({
+            ...filter,
+            frequency: Math.round(filter.frequency), // Round frequency to full hertz
+            id: Date.now() + index // Ensure unique IDs
+          }));
+
+          // Load filters to current channel or both channels based on mode
+          if (data.leftFilters && data.rightFilters) {
+            // New format with separate channels
+            leftFilters.value = data.leftFilters.map((filter: Filter, index: number) => ({
               ...filter,
               frequency: Math.round(filter.frequency), // Round frequency to full hertz
-              id: Date.now() + index // Ensure unique IDs
+              id: Date.now() + index
+            }));
+            rightFilters.value = data.rightFilters.map((filter: Filter, index: number) => ({
+              ...filter,
+              frequency: Math.round(filter.frequency), // Round frequency to full hertz
+              id: Date.now() + index + 1000
             }));
 
-            // Load filters to current channel or both channels based on mode
-            if (data.leftFilters && data.rightFilters) {
-              // New format with separate channels
-              leftFilters.value = data.leftFilters.map((filter: Filter, index: number) => ({
-                ...filter,
-                frequency: Math.round(filter.frequency), // Round frequency to full hertz
-                id: Date.now() + index
-              }));
-              rightFilters.value = data.rightFilters.map((filter: Filter, index: number) => ({
-                ...filter,
-                frequency: Math.round(filter.frequency), // Round frequency to full hertz
-                id: Date.now() + index + 1000
-              }));
+            // Update filter store with loaded filters
+            await filterStore.clearFiltersFromBank('left');
+            await filterStore.clearFiltersFromBank('right');
 
-              // Update filter store with loaded filters
-              await filterStore.clearFiltersFromBank('left');
-              await filterStore.clearFiltersFromBank('right');
+            for (const [index, filter] of leftFilters.value.entries()) {
+              await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
+            }
 
-              for (const [index, filter] of leftFilters.value.entries()) {
-                await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
-              }
-
-              for (const [index, filter] of rightFilters.value.entries()) {
-                await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
-              }
-            } else {
-              // Legacy format - load to current channel
-              setCurrentFilterArray(loadedFilters);
-
-              // Update filter store for current channel
-              await filterStore.clearFiltersFromBank(activeChannel.value);
-              for (const [index, filter] of loadedFilters.entries()) {
-                await filterStore.addFilter(activeChannel.value, index, convertUIFilterToStore(filter));
-              }
+            for (const [index, filter] of rightFilters.value.entries()) {
+              await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
             }
 
             // Set the first filter as active if any exist

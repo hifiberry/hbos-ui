@@ -382,9 +382,9 @@ const loadBackendCapabilities = async () => {
   try {
     backendCapabilities.value = await filterStore.getBackendCapabilities();
     backendName.value = backendCapabilities.value?.backendName || '';
-    console.log('Backend capabilities loaded:', backendCapabilities.value);
+    console.log('speaker-equalizer: Backend capabilities loaded:', backendCapabilities.value);
   } catch (error) {
-    console.error('Failed to load backend capabilities:', error);
+    console.error('speaker-equalizer: Failed to load backend capabilities:', error);
   }
 };
 
@@ -412,9 +412,9 @@ const loadFiltersFromBackend = async () => {
       rightFilters.value = backendFilters.right.filters.map((filter, index) => convertStoreFilterToUI(filter, `right_${index + 1}`));
     }
 
-    console.log('Loaded filters from backend:', { leftCount: leftFilters.value.length, rightCount: rightFilters.value.length });
+    console.log('speaker-equalizer: Loaded filters from backend:', { leftCount: leftFilters.value.length, rightCount: rightFilters.value.length });
   } catch (error) {
-    console.error('Failed to load filters from backend:', error);
+    console.error('speaker-equalizer: Failed to load filters from backend:', error);
   }
 };
 
@@ -793,7 +793,7 @@ async function startBypass() {
     // Bypass all filter banks using the REST API
     const bypassPromises: Promise<FilterBypassSetResponse>[] = banksToBypass.map(bankName =>
       setFilterBankBypassState(bankName, true).catch((error: Error) => {
-        console.error(`Failed to bypass filter bank ${bankName}:`, error);
+        console.error(`speaker-equalizer: Failed to bypass filter bank ${bankName}:`, error);
         throw error;
       })
     );
@@ -808,10 +808,10 @@ async function startBypass() {
       successfulOperations += result.successful || 0;
     });
 
-    console.log(`Successfully bypassed ${successfulOperations}/${totalFilters} filters across ${banksToBypass.length} banks`);
+    console.log(`speaker-equalizer: Successfully bypassed ${successfulOperations}/${totalFilters} filters across ${banksToBypass.length} banks`);
 
   } catch (error) {
-    console.error('Failed to start bypass:', error);
+    console.error('speaker-equalizer: Failed to start bypass:', error);
     // Reset bypass state if something went wrong
     isBypassed.value = false;
   }
@@ -832,7 +832,7 @@ async function endBypass() {
 
   // If there were no filter banks to restore, just return
   if (previousFilterStates.value.size === 0) {
-    console.log('No filter banks to restore from bypass');
+    console.log('speaker-equalizer: No filter banks to restore from bypass');
     return;
   }
 
@@ -843,7 +843,7 @@ async function endBypass() {
     for (const bankName of previousFilterStates.value.entries()) {
       restorePromises.push(
         setFilterBankBypassState(bankName, false).catch((error: Error) => {
-          console.error(`Failed to restore filter bank ${bankName}:`, error);
+          console.error(`speaker-equalizer: Failed to restore filter bank ${bankName}:`, error);
           throw error;
         })
       );
@@ -859,13 +859,13 @@ async function endBypass() {
       successfulOperations += result.successful || 0;
     });
 
-    console.log(`Successfully restored ${successfulOperations}/${totalFilters} filters across ${restorePromises.length} banks`);
+    console.log(`speaker-equalizer: Successfully restored ${successfulOperations}/${totalFilters} filters across ${restorePromises.length} banks`);
 
     // Clear the stored states
     previousFilterStates.value = [];
 
   } catch (error) {
-    console.error('Failed to end bypass:', error);
+    console.error('speaker-equalizer: Failed to end bypass:', error);
   }
 }
 
@@ -924,7 +924,7 @@ const addFilterOfType = async (type: BiquadFilterType) => {
 
     showAddFilterModal.value = false;
   } catch (error) {
-    console.error('Failed to add filter:', error);
+    console.error('speaker-equalizer: Failed to add filter:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     alert(`Failed to add filter: ${errorMessage}`);
   }
@@ -1014,7 +1014,7 @@ const loadEQSettings = () => {
             if (data.activeChannel) activeChannel.value = data.activeChannel;
           }
         } catch (error) {
-          console.error('Error loading Speaker EQ settings:', error);
+          console.error('speaker-equalizer: Error loading Speaker EQ settings:', error);
           alert('Error loading Speaker EQ settings. Please check the file format.');
         }
       };
@@ -1084,7 +1084,7 @@ const loadRoomEQSettings = async () => {
               configs.push({ key, data: configData });
             }
           } catch (parseError) {
-            console.warn(`Failed to parse Room EQ config ${key}:`, parseError);
+            console.warn(`speaker-equalizer: Failed to parse Room EQ config ${key}:`, parseError);
           }
         }
       }
@@ -1096,10 +1096,10 @@ const loadRoomEQSettings = async () => {
   } catch (error) {
     // If we get a 404 or other error, it likely means no configurations exist yet
     if (error instanceof Error && error.message.includes('404')) {
-      console.log('No Room EQ configurations found (404) - this is normal for a fresh installation');
+      console.log('speaker-equalizer: No Room EQ configurations found (404) - this is normal for a fresh installation');
       roomEQConfigs.value = [];
     } else {
-      console.error('Failed to load Room EQ configurations:', error);
+      console.error('speaker-equalizer: Failed to load Room EQ configurations:', error);
       roomEQConfigs.value = [];
     }
   } finally {
@@ -1182,9 +1182,9 @@ const loadSelectedRoomEQConfig = async () => {
     }
 
     showRoomEQModal.value = false;
-    console.log(`✅ Loaded Room EQ configuration "${config.name}" to ${roomEQChannelMode.value} channel(s)`);
+    console.log(`speaker-equalizer: Loaded Room EQ configuration "${config.name}" to ${roomEQChannelMode.value} channel(s)`);
   } catch (error) {
-    console.error('Failed to load Room EQ configuration:', error);
+    console.error('speaker-equalizer: Failed to load Room EQ configuration:', error);
     alert('Error loading Room EQ configuration. Please try again.');
   }
 };
@@ -1318,7 +1318,7 @@ async function toggleFilterEnabled(filter: Filter) {
     const config = createLinkedChannelConfig();
     await toggleFilterEnabledLinked(config, filter.id);
   } catch (error) {
-    console.error('Failed to toggle filter enabled state:', error);
+    console.error('speaker-equalizer: Failed to toggle filter enabled state:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     alert(`Failed to toggle filter: ${errorMessage}`);
   }

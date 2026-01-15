@@ -14,7 +14,6 @@ This directory contains technical documentation for the HiFiBerryOS WebUI projec
 
 ### Development Documentation
 
-- **[Development Roadmap](./development.md)** - Project phases, features, and development progress
 - **[Known Issues & Fixes](./fixes-needed.md)** - Current issues, fixes needed, and technical notes
 
 ## Quick Links
@@ -34,8 +33,6 @@ This directory contains technical documentation for the HiFiBerryOS WebUI projec
 
 ### Development
 
-- [Phase 1 Features](./development.md#phase-1)
-- [Phase 2 Features](./development.md#phase-2)
 - [WebSocket Issues](./fixes-needed.md#websocket)
 
 ## Contributing

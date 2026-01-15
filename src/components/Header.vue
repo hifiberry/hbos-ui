@@ -28,7 +28,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
 import SongControlInfo from '@/components/SongControlInfo.vue'
 import VolumeControl from '@/components/VolumeControl.vue'

@@ -31,6 +31,17 @@ npm run dev-server
 Please follow the code guidelines described in this section.
 This is to improve readability and avoid poorly written code.
 
+### Components
+Please organize the component to follow this scheme:
+```typescript
+    <script setup lang="ts">
+        /* IMPORTS */
+        /* PROPS */
+        /* GLOBAL DEFINITIONS */
+        /* FUNCTIONS */
+    </script>
+```
+
 ### Casing
 - Global variables: `UPPER_CASE_SNAKE_CASE`
 - Functions: `camelCase`

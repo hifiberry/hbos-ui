@@ -332,6 +332,7 @@ import {
 } from '@/api/dsptoolkit';
 
 import { getConfigKeys, getConfigValue } from '@/api/config';
+import { type RoomEQFilter } from '@/api/roomeq';
 
 import {
   type LinkedChannelConfig,
@@ -1105,11 +1106,11 @@ const loadRoomEQSettings = async () => {
   * Convert room acoustics correction eq to speaker
   * eq filter format (`BiquadFilterType`).
   *
-  * @param {string} roomEQFilter - the room acoustics correction filter's string for
+  * @param {RoomEQFilter} roomEQFilter - the room acoustics correction filter's string for
   * the type.
   * @param {number} index - the index inside of the filters array
   */
-const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: string, index: number): Filter => {
+const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: RoomEQFilter, index: number): Filter => {
   // Map Room EQ filter types to Speaker EQ filter types
   const filterTypeMap: Record<string, BiquadFilterType> = {
     'hp': 'highpass',        // Room EQ uses 'hp'

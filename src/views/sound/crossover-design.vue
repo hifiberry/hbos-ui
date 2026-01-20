@@ -93,7 +93,7 @@ const backendName = ref("");
   */
 onMounted(() => {
   loadBackendCapabilities();
-  loadFiltersFromBackend();
+  filterStore.createMultipleFilterBanks(['A', 'B', 'C', 'D']);
 })
 
 /**
@@ -108,43 +108,6 @@ const loadBackendCapabilities = async () => {
     console.log("Backend capabilities loaded:", backendCapabilities.value);
   } catch (error) {
     console.error("Failed to load backend capabilities:", error);
-  }
-}
-
-/**
-  * Loads the filters from the given backend and stores them in
-  * the according `channelX` filter array, where `X` is the
-  * channel letter.
-  */
-const loadFiltersFromBackend = async () => {
-  try {
-    await filterStore.syncFromBackend();
-    const backendFilters = filterStore.filterBanks;
-
-    if (backendFilters.channelA?.filters) {
-      channelAFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelA_${index + 1}`));
-    }
-
-    if (backendFilters.channelB?.filters) {
-      channelBFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelB_${index + 1}`));
-    }
-
-    if (backendFilters.channelC?.filters) {
-      channelCFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelC_${index + 1}`));
-    }
-
-    if (backendFilters.channelD?.filters) {
-      channelDFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelD_${index + 1}`));
-    }
-
-    console.log("Loaded filters from backend:", {
-      channelACount: channelAFilters.value.length,
-      channelBCount: channelBFilters.value.length,
-      channelCCount: channelCFilters.value.length,
-      channelDCount: channelDFilters.value.length
-    });
-  } catch (error) {
-    console.error("Failed to load filters from backend:", error);
   }
 }
 
@@ -177,18 +140,15 @@ function getCurrentFilterArray(): Filter[] {
   * Adds a filter to the global `currentFilterArray` array.
   */
 function addItemToFilters() {
-  // Get current filter length so the id can be calculated later on
-  const filterLength = currentFilterArray.value.length;
-
-  currentFilterArray.value.push({
-    id: filterLength+1,
+  const filter = {
     icon: 'peaking',
-    text: 'Band ' + filterLength+1,
     frequency: 800,
     gain: 0,
     Q: 1.2,
     enabled: true
-  });
+  };
+
+  filterStore.addFilter('A', 0, filter);
 }
 
 /**

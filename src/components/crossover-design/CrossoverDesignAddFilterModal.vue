@@ -6,10 +6,12 @@
           <button @click="close()">Close</button>
           <div class="modal-buttons-div">
             <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
-              :class="['filter-type-option']"
+              class="modal-filter-type-button"
               @click="addFilter(type)">
               <Icon :icon="getFilterIconName(type)" class="filter-icon" />
-              <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
+              <span class="filter-name">
+                {{ formatFilterTypeName(type) }}
+              </span>
             </button>
           </div>
         </div>
@@ -70,21 +72,6 @@ async function addFilter(type: BiquadFilterType) {
 </script>
 
 <style>
-button {
-  color: var(--color-body);
-  transition: all 0.25s;
-}
-
-button:disabled, button:disabled:hover {
-  color: var(--color-body);
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-button:hover {
-  color: var(--primary);
-}
-
 .modal {
   position: fixed;
   inset: 0;
@@ -109,6 +96,25 @@ button:hover {
 .modal-buttons-div {
   display: flex;
   flex-direction: row;
+}
+
+.modal-filter-type-button {
+  color: var(--color-body);
+  transition: all 0.25s;
+
+  border: 2px solid var(--color-body);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 10px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &:hover {
+    border: 2px solid var(--primary);
+    background: rgba(225, 30, 74, 0.1);
+  }
 }
 </style>
 

@@ -111,6 +111,11 @@ const loadBackendCapabilities = async () => {
   }
 }
 
+/**
+  * Gets the filters for all the channels from the filterstore (backend),
+  * converts them to ui-filters and loads them into the corresponding
+  * filter array.
+  */
 function getFiltersFromFilterStore() {
   channelAFilters.value = filterStore.getFiltersFromBank('A').map((filter, index) =>
   convertStoreFilterToUI(filter, `A_${index}`));

@@ -7,7 +7,7 @@
         <div class="filtergraph-container">
           <div class="filtergraph-header">
             <h2>
-              {{ currentChannel }}
+              Channel {{ currentChannel }}
             </h2>
             <p>
               {{ backendName }}
@@ -27,23 +27,23 @@
           />
           <div class="filtergraph-channel-selector">
             <button
-              :class="{ 'channel-selector-active': currentChannel === 'Channel A' }"
-              @click="currentChannel='Channel A'">
+              :class="{ 'channel-selector-active': currentChannel === 'A' }"
+              @click="currentChannel='A'">
               Channel A
             </button>
             <button
-              :class="{ 'channel-selector-active': currentChannel === 'Channel B' }"
-              @click="currentChannel='Channel B'">
+              :class="{ 'channel-selector-active': currentChannel === 'B' }"
+              @click="currentChannel='B'">
               Channel B
             </button>
             <button
-              :class="{ 'channel-selector-active': currentChannel === 'Channel C' }"
-              @click="currentChannel='Channel C'">
+              :class="{ 'channel-selector-active': currentChannel === 'C' }"
+              @click="currentChannel='C'">
               Channel C
             </button>
             <button
-              :class="{ 'channel-selector-active': currentChannel === 'Channel D' }"
-              @click="currentChannel='Channel D'">
+              :class="{ 'channel-selector-active': currentChannel === 'D' }"
+              @click="currentChannel='D'">
               Channel D
             </button>
           </div>
@@ -75,7 +75,7 @@ const channelAFilters = ref<Filter[]>([]);
 const channelBFilters = ref<Filter[]>([]);
 const channelCFilters = ref<Filter[]>([]);
 const channelDFilters = ref<Filter[]>([]);
-const currentChannel = ref<string>("Channel A");
+const currentChannel = ref<string>("A");
 const currentFilterArray = computed(() => {
   return getCurrentFilterArray();
 });
@@ -114,6 +114,16 @@ const loadBackendCapabilities = async () => {
 function getFiltersFromFilterStore() {
   channelAFilters.value = filterStore.getFiltersFromBank('A').map((filter, index) =>
   convertStoreFilterToUI(filter, `A_${index}`));
+
+  channelBFilters.value = filterStore.getFiltersFromBank('B').map((filter, index) =>
+  convertStoreFilterToUI(filter, `B_${index}`));
+
+  channelCFilters.value = filterStore.getFiltersFromBank('C').map((filter, index) =>
+  convertStoreFilterToUI(filter, `C_${index}`));
+
+  channelDFilters.value = filterStore.getFiltersFromBank('D').map((filter, index) =>
+  convertStoreFilterToUI(filter, `D_${index}`));
+
   console.log("crossover-design: Filters loaded from the filterStore");
   console.log("crossover-design: channelAFilters: ", channelAFilters.value);
 }
@@ -124,16 +134,16 @@ function getFiltersFromFilterStore() {
   */
 function getCurrentFilterArray(): Filter[] {
   switch (currentChannel.value) {
-    case "Channel A":
+    case "A":
       return channelAFilters.value;
       break;
-    case "Channel B":
+    case "B":
       return channelBFilters.value;
       break;
-    case "Channel C":
+    case "C":
       return channelCFilters.value;
       break;
-    case "Channel D":
+    case "D":
       return channelDFilters.value;
       break;
 
@@ -155,7 +165,7 @@ async function addItemToFilters() {
     enabled: true
   };
 
-  await filterStore.addFilter('A', 0, filter);
+  await filterStore.addFilter(currentChannel.value, 0, filter);
 
   getFiltersFromFilterStore();
 }

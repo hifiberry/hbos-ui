@@ -5,7 +5,12 @@
         <button @click="close()">Close</button>
         <div class="modal-content">
           CrossoverDesignAddFilterModal
-          <button @click="addFilter()">add filter</button>
+          <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
+            :class="['filter-type-option']"
+            @click="addFilter(type)">
+            <Icon :icon="getFilterIconName(type)" class="filter-icon" />
+            <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
+          </button>
         </div>
       </ContentBox>
     </div>
@@ -17,7 +22,11 @@
 import { ref } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
 import { useFilterStore } from '@/stores/filter_connector';
+import { type BiquadFilterType } from '@/utils/biquad';
+import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
+import Icon from '@/components/Icon.vue';
 import ContentBox from '@/components/ContentBox.vue'
+
 
 
 /* PROPS */
@@ -30,6 +39,7 @@ const { open, currentChannel } = defineProps({
 /* GLOBAL DEFINITIONS */
 const emit = defineEmits(['update:open'])
 const filterStore = useFilterStore();
+const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowpass', 'peaking', 'highpass'];
 
 
 /* FUNCTIONS */
@@ -43,12 +53,12 @@ function close() {
   emit('update:open', false)
 }
 
-async function addFilter() {
+async function addFilter(type: BiquadFilterType) {
   const filter = {
-    icon: 'peaking',
+    type: type,
     frequency: 800,
     gain: 0,
-    Q: 1.2,
+    q: 0.8,
     enabled: true
   };
 

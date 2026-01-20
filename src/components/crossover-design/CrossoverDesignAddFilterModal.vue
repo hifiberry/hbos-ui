@@ -5,6 +5,7 @@
         <button @click="close()">Close</button>
         <div class="modal-content">
           CrossoverDesignAddFilterModal
+          <button @click="addFilter()">add filter</button>
         </div>
       </ContentBox>
     </div>
@@ -19,8 +20,9 @@ import ContentBox from '@/components/ContentBox.vue'
 
 
 /* PROPS */
-const { open } = defineProps({
-  open: { type: Boolean, required: true }
+const { open, currentChannel } = defineProps({
+  open: Boolean,
+  currentChannel: String
 })
 
 
@@ -37,6 +39,10 @@ const emit = defineEmits(['update:open'])
   */
 function close() {
   emit('update:open', false)
+}
+
+function addFilter() {
+  console.log("[CrossoverDesignAddFilterModal] currentChannel:", currentChannel);
 }
 </script>
 

@@ -54,7 +54,7 @@
           add filter
         </button>
       </ContentBox>
-      <CrossoverDesignAddFilterModal v-model:open="modalOpen" />
+      <CrossoverDesignAddFilterModal v-model:open="modalOpen" :currentChannel="currentChannel" />
     </div>
   </PageContent>
 </template>

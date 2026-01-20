@@ -163,6 +163,12 @@ function getCurrentFilterArray(): Filter[] {
   }
 }
 
+/**
+  * Watches for changes in the `openModal` ref.
+  * When the value is changed, it reloads the filters from the
+  * filterStore (the backend). This is done so after closing the
+  * modal (after adding a filter), the ui gets updated.
+  */
 watch(modalOpen, async () => {
   console.log("crossover-design: openModal value changed");
   getFiltersFromFilterStore();

@@ -40,7 +40,7 @@ const { open, currentChannel } = defineProps({
 /* GLOBAL DEFINITIONS */
 const emit = defineEmits(['update:open'])
 const filterStore = useFilterStore();
-const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowpass', 'peaking', 'highpass'];
+const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['highpass', 'peaking', 'lowpass' ];
 
 
 /* FUNCTIONS */

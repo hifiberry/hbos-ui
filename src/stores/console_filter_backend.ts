@@ -106,7 +106,6 @@ export class ConsoleFilterBackend extends FilterBackend {
       availableFilterBanks
     }
 
-    console.log(`[${this.name}] Backend capabilities:`, capabilities)
     return capabilities
   }
 

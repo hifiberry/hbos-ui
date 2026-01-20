@@ -175,6 +175,16 @@ async function addItemToFilters() {
   getFiltersFromFilterStore();
 }
 
+
+/**
+  * Helper function to get the backend position.
+  * This is used to find the filter to update in the
+  * backend while dragging the filter in the filtergraph.
+  */
+function findFilterPositionById(id: number): number {
+  return currentFilterArray.value.findIndex(f => f.id === id);
+}
+
 /**
   * Updates a filter's frequency and gain in the global `filters`
   * array.
@@ -184,19 +194,22 @@ async function addItemToFilters() {
   * @param {number} payload.frequency - The new frequency value (in Hz).
   * @param {number} payload.gain - The new gain value (in dB).
   */
-const onUpdateFreqGain = ({ id, frequency, gain }) => {
-  // Find the filter object that matches the supplied id.
-  const target = currentFilterArray.value.find(f => f.id === id);
+const onUpdateFreqGain = async ({ id, frequency, gain }) => {
+  const position = findFilterPositionById(id);
+  if (position === -1) return;
 
-  // Return if no matching filter was found.
-  if (!target) {
-    return;
-  }
+  // Update backend
+  await filterStore.updateFilter(currentChannel.value, position, {
+    frequency,
+    gain
+  });
 
-  // Update the properties.
+  // Optional: update UI immediately (optimistic)
+  const target = currentFilterArray.value[position];
   target.frequency = frequency;
   target.gain = gain;
-}
+};
+
 
 /**
   * Updates a filter's q in the global `filters` array.
@@ -204,18 +217,16 @@ const onUpdateFreqGain = ({ id, frequency, gain }) => {
   * @param {number} payload.id
   * @param {number} payload.Q
   */
-const onUpdateQ = ({ id, Q }) => {
-  // Find the filter that matches the supplied id.
-  const target = currentFilterArray.value.find(f => f.id === id);
+const onUpdateQ = async ({ id, Q }) => {
+  const position = findFilterPositionById(id);
+  if (position === -1) return;
 
-  // Return if no matching filter was found
-  if (!target) {
-    return;
-  }
+  await filterStore.updateFilter(currentChannel.value, position, { Q });
 
-  // Update the property.
+  const target = currentFilterArray.value[position];
   target.Q = Q;
-}
+};
+
 
 /**
   * Function that will be called when a filter is dragged.

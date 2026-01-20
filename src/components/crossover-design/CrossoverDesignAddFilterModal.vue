@@ -16,6 +16,7 @@
 /* IMPORTS */
 import { ref } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
+import { useFilterStore } from '@/stores/filter_connector';
 import ContentBox from '@/components/ContentBox.vue'
 
 
@@ -28,6 +29,7 @@ const { open, currentChannel } = defineProps({
 
 /* GLOBAL DEFINITIONS */
 const emit = defineEmits(['update:open'])
+const filterStore = useFilterStore();
 
 
 /* FUNCTIONS */
@@ -41,8 +43,18 @@ function close() {
   emit('update:open', false)
 }
 
-function addFilter() {
-  console.log("[CrossoverDesignAddFilterModal] currentChannel:", currentChannel);
+async function addFilter() {
+  const filter = {
+    icon: 'peaking',
+    frequency: 800,
+    gain: 0,
+    Q: 1.2,
+    enabled: true
+  };
+
+  await filterStore.addFilter(currentChannel, 0, filter);
+
+  close();
 }
 </script>
 

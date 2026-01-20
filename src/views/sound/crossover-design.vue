@@ -50,7 +50,7 @@
         </div>
       </ContentBox>
       <ContentBox>
-        <button @click="addFilter">
+        <button @click="modalOpen = true">
           add filter
         </button>
       </ContentBox>
@@ -161,26 +161,6 @@ function getCurrentFilterArray(): Filter[] {
       return channelAFilters.value;
       break;
   }
-}
-
-/**
-  * Adds a filter to the backend. It waits until the filter was
-  * added and then reads out all the filters from the backend
-  * (`getFiltersFromFilterStore()`) to sync the ui with the
-  * backend.
-  */
-async function addFilter() {
-  modalOpen.value = true;
-  const filter = {
-    icon: 'peaking',
-    frequency: 800,
-    gain: 0,
-    Q: 1.2,
-    enabled: true
-  };
-
-  await filterStore.addFilter(currentChannel.value, 0, filter);
-  getFiltersFromFilterStore();
 }
 
 watch(modalOpen, async () => {

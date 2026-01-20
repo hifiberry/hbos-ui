@@ -94,6 +94,7 @@ const backendName = ref("");
 onMounted(async () => {
   await filterStore.createMultipleFilterBanks(['A', 'B', 'C', 'D']);
   await loadBackendCapabilities();
+  getFiltersFromFilterStore();
 })
 
 /**

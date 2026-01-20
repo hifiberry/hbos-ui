@@ -50,7 +50,7 @@
         </div>
       </ContentBox>
       <ContentBox>
-        <button @click="addItemToFilters">
+        <button @click="addFilter">
           add filter
         </button>
       </ContentBox>
@@ -159,9 +159,12 @@ function getCurrentFilterArray(): Filter[] {
 }
 
 /**
-  * Adds a filter to the global `currentFilterArray` array.
+  * Adds a filter to the backend. It waits until the filter was
+  * added and then reads out all the filters from the backend
+  * (`getFiltersFromFilterStore()`) to sync the ui with the
+  * backend.
   */
-async function addItemToFilters() {
+async function addFilter() {
   const filter = {
     icon: 'peaking',
     frequency: 800,
@@ -171,7 +174,6 @@ async function addItemToFilters() {
   };
 
   await filterStore.addFilter(currentChannel.value, 0, filter);
-
   getFiltersFromFilterStore();
 }
 

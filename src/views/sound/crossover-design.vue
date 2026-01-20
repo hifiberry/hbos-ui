@@ -118,16 +118,16 @@ const loadBackendCapabilities = async () => {
   */
 function getFiltersFromFilterStore() {
   channelAFilters.value = filterStore.getFiltersFromBank('A').map((filter, index) =>
-  convertStoreFilterToUI(filter, `A_${index}`));
+  convertStoreFilterToUI(filter, filter.id));
 
   channelBFilters.value = filterStore.getFiltersFromBank('B').map((filter, index) =>
-  convertStoreFilterToUI(filter, `B_${index}`));
+  convertStoreFilterToUI(filter, filter.id));
 
   channelCFilters.value = filterStore.getFiltersFromBank('C').map((filter, index) =>
-  convertStoreFilterToUI(filter, `C_${index}`));
+  convertStoreFilterToUI(filter, filter.id));
 
   channelDFilters.value = filterStore.getFiltersFromBank('D').map((filter, index) =>
-  convertStoreFilterToUI(filter, `D_${index}`));
+  convertStoreFilterToUI(filter, filter.id));
 
   console.log("crossover-design: Filters loaded from the filterStore");
   console.log("crossover-design: channelAFilters: ", channelAFilters.value);

@@ -5,25 +5,47 @@
         <p>no filters in the current channel</p>
       </template>
       <div v-for="filter in props.filterList" class="filter-list-entry">
-        <Icon :icon="getFilterIconName(filter.icon)" />
-        <p>
-          {{ filter.icon }}
-        </p>
+        <div class="filter-list-entry-info">
+          <p>
+            position: {{ filter.id }}
+          </p>
+          <Icon :icon="getFilterIconName(filter.icon)" />
+          <p>
+            {{ filter.icon }}
+          </p>
+        </div>
+        <button @click="removeFilter(filter.id)">
+          remove
+        </button>
       </div>
     </div>
   </ContentBox>
 </template>
 
 <script setup lang="ts">
+/* IMPORTS */
 import { type Filter } from '@/utils/filtercalc';
 import { getFilterIconName } from '@/utils/filter-display';
+import { useFilterStore } from '@/stores/filter_connector';
 import ContentBox from '@/components/ContentBox.vue';
 import Icon from '@/components/Icon.vue';
 
+/* PROPS */
 const props = defineProps<{
   filterList: Filter[];
+  currentChannel: String;
 }>();
+
+/* GLOBAL DEFINITIONS */
+const filterStore = useFilterStore();
+
+/* FUNCTIONS */
+async function removeFilter(id) {
+  await filterStore.removeFilter(props.currentChannel, id);
+}
+
 </script>
+
 <style>
 .filter-list-container {
   padding: 10px;
@@ -40,11 +62,18 @@ const props = defineProps<{
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
 
   &:hover {
     border: 2px solid var(--primary);
     background: rgba(225, 30, 74, 0.1);
   }
+}
+
+.filter-list-entry-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
 </style>

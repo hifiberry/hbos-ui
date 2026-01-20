@@ -49,6 +49,7 @@
           </div>
         </div>
       </ContentBox>
+      <CrossoverDesignFilterList :filterList="currentFilterArray"/>
       <ContentBox>
         <button @click="modalOpen = true">
           add filter
@@ -70,6 +71,8 @@ import ContentBox from '@/components/ContentBox.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
 import CrossoverDesignAddFilterModal from
 '@/components/crossover-design/CrossoverDesignAddFilterModal.vue';
+import CrossoverDesignFilterList from
+'@/components/crossover-design/CrossoverDesignFilterList.vue';
 
 
 /* GLOBAL DEFINITIONS */

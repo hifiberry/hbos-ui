@@ -91,9 +91,9 @@ const backendName = ref("");
   * This function will be run after the component has been mounted.
   * Initialisations should be done here.
   */
-onMounted(() => {
-  loadBackendCapabilities();
-  filterStore.createMultipleFilterBanks(['A', 'B', 'C', 'D']);
+onMounted(async () => {
+  await filterStore.createMultipleFilterBanks(['A', 'B', 'C', 'D']);
+  await loadBackendCapabilities();
 })
 
 /**
@@ -109,6 +109,13 @@ const loadBackendCapabilities = async () => {
   } catch (error) {
     console.error("Failed to load backend capabilities:", error);
   }
+}
+
+function getFiltersFromFilterStore() {
+  channelAFilters.value = filterStore.getFiltersFromBank('A').map((filter, index) =>
+  convertStoreFilterToUI(filter, `A_${index}`));
+  console.log("crossover-design: Filters loaded from the filterStore");
+  console.log("crossover-design: channelAFilters: ", channelAFilters.value);
 }
 
 /**
@@ -139,7 +146,7 @@ function getCurrentFilterArray(): Filter[] {
 /**
   * Adds a filter to the global `currentFilterArray` array.
   */
-function addItemToFilters() {
+async function addItemToFilters() {
   const filter = {
     icon: 'peaking',
     frequency: 800,
@@ -148,7 +155,9 @@ function addItemToFilters() {
     enabled: true
   };
 
-  filterStore.addFilter('A', 0, filter);
+  await filterStore.addFilter('A', 0, filter);
+
+  getFiltersFromFilterStore();
 }
 
 /**

@@ -41,10 +41,10 @@ export class ConsoleFilterBackend extends FilterBackend {
   private readonly PREDEFINED_BANKS = {
     left: { maxFilters: 16 },
     right: { maxFilters: 16 },
-    channelA: { maxFilters: 16 },
-    channelB: { maxFilters: 16 },
-    channelC: { maxFilters: 16 },
-    channelD: { maxFilters: 16 }
+    A: { maxFilters: 16 },
+    B: { maxFilters: 16 },
+    C: { maxFilters: 16 },
+    D: { maxFilters: 16 }
   }
 
   constructor() {

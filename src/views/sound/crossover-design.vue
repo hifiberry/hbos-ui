@@ -54,6 +54,7 @@
           add filter
         </button>
       </ContentBox>
+      <CrossoverDesignAddFilterModal v-model:open="modalOpen" />
     </div>
   </PageContent>
 </template>
@@ -67,6 +68,8 @@ import { convertStoreFilterToUI } from '@/utils/filter-conversions';
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
+import CrossoverDesignAddFilterModal from
+'@/components/crossover-design/CrossoverDesignAddFilterModal.vue';
 
 
 /* GLOBAL DEFINITIONS */
@@ -79,6 +82,7 @@ const currentChannel = ref<string>("A");
 const currentFilterArray = computed(() => {
   return getCurrentFilterArray();
 });
+const modalOpen = ref(false)
 
 const filterStore = useFilterStore();
 const backendCapabilities = ref<BackendCapabilities | null>(null);
@@ -166,6 +170,7 @@ function getCurrentFilterArray(): Filter[] {
   * backend.
   */
 async function addFilter() {
+  modalOpen.value = true;
   const filter = {
     icon: 'peaking',
     frequency: 800,

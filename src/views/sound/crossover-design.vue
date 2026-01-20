@@ -170,7 +170,6 @@ function getCurrentFilterArray(): Filter[] {
   * modal (after adding a filter), the ui gets updated.
   */
 watch(modalOpen, async () => {
-  console.log("crossover-design: openModal value changed");
   getFiltersFromFilterStore();
 })
 

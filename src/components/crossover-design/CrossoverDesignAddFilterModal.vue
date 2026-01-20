@@ -2,15 +2,16 @@
   <Teleport to="body">
     <div v-if="open" class="modal">
       <ContentBox>
-        <button @click="close()">Close</button>
         <div class="modal-content">
-          CrossoverDesignAddFilterModal
-          <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
-            :class="['filter-type-option']"
-            @click="addFilter(type)">
-            <Icon :icon="getFilterIconName(type)" class="filter-icon" />
-            <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
-          </button>
+          <button @click="close()">Close</button>
+          <div class="modal-buttons-div">
+            <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
+              :class="['filter-type-option']"
+              @click="addFilter(type)">
+              <Icon :icon="getFilterIconName(type)" class="filter-icon" />
+              <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
+            </button>
+          </div>
         </div>
       </ContentBox>
     </div>
@@ -97,7 +98,7 @@ button:hover {
   padding: 15px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: start;
   justify-content: center;
 }
 
@@ -108,8 +109,6 @@ button:hover {
 .modal-buttons-div {
   display: flex;
   flex-direction: row;
-  width: 100%;
-  justify-content: space-between;
 }
 </style>
 

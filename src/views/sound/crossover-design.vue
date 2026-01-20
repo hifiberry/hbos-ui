@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
 /* IMPORTS */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { type Filter } from '@/utils/filtercalc';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { convertStoreFilterToUI } from '@/utils/filter-conversions';
@@ -182,6 +182,11 @@ async function addFilter() {
   await filterStore.addFilter(currentChannel.value, 0, filter);
   getFiltersFromFilterStore();
 }
+
+watch(modalOpen, async () => {
+  console.log("crossover-design: openModal value changed");
+  getFiltersFromFilterStore();
+})
 
 
 /**

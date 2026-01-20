@@ -49,7 +49,7 @@
           </div>
         </div>
       </ContentBox>
-      <CrossoverDesignFilterList :filterList="currentFilterArray"/>
+      <CrossoverDesignFilterList :filterList="currentFilterArray" :currentChannel="currentChannel"/>
       <ContentBox>
         <button @click="modalOpen = true">
           add filter

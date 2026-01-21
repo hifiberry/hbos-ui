@@ -284,16 +284,16 @@ button {
 }
 
 .filtergraph-channel-selector button:first-child {
-  border-radius: 5px 0 0 5px;
+  border-radius: 4px 0 0 4px;
 }
 
 .filtergraph-channel-selector button:last-child {
-  border-radius: 0 5px 5px 0;
+  border-radius: 0 4px 4px 0;
 }
 
 .channel-selector-active {
   background: var(--primary);
-  color: var(--color-body);
+  color: #fafafa;
   border-color: var(--primary);
 }
 </style>

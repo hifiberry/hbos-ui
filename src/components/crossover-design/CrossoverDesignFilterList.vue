@@ -4,9 +4,6 @@
       <template v-if="props.filterList.length === 0">
         <p>no filters in the current channel</p>
       </template>
-      <p>
-        activeFilterId: {{ activeFilterId }}
-      </p>
       <div
         v-for="(filter, index) in props.filterList"
         class="filter-list-entry"

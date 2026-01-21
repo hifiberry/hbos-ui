@@ -36,12 +36,15 @@ const props = defineProps<{
   currentChannel: String;
 }>();
 
+const emit = defineEmits(['filterRemoved']);
+
 /* GLOBAL DEFINITIONS */
 const filterStore = useFilterStore();
 
 /* FUNCTIONS */
 async function removeFilter(id) {
   await filterStore.removeFilter(props.currentChannel, id);
+  emit('filterRemoved');
 }
 
 </script>

@@ -1,11 +1,6 @@
 <template>
-  <ContentBox>
+  <ContentBox v-if="props.filterList.length !== 0">
     <div class="filter-list-container">
-      <template v-if="props.filterList.length === 0">
-        <p>
-          Added filters will appear here.
-        </p>
-      </template>
       <div
         v-for="(filter, index) in props.filterList"
         class="filter-list-entry"

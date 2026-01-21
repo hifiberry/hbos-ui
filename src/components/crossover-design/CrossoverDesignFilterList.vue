@@ -8,7 +8,10 @@
         <div class="filter-list-entry-info">
           <Icon :icon="getFilterIconName(filter.icon)" />
           <p>
-            {{ filter.icon }}
+            {{ filter.icon }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q }}
+
+          </p>
+          <p>
           </p>
         </div>
         <button @click="removeFilter(index)">

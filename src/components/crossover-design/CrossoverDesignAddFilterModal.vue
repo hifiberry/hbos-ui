@@ -15,10 +15,14 @@
             <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
               class="modal-filter-type-button"
               @click="addFilter(type)">
-              <Icon :icon="getFilterIconName(type)" class="filter-icon" />
-              <span class="filter-name">
+              <Icon
+                :icon="getFilterIconName(type)"
+                height="40"
+                width="40"
+                />
+              <p class="filter-name">
                 {{ formatFilterTypeName(type) }}
-              </span>
+              </p>
             </button>
           </div>
         </div>
@@ -119,7 +123,8 @@ button {
   align-items: center;
 }
 
-.close-button {
+.filter-name {
+  padding-top: 10px;
 }
 
 .modal-buttons-div {
@@ -133,7 +138,8 @@ button {
 
   border: 2px solid var(--color-body);
   border-radius: 8px;
-  padding: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
   margin: 10px;
 
   display: flex;

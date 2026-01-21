@@ -4,17 +4,17 @@
       <template v-if="props.filterList.length === 0">
         <p>no filters in the current channel</p>
       </template>
-      <div v-for="filter in props.filterList" class="filter-list-entry">
+      <div v-for="(filter, index) in props.filterList" class="filter-list-entry">
         <div class="filter-list-entry-info">
           <p>
-            position: {{ filter.id }}
+            position: {{ index }}
           </p>
           <Icon :icon="getFilterIconName(filter.icon)" />
           <p>
             {{ filter.icon }}
           </p>
         </div>
-        <button @click="removeFilter(filter.id)">
+        <button @click="removeFilter(index)">
           remove
         </button>
       </div>

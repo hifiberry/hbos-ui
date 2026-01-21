@@ -6,9 +6,6 @@
       </template>
       <div v-for="(filter, index) in props.filterList" class="filter-list-entry">
         <div class="filter-list-entry-info">
-          <p>
-            position: {{ index }}
-          </p>
           <Icon :icon="getFilterIconName(filter.icon)" />
           <p>
             {{ filter.icon }}
@@ -49,7 +46,22 @@ async function removeFilter(id) {
 
 </script>
 
-<style>
+<style scoped lang="scss">
+button {
+  transition: all 0.25s;
+  padding: 10px;
+
+  border: 2px solid var(--color-body);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 10px;
+
+  &:hover {
+    border: 2px solid var(--primary);
+    background: rgba(225, 30, 74, 0.1);
+  }
+}
+
 .filter-list-container {
   padding: 10px;
 }
@@ -57,7 +69,7 @@ async function removeFilter(id) {
 .filter-list-entry {
   transition: all 0.25s;
 
-  border: 2px solid var(--color-body);
+  border: 1px solid var(--color-body);
   border-radius: 8px;
   padding: 10px;
   margin: 10px;
@@ -66,11 +78,6 @@ async function removeFilter(id) {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-
-  &:hover {
-    border: 2px solid var(--primary);
-    background: rgba(225, 30, 74, 0.1);
-  }
 }
 
 .filter-list-entry-info {

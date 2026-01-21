@@ -9,16 +9,16 @@
       </p>
       <div v-for="(filter, index) in props.filterList" class="filter-list-entry">
         <div class="filter-list-entry-info">
+          <button @click="emit('update:activeFilterId', filter.id)">
+            activate
+          </button>
           <Icon :icon="getFilterIconName(filter.icon)" />
           <p>
-            {{ filter.icon }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q }}
+            {{ filter.icon }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q.toFixed(2) }}
           </p>
         </div>
         <button @click="removeFilter(index)">
-          remove
-        </button>
-        <button @click="emit('update:activeFilterId', filter.id)">
-          activate
+          <Icon icon="close" />
         </button>
       </div>
     </div>
@@ -61,13 +61,11 @@ button {
   transition: all 0.25s;
   padding: 10px;
 
-  border: 2px solid var(--color-body);
   border-radius: 8px;
   padding: 10px;
   margin: 10px;
 
   &:hover {
-    border: 2px solid var(--primary);
     background: rgba(225, 30, 74, 0.1);
   }
 }

@@ -3,7 +3,14 @@
     <div v-if="open" class="modal">
       <ContentBox>
         <div class="modal-content">
-          <button @click="close()">Close</button>
+          <div class="modal-header">
+            <h1>
+              add a filter
+            </h1>
+            <button @click="close()">
+              <Icon icon="close" />
+            </button>
+          </div>
           <div class="modal-buttons-div">
             <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
               class="modal-filter-type-button"
@@ -71,7 +78,18 @@ async function addFilter(type: BiquadFilterType) {
 }
 </script>
 
-<style>
+<style scoped lang="scss">
+button {
+  transition: all 0.25s;
+  padding: 10px;
+
+  border-radius: 8px;
+
+  &:hover {
+    background: rgba(225, 30, 74, 0.1);
+  }
+}
+
 .modal {
   position: fixed;
   inset: 0;
@@ -90,7 +108,18 @@ async function addFilter(type: BiquadFilterType) {
 }
 
 .modal-content > * {
-  margin: 10px;
+  margin: 2%;
+}
+
+.modal-header {
+  width: 98%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-button {
 }
 
 .modal-buttons-div {

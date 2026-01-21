@@ -2,7 +2,9 @@
   <ContentBox>
     <div class="filter-list-container">
       <template v-if="props.filterList.length === 0">
-        <p>no filters in the current channel</p>
+        <p>
+          Added filters will appear here.
+        </p>
       </template>
       <div
         v-for="(filter, index) in props.filterList"

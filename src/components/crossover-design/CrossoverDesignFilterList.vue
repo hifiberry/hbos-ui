@@ -93,7 +93,7 @@ button {
 
   &:hover {
     border: 1px solid var(--primary);
-    background: rgba(225, 30, 74, 0.03);
+    background: rgba(225, 30, 74, 0.02);
   }
 }
 

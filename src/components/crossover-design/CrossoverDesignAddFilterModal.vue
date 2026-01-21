@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="open" class="modal">
+    <div v-if="open" class="modal" @click="close()">
       <ContentBox>
         <div class="modal-content">
           <div class="modal-header">

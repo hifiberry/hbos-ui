@@ -56,9 +56,14 @@
         @filter-removed="getFiltersFromFilterStore"
         />
       <ContentBox>
-        <button @click="modalOpen = true">
-          add filter
-        </button>
+        <div class="add-button-div">
+          <button @click="modalOpen = true"  class="add-button">
+            <Icon icon="add" />
+            <p>
+              Add filter
+            </p>
+          </button>
+        </div>
       </ContentBox>
       <CrossoverDesignAddFilterModal v-model:open="modalOpen" :currentChannel="currentChannel" />
     </div>
@@ -70,6 +75,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { type Filter } from '@/utils/filtercalc';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
+import Icon from '@/components/Icon.vue';
 import { convertStoreFilterToUI } from '@/utils/filter-conversions';
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
@@ -256,6 +262,34 @@ button {
   padding: 10px;
   width: 100%;
 }
+
+.add-button-div {
+  transition: all 0.25s;
+
+  margin: 20px;
+
+  border: 1px solid var(--color-body);
+  border-radius: 8px;
+
+
+  &:hover {
+    border: 1px solid #E11E4AAA;
+    background: rgba(225, 30, 74, 0.02);
+  }
+}
+
+.add-button {
+  display: flex;
+  flex-direction: row;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+}
+
+.add-button>* {
+  margin-right: 10px;
+}
+
 
 .main-container {
   display: flex;

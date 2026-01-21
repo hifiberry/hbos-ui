@@ -7,11 +7,11 @@
       <p>
         activeFilterId: {{ activeFilterId }}
       </p>
-      <div v-for="(filter, index) in props.filterList" class="filter-list-entry">
+      <div
+        v-for="(filter, index) in props.filterList"
+        class="filter-list-entry"
+        @click="emit('update:activeFilterId', filter.id)">
         <div class="filter-list-entry-info">
-          <button @click="emit('update:activeFilterId', filter.id)">
-            activate
-          </button>
           <Icon :icon="getFilterIconName(filter.icon)" />
           <p>
             {{ filter.icon }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q.toFixed(2) }}
@@ -86,6 +86,10 @@ button {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+
+  &:hover {
+    border: 1px solid var(--primary);
+  }
 }
 
 .filter-list-entry-info {

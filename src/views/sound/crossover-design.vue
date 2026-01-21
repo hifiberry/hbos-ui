@@ -81,7 +81,7 @@ import CrossoverDesignFilterList from
 
 
 /* GLOBAL DEFINITIONS */
-const activeFilterId = ref<number | null>(1)
+const activeFilterId = ref<number | null>(0)
 const channelAFilters = ref<Filter[]>([]);
 const channelBFilters = ref<Filter[]>([]);
 const channelCFilters = ref<Filter[]>([]);
@@ -144,6 +144,8 @@ function getFiltersFromFilterStore() {
 
   console.log("crossover-design: Filters loaded from the filterStore");
   console.log("crossover-design: channelAFilters: ", channelAFilters.value);
+
+  activeFilterId.value = currentFilterArray.value.length-1;
 }
 
 /**

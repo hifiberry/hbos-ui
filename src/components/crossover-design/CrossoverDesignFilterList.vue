@@ -10,7 +10,9 @@
       <div
         v-for="(filter, index) in props.filterList"
         class="filter-list-entry"
-        @click="emit('update:activeFilterId', filter.id)">
+        @click="emit('update:activeFilterId', filter.id)"
+        :class="{ active: filter.id === activeFilterId }"
+        >
         <div class="filter-list-entry-info">
           <Icon :icon="getFilterIconName(filter.icon)" />
           <p>
@@ -87,8 +89,14 @@ button {
   align-items: center;
   justify-content: space-between;
 
+  &.active {
+    border-color: var(--primary);
+    background: rgba(225, 30, 74, 0.05);
+  }
+
   &:hover {
     border: 1px solid var(--primary);
+    background: rgba(225, 30, 74, 0.03);
   }
 }
 

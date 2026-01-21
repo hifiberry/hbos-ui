@@ -52,6 +52,7 @@
       <CrossoverDesignFilterList
         :filterList="currentFilterArray"
         :currentChannel="currentChannel"
+        v-model:activeFilterId="activeFilterId"
         @filter-removed="getFiltersFromFilterStore"
         />
       <ContentBox>

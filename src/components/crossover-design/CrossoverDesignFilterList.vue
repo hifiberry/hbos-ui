@@ -4,18 +4,21 @@
       <template v-if="props.filterList.length === 0">
         <p>no filters in the current channel</p>
       </template>
+      <p>
+        activeFilterId: {{ activeFilterId }}
+      </p>
       <div v-for="(filter, index) in props.filterList" class="filter-list-entry">
         <div class="filter-list-entry-info">
           <Icon :icon="getFilterIconName(filter.icon)" />
           <p>
             {{ filter.icon }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q }}
-
-          </p>
-          <p>
           </p>
         </div>
         <button @click="removeFilter(index)">
           remove
+        </button>
+        <button @click="emit('update:activeFilterId', filter.id)">
+          activate
         </button>
       </div>
     </div>
@@ -34,9 +37,13 @@ import Icon from '@/components/Icon.vue';
 const props = defineProps<{
   filterList: Filter[];
   currentChannel: String;
+  activeFilterId: number | null;
 }>();
 
-const emit = defineEmits(['filterRemoved']);
+const emit = defineEmits<{
+  (e: 'update:activeFilterId', value: number | null): void
+  (e: 'filterRemoved'): void
+}>()
 
 /* GLOBAL DEFINITIONS */
 const filterStore = useFilterStore();

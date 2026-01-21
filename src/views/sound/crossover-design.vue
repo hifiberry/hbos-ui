@@ -144,8 +144,6 @@ function getFiltersFromFilterStore() {
 
   console.log("crossover-design: Filters loaded from the filterStore");
   console.log("crossover-design: channelAFilters: ", channelAFilters.value);
-
-  activeFilterId.value = currentFilterArray.value.length-1;
 }
 
 /**

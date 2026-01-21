@@ -92,7 +92,7 @@ button {
   }
 
   &:hover {
-    border: 1px solid var(--primary);
+    border: 1px solid #E11E4AAA;
     background: rgba(225, 30, 74, 0.02);
   }
 }

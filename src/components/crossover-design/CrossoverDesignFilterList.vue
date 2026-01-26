@@ -106,10 +106,13 @@ async function decrementFilterFrequency(index) {
   if (index === -1) return;
 
   const filter = props.filterList[index];
+  let frequency = (filter.frequency*0.95).toFixed(0);
+  if (frequency < 20) {
+    frequency = 20;
+  }
 
   await filterStore.updateFilter(props.currentChannel, index, {
-    frequency: (filter.frequency*0.95).toFixed(0),
-    gain: filter.gain
+    frequency
   });
 
   emit('filters-updated');
@@ -124,10 +127,13 @@ async function incrementFilterFrequency(index) {
   if (index === -1) return;
 
   const filter = props.filterList[index];
+  let frequency = (filter.frequency*1.05).toFixed(0);
+  if (frequency > 20000) {
+    frequency = 20000;
+  }
 
   await filterStore.updateFilter(props.currentChannel, index, {
-    frequency: (filter.frequency*1.05).toFixed(0),
-    gain: filter.gain
+    frequency
   });
 
   emit('filters-updated');
@@ -142,10 +148,13 @@ async function decrementFilterGain(index) {
   if (index === -1) return;
 
   const filter = props.filterList[index];
+  let gain = filter.gain-0.5;
+  if (gain < -20) {
+    gain = -20;
+  }
 
   await filterStore.updateFilter(props.currentChannel, index, {
-    frequency: filter.frequency,
-    gain: filter.gain-0.5
+    gain
   });
 
   emit('filters-updated');
@@ -160,10 +169,13 @@ async function incrementFilterGain(index) {
   if (index === -1) return;
 
   const filter = props.filterList[index];
+  let gain = filter.gain+0.5;
+  if (gain > 20) {
+    gain = 20;
+  }
 
   await filterStore.updateFilter(props.currentChannel, index, {
-    frequency: filter.frequency,
-    gain: filter.gain+0.5
+    gain
   });
 
   emit('filters-updated');
@@ -178,7 +190,10 @@ async function decrementFilterQ(index) {
   if (index === -1) return;
 
   const filter = props.filterList[index];
-  const q = filter.Q*0.95;
+  let q = filter.Q*0.95;
+  if (q < 0.1) {
+    q = 0.1;
+  }
 
   await filterStore.updateFilter(props.currentChannel, index, { q });
 
@@ -194,7 +209,10 @@ async function incrementFilterQ(index) {
   if (index === -1) return;
 
   const filter = props.filterList[index];
-  const q = filter.Q*1.05;
+  let q = filter.Q*1.05;
+  if (q > 14.41) {
+    q = 14.41;
+  }
 
   await filterStore.updateFilter(props.currentChannel, index, { q });
 

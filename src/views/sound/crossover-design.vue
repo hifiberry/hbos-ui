@@ -231,11 +231,11 @@ const onUpdateFreqGain = async ({ id, frequency, gain }) => {
   * @param {number} payload.id
   * @param {number} payload.Q
   */
-const onUpdateQ = async ({ id, q }) => {
+const onUpdateQ = async ({ id, Q }) => {
   const position = findFilterPositionById(id);
   if (position === -1) return;
 
-  await filterStore.updateFilter(currentChannel.value, position, { q });
+  await filterStore.updateFilter(currentChannel.value, position, { Q });
 
   const target = currentFilterArray.value[position];
   target.Q = Q;

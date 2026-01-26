@@ -178,7 +178,7 @@ async function decrementFilterQ(index) {
   if (index === -1) return;
 
   const filter = props.filterList[index];
-  const q = filter.Q-0.05;
+  const q = filter.Q*0.95;
 
   await filterStore.updateFilter(props.currentChannel, index, { q });
 
@@ -194,7 +194,7 @@ async function incrementFilterQ(index) {
   if (index === -1) return;
 
   const filter = props.filterList[index];
-  const q = filter.Q+0.05;
+  const q = filter.Q*1.05;
 
   await filterStore.updateFilter(props.currentChannel, index, { q });
 

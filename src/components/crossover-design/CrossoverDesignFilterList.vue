@@ -7,15 +7,57 @@
         @click="emit('update:activeFilterId', filter.id)"
         :class="{ active: filter.id === activeFilterId }"
         >
+        <!-- Icon, filtertype and remove button -->
         <div class="filter-list-entry-info">
-          <Icon :icon="getFilterIconName(filter.icon)" />
+          <Icon
+            :icon="getFilterIconName(filter.icon)"
+            width="40"
+            height="40"
+          />
           <p>
-            {{ filter.icon }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q.toFixed(2) }}
+            {{ filter.icon }}
           </p>
+          <button @click="removeFilter(index)">
+            <Icon icon="close" />
+          </button>
         </div>
-        <button @click="removeFilter(index)">
-          <Icon icon="close" />
-        </button>
+
+        <!-- Increment and decrement buttons -->
+        <div class="filter-list-entry-info">
+          <div class="filter-increment-decrement-buttons">
+            <button @click="decrementFilterFrequency(index)">
+              <Icon icon="minus-small" />
+            </button>
+            <p>
+              {{ filter.frequency }} Hz
+            </p>
+            <button @click="incrementFilterFrequency(index)">
+              <Icon icon="plus-small" />
+            </button>
+          </div>
+          <div class="filter-increment-decrement-buttons">
+            <button @click="decrementFilterGain(index)">
+              <Icon icon="minus-small" />
+            </button>
+            <p>
+              {{ filter.gain }} dB
+            </p>
+            <button @click="incrementFilterGain(index)">
+              <Icon icon="plus-small" />
+            </button>
+          </div>
+          <div class="filter-increment-decrement-buttons">
+            <button @click="decrementFilterQ(index)">
+              <Icon icon="minus-small" />
+            </button>
+            <p>
+              {{ filter.Q.toFixed(2) }} Q
+            </p>
+            <button @click="incrementFilterQ(index)">
+              <Icon icon="plus-small" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </ContentBox>
@@ -38,18 +80,126 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:activeFilterId', value: number | null): void
-  (e: 'filterRemoved'): void
+  (e: 'filters-updated'): void
 }>()
 
 /* GLOBAL DEFINITIONS */
 const filterStore = useFilterStore();
 
 /* FUNCTIONS */
-async function removeFilter(id) {
-  await filterStore.removeFilter(props.currentChannel, id);
-  emit('filterRemoved');
+/**
+  * Removes a filter from the backend and tells the parent component,
+  * that the filters have updated.
+  * @param {number} index
+  */
+async function removeFilter(index) {
+  await filterStore.removeFilter(props.currentChannel, index);
+  emit('filters-updated');
 }
 
+/**
+  * Decrements a filter's frequency in the backend and tells the parent
+  * component, that the filters have updated.
+  * @param {number} index
+  */
+async function decrementFilterFrequency(index) {
+  if (index === -1) return;
+
+  const filter = props.filterList[index];
+
+  await filterStore.updateFilter(props.currentChannel, index, {
+    frequency: (filter.frequency*0.95).toFixed(0),
+    gain: filter.gain
+  });
+
+  emit('filters-updated');
+}
+
+/**
+  * Increments a filter's frequency in the backend and tells the parent
+  * component, that the filters have updated.
+  * @param {number} index
+  */
+async function incrementFilterFrequency(index) {
+  if (index === -1) return;
+
+  const filter = props.filterList[index];
+
+  await filterStore.updateFilter(props.currentChannel, index, {
+    frequency: (filter.frequency*1.05).toFixed(0),
+    gain: filter.gain
+  });
+
+  emit('filters-updated');
+}
+
+/**
+  * Decrements a filter's gain in the backend and tells the parent
+  * component, that the filters have updated.
+  * @param {number} index
+  */
+async function decrementFilterGain(index) {
+  if (index === -1) return;
+
+  const filter = props.filterList[index];
+
+  await filterStore.updateFilter(props.currentChannel, index, {
+    frequency: filter.frequency,
+    gain: filter.gain-0.5
+  });
+
+  emit('filters-updated');
+}
+
+/**
+  * Increments a filter's gain in the backend and tells the parent
+  * component, that the filters have updated.
+  * @param {number} index
+  */
+async function incrementFilterGain(index) {
+  if (index === -1) return;
+
+  const filter = props.filterList[index];
+
+  await filterStore.updateFilter(props.currentChannel, index, {
+    frequency: filter.frequency,
+    gain: filter.gain+0.5
+  });
+
+  emit('filters-updated');
+}
+
+/**
+  * Decrements a filter's q in the backend and tells the parent
+  * component, that the filters have updated.
+  * @param {number} index
+  */
+async function decrementFilterQ(index) {
+  if (index === -1) return;
+
+  const filter = props.filterList[index];
+  const q = filter.Q-0.05;
+
+  await filterStore.updateFilter(props.currentChannel, index, { q });
+
+  emit('filters-updated');
+}
+
+/**
+  * Increments a filter's q in the backend and tells the parent
+  * component, that the filters have updated.
+  * @param {number} index
+  */
+async function incrementFilterQ(index) {
+  if (index === -1) return;
+
+  const filter = props.filterList[index];
+  const q = filter.Q+0.05;
+
+  await filterStore.updateFilter(props.currentChannel, index, { q });
+
+  emit('filters-updated');
+}
 </script>
 
 <style scoped lang="scss">
@@ -79,7 +229,7 @@ button {
   margin: 10px;
 
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: space-between;
 
@@ -98,6 +248,23 @@ button {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+}
+
+.filter-increment-decrement-buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   justify-content: center;
+
+  /* tablet/mobile view */
+  @media only screen and (max-width: 700px) {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: center;
+  }
 }
 </style>

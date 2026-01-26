@@ -53,12 +53,14 @@
         :filterList="currentFilterArray"
         :currentChannel="currentChannel"
         v-model:activeFilterId="activeFilterId"
-        @filter-removed="getFiltersFromFilterStore"
+        @filters-updated="getFiltersFromFilterStore"
         />
       <ContentBox>
         <div class="add-button-div">
           <button @click="modalOpen = true"  class="add-button">
-            <Icon icon="add" />
+            <Icon
+              icon="add"
+              />
             <p>
               Add filter
             </p>
@@ -229,11 +231,11 @@ const onUpdateFreqGain = async ({ id, frequency, gain }) => {
   * @param {number} payload.id
   * @param {number} payload.Q
   */
-const onUpdateQ = async ({ id, Q }) => {
+const onUpdateQ = async ({ id, q }) => {
   const position = findFilterPositionById(id);
   if (position === -1) return;
 
-  await filterStore.updateFilter(currentChannel.value, position, { Q });
+  await filterStore.updateFilter(currentChannel.value, position, { q });
 
   const target = currentFilterArray.value[position];
   target.Q = Q;

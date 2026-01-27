@@ -14,9 +14,9 @@
             width="40"
             height="40"
           />
-          <p>
+          <h2>
             {{ filter.icon }}
-          </p>
+          </h2>
           <button @click="removeFilter(index)">
             <Icon icon="close" />
           </button>

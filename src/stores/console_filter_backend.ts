@@ -44,7 +44,11 @@ export class ConsoleFilterBackend extends FilterBackend {
     A: { maxFilters: 16 },
     B: { maxFilters: 16 },
     C: { maxFilters: 16 },
-    D: { maxFilters: 16 }
+    D: { maxFilters: 16 },
+    E: { maxFilters: 16 },
+    F: { maxFilters: 16 },
+    G: { maxFilters: 16 },
+    H: { maxFilters: 16 }
   }
 
   constructor() {

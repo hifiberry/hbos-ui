@@ -82,7 +82,9 @@ const channels = ref<Record<string, Filter[]>>({});
 const currentChannel = ref<string>("A");
 
 // this ref defines the count of the channels.
-const channelCount = ref(8);
+const channelCount = computed(() =>
+  Object.keys(filterStore.getAllBanks).length
+);
 const channelNames = computed(() =>
   Array.from({ length: channelCount.value}, (_, i) =>
     String.fromCharCode(65+i)
@@ -105,8 +107,8 @@ const backendName = ref("");
   * Initialisations should be done here.
   */
 onMounted(async () => {
-  await filterStore.createMultipleFilterBanks(channelNames.value);
   await loadBackendCapabilities();
+  await filterStore.createMultipleFilterBanks(channelNames.value);
   getFiltersFromFilterStore();
 })
 

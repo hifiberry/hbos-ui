@@ -83,7 +83,7 @@ const currentChannel = ref<string>("A");
 
 // this ref defines the count of the channels.
 const channelCount = computed(() =>
-  Object.keys(filterStore.getAllBanks).length
+  filterStore.getFilterBanksByPattern(/^[A-D]$/).length
 );
 const channelNames = computed(() =>
   Array.from({ length: channelCount.value}, (_, i) =>

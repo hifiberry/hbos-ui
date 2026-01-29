@@ -223,13 +223,14 @@ async function incrementFilterQ(index) {
 <style scoped lang="scss">
 button {
   transition: all 0.25s;
-  padding: 10px;
-
+  background: rgba(225, 255, 255, 0.1);
+  border: 1px solid rgba(112, 112, 112, 0.5);
   border-radius: 8px;
-  padding: 10px;
+  padding: 5px;
   margin: 10px;
 
   &:hover {
+    border: 1px solid var(--primary);
     background: rgba(225, 30, 74, 0.1);
   }
 }

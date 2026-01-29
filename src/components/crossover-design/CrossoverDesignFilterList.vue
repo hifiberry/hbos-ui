@@ -15,11 +15,24 @@
             height="40"
           />
           <h2>
-            {{ filter.icon }}
+            {{ filter.icon.toUpperCase() }}
           </h2>
           <button @click="removeFilter(index)">
             <Icon icon="close" />
           </button>
+        </div>
+
+        <!-- Descriptions -->
+        <div class="filter-list-entry-info">
+          <div class="filter-increment-decrement-info">
+            FREQUENCY
+          </div>
+          <div class="filter-increment-decrement-info">
+            GAIN
+          </div>
+          <div class="filter-increment-decrement-info">
+            Q (WIDTH)
+          </div>
         </div>
 
         <!-- Increment and decrement buttons -->
@@ -268,15 +281,20 @@ button {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  padding-left: 25px;
+  padding-right: 25px;
 
   width: 100%;
 }
 
-.filter-increment-decrement-buttons {
+.filter-increment-decrement-buttons,
+.filter-increment-decrement-info
+{
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  width: 100%;
 
   /* tablet/mobile view */
   @media only screen and (max-width: 700px) {
@@ -285,5 +303,9 @@ button {
     align-items: center;
     justify-content: center;
   }
+}
+
+.filter-increment-decrement-info {
+  color: #666;
 }
 </style>

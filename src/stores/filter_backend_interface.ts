@@ -5,6 +5,10 @@
  * Implementations can be console logging (for demo), HTTP API calls, WebSocket, etc.
  */
 
+/**
+ * Interface for the filter. Those filters
+ * come directly from the backend.
+ */
 export interface Filter {
   id: string
   type: 'highpass' | 'lowpass' | 'bandpass' | 'bandstop' | 'peak' | 'shelf-low' | 'shelf-high' | 'allpass'
@@ -14,6 +18,10 @@ export interface Filter {
   enabled: boolean
 }
 
+/**
+ * A interface that holds a name of a filterbank, as
+ * well as an array of filters.
+ */
 export interface FilterBank {
   name: string
   filters: Filter[]
@@ -23,10 +31,14 @@ export interface FilterBanks {
   [bankName: string]: FilterBank
 }
 
+/**
+ * Stores information about a `FilterBank`.
+ */
 export interface FilterBankInfo {
   name: string
   maxFilters: number
   currentFilterCount: number
+  filterBankType: string
 }
 
 export interface BackendCapabilities {

@@ -82,14 +82,7 @@ const channels = ref<Record<string, Filter[]>>({});
 const currentChannel = ref<string>("A");
 
 // this ref defines the count of the channels.
-const channelCount = computed(() =>
-  filterStore.getFilterBanksByPattern(/^[A-D]$/).length
-);
-const channelNames = computed(() =>
-  Array.from({ length: channelCount.value}, (_, i) =>
-    String.fromCharCode(65+i)
-  )
-)
+const channelNames = ref<string[]>([])
 const currentFilterArray = computed(() => {
   return channels.value[currentChannel.value] ?? []
 });
@@ -107,6 +100,7 @@ const backendName = ref("");
   * Initialisations should be done here.
   */
 onMounted(async () => {
+  channelNames.value = await filterStore.getFilterBanksByType('crossover-designer');
   await loadBackendCapabilities();
   await filterStore.createMultipleFilterBanks(channelNames.value);
   getFiltersFromFilterStore();

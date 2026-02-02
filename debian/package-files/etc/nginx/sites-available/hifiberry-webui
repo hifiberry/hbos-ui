@@ -10,6 +10,9 @@ server {
     # Include HiFiBerry Config API proxy configuration
     include /etc/nginx/hifiberry-config.nginx;
 
+    # Include HiFiBerry PipeWire API proxy configuration
+    include /etc/nginx/hifiberry-pipewire.nginx;
+
     # Include HiFiBerry DSP Toolkit API proxy configuration
     include /etc/nginx/hifiberry-sigmatcp.nginx;
 

@@ -14,6 +14,9 @@
             width="40"
             height="40"
           />
+          <button @click="toggleFilterBypassState(index)">
+            toggle
+          </button>
           <h2>
             {{ filter.icon.toUpperCase() }}
           </h2>
@@ -81,6 +84,7 @@
 import { type Filter } from '@/utils/filtercalc';
 import { getFilterIconName } from '@/utils/filter-display';
 import { useFilterStore } from '@/stores/filter_connector';
+import { setIndividualFilterBypassState } from '@/api/dsptoolkit';
 import ContentBox from '@/components/ContentBox.vue';
 import Icon from '@/components/Icon.vue';
 
@@ -230,6 +234,19 @@ async function incrementFilterQ(index) {
   await filterStore.updateFilter(props.currentChannel, index, { q });
 
   emit('filters-updated');
+}
+
+/**
+  * Toggles the bypas state of a filter. Currently
+  * only sets the filter to `bypassed=true`.
+  */
+function toggleFilterBypassState(index) {
+  const data = {
+    bankAddress: props.currentChannel,
+    filterOffset: index,
+    bypassed: true
+  }
+  setIndividualFilterBypassState(data);
 }
 </script>
 

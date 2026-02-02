@@ -150,9 +150,10 @@ import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
 import ProgressSlider from '@/components/ProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
-import { getPipewireVolume, setPipewireVolume, type PipewireVolumeData, getPipewireMixerAnalysis, getPipewireMonoStereo, getPipewireBalance, setPipewireBalance, setPipewireModeAndBalance, type PipewireMixerAnalysis } from '@/api/pipewire'
+import { getSpeakerEQCrossbar, setSpeakerEQCrossbarMatrix } from '@/api/pipewire'
 import { getSystemInfo, type SystemInfo } from '@/api/system'
 import { getHeadphoneControls, getHeadphoneVolume, setHeadphoneVolume } from '@/api/volume'
+import { settingsToMatrix, matrixToSettings, type AudioMode } from '@/helpers/mixing_matrix'
 
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
@@ -196,6 +197,8 @@ const headphoneDisplayDb = computed(() => {
 async function onSliderChange(newVal: number) {
   const pct = Math.round(newVal)
   volumeLimitPercent.value = pct
+  // TODO: Re-implement with new PipeWire API
+  /*
   // PipeWire expects linear 0.0-1.0; API handles curve conversion and returns dB
   try {
     const linear = Math.max(0, Math.min(1, pct / 100))
@@ -211,6 +214,7 @@ async function onSliderChange(newVal: number) {
     console.error('Failed to set PipeWire default volume:', e)
     volumeAvailable.value = false
   }
+  */
 }
 
 // Update headphone volume when the slider changes
@@ -285,7 +289,6 @@ const balanceLabel = computed(() => {
 })
 
 // Audio mode state
-type AudioMode = 'stereo' | 'swapped' | 'mono' | 'left' | 'right'
 const audioMode = ref<AudioMode>('stereo')
 const modeAvailable = ref<boolean>(true)
 
@@ -295,92 +298,79 @@ async function setAudioMode(mode: AudioMode) {
   console.log('Current balance value:', balanceValue.value)
 
   try {
-    // Since API requires mode and balance to be set together, pass current balance
-    const currentBalance = balanceValue.value
-    console.log('Calling setPipewireModeAndBalance with:', { mode, balance: currentBalance })
+    // Convert mode and balance to mixing matrix
+    const matrix = settingsToMatrix(mode, balanceValue.value)
+    console.log('Calculated matrix from mode/balance:', {
+      mode,
+      balance: balanceValue.value,
+      matrix
+    })
 
-    const res = await setPipewireModeAndBalance(mode, currentBalance)
-    console.log('Raw API response for setAudioMode:', res)
+    // Update the matrix in PipeWire using the new bulk API
+    console.log('Setting crossbar matrix...')
+    const result = await setSpeakerEQCrossbarMatrix(matrix)
 
-    if (res.status === 'success' && res.data) {
-      const data = res.data as PipewireMixerAnalysis
-      console.log('Parsed mixer analysis data:', data)
-      console.log('API returned mode:', data.mode, 'requested mode:', mode)
-      console.log('API returned balance:', data.balance, 'type:', typeof data.balance)
-
-      // Validate that the returned mode is one of our supported modes
-      if (data.mode === 'stereo' || data.mode === 'swapped' || data.mode === 'mono' || data.mode === 'left' || data.mode === 'right') {
-        console.log('Setting UI mode from API response:', data.mode)
-        audioMode.value = data.mode
-        modeAvailable.value = true
-        console.log('Audio mode successfully changed to:', data.mode)
-      } else {
-        // If the API returns "balance" or other non-mode values,
-        // it might indicate the backend is mixing concepts.
-        // Default to stereo since balance is a separate setting.
-        console.warn('PipeWire returned non-mode value after mode change:', data.mode, '- this may indicate API confusion between mode and balance')
-        console.log('Keeping requested mode in UI:', mode)
-        audioMode.value = mode // Use the requested mode instead of API response
-        modeAvailable.value = true
-      }
-
-      // Always try to update balance regardless of mode
-      if (typeof data.balance === 'number' && !isNaN(data.balance) && isFinite(data.balance)) {
-        const roundedBalance = Math.round(data.balance * 100) / 100
-        console.log('Updated balance from mode change:', data.balance, '→', roundedBalance)
-        balanceValue.value = roundedBalance
-      } else {
-        console.warn('Invalid balance value from API:', {
-          value: data.balance,
-          type: typeof data.balance,
-          isNaN: typeof data.balance === 'number' ? isNaN(data.balance) : 'N/A',
-          isFinite: typeof data.balance === 'number' ? isFinite(data.balance) : 'N/A'
-        }, '- keeping current balance:', balanceValue.value)
-      }
-    } else {
-      console.warn('API returned unsuccessful status or no data:', res)
+    if ('error' in result) {
+      console.error('Failed to set crossbar matrix:', result.error, result.message)
+      modeAvailable.value = false
+      return
     }
+
+    console.log('Crossbar matrix updated successfully:', result.matrix)
+
+    // Update local state
+    audioMode.value = mode
+    modeAvailable.value = true
+    console.log('Audio mode successfully changed to:', mode)
   } catch (e) {
     console.error('Failed to set PipeWire audio mode:', e)
     modeAvailable.value = false
-    // Revert the UI to the previous state if API call failed
   }
   console.log('=== setAudioMode END ===')
 }
 
 async function onBalanceChange(newVal: number) {
-  console.log('onBalanceChange called with:', newVal, 'type:', typeof newVal) // Debug log
+  console.log('=== onBalanceChange START ===')
+  console.log('Slider value:', newVal)
 
   const balance = sliderPercentToBalance(newVal)
-  console.log('Calculated balance from slider:', balance) // Debug log
+  console.log('Calculated balance from slider:', balance)
 
   if (typeof balance === 'number' && !isNaN(balance) && isFinite(balance)) {
-    balanceValue.value = Math.round(balance * 100) / 100 // Round to 2 decimal places
-    console.log('Set local balance to:', balanceValue.value) // Debug log
+    balanceValue.value = Math.round(balance * 100) / 100
+    console.log('Set local balance to:', balanceValue.value)
   } else {
     console.error('Invalid balance calculated from slider:', balance, 'from input:', newVal)
-    return // Don't proceed with invalid values
+    return
   }
 
   try {
-    const res = await setPipewireBalance(balanceValue.value)
+    // Convert mode and balance to mixing matrix
+    const matrix = settingsToMatrix(audioMode.value, balanceValue.value)
+    console.log('Calculated matrix from mode/balance:', {
+      mode: audioMode.value,
+      balance: balanceValue.value,
+      matrix
+    })
 
-    if (res.status === 'success' && res.data) {
-      // Update local state with actual value from backend
-      const data = res.data as { monostereo_mode: string; balance: number }
-      if (typeof data.balance === 'number' && !isNaN(data.balance) && isFinite(data.balance)) {
-        balanceValue.value = Math.round(data.balance * 100) / 100
-        console.log('Updated balance from API response:', balanceValue.value) // Debug log
-      } else {
-        console.warn('Invalid balance in API response:', data.balance)
-      }
-      balanceAvailable.value = true
+    // Update the matrix in PipeWire using the new bulk API
+    console.log('Setting crossbar matrix...')
+    const result = await setSpeakerEQCrossbarMatrix(matrix)
+
+    if ('error' in result) {
+      console.error('Failed to set crossbar matrix:', result.error, result.message)
+      balanceAvailable.value = false
+      return
     }
+
+    console.log('Crossbar matrix updated successfully:', result.matrix)
+
+    balanceAvailable.value = true
   } catch (e) {
     console.error('Failed to set PipeWire balance:', e)
     balanceAvailable.value = false
-    // Keep the UI value as user selected it even if API failed
   }
+  console.log('=== onBalanceChange END ===')
 }
 
 // Initialize from default sink volume and balance
@@ -430,6 +420,8 @@ onMounted(async () => {
     console.warn('Failed to load system info:', e)
   }
 
+  // TODO: Re-implement with new PipeWire API
+  /*
   // Load volume
   try {
     const res = await getPipewireVolume('default')
@@ -443,74 +435,44 @@ onMounted(async () => {
     console.warn('PipeWire volume not available:', e)
     volumeAvailable.value = false
   }
+  */
 
-  // Load balance and mode using new separate endpoints
+  // Load mixing matrix from PipeWire API
   try {
-    // Get current monostereo mode
-    const modeRes = await getPipewireMonoStereo()
-    if (modeRes.status === 'success' && modeRes.data) {
-      const modeData = modeRes.data as { monostereo_mode: string }
-      if (modeData.monostereo_mode === 'stereo' || modeData.monostereo_mode === 'swapped' || modeData.monostereo_mode === 'mono' ||
-          modeData.monostereo_mode === 'left' || modeData.monostereo_mode === 'right') {
-        audioMode.value = modeData.monostereo_mode as AudioMode
-        console.log('Initialized audio mode to:', modeData.monostereo_mode)
-      } else {
-        console.log('Unknown mode from API:', modeData.monostereo_mode, '- defaulting to stereo')
-        audioMode.value = 'stereo'
-      }
-      modeAvailable.value = true
-    }
+    console.log('Loading mixing matrix from PipeWire...')
+    const res = await getSpeakerEQCrossbar()
 
-    // Get current balance
-    const balanceRes = await getPipewireBalance()
-    if (balanceRes.status === 'success' && balanceRes.data) {
-      const balanceData = balanceRes.data as { balance: number }
-      if (typeof balanceData.balance === 'number' && !isNaN(balanceData.balance) && isFinite(balanceData.balance)) {
-        const roundedBalance = Math.round(balanceData.balance * 100) / 100
-        balanceValue.value = roundedBalance
+    if ('error' in res) {
+      console.warn('Failed to get crossbar matrix:', res.error, res.message)
+      balanceAvailable.value = false
+      modeAvailable.value = false
+    } else {
+      const matrix = res.matrix
+      console.log('Loaded crossbar matrix from API:', matrix)
+
+      // Convert matrix to mode and balance settings
+      const settings = matrixToSettings(matrix)
+
+      if (settings) {
+        console.log('Extracted settings from matrix:', settings)
+        audioMode.value = settings.mode
+        balanceValue.value = Math.round(settings.balance * 100) / 100
+        console.log('Initialized audio mode to:', audioMode.value)
         console.log('Initialized balance to:', balanceValue.value)
+        balanceAvailable.value = true
+        modeAvailable.value = true
       } else {
-        console.warn('Invalid initial balance value from API:', balanceData.balance, '- defaulting to 0')
+        console.warn('Could not extract settings from matrix, using defaults')
+        audioMode.value = 'stereo'
         balanceValue.value = 0
-      }
-      balanceAvailable.value = true
-    }
-  } catch (e) {
-    console.warn('PipeWire balance/mode not available:', e)
-    // Fallback to mixer analysis if new endpoints fail
-    try {
-      const res = await getPipewireMixerAnalysis()
-      if (res.status === 'success' && res.data) {
-        const data = res.data as PipewireMixerAnalysis
-        console.log('Fallback mixer analysis data:', data)
-
-        // Initialize balance with proper validation
-        if (typeof data.balance === 'number' && !isNaN(data.balance) && isFinite(data.balance)) {
-          const roundedBalance = Math.round(data.balance * 100) / 100
-          balanceValue.value = roundedBalance
-          console.log('Fallback: Initialized balance to:', balanceValue.value)
-        } else {
-          console.warn('Invalid fallback balance value from API:', data.balance, '- defaulting to 0')
-          balanceValue.value = 0
-        }
-
-        // Initialize audio mode from API
-        if (data.mode === 'stereo' || data.mode === 'swapped' || data.mode === 'mono' || data.mode === 'left' || data.mode === 'right') {
-          audioMode.value = data.mode
-          console.log('Fallback: Initialized audio mode to:', data.mode)
-        } else {
-          console.log('Fallback: Unknown mode value:', data.mode, '- defaulting to stereo')
-          audioMode.value = 'stereo'
-        }
-
         balanceAvailable.value = true
         modeAvailable.value = true
       }
-    } catch (fallbackError) {
-      console.warn('Fallback mixer analysis also failed:', fallbackError)
-      balanceAvailable.value = false
-      modeAvailable.value = false
     }
+  } catch (e) {
+    console.warn('PipeWire balance/mode not available:', e)
+    balanceAvailable.value = false
+    modeAvailable.value = false
   }
 })
 </script>

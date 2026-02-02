@@ -34,6 +34,11 @@ export interface ApiInfo {
   endpoints: ApiEndpoint[]
 }
 
+export interface VersionInfo {
+  version: string
+  api_version: string
+}
+
 export interface PipewireObject {
   id: number
   name: string
@@ -436,6 +441,13 @@ async function apiRequest<T>(
 // ============================================================================
 // Core API
 // ============================================================================
+
+/**
+ * Get version information
+ */
+export async function getVersion(): Promise<ApiResponse<VersionInfo>> {
+  return apiRequest<VersionInfo>('/version')
+}
 
 /**
  * List all available API endpoints

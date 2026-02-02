@@ -400,11 +400,11 @@ function getApiBaseUrl(): string {
 
   if (useProxy) {
     // Use proxy in development
-    return `${window.location.origin}/api/pipewire`
+    return `${window.location.origin}/api/pipewire/v1`
   } else {
     // Direct connection in production
     const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
-    return `http://${deviceIP}${portSuffix}/api/pipewire`
+    return `http://${deviceIP}${portSuffix}/api/pipewire/v1`
   }
 }
 

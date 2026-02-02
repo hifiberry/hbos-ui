@@ -1,3 +1,14 @@
+hifiberry-webui (0.17.0) stable; urgency=medium
+
+  * Integrated PipeWire mixing matrix API for audio mode and balance control
+  * Added mixing_matrix.ts helper module for audio settings conversion
+  * Implemented bulk matrix endpoint for efficient audio routing updates
+  * Fixed general sound settings page after PipeWire API refactor
+  * Removed deprecated PipeWire API calls from sound settings
+  * Added PipeWire API version check to system-info page
+
+ -- HiFiBerry <info@hifiberry.com>  Mon, 02 Feb 2026 17:08:40 +0000
+
 hifiberry-webui (0.16.0) stable; urgency=medium
 
   * Updated many icons for consistency

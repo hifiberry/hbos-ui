@@ -14,15 +14,19 @@
             width="40"
             height="40"
           />
-          <button @click="toggleFilterBypassState(index)">
-            toggle
-          </button>
           <h2>
             {{ filter.icon.toUpperCase() }}
           </h2>
-          <button @click="removeFilter(index)">
-            <Icon icon="close" />
-          </button>
+          <div class="filter-list-entry-controls">
+            <button
+              :class="{ active: filter.enabled === true}"
+              @click="toggleFilterBypassState(index, filter.enabled)">
+              toggle
+            </button>
+            <button @click="removeFilter(index)">
+              <Icon icon="close" />
+            </button>
+          </div>
         </div>
 
         <!-- Descriptions -->
@@ -240,13 +244,14 @@ async function incrementFilterQ(index) {
   * Toggles the bypas state of a filter. Currently
   * only sets the filter to `bypassed=true`.
   */
-function toggleFilterBypassState(index) {
+function toggleFilterBypassState(index, isEnabledOrNot) {
   const data = {
     bankAddress: props.currentChannel,
     filterOffset: index,
-    bypassed: true
+    bypassed: !isEnabledOrNot
   }
   setIndividualFilterBypassState(data);
+  emit('filters-updated');
 }
 </script>
 
@@ -260,6 +265,10 @@ button {
   margin: 10px;
 
   &:hover {
+    border: 1px solid var(--primary);
+    background: rgba(225, 30, 74, 0.1);
+  }
+  &.active {
     border: 1px solid var(--primary);
     background: rgba(225, 30, 74, 0.1);
   }
@@ -324,5 +333,11 @@ button {
 
 .filter-increment-decrement-info {
   color: #666;
+}
+
+.filter-list-entry-controls {
+  display: flex;
+  justify-content: center;
+  align-content: center;
 }
 </style>

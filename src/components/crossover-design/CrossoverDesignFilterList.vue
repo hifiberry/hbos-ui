@@ -18,11 +18,17 @@
             {{ filter.icon.toUpperCase() }}
           </h2>
           <div class="filter-list-entry-controls">
-            <button
-              :class="{ active: filter.enabled === true}"
-              @click="toggleFilterBypassState(index, filter.enabled)">
-              toggle
-            </button>
+            <div class="filter-toggle">
+              <label class="toggle-switch">
+                <input
+                  type="checkbox"
+                  :checked="filter.enabled"
+                  @click.stop.prevent
+                  @change="toggleFilterBypassState(index, filter.enabled)"
+                />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
             <button @click="removeFilter(index)">
               <Icon icon="close" />
             </button>
@@ -256,6 +262,8 @@ function toggleFilterBypassState(index, isEnabledOrNot) {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/scss/service-item' as *;
+
 button {
   transition: all 0.25s;
   background: rgba(225, 255, 255, 0.1);
@@ -272,6 +280,10 @@ button {
     border: 1px solid var(--primary);
     background: rgba(225, 30, 74, 0.1);
   }
+}
+
+.toggle-switch {
+  @include service-toggle-switch;
 }
 
 .filter-list-container {
@@ -339,5 +351,50 @@ button {
   display: flex;
   justify-content: center;
   align-content: center;
+}
+
+.filter-toggle {
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+
+    input {
+      opacity: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #555;
+      transition: 0.3s;
+      border-radius: 24px;
+
+      &:before {
+        position: absolute;
+        content: '';
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+    }
+
+    input:checked + .toggle-slider {
+      background-color: #e11e4a;
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+  }
 }
 </style>

@@ -778,7 +778,8 @@ import { getDSPProgramInfo, type DSPProgramInfo } from '@/api/dsptoolkit'
 import { useEditableText } from '@/composables/useEditableField'
 import { useFavouritesInfo } from '@/composables/useFavouritesInfo'
 import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart'
-import { listPipewireDevices, getPipewireMonoStereo, getPipewireBalance, type PipewireDevices } from '@/api/pipewire'
+// TODO: Update to use new PipeWire API
+// import { listPipewireDevices, getPipewireMonoStereo, getPipewireBalance, type PipewireDevices } from '@/api/pipewire'
 import { useAppConfigStore } from '@/stores/appconfig'
 
 // State
@@ -849,10 +850,11 @@ const filesToCheck = [
   '/etc/hifiberry.user'
 ]
 
-// Pipewire devices state
+// Pipewire devices state - TODO: Update to use new PipeWire API
 const pipewireLoading = ref(true)
 const pipewireError = ref('')
-const pipewireDevices = ref<PipewireDevices | null>(null)
+// const pipewireDevices = ref<PipewireDevices | null>(null)
+const pipewireDevices = ref<any>(null)
 const pipewireMonoStereo = ref<string | null>(null)
 const pipewireBalance = ref<number | null>(null)
 
@@ -1397,6 +1399,12 @@ const fetchPipewireDevices = async () => {
   pipewireError.value = ''
 
   try {
+    // TODO: Update to use new PipeWire API
+    console.log('fetchPipewireDevices: PipeWire API not yet updated to new format')
+    pipewireError.value = 'PipeWire API migration in progress'
+    return
+    
+    /* OLD CODE - TODO: Update
     console.log('fetchPipewireDevices: Calling Pipewire APIs...')
 
     // Add timeout to prevent hanging
@@ -1428,7 +1436,9 @@ const fetchPipewireDevices = async () => {
     } else {
       throw new Error(devicesResponse.message || 'Failed to retrieve Pipewire devices')
     }
-
+    */
+    
+    /* OLD CODE - TODO: Update
     if (monoStereoResponse.status === 'success' && monoStereoResponse.data) {
       pipewireMonoStereo.value = monoStereoResponse.data.monostereo_mode
       console.log('fetchPipewireDevices: Successfully set monoStereo to:', pipewireMonoStereo.value)
@@ -1442,6 +1452,7 @@ const fetchPipewireDevices = async () => {
     } else {
       pipewireBalance.value = null
     }
+    */
   } catch (err) {
     console.error('fetchPipewireDevices: Error occurred:', err)
     pipewireError.value = err instanceof Error ? err.message : 'Failed to retrieve Pipewire data'

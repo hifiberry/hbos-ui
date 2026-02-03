@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import packageJson from './package.json'
 // import removeConsole from 'vite-plugin-remove-console'
 
 // A vite plugin that remove all the specified console types in the production environment
@@ -24,6 +25,9 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+  },
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version),
   },
   build: {
     minify: true, // Disable minification for readable error messages

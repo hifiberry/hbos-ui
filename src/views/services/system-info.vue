@@ -1422,6 +1422,10 @@ const fetchBackgroundServices = async () => {
     // Define the services to check (only those with version endpoints for now)
     const servicesToCheck = [
       {
+        name: 'Web UI',
+        isLocal: true
+      },
+      {
         name: 'Audio control',
         url: `${appConfigStore.getApiBaseUrl()}/version`
       },
@@ -1446,11 +1450,25 @@ const fetchBackgroundServices = async () => {
     for (const service of servicesToCheck) {
       const serviceCheck: BackgroundService = {
         name: service.name,
-        url: service.url,
+        url: service.url || '',
         status: 'checking'
       }
 
       backgroundServices.value.push(serviceCheck)
+
+      // Handle local web interface version
+      if (service.isLocal) {
+        serviceCheck.version = import.meta.env.VITE_APP_VERSION
+        serviceCheck.status = 'available'
+        serviceCheck.lastChecked = new Date()
+        console.log(`${service.name} version: ${serviceCheck.version}`)
+        continue
+      }
+
+      if (!service.url) {
+        serviceCheck.status = 'unavailable'
+        continue
+      }
 
       try {
         const startTime = Date.now()
@@ -1470,17 +1488,18 @@ const fetchBackgroundServices = async () => {
           if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API') {
             try {
               const data = await response.json()
+              console.log(`${service.name} response data:`, data)
               if (data && data.version) {
                 serviceCheck.version = data.version
                 serviceCheck.status = 'available'
                 console.log(`${service.name} is available (${responseTime}ms) - Version: ${serviceCheck.version}`)
               } else {
                 serviceCheck.status = 'unknown'
-                console.log(`${service.name} returned OK but no version info (${responseTime}ms) - Status: unknown`)
+                console.log(`${service.name} returned OK but no version info (${responseTime}ms) - Status: unknown`, data)
               }
             } catch (jsonError) {
               serviceCheck.status = 'unknown'
-              console.log(`${service.name} returned OK but could not parse version info (${responseTime}ms) - Status: unknown`)
+              console.log(`${service.name} returned OK but could not parse version info (${responseTime}ms) - Status: unknown`, jsonError)
             }
           } else {
             serviceCheck.status = 'available'

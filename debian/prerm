@@ -5,12 +5,16 @@ set -e
 case "$1" in
     remove|purge)
         echo "Removing HiFiBerry Web UI nginx configuration"
-        # Remove the nginx configuration
-        if [ -x /usr/sbin/configure-webui ]; then
-            /usr/sbin/configure-webui remove || true
-        else
-            echo "Warning: configure-webui script not found, manual cleanup required"
-            echo "Run 'sudo rm -f /etc/nginx/sites-enabled/hifiberry-webui' to manually remove"
+        
+        # Disable nginx site
+        if [ -L /etc/nginx/sites-enabled/hifiberry-webui ]; then
+            echo "Disabling HiFiBerry Web UI nginx site"
+            rm -f /etc/nginx/sites-enabled/hifiberry-webui
+            
+            # Reload nginx if running
+            if systemctl is-active --quiet nginx; then
+                systemctl reload nginx 2>/dev/null || true
+            fi
         fi
         ;;
     

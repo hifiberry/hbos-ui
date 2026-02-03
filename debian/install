@@ -1,9 +1,8 @@
-debian/package-files/usr/sbin/configure-webui usr/sbin/
-debian/package-files/etc/nginx/hifiberry-webui.nginx etc/nginx/
-debian/package-files/etc/nginx/hifiberry-audiocontrol.nginx etc/nginx/
-debian/package-files/etc/nginx/hifiberry-config.nginx etc/nginx/
-debian/package-files/etc/nginx/hifiberry-pipewire.nginx etc/nginx/
-debian/package-files/etc/nginx/hifiberry-sigmatcp.nginx etc/nginx/
-debian/package-files/etc/nginx/hifiberry-btaudio.nginx etc/nginx/
-debian/package-files/etc/nginx/hifiberry-roomeq.nginx etc/nginx/
-debian/package-files/etc/nginx/sites-available/hifiberry-webui etc/nginx/sites-available/
+debian/package-files/etc/nginx/hifiberry-webui.nginx usr/share/hifiberry-webui/nginx/
+debian/package-files/etc/nginx/hifiberry-audiocontrol.nginx usr/share/hifiberry-webui/nginx/
+debian/package-files/etc/nginx/hifiberry-config.nginx usr/share/hifiberry-webui/nginx/
+debian/package-files/etc/nginx/hifiberry-pipewire.nginx usr/share/hifiberry-webui/nginx/
+debian/package-files/etc/nginx/hifiberry-sigmatcp.nginx usr/share/hifiberry-webui/nginx/
+debian/package-files/etc/nginx/hifiberry-btaudio.nginx usr/share/hifiberry-webui/nginx/
+debian/package-files/etc/nginx/hifiberry-roomeq.nginx usr/share/hifiberry-webui/nginx/
+debian/package-files/etc/nginx/sites-available/hifiberry-webui usr/share/hifiberry-webui/nginx/

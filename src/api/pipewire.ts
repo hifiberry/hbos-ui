@@ -791,6 +791,16 @@ export async function getSpeakerEQCrossbar(): Promise<ApiResponse<CrossbarMatrix
 }
 
 /**
+ * Set the entire crossbar routing matrix
+ */
+export async function setSpeakerEQCrossbarMatrix(matrix: number[][]): Promise<ApiResponse<CrossbarMatrix>> {
+  return apiRequest<CrossbarMatrix>(`${SPEAKEREQ_BASE}/crossbar`, {
+    method: 'PUT',
+    body: JSON.stringify({ matrix }),
+  })
+}
+
+/**
  * Set a single crossbar routing value
  */
 export async function setSpeakerEQCrossbar(

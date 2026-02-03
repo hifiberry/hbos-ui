@@ -7,24 +7,49 @@ case "$1" in
         # $2 contains the old version if this is an upgrade
         if [ -z "$2" ]; then
             echo "Installing HiFiBerry Web UI (fresh install)"
-            action="install"
         else
             echo "Upgrading HiFiBerry Web UI from version $2"
-            action="upgrade"
         fi
         
         # Create necessary directories
         mkdir -p /var/log/nginx
+        mkdir -p /etc/nginx/sites-available
         
-        # Set up HiFiBerry Web UI nginx configuration
-        if [ -x /usr/sbin/configure-webui ]; then
-            echo "Setting up HiFiBerry Web UI nginx configuration"
-            /usr/sbin/configure-webui setup || true
-        else
-            echo "Warning: configure-webui not found at /usr/sbin/configure-webui"
-            echo "Manual setup required: run 'sudo configure-webui setup' to enable the Web UI"
-            ls -la /usr/sbin/configure-webui || echo "File does not exist"
+        # Always install nginx configuration files from templates
+        echo "Installing HiFiBerry nginx configuration files"
+        for nginx_file in /usr/share/hifiberry-webui/nginx/*.nginx; do
+            if [ -f "$nginx_file" ]; then
+                filename=$(basename "$nginx_file")
+                cp "$nginx_file" /etc/nginx/"$filename"
+            fi
+        done
+        
+        # Install nginx site configuration
+        if [ -f /usr/share/hifiberry-webui/nginx/hifiberry-webui ]; then
+            cp /usr/share/hifiberry-webui/nginx/hifiberry-webui /etc/nginx/sites-available/hifiberry-webui
+            
+            # Enable nginx site
+            echo "Enabling HiFiBerry Web UI nginx site"
+            ln -sf /etc/nginx/sites-available/hifiberry-webui /etc/nginx/sites-enabled/hifiberry-webui
+            
+            # Disable default site if it exists
+            if [ -L /etc/nginx/sites-enabled/default ]; then
+                echo "Disabling default nginx site"
+                rm -f /etc/nginx/sites-enabled/default
+            fi
+            
+            # Test and reload nginx
+            if nginx -t 2>/dev/null; then
+                echo "nginx configuration test passed"
+                if systemctl is-active --quiet nginx; then
+                    systemctl reload nginx && echo "nginx reloaded successfully"
+                fi
+            else
+                echo "Warning: nginx configuration test failed"
+            fi
         fi
+        
+        echo "HiFiBerry Web UI is now available at http://localhost"
         ;;
     
     abort-upgrade|abort-remove|abort-deconfigure)

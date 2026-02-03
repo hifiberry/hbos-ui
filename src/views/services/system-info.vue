@@ -482,6 +482,9 @@
                     <span v-else-if="service.status === 'available'" class="service-status status-available">
                       Available
                     </span>
+                    <span v-else-if="service.status === 'unknown'" class="service-status status-unknown">
+                      Unknown
+                    </span>
                     <span v-else :class="['service-status', `status-${service.status}`]">
                       {{ service.status === 'unavailable' ? 'Unavailable' : 'Checking...' }}
                     </span>
@@ -808,7 +811,7 @@ const pipewireBalance = ref<number | null>(null)
 interface BackgroundService {
   name: string
   url: string
-  status: 'available' | 'unavailable' | 'checking'
+  status: 'available' | 'unavailable' | 'checking' | 'unknown'
   responseTime?: number
   lastChecked?: Date
   version?: string
@@ -1463,22 +1466,24 @@ const fetchBackgroundServices = async () => {
         serviceCheck.lastChecked = new Date()
 
         if (response.ok) {
-          serviceCheck.status = 'available'
-
           // Try to extract version information for APIs that support it
           if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API') {
             try {
               const data = await response.json()
               if (data && data.version) {
                 serviceCheck.version = data.version
+                serviceCheck.status = 'available'
                 console.log(`${service.name} is available (${responseTime}ms) - Version: ${serviceCheck.version}`)
               } else {
-                console.log(`${service.name} is available (${responseTime}ms) - No version info`)
+                serviceCheck.status = 'unknown'
+                console.log(`${service.name} returned OK but no version info (${responseTime}ms) - Status: unknown`)
               }
             } catch (jsonError) {
-              console.log(`${service.name} is available (${responseTime}ms) - Could not parse version info`)
+              serviceCheck.status = 'unknown'
+              console.log(`${service.name} returned OK but could not parse version info (${responseTime}ms) - Status: unknown`)
             }
           } else {
+            serviceCheck.status = 'available'
             console.log(`${service.name} is available (${responseTime}ms)`)
           }
         } else {
@@ -2253,6 +2258,11 @@ onUnmounted(() => {
     &.status-unavailable {
       background: var(--background-error, rgba(239, 68, 68, 0.1));
       color: var(--color-error, #dc2626);
+    }
+
+    &.status-unknown {
+      background: var(--background-warning, rgba(245, 158, 11, 0.1));
+      color: var(--color-warning, #d97706);
     }
 
     &.status-checking {

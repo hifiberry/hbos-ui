@@ -1,3 +1,12 @@
+hifiberry-webui (0.17.2) stable; urgency=medium
+
+  * Changed background service status display: show "Unknown" instead of "Available" when API returns no version
+  * Added Web UI version display in Background Services section
+  * Fixed Vite proxy configuration for PipeWire API endpoints
+  * Added proper styling for "Unknown" service status with warning appearance
+
+ -- HiFiBerry <info@hifiberry.com>  Mon, 03 Feb 2026 14:30:00 +0000
+
 hifiberry-webui (0.17.1) stable; urgency=medium
 
   * Removed configure-webui script in favor of static nginx configuration

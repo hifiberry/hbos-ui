@@ -204,14 +204,14 @@ const headphoneDisplayDb = computed(() => {
 async function onSliderChange(newVal: number) {
   const pct = Math.round(newVal)
   volumeLimitPercent.value = pct
-  
+
   // Convert percentage to dB and update PipeWire master gain
   const db = percentToDb(pct)
-  
+
   try {
     console.log(`Setting master gain to ${db} dB (${pct}%)`)
     const res = await setSpeakerEQMasterGain(db)
-    
+
     if ('error' in res) {
       console.error('Failed to set master gain:', res.error, res.message)
       volumeAvailable.value = false
@@ -435,7 +435,7 @@ onMounted(async () => {
   try {
     console.log('Loading master gain from PipeWire SpeakerEQ...')
     const res = await getSpeakerEQMasterGain()
-    
+
     if ('error' in res) {
       console.warn('Failed to get master gain:', res.error, res.message)
       volumeAvailable.value = false

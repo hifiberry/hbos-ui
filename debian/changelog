@@ -1,3 +1,11 @@
+hifiberry-webui (0.17.3) stable; urgency=medium
+
+  * Implemented Volume Limit control mapped to PipeWire SpeakerEQ master gain
+  * Added linear -60dB to 0dB mapping for volume limit slider
+  * Integrated master gain API calls for loading and saving volume settings
+
+ -- HiFiBerry <info@hifiberry.com>  Mon, 03 Feb 2026 16:00:00 +0000
+
 hifiberry-webui (0.17.2) stable; urgency=medium
 
   * Changed background service status display: show "Unknown" instead of "Available" when API returns no version

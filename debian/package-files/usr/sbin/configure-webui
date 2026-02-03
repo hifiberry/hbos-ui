@@ -63,6 +63,7 @@ def setup_webui():
     webui_include = Path("/etc/nginx/hifiberry-webui.nginx")
     audiocontrol_include = Path("/etc/nginx/hifiberry-audiocontrol.nginx")
     config_include = Path("/etc/nginx/hifiberry-config.nginx")
+    pipewire_include = Path("/etc/nginx/hifiberry-pipewire.nginx")
     sigmatcp_include = Path("/etc/nginx/hifiberry-sigmatcp.nginx")
     roomeq_include = Path("/etc/nginx/hifiberry-roomeq.nginx")
     webui_dir = Path("/usr/share/hifiberry/webui")
@@ -79,6 +80,10 @@ def setup_webui():
     if not config_include.exists():
         print(f"Error: Config nginx include file not found at {config_include}")
         return 1
+    
+    if not pipewire_include.exists():
+        print(f"Warning: PipeWire nginx include file not found at {pipewire_include}")
+        print("PipeWire API will not be available")
     
     if not sigmatcp_include.exists():
         print(f"Warning: DSP Toolkit nginx include file not found at {sigmatcp_include}")
@@ -120,6 +125,13 @@ server {{
     include {config_include};
 '''
             
+            # Add PipeWire include if available
+            if pipewire_include.exists():
+                config_content += f'''    
+    # Include HiFiBerry PipeWire API proxy configuration
+    include {pipewire_include};
+'''
+            
             # Add DSP Toolkit include if available
             if sigmatcp_include.exists():
                 config_content += f'''    
@@ -158,7 +170,7 @@ server {{
     else:
         # Fallback: modify main nginx.conf directly
         print("Warning: sites-available not found, manual configuration required")
-        print(f"Please add 'include {audiocontrol_include};', 'include {config_include};', 'include {sigmatcp_include};', 'include {roomeq_include};' and 'include {webui_include};' to your nginx server block")
+        print(f"Please add 'include {audiocontrol_include};', 'include {config_include};', 'include {pipewire_include};', 'include {sigmatcp_include};', 'include {roomeq_include};' and 'include {webui_include};' to your nginx server block")
         return 1
     
     # Test nginx configuration

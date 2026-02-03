@@ -1,3 +1,12 @@
+hifiberry-webui (0.17.1) stable; urgency=medium
+
+  * Removed configure-webui script in favor of static nginx configuration
+  * Added PipeWire API nginx configuration to main site config
+  * Changed nginx config files to non-conffiles for automatic updates
+  * Fixed nginx configuration to always update on package upgrade
+
+ -- HiFiBerry <info@hifiberry.com>  Mon, 03 Feb 2026 09:26:00 +0000
+
 hifiberry-webui (0.17.0) stable; urgency=medium
 
   * Integrated PipeWire mixing matrix API for audio mode and balance control

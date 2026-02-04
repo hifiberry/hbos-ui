@@ -1,3 +1,11 @@
+hifiberry-webui (0.17.4) stable; urgency=medium
+
+  * Updated system-info page to show "(config.txt)" suffix for sound cards loaded from config.txt
+  * Removed edit functionality for sound card name field in system info
+  * Added fixedInConfigTxt attribute support in sound card display logic
+
+ -- HiFiBerry <info@hifiberry.com>  Wed, 04 Feb 2026 10:00:47 +0000
+
 hifiberry-webui (0.17.3) stable; urgency=medium
 
   * Implemented Volume Limit control mapped to PipeWire SpeakerEQ master gain

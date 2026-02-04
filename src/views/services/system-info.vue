@@ -196,7 +196,11 @@
                 <td class="label">Name</td>
                 <td class="value">
                   <div class="soundcard-display">
-                    <span>{{ getSoundCardDisplayName(systemInfo.soundcard) }}</span>
+                    <span v-if="!systemInfo.soundcard.fixedInConfigTxt">{{ getSoundCardDisplayName(systemInfo.soundcard) }}</span>
+                    <span v-else>
+                      {{ transformSoundCardName(systemInfo.soundcard.name) }}
+                      (<router-link to="/services/system-tools" class="config-link">config.txt</router-link>)
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -2212,6 +2216,20 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
+
+  &:hover {
+    color: var(--color-primary-dark, #1e40af);
+    text-decoration: underline;
+  }
+}
+
+// Config.txt link style
+.config-link {
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  text-decoration: none;
 
   &:hover {
     color: var(--color-primary-dark, #1e40af);

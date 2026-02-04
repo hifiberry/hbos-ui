@@ -23,28 +23,76 @@ function isApiError(response: unknown): response is ApiError {
 }
 
 // Core API Types
+
+/**
+ * ```json
+ * {
+ *  path: "/api/v1",
+ *  {
+ *    0: "GET"
+ *  },
+ *  description: "List all available API endpoints"
+ * }
+ * ```
+ */
 export interface ApiEndpoint {
   path: string
   methods: string[]
   description: string
 }
 
+/**
+ * Struct that gets returned from `/api/pipewire/v1`
+ * ```json
+ * {
+ *  version: "1.0",
+ *  endpoints: ApiEndpoint, ApiEndpoint...
+ * }
+ * ```
+ */
 export interface ApiInfo {
   version: string
   endpoints: ApiEndpoint[]
 }
 
+/**
+ * Struct that gets returned from `/api/pipewire/v1/version`
+ * ```json
+ * {
+ *  version: "2.0.9",
+ *  api_version: "1.0"
+ * }
+ * ```
+ */
 export interface VersionInfo {
   version: string
   api_version: string
 }
 
+/**
+ * Struct that contains a pipewire object's information.
+ * Those objects can be found from the objects array from
+ * `/api/pipewire/v1/ls`.
+ * ```json
+ * {
+ *  id: 2,
+ *  name: "libpipewire-module-protocol-native",
+ *  type: "module",
+ *  media_class: "Other"
+ * }
+ * ```
+ */
 export interface PipewireObject {
   id: number
   name: string
   type: 'node' | 'device' | 'port' | 'link' | 'client' | 'module' | 'factory'
 }
 
+/**
+ * Struct that gets returned from `/api/pipewire/v1/ls`.
+ * This is just an array of pipewire object's, explained
+ * above.
+ */
 export interface PipewireObjectsList {
   objects: PipewireObject[]
 }

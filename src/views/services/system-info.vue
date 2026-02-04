@@ -195,48 +195,8 @@
               <tr>
                 <td class="label">Name</td>
                 <td class="value">
-                  <div v-if="!isEditingSoundCard" class="soundcard-display">
-                    <span>{{ transformSoundCardName(systemInfo.soundcard.name) }}</span>
-                    <button
-                      @click="startEditingSoundCard"
-                      class="edit-button"
-                      :disabled="loading"
-                    >
-                      <Icon icon="tabler/edit" :width="16" :height="16" />
-                    </button>
-                  </div>
-                  <div v-else class="soundcard-edit">
-                    <select
-                      v-model="selectedSoundCard"
-                      class="soundcard-select"
-                      :disabled="savingSoundCard"
-                    >
-                      <option
-                        v-for="card in availableSoundCards"
-                        :key="card.dtoverlay"
-                        :value="card.dtoverlay"
-                      >
-                        {{ transformSoundCardName(card.name) }}
-                      </option>
-                    </select>
-                    <div class="editable-actions">
-                      <button
-                        @click="saveSoundCard"
-                        class="save-button"
-                        :disabled="savingSoundCard || !selectedSoundCard"
-                        :title="savingSoundCard ? 'Saving...' : 'Save'"
-                      >
-                        <Icon icon="tabler/check" :width="16" :height="16" />
-                      </button>
-                      <button
-                        @click="cancelEditingSoundCard"
-                        class="cancel-button"
-                        :disabled="savingSoundCard"
-                        title="Cancel"
-                      >
-                        <Icon icon="tabler/x" :width="16" :height="16" />
-                      </button>
-                    </div>
+                  <div class="soundcard-display">
+                    <span>{{ getSoundCardDisplayName(systemInfo.soundcard) }}</span>
                   </div>
                 </td>
               </tr>
@@ -859,6 +819,19 @@ const transformSoundCardName = (name: string): string => {
   }
 
   return transformations[name] || name
+}
+
+// Get sound card display name with config.txt suffix if manually configured
+const getSoundCardDisplayName = (soundcard: any): string => {
+  const baseName = transformSoundCardName(soundcard.name)
+
+  // Show (config.txt) suffix if card is fixed in config.txt and working
+  // This indicates the card is loaded from config.txt
+  if (soundcard.fixedInConfigTxt === true) {
+    return `${baseName} (config.txt)`
+  }
+
+  return baseName
 }
 
 // Format bytes for display

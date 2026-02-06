@@ -1,12 +1,14 @@
-hifiberry-webui (0.17.6) stable; urgency=medium
+hifiberry-webui (0.17.7) stable; urgency=medium
 
   * Added "No fixed configuration (auto-detect)" option to sound card selection
   * Fixed sound card selection to use card name instead of dtoverlay as value
   * Resolves issue where cards with same dtoverlay (e.g., MiniAmp/Beocreate) show incorrect selection
   * WebUI correctly displays currently configured fixed sound card on page load
+  * Fixed auto-detect option to use correct API endpoint (/soundcard/detection/enable)
+  * Auto-detect now completely removes fixed sound card configuration (dtoverlay, force_eeprom_read, comments)
   * Clicking config.txt link in system-info now navigates to system-tools page
 
- -- HiFiBerry <info@hifiberry.com>  Thu, 06 Feb 2026 13:45:00 +0000
+ -- HiFiBerry <info@hifiberry.com>  Fri, 06 Feb 2026 14:00:00 +0000
 
 hifiberry-webui (0.17.4) stable; urgency=medium
 

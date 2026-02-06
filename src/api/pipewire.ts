@@ -442,6 +442,13 @@ export interface RIAANotchSetResponse {
 
 import { useAppConfigStore } from '@/stores/appconfig'
 
+/**
+ * Gets the api config url from the `configStore`.
+ * If development is happening using a proxy, it will adjust
+ * the url accordingly.
+ *
+ * @returns {string} the full url for the api
+ */
 function getApiBaseUrl(): string {
   const configStore = useAppConfigStore()
   const { deviceIP, devicePort, useProxy } = configStore.config.audiocontrol_api
@@ -456,6 +463,24 @@ function getApiBaseUrl(): string {
   }
 }
 
+/**
+ * Requests a given api endpoint and returns
+ * the response of a given type.
+ *
+ *
+ * Example:
+ * ```typescript
+ *  return apiRequest<CacheRefreshResponse>('/cache/refresh', { method: 'POST' })
+ * ```
+ *
+ * This requests the api endpoint `/cache/refresh` and
+ * expects the type `CacheRefreshResponse`. It also uses
+ * the POST method.
+ *
+ * @param {string} endpoint - Endpoint that should be requested
+ * @param {RequestInit?} options - Optional options like using another http method
+ * @returns {Promise<ApiResponse<T>>} The struct of the `T` type
+ */
 async function apiRequest<T>(
   endpoint: string,
   options?: RequestInit

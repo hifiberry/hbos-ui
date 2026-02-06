@@ -294,15 +294,15 @@
                 <td class="label">Program Length</td>
                 <td class="value">{{ dspProgramInfo.program_length }} bytes</td>
               </tr>
-              <tr v-if="dspProgramInfo.checksums?.md5">
+              <tr v-if="dspProgramInfo.program_length > 0 && dspProgramInfo.checksums?.md5">
                 <td class="label">MD5 Checksum</td>
                 <td class="value uuid">{{ formatChecksum(dspProgramInfo.checksums.md5) }}</td>
               </tr>
-              <tr v-if="dspProgramInfo.checksums?.sha1">
+              <tr v-if="dspProgramInfo.program_length > 0 && dspProgramInfo.checksums?.sha1">
                 <td class="label">SHA1 Checksum</td>
                 <td class="value uuid">{{ formatChecksum(dspProgramInfo.checksums.sha1) }}</td>
               </tr>
-              <tr v-if="!dspProgramInfo.checksums?.md5 && !dspProgramInfo.checksums?.sha1">
+              <tr v-if="dspProgramInfo.program_length > 0 && !dspProgramInfo.checksums?.md5 && !dspProgramInfo.checksums?.sha1">
                 <td class="label">Checksums</td>
                 <td class="value">Not available</td>
               </tr>
@@ -1143,11 +1143,15 @@ const fetchDSPProgramInfo = async () => {
     console.error('Error fetching DSP program info:', err)
     const errorMessage = err instanceof Error ? err.message : 'Failed to retrieve DSP program information'
 
-    // Check if the error indicates no DSP detected
+    // Check if the error indicates no DSP detected (including connection errors when service is down)
     if (errorMessage.includes('DSP software not available') ||
         errorMessage.includes('not available') ||
-        errorMessage.includes('not detected')) {
-      dspProgramError.value = 'No DSP detected'
+        errorMessage.includes('not detected') ||
+        errorMessage.includes('502') ||
+        errorMessage.includes('Bad Gateway') ||
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('NetworkError')) {
+      dspProgramError.value = 'No DSP hardware detected'
     } else {
       dspProgramError.value = errorMessage
     }
@@ -1418,6 +1422,10 @@ const fetchBackgroundServices = async () => {
         name: 'PipeWire API',
         url: `${window.location.origin}/api/pipewire/v1/version`,
         isPipewire: true
+      },
+      {
+        name: 'Room EQ',
+        url: `${appConfigStore.getRoomEQApiBaseUrl()}/version`
       }
     ]
 
@@ -1462,7 +1470,7 @@ const fetchBackgroundServices = async () => {
 
         if (response.ok) {
           // Try to extract version information for APIs that support it
-          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API') {
+          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API' || service.name === 'Room EQ') {
             try {
               const data = await response.json()
               console.log(`${service.name} response data:`, data)
@@ -1471,12 +1479,12 @@ const fetchBackgroundServices = async () => {
                 serviceCheck.status = 'available'
                 console.log(`${service.name} is available (${responseTime}ms) - Version: ${serviceCheck.version}`)
               } else {
-                serviceCheck.status = 'unknown'
-                console.log(`${service.name} returned OK but no version info (${responseTime}ms) - Status: unknown`, data)
+                serviceCheck.status = 'unavailable'
+                console.log(`${service.name} returned OK but no version info (${responseTime}ms) - Status: unavailable`, data)
               }
             } catch (jsonError) {
-              serviceCheck.status = 'unknown'
-              console.log(`${service.name} returned OK but could not parse version info (${responseTime}ms) - Status: unknown`, jsonError)
+              serviceCheck.status = 'unavailable'
+              console.log(`${service.name} returned OK but could not parse version info (${responseTime}ms) - Status: unavailable`, jsonError)
             }
           } else {
             serviceCheck.status = 'available'
@@ -1489,13 +1497,20 @@ const fetchBackgroundServices = async () => {
       } catch (err) {
         serviceCheck.status = 'unavailable'
         serviceCheck.lastChecked = new Date()
-        console.error(`${service.name} is unavailable:`, err)
-        if (err instanceof Error) {
-          console.error(`Error details for ${service.name}:`, {
-            message: err.message,
-            name: err.name,
-            stack: err.stack
-          })
+
+        // Special handling for DSP backend - show "No DSP hardware detected" instead of connection error
+        if (service.name === 'DSP backend') {
+          serviceCheck.version = 'No DSP hardware detected'
+          console.log(`${service.name}: No DSP hardware detected (service not running)`)
+        } else {
+          console.error(`${service.name} is unavailable:`, err)
+          if (err instanceof Error) {
+            console.error(`Error details for ${service.name}:`, {
+              message: err.message,
+              name: err.name,
+              stack: err.stack
+            })
+          }
         }
       }
     }

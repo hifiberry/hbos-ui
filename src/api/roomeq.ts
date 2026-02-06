@@ -1303,6 +1303,12 @@ export const getRoomEQMicrophones = async (): Promise<RoomEQApiEnvelope<RoomEQMi
       throw new Error(`Failed to get microphones: ${response.status} ${response.statusText}`)
     }
 
+    // Check if response is JSON before parsing
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('RoomEQ service returned non-JSON response. Service may not be installed or running.')
+    }
+
     const data = await response.json()
     console.log('RoomEQ microphones response:', data)
 

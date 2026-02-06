@@ -313,12 +313,14 @@ export const setSoundCardDetection = async (enabled: boolean): Promise<{ status:
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/soundcard/detection`, {
+  // Use the correct endpoint based on enabled/disabled
+  const endpoint = enabled ? '/soundcard/detection/enable' : '/soundcard/detection/disable'
+
+  const response = await fetch(`${baseUrl}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ enabled }),
   })
 
   const data = await response.json()

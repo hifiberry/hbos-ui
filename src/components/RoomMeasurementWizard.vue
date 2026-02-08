@@ -1,14 +1,15 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click="handleOverlayClick">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h2>Room Measurement Wizard</h2>
-        <button @click="closeWizard" class="close-button" title="Close">
-          <Icon icon="close" />
-        </button>
-      </div>
-
-      <div class="modal-body">
+  <WizardModal
+    :is-open="isOpen"
+    title="Room Measurement Wizard"
+    :current-step="currentStep"
+    :total-steps="totalSteps"
+    :can-proceed-next="canProceedToNextStep"
+    @close="closeWizard"
+    @next="nextStep"
+    @previous="previousStep"
+    @finish="saveMeasurement"
+  >
         <!-- Step 1: Microphone Detection -->
         <div v-if="currentStep === 1" class="step-content">
           <div class="step-header">
@@ -307,91 +308,24 @@
               <span>Error: {{ fftError }}</span>
             </div>
             <div v-else-if="fftData" class="fft-chart">
-              <div class="frequency-response-chart">
-                <svg viewBox="0 0 800 300" class="response-svg">
-                  <!-- Grid lines -->
-                  <defs>
-                    <pattern id="grid" width="40" height="30" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
-                    </pattern>
-                  </defs>
-                  <rect width="800" height="300" fill="url(#grid)" />
-
-                  <!-- Frequency axis (log scale) -->
-                  <g class="frequency-axis">
-                    <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
-                    <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
-                    <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
-                    <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
-                    <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
-                  </g>
-
-                  <!-- Magnitude axis -->
-                  <g class="magnitude-axis">
-                    <text x="20" y="250" text-anchor="middle" class="axis-label">-20</text>
-                    <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
-                    <text x="20" y="50" text-anchor="middle" class="axis-label">+20</text>
-                  </g>
-
-                  <!-- Frequency response curve -->
-                  <path
-                    :d="generateFrequencyResponsePath(fftData)"
-                    fill="none"
-                    stroke="#4CAF50"
-                    stroke-width="2"
-                  />
-
-                  <!-- 0 dB reference line -->
-                  <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
-                </svg>
-              </div>
-
-              <!-- Frequency bands summary -->
-              <!-- <div class="frequency-bands">
-                <div v-for="(band, key) in fftData.frequency_bands" :key="key" class="band-info">
-                  <span class="band-name">{{ getBandDisplayName(key) }}</span>
-                  <span class="band-range">{{ band.range }}</span>
-                  <span class="band-level">{{ band.avg_magnitude.toFixed(1) }}dB</span>
-                </div>
-              </div> -->
+              <FrequencyResponseChart
+                grid-pattern-id="grid-measurement"
+                :chart-config="measurementChartConfig"
+                :curves="measurementCurves"
+              />
             </div>
           </div>
         </div>
-
-      </div>
-
-      <div class="modal-footer">
-        <div class="step-navigation">
-          <button v-if="currentStep > 1" @click="previousStep" class="nav-button secondary">
-            <Icon icon="arrow-left" />
-            Previous
-          </button>
-          <div class="step-indicator">
-            Step {{ currentStep }} of {{ totalSteps }}
-          </div>
-          <button
-            v-if="canProceedToNextStep && currentStep < totalSteps"
-            @click="nextStep"
-            class="nav-button primary"
-            :disabled="!canProceedToNextStep"
-          >
-            Next
-            <Icon icon="arrow-right" />
-          </button>
-          <button v-else-if="currentStep === totalSteps" @click="saveMeasurement" class="nav-button primary">
-            Save
-            <Icon icon="checkmark" />
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </WizardModal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import Icon from '@/components/Icon.vue'
+import WizardModal from '@/components/WizardModal.vue'
+import FrequencyResponseChart from '@/components/FrequencyResponseChart.vue'
 import ProgressSlider from './ProgressSlider.vue'
+import { CHART_CONFIGS } from '@/composables/useChartPaths'
 import { measureRoomEQSPL, getRoomEQMicrophones, type RoomEQMicrophone, startRoomEQNoise, stopRoomEQNoise, keepRoomEQNoisePlaying, completeRoomMeasurement, startRoomMeasure, type RoomMeasureRequest, analyzeRoomEQFFTRecording } from '@/api/roomeq'
 import { pauseAllPlayers } from '@/api/player'
 import { usePlayerStore } from '@/stores/player'
@@ -494,7 +428,6 @@ const sourceSignalFilename = ref<string>('')
 const totalRecordingDuration = ref<number>(0)
 
 // FFT analysis state
-// FFT analysis state
 interface FFTData {
   frequencies: number[]
   magnitude: number[]
@@ -536,6 +469,33 @@ const smoothingType = ref<'1/3_octave' | '1/6_octave'>('1/3_octave')
 
 // Measurement name with default value
 const measurementName = ref<string>('')
+
+// Chart config and curves for FrequencyResponseChart
+const measurementChartConfig = CHART_CONFIGS.measurement
+
+const measurementCurves = computed(() => {
+  if (!fftData.value) return []
+
+  let frequencies: number[]
+  let magnitudes: number[]
+
+  if (fftData.value.log_frequency_summary?.frequencies && fftData.value.log_frequency_summary?.magnitudes) {
+    frequencies = fftData.value.log_frequency_summary.frequencies
+    magnitudes = fftData.value.log_frequency_summary.magnitudes
+  } else if (fftData.value.frequencies && fftData.value.magnitude) {
+    frequencies = fftData.value.frequencies
+    magnitudes = fftData.value.magnitude
+  } else {
+    return []
+  }
+
+  return [{
+    frequencies,
+    magnitudes,
+    color: '#4CAF50',
+    strokeWidth: 2,
+  }]
+})
 
 // Set default measurement name
 const setDefaultMeasurementName = () => {
@@ -759,12 +719,6 @@ onBeforeUnmount(() => {
 })
 
 // Methods
-const handleOverlayClick = (event: MouseEvent) => {
-  if (event.target === event.currentTarget) {
-    closeWizard()
-  }
-}
-
 const closeWizard = () => {
   // Stop any ongoing SPL measurements before closing
   if (isMeasuring.value) {
@@ -1157,57 +1111,6 @@ const saveMeasurement = async () => {
   }
 }
 
-// Helper function to generate SVG path for frequency response curve
-const generateFrequencyResponsePath = (data: FFTData): string => {
-  // Prefer logarithmic frequency summary if available (better for acoustic visualization)
-  let frequencies: number[]
-  let magnitudes: number[]
-
-  if (data.log_frequency_summary?.frequencies && data.log_frequency_summary?.magnitudes) {
-    frequencies = data.log_frequency_summary.frequencies
-    magnitudes = data.log_frequency_summary.magnitudes
-  } else if (data.frequencies && data.magnitude) {
-    frequencies = data.frequencies
-    magnitudes = data.magnitude
-  } else {
-    return ''
-  }
-
-  const minFreq = 20
-  const maxFreq = 20000
-  const minMag = -30 // -30 dB
-  const maxMag = 30  // +30 dB
-  const width = 760 - 40 // Chart width minus margins
-  const height = 280 - 20 // Chart height minus margins
-
-  const logScale = (freq: number) => {
-    return 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
-  }
-
-  const magScale = (mag: number) => {
-    return 20 + (maxMag - mag) / (maxMag - minMag) * height
-  }
-
-  let path = ''
-  for (let i = 0; i < frequencies.length; i++) {
-    const freq = frequencies[i]
-    const mag = magnitudes[i]
-
-    if (freq >= minFreq && freq <= maxFreq) {
-      const x = logScale(freq)
-      const y = magScale(mag)
-
-      if (path === '') {
-        path = `M ${x} ${y}`
-      } else {
-        path += ` L ${x} ${y}`
-      }
-    }
-  }
-
-  return path
-}
-
 // Lifecycle
 onMounted(() => {
   // Set default measurement name initially
@@ -1235,128 +1138,6 @@ watch(smoothingType, () => {
 </script>
 
 <style scoped lang="scss">
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: var(--background-card);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  max-width: 700px;
-  width: 90vw;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-
-  .nav-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    font-size: 0.875rem;
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    &.secondary {
-      background: var(--color-bg-secondary);
-      color: var(--color-body);
-      border: 1px solid var(--color-border);
-
-      &:hover:not(:disabled) {
-        background: var(--color-border);
-      }
-    }
-
-    &.primary {
-      background: var(--primary);
-      color: white;
-
-      &:hover:not(:disabled) {
-        background: var(--primary-dark, var(--primary));
-        opacity: 0.9;
-      }
-    }
-
-    &.danger {
-      background: #dc3545;
-      color: white;
-
-      &:hover:not(:disabled) {
-        background: #c82333;
-      }
-    }
-
-    svg {
-      width: 16px;
-      height: 16px;
-    }
-  }
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 32px 20px 32px;
-  border-bottom: 1px solid var(--color-border);
-
-  h2 {
-    margin: 0;
-    color: var(--color-head);
-    font-size: 1.5rem;
-    font-weight: 600;
-  }
-
-  .close-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    color: var(--color-body-secondary);
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: var(--color-bg-secondary);
-      color: var(--color-head);
-    }
-
-    svg {
-      width: 18px;
-      height: 18px;
-    }
-  }
-}
-
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 32px;
-}
-
 .step-content {
   .step-header {
     display: flex;
@@ -1452,60 +1233,6 @@ watch(smoothingType, () => {
           }
         }
       }
-
-      .signal-type-options {
-        display: flex;
-        gap: 12px;
-        margin-top: 8px;
-
-        .signal-option {
-          flex: 1;
-          padding: 12px;
-          border: 2px solid var(--color-border);
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          background: var(--color-bg);
-
-          &:hover:not(.disabled) {
-            border-color: var(--primary);
-            background: var(--color-bg-secondary);
-          }
-
-          &.active {
-            border-color: var(--primary);
-            background: var(--primary-alpha-10);
-          }
-
-          &.disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-
-          .signal-option-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
-
-            .signal-option-label {
-              font-weight: 600;
-              color: var(--color-head);
-            }
-          }
-
-          .signal-option-description {
-            font-size: 0.9em;
-            color: var(--color-body);
-            line-height: 1.4;
-          }
-        }
-      }
-      .setting-error {
-        color: var(--color-error, #dc3545);
-        font-size: 0.875rem;
-        margin-top: 8px;
-      }
     }
   }
 
@@ -1514,20 +1241,6 @@ watch(smoothingType, () => {
     justify-content: center;
     margin-top: 8px;
     margin-bottom: 12px;
-  }
-
-  .recording-file {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--color-body-secondary);
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-
-    .mono {
-      font-family: monospace;
-      color: var(--color-head);
-    }
   }
 
   .progress-info {
@@ -1555,48 +1268,6 @@ watch(smoothingType, () => {
           width: 30%;
           animation: indeterminate 2s ease-in-out infinite;
         }
-      }
-    }
-  }
-
-  /* Step 5 styles */
-  .measurement-summary {
-    margin: 24px 0;
-
-    h4 {
-      margin: 0 0 16px 0;
-      color: var(--color-head);
-      font-size: 1.125rem;
-      font-weight: 600;
-    }
-
-    p {
-      margin: 0 0 20px 0;
-      color: var(--color-body);
-      line-height: 1.5;
-    }
-
-    .recording-file-final {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 20px;
-      background: var(--color-bg-secondary);
-      border: 1px solid var(--color-border);
-      border-radius: 8px;
-      color: var(--color-head);
-      font-size: 1rem;
-
-      .mono {
-        font-family: monospace;
-        font-weight: 600;
-        color: var(--primary);
-      }
-
-      svg {
-        width: 20px;
-        height: 20px;
-        color: var(--primary);
       }
     }
   }
@@ -1810,229 +1481,52 @@ watch(smoothingType, () => {
         }
       }
     }
-
-    .selected-microphone-info {
-      h5 {
-        margin: 0 0 16px 0;
-        color: var(--color-head);
-        font-size: 1rem;
-        font-weight: 600;
-      }
-
-      .microphone-details-card {
-        background: var(--color-bg-secondary);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        padding: 20px;
-
-        .detail-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 8px 0;
-          border-bottom: 1px solid var(--color-border);
-
-          &:last-child {
-            border-bottom: none;
-          }
-
-          .detail-label {
-            font-weight: 500;
-            color: var(--color-body-secondary);
-          }
-
-          .detail-value {
-            font-weight: 500;
-            color: var(--color-head);
-            font-family: 'Metropolis', monospace;
-          }
-        }
-      }
-    }
-
-    .positioning-instructions {
-      p {
-        margin: 0;
-        color: var(--color-body);
-        font-size: 1rem;
-        line-height: 1.6;
-        text-align: center;
-        padding: 24px 32px;
-        background: var(--color-bg-secondary);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-      }
-    }
-
-    .audio-level-instructions {
-      .level-guidance {
-        margin-bottom: 24px;
-
-        h4 {
-          margin: 0 0 16px 0;
-          color: var(--color-head);
-          font-size: 1.125rem;
-          font-weight: 600;
-        }
-
-        p {
-          margin: 0;
-          color: var(--color-body);
-          line-height: 1.5;
-        }
-      }
-
-      .noise-controls[data-component="room-wizard"] {
-        margin-bottom: 24px;
-        margin-top: 32px;
-
-        > h4 {
-          color: var(--color-head);
-          font-size: 1.125rem;
-          font-weight: 600;
-        }
-
-        .controls-section {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-
-          .noise-button-container {
-            display: flex;
-            justify-content: center;
-          }
-
-          .volume-control {
-            .volume-header {
-              .volume-label {
-                color: var(--color-head);
-                font-weight: 500;
-                font-size: 1rem;
-              }
-            }
-
-            .volume-slider-container {
-              width: 100%;
-            }
-          }
-
-          .measured-level-control {
-            .measured-level-header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-
-              .measured-level-label {
-                color: var(--color-head);
-                font-weight: 500;
-                font-size: 1rem;
-              }
-
-              .measured-level-value {
-                color: var(--color-body);
-                font-weight: 600;
-                font-size: 0.9rem;
-                background: var(--color-bg-secondary);
-                padding: 4px 8px;
-                border-radius: 4px;
-                border: 1px solid var(--color-border);
-                font-family: monospace;
-                min-width: 6ch;
-                text-align: center;
-              }
-            }
-
-            .measured-level-meter-container {
-              width: 100%;
-
-              .vu-meter {
-                width: 100%;
-
-                .spl-meter-bar {
-                  width: 100%;
-                  margin-bottom: 12px;
-
-                  .spl-meter-track {
-                    width: 100%;
-                    height: 20px;
-                    background: var(--color-bg-secondary);
-                    border: 1px solid var(--color-border);
-                    border-radius: 6px;
-                    position: relative;
-                    overflow: hidden;
-                    margin-bottom: 8px;
-
-                    .spl-meter-fill {
-                      position: absolute;
-                      top: 0;
-                      left: 0;
-                      bottom: 0;
-                      height: 100%;
-                      transition: width 0.2s ease, background-color 0.2s ease;
-                      border-radius: 5px 0 0 5px;
-                    }
-                  }
-
-                  .spl-scale {
-                    width: 100%;
-                    padding: 0 4px;
-                    font-size: 0.7rem;
-                    color: var(--color-body-secondary);
-                    font-weight: 500;
-                    display: grid;
-                    grid-template-columns: repeat(5, 1fr);
-                    text-align: center;
-
-                    .scale-mark {
-                      &.optimal {
-                        color: #28a745; /* green */
-                        font-weight: 600;
-                      }
-                    }
-                  }
-                }
-
-                .optimal-range-indicator {
-                  text-align: center;
-                  margin-top: 12px;
-
-                  .range-label {
-                    font-size: 0.75rem;
-                    color: white;
-                    background: var(--primary);
-                    padding: 2px 6px;
-                    border-radius: 3px;
-                    font-weight: 500;
-                    display: inline-block;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
   }
 }
 
-.modal-footer {
-  border-top: 1px solid var(--color-border);
-  padding: 20px 32px;
+// nav-button used inside step content (e.g. play noise button)
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
 
-  .step-navigation {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
-    .step-indicator {
-      font-size: 0.875rem;
-      color: var(--color-body-secondary);
-      font-weight: 500;
+  &.primary {
+    background: var(--primary);
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: var(--primary-dark, var(--primary));
+      opacity: 0.9;
     }
+  }
+
+  &.danger {
+    background: #dc3545;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: #c82333;
+    }
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
   }
 }
 
-/* Ensure SPL meter styles apply outside of .microphones-section scope */
 .positioning-instructions {
   p {
     margin: 0;
@@ -2137,7 +1631,7 @@ watch(smoothingType, () => {
 
               .spl-meter-track {
                 width: 100%;
-                height: 20px; /* Fix collapse */
+                height: 20px;
                 background: var(--color-bg-secondary);
                 border: 1px solid var(--color-border);
                 border-radius: 6px;
@@ -2159,7 +1653,7 @@ watch(smoothingType, () => {
               .spl-scale {
                 position: relative;
                 width: 100%;
-                height: 20px; /* room for labels */
+                height: 20px;
                 margin-top: 2px;
                 font-size: 0.7rem;
                 color: var(--color-body-secondary);
@@ -2176,22 +1670,22 @@ watch(smoothingType, () => {
                     position: absolute;
                     left: 50%;
                     transform: translateX(-50%);
-                    top: -10px; /* tick above label */
+                    top: -10px;
                     width: 1px;
                     height: 8px;
                     background: var(--color-border);
                   }
 
                   &:first-child {
-                    transform: none; /* align 40 at the left edge */
+                    transform: none;
                   }
 
                   &:last-child {
-                    transform: translateX(-100%); /* align 100 at the right edge */
+                    transform: translateX(-100%);
                   }
 
                   &.optimal {
-                    color: #28a745; /* green */
+                    color: #28a745;
                     font-weight: 600;
                   }
                 }
@@ -2205,7 +1699,7 @@ watch(smoothingType, () => {
               .range-label {
                 font-size: 0.75rem;
                 color: #0f5132;
-                background: #d1e7dd; /* green-ish badge */
+                background: #d1e7dd;
                 padding: 2px 6px;
                 border-radius: 3px;
                 font-weight: 600;
@@ -2226,33 +1720,6 @@ watch(smoothingType, () => {
 }
 
 @media (max-width: 768px) {
-  .modal-content {
-    width: 95vw;
-    max-height: 90vh;
-  }
-
-  .modal-header {
-    padding: 20px 24px 16px 24px;
-
-    h2 {
-      font-size: 1.25rem;
-    }
-  }
-
-  .modal-body {
-    padding: 24px;
-  }
-
-  .modal-footer {
-    padding: 16px 24px;
-
-    .step-navigation {
-      .step-indicator {
-        font-size: 0.8125rem;
-      }
-    }
-  }
-
   .step-content {
     .measurement-mic-image {
       height: 150px;
@@ -2401,11 +1868,6 @@ watch(smoothingType, () => {
     }
   }
 
-  h4 {
-    color: #2c3e50;
-    margin-bottom: 16px;
-  }
-
   .fft-loading {
     display: flex;
     align-items: center;
@@ -2429,65 +1891,6 @@ watch(smoothingType, () => {
     background: #f8d7da;
     border: 1px solid #f5c6cb;
     border-radius: 8px;
-  }
-
-  .fft-chart {
-    p {
-      margin-bottom: 16px;
-      color: #666;
-      font-size: 0.875rem;
-    }
-
-    .frequency-response-chart {
-      background: #1a1a1a;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-
-      .response-svg {
-        width: 100%;
-        height: auto;
-        max-height: 300px;
-
-        .axis-label {
-          fill: #ccc;
-          font-size: 12px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-      }
-    }
-
-    .frequency-bands {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-
-      .band-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 12px;
-        background: #f8f9fa;
-        border-radius: 6px;
-        border: 1px solid #e9ecef;
-
-        .band-name {
-          font-weight: 600;
-          color: #2c3e50;
-        }
-
-        .band-range {
-          font-size: 0.75rem;
-          color: #666;
-        }
-
-        .band-level {
-          font-weight: 600;
-          color: #28a745;
-          font-family: 'Courier New', monospace;
-        }
-      }
-    }
   }
 }
 

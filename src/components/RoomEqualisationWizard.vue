@@ -1,14 +1,19 @@
 <template>
-  <div v-if="isOpen && measurement" class="modal-overlay" @click="handleOverlayClick">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h2>Room Equalisation Wizard</h2>
-        <button @click="closeWizard" class="close-button" title="Close">
-          <Icon icon="close" />
-        </button>
-      </div>
-
-      <div class="modal-body">
+  <WizardModal
+    :is-open="isOpen && !!measurement"
+    title="Room Equalisation Wizard"
+    :current-step="currentStep"
+    :total-steps="totalSteps"
+    :can-proceed-next="currentStep !== 4 || canProceedToStep5"
+    :next-label="currentStep === 3 ? 'Start' : currentStep === 4 && !canProceedToStep5 ? 'Processing...' : 'Next'"
+    final-label="Save"
+    final-icon="save"
+    :saving-final="savingConfiguration"
+    @close="closeWizard"
+    @next="nextStep"
+    @previous="previousStep"
+    @finish="saveConfiguration"
+  >
         <!-- Step 1: Review Frequency Response -->
         <div v-if="currentStep === 1" class="step-content">
           <div class="step-header">
@@ -29,33 +34,11 @@
               </div>
             </div>
             <div class="fft-chart">
-              <div class="frequency-response-chart">
-                <svg viewBox="0 0 800 300" class="response-svg">
-                  <defs>
-                    <pattern id="grid-eq" width="40" height="30" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
-                    </pattern>
-                  </defs>
-                  <rect width="800" height="300" fill="url(#grid-eq)" />
-
-                  <g class="frequency-axis">
-                    <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
-                    <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
-                    <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
-                    <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
-                    <text x="750" y="290" text-anchor="middle" class="axis-label">25k</text>
-                  </g>
-
-                  <g class="magnitude-axis">
-                    <text x="20" y="250" text-anchor="middle" class="axis-label">-20</text>
-                    <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
-                    <text x="20" y="50" text-anchor="middle" class="axis-label">+20</text>
-                  </g>
-
-                  <path :d="generatePath(measurement)" fill="none" stroke="#4CAF50" stroke-width="2" />
-                  <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
-                </svg>
-              </div>
+              <FrequencyResponseChart
+                grid-pattern-id="grid-eq"
+                :chart-config="standardChartConfig"
+                :curves="step1Curves"
+              />
             </div>
           </div>
         </div>
@@ -98,15 +81,13 @@
 
             <!-- Preview selected target curve with measured overlay (±20 dB scale) -->
             <div v-if="selectedTargetPoints.length" class="target-preview">
-              <svg viewBox="0 0 800 200" class="response-svg">
-                <rect width="800" height="200" fill="#111" rx="6" />
-                <!-- 0 dB reference line (rendered first, behind curves) -->
-                <line x1="40" y1="100" x2="760" y2="100" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
-                <!-- Measured overlay -->
-                <path v-if="measurement" :d="generateStep2MeasuredPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="2" />
-                <!-- Target curve (±20 dB scale) -->
-                <path :d="generateTargetPath(selectedTargetPoints)" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
-              </svg>
+              <FrequencyResponseChart
+                grid-pattern-id="grid-preview"
+                view-box="0 0 800 200"
+                :chart-config="previewChartConfig"
+                :curves="step2Curves"
+                :show-reference-line="true"
+              />
             </div>
 
             <div class="option-row" v-if="exportMode">
@@ -149,81 +130,47 @@
           <!-- Measured Frequency Response Display -->
           <div class="frequency-response-section">
             <h4>Measured Frequency Response</h4>
-            <div class="frequency-response-chart">
-              <svg viewBox="0 0 800 300" class="response-svg">
-                <defs>
-                  <pattern id="grid-step3" width="40" height="30" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
-                  </pattern>
-                </defs>
-                <rect width="800" height="300" fill="url(#grid-step3)" />
+            <FrequencyResponseChart
+              grid-pattern-id="grid-step3"
+              :chart-config="step3ChartConfig"
+              :curves="step3Curves"
+              reference-dash-array="3,3"
+            >
+              <!-- Usable frequency range indicators -->
+              <g v-if="userMinFrequency && userMaxFrequency">
+                <!-- Low frequency limit line -->
+                <line :x1="frequencyToXStep3(userMinFrequency || 20)"
+                      y1="20"
+                      :x2="frequencyToXStep3(userMinFrequency || 20)"
+                      y2="280"
+                      stroke="#ff6b6b"
+                      stroke-width="2"
+                      stroke-dasharray="5,5" />
+                <text :x="frequencyToXStep3(userMinFrequency || 20)"
+                      y="12"
+                      text-anchor="middle"
+                      class="range-label"
+                      fill="#ff6b6b">
+                  {{ Math.round(userMinFrequency || 20) }}Hz
+                </text>
 
-                <!-- Frequency axis (20Hz - 20kHz) -->
-                <g class="frequency-axis">
-                  <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
-                  <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
-                  <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
-                  <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
-                  <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
-                </g>
-
-                <!-- Magnitude axis (-20dB to +20dB) -->
-                <g class="magnitude-axis">
-                  <text x="20" y="285" text-anchor="middle" class="axis-label">-20</text>
-                  <text x="20" y="235" text-anchor="middle" class="axis-label">-10</text>
-                  <text x="20" y="185" text-anchor="middle" class="axis-label">-5</text>
-                  <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
-                  <text x="20" y="115" text-anchor="middle" class="axis-label">+5</text>
-                  <text x="20" y="65" text-anchor="middle" class="axis-label">+10</text>
-                  <text x="20" y="15" text-anchor="middle" class="axis-label">+20</text>
-                </g>
-
-                <!-- 0 dB reference line -->
-                <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="3,3" />
-
-                <!-- Measured frequency response curve -->
-        <path v-if="measurement"
-          :d="generateMeasuredPath(measurement)"
-          fill="none"
-          stroke="#4CAF50"
-          stroke-width="2" />
-
-                <!-- Usable frequency range indicators -->
-                <g v-if="userMinFrequency && userMaxFrequency">
-                  <!-- Low frequency limit line -->
-                  <line :x1="frequencyToX(userMinFrequency || 20)"
-                        y1="20"
-                        :x2="frequencyToX(userMinFrequency || 20)"
-                        y2="280"
-                        stroke="#ff6b6b"
-                        stroke-width="2"
-                        stroke-dasharray="5,5" />
-                  <text :x="frequencyToX(userMinFrequency || 20)"
-                        y="12"
-                        text-anchor="middle"
-                        class="range-label"
-                        fill="#ff6b6b">
-                    {{ Math.round(userMinFrequency || 20) }}Hz
-                  </text>
-
-                  <!-- High frequency limit line -->
-      <line :x1="frequencyToX(userMaxFrequency || 20000)"
-                        y1="20"
-        :x2="frequencyToX(userMaxFrequency || 20000)"
-                        y2="280"
-                        stroke="#ff6b6b"
-                        stroke-width="2"
-                        stroke-dasharray="5,5" />
-      <text :x="frequencyToX(userMaxFrequency || 20000)"
-                        y="12"
-                        text-anchor="middle"
-                        class="range-label"
-                        fill="#ff6b6b">
-        {{ Math.round(userMaxFrequency || 20000) }}Hz
-                  </text>
-                </g>
-              </svg>
-            </div>
+                <!-- High frequency limit line -->
+    <line :x1="frequencyToXStep3(userMaxFrequency || 20000)"
+                      y1="20"
+      :x2="frequencyToXStep3(userMaxFrequency || 20000)"
+                      y2="280"
+                      stroke="#ff6b6b"
+                      stroke-width="2"
+                      stroke-dasharray="5,5" />
+    <text :x="frequencyToXStep3(userMaxFrequency || 20000)"
+                      y="12"
+                      text-anchor="middle"
+                      class="range-label"
+                      fill="#ff6b6b">
+      {{ Math.round(userMaxFrequency || 20000) }}Hz
+                </text>
+              </g>
+            </FrequencyResponseChart>
           </div>
 
           <!-- Usable Frequency Range Controls -->
@@ -325,46 +272,12 @@
           <!-- Show initial frequency response -->
           <div class="frequency-response-section">
             <h4>Initial Frequency Response</h4>
-            <div class="frequency-response-chart">
-              <svg viewBox="0 0 800 300" class="response-svg">
-                <defs>
-                  <pattern id="grid-opt" width="40" height="30" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
-                  </pattern>
-                </defs>
-                <rect width="800" height="300" fill="url(#grid-opt)" />
-
-                <!-- Frequency axis (20Hz - 20kHz) -->
-                <g class="frequency-axis">
-                  <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
-                  <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
-                  <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
-                  <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
-                  <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
-                </g>
-
-                <!-- Magnitude axis (-10dB to +10dB) -->
-                <g class="magnitude-axis">
-                  <text x="20" y="270" text-anchor="middle" class="axis-label">-10</text>
-                  <text x="20" y="220" text-anchor="middle" class="axis-label">-5</text>
-                  <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
-                  <text x="20" y="80" text-anchor="middle" class="axis-label">+5</text>
-                  <text x="20" y="30" text-anchor="middle" class="axis-label">+10</text>
-                </g>
-
-                <!-- Initial measurement curve -->
-                <path :d="generateOptimisationPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="2" />
-
-                <!-- Target curve (clipped to min/max optimizer frequencies) -->
-                <path v-if="selectedTargetPoints.length" :d="generateOptimisationTargetClippedPath(selectedTargetPoints, userMinFrequency, userMaxFrequency)" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
-
-                <!-- Optimized curve (shown during/after optimization) -->
-                <path v-if="optimizedResponse" :d="generateOptimisationPath(optimizedResponse)" fill="none" stroke="#ff6b35" stroke-width="2" />
-
-                <!-- 0 dB reference line -->
-                <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="3,3"/>
-              </svg>
-            </div>
+            <FrequencyResponseChart
+              grid-pattern-id="grid-opt"
+              :chart-config="optimisationChartConfig"
+              :curves="step4Curves"
+              reference-dash-array="3,3"
+            />
           </div>
 
           <div class="optimisation">
@@ -423,46 +336,12 @@
             <!-- Frequency Response with Filters Applied -->
             <div class="corrected-response-section">
               <h4>Corrected Frequency Response</h4>
-              <div class="frequency-response-chart">
-                <svg viewBox="0 0 800 300" class="response-svg">
-                  <defs>
-                    <pattern id="grid-corrected" width="40" height="30" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#444" stroke-width="0.5"/>
-                    </pattern>
-                  </defs>
-                  <rect width="800" height="300" fill="url(#grid-corrected)" />
-
-                  <!-- Frequency axis -->
-                  <g class="frequency-axis">
-                    <text x="50" y="290" text-anchor="middle" class="axis-label">20</text>
-                    <text x="200" y="290" text-anchor="middle" class="axis-label">100</text>
-                    <text x="400" y="290" text-anchor="middle" class="axis-label">1k</text>
-                    <text x="600" y="290" text-anchor="middle" class="axis-label">10k</text>
-                    <text x="750" y="290" text-anchor="middle" class="axis-label">20k</text>
-                  </g>
-
-                  <!-- Magnitude axis -->
-                  <g class="magnitude-axis">
-                    <text x="20" y="270" text-anchor="middle" class="axis-label">-10</text>
-                    <text x="20" y="220" text-anchor="middle" class="axis-label">-5</text>
-                    <text x="20" y="150" text-anchor="middle" class="axis-label">0</text>
-                    <text x="20" y="80" text-anchor="middle" class="axis-label">+5</text>
-                    <text x="20" y="30" text-anchor="middle" class="axis-label">+10</text>
-                  </g>
-
-                  <!-- Original measurement (faded) -->
-                  <path :d="generateOptimisationPath(measurement)" fill="none" stroke="#4CAF50" stroke-width="1.5" opacity="0.4" />
-
-                  <!-- Target curve (dashed) -->
-                  <path v-if="selectedTargetPoints.length" :d="generateOptimisationTargetClippedPath(selectedTargetPoints, userMinFrequency, userMaxFrequency)" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="5,5" />
-
-                  <!-- Corrected response (highlighted) -->
-                  <path v-if="optimizedResponse" :d="generateOptimisationPath(optimizedResponse)" fill="none" stroke="#ff6b35" stroke-width="2.5" />
-
-                  <!-- 0 dB reference line -->
-                  <line x1="40" y1="150" x2="760" y2="150" stroke="#666" stroke-width="1" stroke-dasharray="3,3"/>
-                </svg>
-              </div>
+              <FrequencyResponseChart
+                grid-pattern-id="grid-corrected"
+                :chart-config="optimisationChartConfig"
+                :curves="step5Curves"
+                reference-dash-array="3,3"
+              />
 
               <div class="chart-legend">
                 <div class="legend-item">
@@ -587,34 +466,15 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="modal-footer">
-        <div class="step-navigation">
-          <button v-if="currentStep > 1" @click="previousStep" class="nav-button secondary">
-            <Icon icon="arrow-left" />
-            Previous
-          </button>
-          <div class="step-indicator">Step {{ currentStep }} of {{ totalSteps }}</div>
-          <button v-if="currentStep < totalSteps" @click="nextStep" class="nav-button primary"
-                  :disabled="currentStep === 4 && !canProceedToStep5">
-            {{ currentStep === 3 ? 'Start' : currentStep === 4 && !canProceedToStep5 ? 'Processing...' : 'Next' }}
-            <Icon icon="arrow-right" />
-          </button>
-          <button v-else @click="saveConfiguration" :disabled="savingConfiguration" class="nav-button primary">
-            <Icon v-if="savingConfiguration" icon="spinner" class="spinning" />
-            <Icon v-else icon="save" />
-            {{ savingConfiguration ? 'Saving...' : 'Save' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </WizardModal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import Icon from '@/components/Icon.vue'
+import WizardModal from '@/components/WizardModal.vue'
+import FrequencyResponseChart from '@/components/FrequencyResponseChart.vue'
+import { CHART_CONFIGS, frequencyToX as frequencyToXHelper } from '@/composables/useChartPaths'
 import type { RoomMeasurement } from '@/stores/settings'
 import { getRoomEQTargetPresets, type RoomEQTargetPoint, detectUsableFrequencyRange, type RoomEQUsableRangeResult } from '@/api/roomeq'
 import { setConfigValue } from '@/api/config'
@@ -674,10 +534,6 @@ watch(measurement, (m) => {
   rangeMax.value = Math.min(25000, Math.ceil(m.frequency_range[1]))
   }
 })
-
-const handleOverlayClick = (event: MouseEvent) => {
-  if (event.target === event.currentTarget) closeWizard()
-}
 
 const closeWizard = () => {
   emit('close')
@@ -1085,387 +941,168 @@ const stepLog = (which: 'min' | 'max', direction: 'up' | 'down') => {
   applyLogStep(which, direction)
 }
 
-// Chart path generator based on saved measurement
-const generatePath = (m: RoomMeasurement): string => {
-  if (!m.frequencies || !m.magnitudes) return ''
+// ── Chart configs ──────────────────────────────────────────────────────
+const standardChartConfig = CHART_CONFIGS.standard
+const previewChartConfig = CHART_CONFIGS.preview
+const step3ChartConfig = CHART_CONFIGS.step3
+const optimisationChartConfig = CHART_CONFIGS.optimisation
 
-  const minFreq = 20
-  const maxFreq = 25000
-  const minMag = -30
-  const maxMag = 30
-  const width = 760 - 40
-  const height = 280 - 20
-
-  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
-  const magScale = (mag: number) => 20 + (maxMag - mag) / (maxMag - minMag) * height
-
-  let path = ''
-  for (let i = 0; i < m.frequencies.length; i++) {
-    const f = m.frequencies[i]
-    const mag = m.magnitudes[i]
-    if (f >= minFreq && f <= maxFreq) {
-      const x = logScale(f)
-      const y = magScale(mag)
-      path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
-    }
-  }
-  return path
+// Convert frequency to X coordinate for step 3 range indicators
+const frequencyToXStep3 = (freq: number): number => {
+  return frequencyToXHelper(freq, step3ChartConfig)
 }
 
-// Draw the selected target curve points as a simple path
-const generateTargetPath = (pts: RoomEQTargetPoint[]): string => {
-  if (!pts || !pts.length) return ''
-  const minFreq = 20
-  const maxFreq = 20000
-  // Preview scale: ±20 dB to match Steps 1 and 3
-  const minMag = -20
-  const maxMag = 20
-  const width = 760 - 40
-  const height = 180 - 20
-  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
-  const magScale = (mag: number) => 10 + (maxMag - mag) / (maxMag - minMag) * height
+// ── Curve definitions for FrequencyResponseChart ──────────────────────
 
-  // Ensure points are sorted by frequency
-  const points = [...pts]
-    .filter(p => p && typeof p === 'object')
-    .sort((a, b) => a.frequency - b.frequency)
+// Step 1: single measured curve
+const step1Curves = computed(() => {
+  const m = measurement.value
+  if (!m?.frequencies || !m?.magnitudes) return []
+  return [{
+    frequencies: m.frequencies,
+    magnitudes: m.magnitudes,
+    color: '#4CAF50',
+    strokeWidth: 2,
+  }]
+})
 
-  let path = ''
-  let drawing = false
-
-  const addPoint = (f: number, db: number, move = false) => {
-    const x = logScale(f)
-    const y = magScale(db)
-    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
-    drawing = true
+// Step 2: measured overlay + target curve
+const step2Curves = computed(() => {
+  const curves: Array<{
+    frequencies: number[]
+    magnitudes: number[]
+    color: string
+    strokeWidth?: number
+    dashArray?: string
+    isTargetCurve?: boolean
+  }> = []
+  const m = measurement.value
+  if (m?.frequencies && m?.magnitudes) {
+    curves.push({
+      frequencies: m.frequencies,
+      magnitudes: m.magnitudes,
+      color: '#4CAF50',
+      strokeWidth: 2,
+    })
   }
-
-  for (let i = 1; i < points.length; i++) {
-    const p0 = points[i - 1]
-    const p1 = points[i]
-    let f0 = p0.frequency
-  const f1 = p1.frequency
-    let y0 = p0.target_db
-  const y1 = p1.target_db
-
-    // Skip zero/negative frequencies safely
-    if (f0 <= 0 || f1 <= 0) continue
-
-    const in0 = f0 >= minFreq && f0 <= maxFreq
-    const in1 = f1 >= minFreq && f1 <= maxFreq
-
-    // If segment entirely to the left or right, check crossings
-    if (!in0 || !in1) {
-      // Compute potential intersections at min/max if segment crosses
-      const crossesMin = (f0 < minFreq && f1 > minFreq) || (f1 < minFreq && f0 > minFreq)
-      const crossesMax = (f0 < maxFreq && f1 > maxFreq) || (f1 < maxFreq && f0 > maxFreq)
-
-      // Both outside and no crossing with visible range -> end current drawing
-      if (!in0 && !in1 && !crossesMin && !crossesMax) {
-        drawing = false
-        continue
-      }
-
-      // If crossing min boundary, add interpolated point at minFreq
-      if (crossesMin) {
-        const t = (minFreq - f0) / (f1 - f0)
-        const y = y0 + t * (y1 - y0)
-        addPoint(minFreq, y, !drawing)
-        // Clamp start to min
-        f0 = minFreq
-        y0 = y
-      }
-      // If crossing max boundary, we'll end at max
-      if (crossesMax) {
-        const t = (maxFreq - f0) / (f1 - f0)
-        const y = y0 + t * (y1 - y0)
-        if (in0) {
-          // Draw from in-range point to max boundary
-          addPoint(f0, y0, !drawing)
-        } else if (!drawing) {
-          addPoint(minFreq, y0, true) // ensure a move exists if needed (safety)
-        }
-        addPoint(maxFreq, y)
-        drawing = false
-        continue
-      }
-
-      // If one point is inside (and not crossing max), connect to the inside point, possibly after adding min boundary
-      if (in0 && !in1) {
-        addPoint(f0, y0, !drawing)
-        // Compute intersection at either max or min (we handled crossings above); if f1 > maxFreq, truncate at max
-        const bound = f1 > maxFreq ? maxFreq : minFreq
-        if (bound === minFreq && f0 > minFreq) {
-          // Segment exits below min; compute intersection to min
-          const t = (minFreq - f0) / (f1 - f0)
-          const y = y0 + t * (y1 - y0)
-          addPoint(minFreq, y)
-        }
-        drawing = false
-        continue
-      }
-      if (!in0 && in1) {
-        // Entering visible range
-        const t = ((f0 < minFreq ? minFreq : maxFreq) - f0) / (f1 - f0)
-        const fEnter = f0 < minFreq ? minFreq : maxFreq
-        const yEnter = y0 + t * (y1 - y0)
-        addPoint(fEnter, yEnter, !drawing)
-        addPoint(f1, y1)
-        continue
-      }
-    }
-
-    // Both points inside: draw normally
-    if (in0 && in1) {
-      if (!drawing) addPoint(f0, y0, true)
-      addPoint(f1, y1)
-    }
+  const pts = selectedTargetPoints.value
+  if (pts.length) {
+    curves.push({
+      frequencies: pts.map(p => p.frequency),
+      magnitudes: pts.map(p => p.target_db),
+      color: '#58a6ff',
+      strokeWidth: 2,
+      dashArray: '5,5',
+      isTargetCurve: true,
+    })
   }
+  return curves
+})
 
-  return path
-}
+// Step 3: measured curve (step3 config)
+const step3Curves = computed(() => {
+  const m = measurement.value
+  if (!m?.frequencies || !m?.magnitudes) return []
+  return [{
+    frequencies: m.frequencies,
+    magnitudes: m.magnitudes,
+    color: '#4CAF50',
+    strokeWidth: 2,
+  }]
+})
 
-// Generate measured path for Step 2 preview (800x200, 20–20k Hz, ±20 dB)
-const generateStep2MeasuredPath = (m: RoomMeasurement): string => {
-  if (!m.frequencies || !m.magnitudes) return ''
-  const minFreq = 20
-  const maxFreq = 20000
-  const minMag = -20
-  const maxMag = 20
-  const width = 760 - 40
-  const height = 180 - 20
-  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
-  const magScale = (mag: number) => 10 + (maxMag - mag) / (maxMag - minMag) * height
-
-  const freqs = m.frequencies
-  const mags = m.magnitudes
-  let path = ''
-  let drawing = false
-
-  const addPoint = (f: number, db: number, move = false) => {
-    const x = logScale(f)
-    const y = magScale(db)
-    path = !drawing || move || path === '' ? `${path}${path ? ' ' : ''}M ${x} ${y}` : `${path} L ${x} ${y}`
-    drawing = true
+// Step 4: measurement + target (clipped) + optimised response
+const step4Curves = computed(() => {
+  const curves: Array<{
+    frequencies: number[]
+    magnitudes: number[]
+    color: string
+    strokeWidth?: number
+    dashArray?: string
+    opacity?: number
+    isTargetCurve?: boolean
+    clipMinFreq?: number
+    clipMaxFreq?: number
+  }> = []
+  const m = measurement.value
+  if (m?.frequencies && m?.magnitudes) {
+    curves.push({
+      frequencies: m.frequencies,
+      magnitudes: m.magnitudes,
+      color: '#4CAF50',
+      strokeWidth: 2,
+    })
   }
-
-  for (let i = 1; i < freqs.length; i++) {
-    let f0 = freqs[i - 1]
-  const f1 = freqs[i]
-    let y0 = mags[i - 1]
-  const y1 = mags[i]
-    if (f0 <= 0 || f1 <= 0) continue
-
-    const in0 = f0 >= minFreq && f0 <= maxFreq
-    const in1 = f1 >= minFreq && f1 <= maxFreq
-
-    if (!in0 || !in1) {
-      const crossesMin = (f0 < minFreq && f1 > minFreq) || (f1 < minFreq && f0 > minFreq)
-      const crossesMax = (f0 < maxFreq && f1 > maxFreq) || (f1 < maxFreq && f0 > maxFreq)
-
-      if (!in0 && !in1 && !crossesMin && !crossesMax) {
-        drawing = false
-        continue
-      }
-
-      if (crossesMin) {
-        const t = (minFreq - f0) / (f1 - f0)
-        const y = y0 + t * (y1 - y0)
-        addPoint(minFreq, y, !drawing)
-        f0 = minFreq
-        y0 = y
-      }
-      if (crossesMax) {
-        const t = (maxFreq - f0) / (f1 - f0)
-        const y = y0 + t * (y1 - y0)
-        if (in0) addPoint(f0, y0, !drawing)
-        addPoint(maxFreq, y)
-        drawing = false
-        continue
-      }
-      if (in0 && !in1) {
-        addPoint(f0, y0, !drawing)
-        drawing = false
-        continue
-      }
-      if (!in0 && in1) {
-        const t = ((f0 < minFreq ? minFreq : maxFreq) - f0) / (f1 - f0)
-        const fEnter = f0 < minFreq ? minFreq : maxFreq
-        const yEnter = y0 + t * (y1 - y0)
-        addPoint(fEnter, yEnter, !drawing)
-        addPoint(f1, y1)
-        continue
-      }
-    }
-
-    if (in0 && in1) {
-      if (!drawing) addPoint(f0, y0, true)
-      addPoint(f1, y1)
-    }
+  const pts = selectedTargetPoints.value
+  if (pts.length) {
+    curves.push({
+      frequencies: pts.map(p => p.frequency),
+      magnitudes: pts.map(p => p.target_db),
+      color: '#58a6ff',
+      strokeWidth: 2,
+      dashArray: '5,5',
+      isTargetCurve: true,
+      clipMinFreq: userMinFrequency.value,
+      clipMaxFreq: userMaxFrequency.value,
+    })
   }
-
-  return path
-}
-
-// Generate optimisation chart path with 20Hz-20kHz range and ±10dB scale
-const generateOptimisationPath = (data: { frequencies: number[]; magnitudes: number[] } | RoomMeasurement | null): string => {
-  if (!data) return ''
-
-  let frequencies: number[]
-  let magnitudes: number[]
-
-  if ('frequencies' in data && 'magnitudes' in data) {
-    frequencies = data.frequencies
-    magnitudes = data.magnitudes
-  } else {
-    return ''
+  if (optimizedResponse.value) {
+    curves.push({
+      frequencies: optimizedResponse.value.frequencies,
+      magnitudes: optimizedResponse.value.magnitudes,
+      color: '#ff6b35',
+      strokeWidth: 2,
+    })
   }
+  return curves
+})
 
-  const minFreq = 20
-  const maxFreq = 20000
-  const minMag = -10
-  const maxMag = 10
-  const width = 760 - 40
-  const height = 280 - 20
-
-  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
-  const magScale = (mag: number) => 20 + (maxMag - mag) / (maxMag - minMag) * height
-
-  let path = ''
-  for (let i = 0; i < frequencies.length; i++) {
-    const f = frequencies[i]
-    const mag = magnitudes[i]
-    if (f >= minFreq && f <= maxFreq) {
-      const x = logScale(f)
-      const y = magScale(mag)
-      path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
-    }
+// Step 5: original (faded) + target (dashed) + corrected
+const step5Curves = computed(() => {
+  const curves: Array<{
+    frequencies: number[]
+    magnitudes: number[]
+    color: string
+    strokeWidth?: number
+    dashArray?: string
+    opacity?: number
+    isTargetCurve?: boolean
+    clipMinFreq?: number
+    clipMaxFreq?: number
+  }> = []
+  const m = measurement.value
+  if (m?.frequencies && m?.magnitudes) {
+    curves.push({
+      frequencies: m.frequencies,
+      magnitudes: m.magnitudes,
+      color: '#4CAF50',
+      strokeWidth: 1.5,
+      opacity: 0.4,
+    })
   }
-  return path
-}
-
-// Generate target curve for Step 4 clipped to [minFreq, maxFreq] with ±10 dB scale
-const generateOptimisationTargetClippedPath = (pts: RoomEQTargetPoint[], minFreqUser: number, maxFreqUser: number): string => {
-  if (!pts || !pts.length) return ''
-  const chartMinFreq = 20
-  const chartMaxFreq = 20000
-  const minMag = -10
-  const maxMag = 10
-  const width = 760 - 40
-  const height = 280 - 20
-  const logScale = (freq: number) => 40 + (Math.log10(freq / chartMinFreq) / Math.log10(chartMaxFreq / chartMinFreq)) * width
-  const magScale = (mag: number) => 20 + (maxMag - mag) / (maxMag - minMag) * height
-
-  const lo = Math.max(chartMinFreq, Math.max(20, Math.floor(minFreqUser || chartMinFreq)))
-  const hi = Math.min(chartMaxFreq, Math.min(20000, Math.ceil(maxFreqUser || chartMaxFreq)))
-  if (lo >= hi) return ''
-
-  // Sort points by frequency
-  const points = [...pts]
-    .filter(p => p && typeof p === 'object')
-    .sort((a, b) => a.frequency - b.frequency)
-
-  if (points.length === 0) return ''
-
-  // Linear interpolation helper
-  const linearInterp = (x: number, x1: number, y1: number, x2: number, y2: number): number => {
-    if (x2 === x1) return y1
-    return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
+  const pts = selectedTargetPoints.value
+  if (pts.length) {
+    curves.push({
+      frequencies: pts.map(p => p.frequency),
+      magnitudes: pts.map(p => p.target_db),
+      color: '#58a6ff',
+      strokeWidth: 2,
+      dashArray: '5,5',
+      isTargetCurve: true,
+      clipMinFreq: userMinFrequency.value,
+      clipMaxFreq: userMaxFrequency.value,
+    })
   }
-
-  // Process each line segment and clip to frequency range
-  const clippedSegments: { freq: number, db: number }[] = []
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i]
-    const p2 = points[i + 1]
-    const f1 = p1.frequency
-    const f2 = p2.frequency
-    const db1 = p1.target_db
-    const db2 = p2.target_db
-
-    // Skip invalid segments
-    if (f1 <= 0 || f2 <= 0 || f1 === f2) continue
-
-    // Determine clipped segment bounds
-    let startFreq = f1
-    let endFreq = f2
-    let startDb = db1
-    let endDb = db2
-
-    // Clip segment to frequency range
-    if (startFreq < lo) {
-      if (endFreq <= lo) continue // Entire segment is below range
-      startDb = linearInterp(lo, f1, db1, f2, db2)
-      startFreq = lo
-    }
-
-    if (endFreq > hi) {
-      if (startFreq >= hi) continue // Entire segment is above range
-      endDb = linearInterp(hi, f1, db1, f2, db2)
-      endFreq = hi
-    }
-
-    // Add clipped segment points
-    if (clippedSegments.length === 0 || clippedSegments[clippedSegments.length - 1].freq !== startFreq) {
-      clippedSegments.push({ freq: startFreq, db: startDb })
-    }
-    if (startFreq !== endFreq) {
-      clippedSegments.push({ freq: endFreq, db: endDb })
-    }
+  if (optimizedResponse.value) {
+    curves.push({
+      frequencies: optimizedResponse.value.frequencies,
+      magnitudes: optimizedResponse.value.magnitudes,
+      color: '#ff6b35',
+      strokeWidth: 2.5,
+    })
   }
-
-  if (clippedSegments.length === 0) return ''
-
-  // Generate SVG path
-  let path = ''
-  for (let i = 0; i < clippedSegments.length; i++) {
-    const point = clippedSegments[i]
-    const x = logScale(point.freq)
-    const y = magScale(point.db)
-
-    if (i === 0) {
-      path = `M ${x} ${y}`
-    } else {
-      path += ` L ${x} ${y}`
-    }
-  }
-
-  return path
-}// Helper functions for step 3 chart display
-const generateMeasuredPath = (m: RoomMeasurement): string => {
-  if (!m.frequencies || !m.magnitudes) return ''
-
-  const minFreq = 20
-  const maxFreq = 20000
-  const minMag = -20
-  const maxMag = 20
-  const width = 760 - 40
-  const height = 280 - 20
-
-  const logScale = (freq: number) => 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
-  const magScale = (mag: number) => 20 + (maxMag - mag) / (maxMag - minMag) * height
-
-  let path = ''
-  for (let i = 0; i < m.frequencies.length; i++) {
-    const f = m.frequencies[i]
-    const mag = m.magnitudes[i]
-    if (f >= minFreq && f <= maxFreq) {
-      const x = logScale(f)
-      const y = magScale(mag)
-      path = path === '' ? `M ${x} ${y}` : `${path} L ${x} ${y}`
-    }
-  }
-  return path
-}
-
-// Convert frequency to X coordinate on the chart
-const frequencyToX = (freq: number): number => {
-  const minFreq = 20
-  const maxFreq = 20000
-  const width = 760 - 40
-  return 40 + (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * width
-}
+  return curves
+})
 
 // Optimisation step - Updated for new streaming API
 import {
@@ -1609,7 +1246,7 @@ const runOptimisation = async () => {
             if (event.line) {
               try {
                 const outputData = JSON.parse(event.line)
-                console.log('� WIZARD: Parsed output data:', outputData)
+                console.log('📊 WIZARD: Parsed output data:', outputData)
 
                 // Handle different types of output data
                 if (outputData.filters && Array.isArray(outputData.filters)) {
@@ -1751,63 +1388,6 @@ const formatFrequency = (freq: number): string => {
 </script>
 
 <style scoped lang="scss">
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: var(--background-card);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  max-width: 700px;
-  width: 90vw;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-
-  .nav-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    font-size: 0.875rem;
-
-    &:disabled { opacity: 0.5; cursor: not-allowed; }
-    &.secondary { background: var(--color-bg-secondary); color: var(--color-body); border: 1px solid var(--color-border); }
-    &.secondary:hover:not(:disabled) { background: var(--color-border); }
-    &.primary { background: var(--primary); color: white; }
-    &.primary:hover:not(:disabled) { background: var(--primary-dark, var(--primary)); opacity: 0.9; }
-    svg { width: 16px; height: 16px; }
-  }
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 32px 20px 32px;
-  border-bottom: 1px solid var(--color-border);
-
-  h2 { margin: 0; color: var(--color-head); font-size: 1.5rem; font-weight: 600; }
-  .close-button { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: transparent; border: none; border-radius: 6px; cursor: pointer; color: var(--color-body-secondary); transition: all 0.2s ease; }
-  .close-button:hover { background: var(--color-bg-secondary); color: var(--color-head); }
-  .close-button svg { width: 18px; height: 18px; }
-}
-
-.modal-body { flex: 1; overflow-y: auto; padding: 32px; }
-
 .step-content {
   .step-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
   .step-icon { width: 48px; height: 48px; color: var(--primary); flex-shrink: 0; margin-top: 4px; }
@@ -1819,9 +1399,6 @@ const formatFrequency = (freq: number): string => {
 .analysis-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .analysis-header h4 { margin: 0; color: var(--color-head); font-size: 1.125rem; font-weight: 600; }
 .analysis-header .meta { color: var(--color-body-secondary); font-size: 0.85rem; display: flex; gap: 12px; }
-
-.response-svg { width: 100%; height: 300px; background: #111; border-radius: 6px; }
-.axis-label { fill: #999; font-size: 10px; }
 
 .eq-options {
   display: grid; gap: 14px;
@@ -1842,8 +1419,6 @@ const formatFrequency = (freq: number): string => {
   font-size: 0.95rem;
 }
 
-.modal-footer { padding: 16px 24px 24px 24px; border-top: 1px solid var(--color-border); }
-.step-navigation { display: flex; align-items: center; justify-content: space-between; }
 .target-preview { margin: 8px 0 14px 0; }
 .optimisation { display: flex; align-items: center; gap: 12px; }
 .opt-status { color: var(--color-body-secondary); }

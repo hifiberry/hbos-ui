@@ -1,3 +1,37 @@
+hifiberry-webui (0.17.13) stable; urgency=medium
+
+  * Fixed sound card configuration display and auto-detect functionality
+  * Sound card dropdown now uses card name instead of dtoverlay for unique identification
+  * Resolves issue where cards with same dtoverlay show incorrect selection
+  * Auto-detect option uses correct API endpoint and removes fixed configuration
+  * Added Room EQ service to background services monitoring list
+  * Improved error handling for RoomEQ microphone detection
+  * Added content-type check before JSON parsing to prevent errors
+  * Display version numbers for all background services including Room EQ
+  * Services without version show as "unavailable" instead of "unknown"
+  * Improved DSP error handling: shows "No DSP hardware detected" for connection errors
+  * DSP backend service shows user-friendly message when hardware not present
+  * DSP program checksums hidden when program length is 0 bytes
+  * System-info config.txt link now navigates to system-tools page
+
+ -- HiFiBerry <info@hifiberry.com>  Fri, 06 Feb 2026 15:00:00 +0000
+
+hifiberry-webui (0.17.4) stable; urgency=medium
+
+  * Updated system-info page to show "(config.txt)" suffix for sound cards loaded from config.txt
+  * Removed edit functionality for sound card name field in system info
+  * Added fixedInConfigTxt attribute support in sound card display logic
+
+ -- HiFiBerry <info@hifiberry.com>  Wed, 04 Feb 2026 10:00:47 +0000
+
+hifiberry-webui (0.17.3) stable; urgency=medium
+
+  * Implemented Volume Limit control mapped to PipeWire SpeakerEQ master gain
+  * Added linear -60dB to 0dB mapping for volume limit slider
+  * Integrated master gain API calls for loading and saving volume settings
+
+ -- HiFiBerry <info@hifiberry.com>  Mon, 03 Feb 2026 16:00:00 +0000
+
 hifiberry-webui (0.17.2) stable; urgency=medium
 
   * Changed background service status display: show "Unknown" instead of "Available" when API returns no version

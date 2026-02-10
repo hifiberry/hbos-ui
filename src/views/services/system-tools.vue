@@ -65,10 +65,11 @@
               :disabled="savingSoundCard || loadingSoundCards"
             >
               <option value="" disabled>{{ loadingSoundCards ? 'Loading...' : 'Select a sound card' }}</option>
+              <option value="auto-detect">No fixed configuration (auto-detect)</option>
               <option
                 v-for="card in availableSoundCards"
-                :key="card.dtoverlay"
-                :value="card.dtoverlay"
+                :key="card.name"
+                :value="card.name"
               >
                 {{ transformSoundCardName(card.name) }}
               </option>
@@ -192,7 +193,7 @@ import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
-import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection } from '@/api/system'
+import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection, disableSoundCardDetection, getSoundCardDetectionStatus } from '@/api/system'
 import { stopAllPlayers } from '@/api/player'
 import type { SoundCard } from '@/api/system'
 
@@ -232,6 +233,26 @@ const loadSoundCards = async () => {
     const response = await getSoundCards()
     if (response.status === 'success' && response.data) {
       availableSoundCards.value = response.data.soundcards
+
+      // Also check if a fixed sound card is configured
+      try {
+        const detectionStatus = await getSoundCardDetectionStatus()
+        if (detectionStatus.status === 'success' && detectionStatus.data) {
+          const { detection_disabled, configured_card_name } = detectionStatus.data
+
+          // If detection is disabled and a card is configured, set it as selected
+          if (detection_disabled && configured_card_name) {
+            // Set the card name directly as the selected value
+            selectedSoundCard.value = configured_card_name
+          } else if (!detection_disabled) {
+            // If detection is enabled, select the auto-detect option
+            selectedSoundCard.value = 'auto-detect'
+          }
+        }
+      } catch (detectionErr) {
+        console.error('Error loading detection status:', detectionErr)
+        // Don't fail the whole operation if detection status fails
+      }
     }
   } catch (err) {
     console.error('Error loading sound cards:', err)
@@ -349,28 +370,31 @@ const saveSoundCardSelection = async () => {
 
   savingSoundCard.value = true
   try {
-    const response = await setSoundCardDtoverlay({
-      dtoverlay: selectedSoundCard.value,
-      remove_existing: true
-    })
+    // Handle auto-detect option
+    if (selectedSoundCard.value === 'auto-detect') {
+      // Enable automatic sound card detection
+      // This will remove HiFiBerry overlays from config.txt
+      await setSoundCardDetection(true)
 
-    if (response.status === 'success') {
-      // Disable automatic sound card detection when setting a fixed configuration
-      try {
-        await setSoundCardDetection(false)
-      } catch (detectionErr) {
-        console.warn('Failed to disable sound card detection:', detectionErr)
-        // Don't fail the whole operation if this fails
-      }
-
-      const cardName = availableSoundCards.value.find(c => c.dtoverlay === selectedSoundCard.value)?.name || 'Sound card'
-      toastStore.showSuccessToast(`${cardName} configured successfully!`)
-
-      if (response.data?.reboot_required) {
-        showRebootConfirmation.value = true
-      }
+      toastStore.showSuccessToast('Removed fixed sound card configuration. Auto-detection enabled.')
+      showRebootConfirmation.value = true
     } else {
-      throw new Error(response.message || 'Failed to update sound card')
+      // Fixed configuration - use the new API endpoint that accepts card name
+      // selectedSoundCard.value is already the card name
+      const cardName = selectedSoundCard.value
+
+      // Use the proper API endpoint that sets both dtoverlay and disables detection with card name
+      const response = await disableSoundCardDetection(cardName)
+
+      if (response.status === 'success') {
+        toastStore.showSuccessToast(`${cardName} configured successfully!`)
+
+        if (response.data?.reboot_required) {
+          showRebootConfirmation.value = true
+        }
+      } else {
+        throw new Error(response.message || 'Failed to update sound card')
+      }
     }
   } catch (err) {
     console.error('Error updating sound card:', err)

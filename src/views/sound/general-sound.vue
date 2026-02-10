@@ -150,7 +150,7 @@ import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
 import ProgressSlider from '@/components/ProgressSlider.vue'
 import { ref, computed, onMounted } from 'vue'
-import { getSpeakerEQCrossbar, setSpeakerEQCrossbarMatrix } from '@/api/pipewire'
+import { getSpeakerEQCrossbar, setSpeakerEQCrossbarMatrix, getSpeakerEQMasterGain, setSpeakerEQMasterGain } from '@/api/pipewire'
 import { getSystemInfo, type SystemInfo } from '@/api/system'
 import { getHeadphoneControls, getHeadphoneVolume, setHeadphoneVolume } from '@/api/volume'
 import { settingsToMatrix, matrixToSettings, type AudioMode } from '@/helpers/mixing_matrix'
@@ -160,6 +160,19 @@ const volumeLimitPercent = ref<number>(100)
 const volumeLimitDb = ref<number | null>(null)
 const volumeAvailable = ref<boolean>(true)
 
+// Convert percentage (0-100) to dB (-60 to 0)
+// 0% = -60dB, 100% = 0dB
+const percentToDb = (percent: number): number => {
+  // Linear mapping: 0% -> -60dB, 100% -> 0dB
+  return (percent / 100) * 60 - 60
+}
+
+// Convert dB (-60 to 0) to percentage (0-100)
+const dbToPercent = (db: number): number => {
+  // Linear mapping: -60dB -> 0%, 0dB -> 100%
+  return Math.max(0, Math.min(100, (db + 60) / 60 * 100))
+}
+
 // Headphone volume control state
 const headphoneVolumePercent = ref<number>(100)
 const headphoneVolumeDb = ref<number | null>(null)
@@ -167,16 +180,10 @@ const headphoneVolumeAvailable = ref<boolean>(false)
 const headphoneVolumeControlType = ref<string | null>(null)
 const systemInfo = ref<SystemInfo | null>(null)
 
-// Convert percentage to attenuation in dB (0% => -∞ dB, otherwise 20*log10(p))
+// Convert percentage to attenuation in dB (linear mapping)
 const displayDb = computed(() => {
-  if (volumeLimitDb.value === null) {
-    const p = volumeLimitPercent.value / 100
-    if (p <= 0) return '- ∞ dB'
-    const db = 20 * Math.log10(p)
-    const rounded = Math.round(db * 10) / 10 // 0.1 dB precision
-    return `${rounded.toFixed(1)} dB`
-  }
-  const rounded = Math.round(volumeLimitDb.value * 10) / 10
+  const db = percentToDb(volumeLimitPercent.value)
+  const rounded = Math.round(db * 10) / 10 // 0.1 dB precision
   return `${rounded.toFixed(1)} dB`
 })
 
@@ -197,24 +204,28 @@ const headphoneDisplayDb = computed(() => {
 async function onSliderChange(newVal: number) {
   const pct = Math.round(newVal)
   volumeLimitPercent.value = pct
-  // TODO: Re-implement with new PipeWire API
-  /*
-  // PipeWire expects linear 0.0-1.0; API handles curve conversion and returns dB
+
+  // Convert percentage to dB and update PipeWire master gain
+  const db = percentToDb(pct)
+
   try {
-    const linear = Math.max(0, Math.min(1, pct / 100))
-    const res = await setPipewireVolume('default', { volume: linear })
-    if (res.status === 'success' && res.data) {
-      // Reflect authoritative values from backend
-      const data = res.data as PipewireVolumeData
-      volumeLimitPercent.value = Math.round((data.volume ?? linear) * 100)
-      volumeLimitDb.value = data.volume_db
+    console.log(`Setting master gain to ${db} dB (${pct}%)`)
+    const res = await setSpeakerEQMasterGain(db)
+
+    if ('error' in res) {
+      console.error('Failed to set master gain:', res.error, res.message)
+      volumeAvailable.value = false
+    } else {
+      // Update from the actual value set
+      volumeLimitDb.value = res.gain
+      volumeLimitPercent.value = Math.round(dbToPercent(res.gain))
       volumeAvailable.value = true
+      console.log(`Master gain successfully set to ${res.gain} dB`)
     }
   } catch (e) {
-    console.error('Failed to set PipeWire default volume:', e)
+    console.error('Failed to set PipeWire master gain:', e)
     volumeAvailable.value = false
   }
-  */
 }
 
 // Update headphone volume when the slider changes
@@ -420,22 +431,24 @@ onMounted(async () => {
     console.warn('Failed to load system info:', e)
   }
 
-  // TODO: Re-implement with new PipeWire API
-  /*
-  // Load volume
+  // Load master gain from PipeWire SpeakerEQ
   try {
-    const res = await getPipewireVolume('default')
-    if (res.status === 'success' && res.data) {
-      const data = res.data as PipewireVolumeData
-      volumeLimitPercent.value = Math.round((data.volume ?? 1) * 100)
-      volumeLimitDb.value = data.volume_db
+    console.log('Loading master gain from PipeWire SpeakerEQ...')
+    const res = await getSpeakerEQMasterGain()
+
+    if ('error' in res) {
+      console.warn('Failed to get master gain:', res.error, res.message)
+      volumeAvailable.value = false
+    } else {
+      volumeLimitDb.value = res.gain
+      volumeLimitPercent.value = Math.round(dbToPercent(res.gain))
       volumeAvailable.value = true
+      console.log(`Loaded master gain: ${res.gain} dB (${volumeLimitPercent.value}%)`)
     }
   } catch (e) {
-    console.warn('PipeWire volume not available:', e)
+    console.warn('PipeWire master gain not available:', e)
     volumeAvailable.value = false
   }
-  */
 
   // Load mixing matrix from PipeWire API
   try {

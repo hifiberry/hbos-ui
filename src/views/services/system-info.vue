@@ -195,48 +195,12 @@
               <tr>
                 <td class="label">Name</td>
                 <td class="value">
-                  <div v-if="!isEditingSoundCard" class="soundcard-display">
-                    <span>{{ transformSoundCardName(systemInfo.soundcard.name) }}</span>
-                    <button
-                      @click="startEditingSoundCard"
-                      class="edit-button"
-                      :disabled="loading"
-                    >
-                      <Icon icon="tabler/edit" :width="16" :height="16" />
-                    </button>
-                  </div>
-                  <div v-else class="soundcard-edit">
-                    <select
-                      v-model="selectedSoundCard"
-                      class="soundcard-select"
-                      :disabled="savingSoundCard"
-                    >
-                      <option
-                        v-for="card in availableSoundCards"
-                        :key="card.dtoverlay"
-                        :value="card.dtoverlay"
-                      >
-                        {{ transformSoundCardName(card.name) }}
-                      </option>
-                    </select>
-                    <div class="editable-actions">
-                      <button
-                        @click="saveSoundCard"
-                        class="save-button"
-                        :disabled="savingSoundCard || !selectedSoundCard"
-                        :title="savingSoundCard ? 'Saving...' : 'Save'"
-                      >
-                        <Icon icon="tabler/check" :width="16" :height="16" />
-                      </button>
-                      <button
-                        @click="cancelEditingSoundCard"
-                        class="cancel-button"
-                        :disabled="savingSoundCard"
-                        title="Cancel"
-                      >
-                        <Icon icon="tabler/x" :width="16" :height="16" />
-                      </button>
-                    </div>
+                  <div class="soundcard-display">
+                    <span v-if="!systemInfo.soundcard.fixedInConfigTxt">{{ getSoundCardDisplayName(systemInfo.soundcard) }}</span>
+                    <span v-else>
+                      {{ transformSoundCardName(systemInfo.soundcard.name) }}
+                      (<router-link to="/services/system-tools" class="config-link">config.txt</router-link>)
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -330,15 +294,15 @@
                 <td class="label">Program Length</td>
                 <td class="value">{{ dspProgramInfo.program_length }} bytes</td>
               </tr>
-              <tr v-if="dspProgramInfo.checksums?.md5">
+              <tr v-if="dspProgramInfo.program_length > 0 && dspProgramInfo.checksums?.md5">
                 <td class="label">MD5 Checksum</td>
                 <td class="value uuid">{{ formatChecksum(dspProgramInfo.checksums.md5) }}</td>
               </tr>
-              <tr v-if="dspProgramInfo.checksums?.sha1">
+              <tr v-if="dspProgramInfo.program_length > 0 && dspProgramInfo.checksums?.sha1">
                 <td class="label">SHA1 Checksum</td>
                 <td class="value uuid">{{ formatChecksum(dspProgramInfo.checksums.sha1) }}</td>
               </tr>
-              <tr v-if="!dspProgramInfo.checksums?.md5 && !dspProgramInfo.checksums?.sha1">
+              <tr v-if="dspProgramInfo.program_length > 0 && !dspProgramInfo.checksums?.md5 && !dspProgramInfo.checksums?.sha1">
                 <td class="label">Checksums</td>
                 <td class="value">Not available</td>
               </tr>
@@ -852,6 +816,19 @@ const transformSoundCardName = (name: string): string => {
   return transformations[name] || name
 }
 
+// Get sound card display name with config.txt suffix if manually configured
+const getSoundCardDisplayName = (soundcard: any): string => {
+  const baseName = transformSoundCardName(soundcard.name)
+
+  // Show (config.txt) suffix if card is fixed in config.txt and working
+  // This indicates the card is loaded from config.txt
+  if (soundcard.fixedInConfigTxt === true) {
+    return `${baseName} (config.txt)`
+  }
+
+  return baseName
+}
+
 // Format bytes for display
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B'
@@ -1157,11 +1134,15 @@ const fetchDSPProgramInfo = async () => {
     console.error('Error fetching DSP program info:', err)
     const errorMessage = err instanceof Error ? err.message : 'Failed to retrieve DSP program information'
 
-    // Check if the error indicates no DSP detected
+    // Check if the error indicates no DSP detected (including connection errors when service is down)
     if (errorMessage.includes('DSP software not available') ||
         errorMessage.includes('not available') ||
-        errorMessage.includes('not detected')) {
-      dspProgramError.value = 'No DSP detected'
+        errorMessage.includes('not detected') ||
+        errorMessage.includes('502') ||
+        errorMessage.includes('Bad Gateway') ||
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('NetworkError')) {
+      dspProgramError.value = 'No DSP hardware detected'
     } else {
       dspProgramError.value = errorMessage
     }
@@ -1432,6 +1413,10 @@ const fetchBackgroundServices = async () => {
         name: 'PipeWire API',
         url: `${window.location.origin}/api/pipewire/v1/version`,
         isPipewire: true
+      },
+      {
+        name: 'Room EQ',
+        url: `${appConfigStore.getRoomEQApiBaseUrl()}/version`
       }
     ]
 
@@ -1476,7 +1461,7 @@ const fetchBackgroundServices = async () => {
 
         if (response.ok) {
           // Try to extract version information for APIs that support it
-          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API') {
+          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API' || service.name === 'Room EQ') {
             try {
               const data = await response.json()
               console.log(`${service.name} response data:`, data)
@@ -1485,12 +1470,12 @@ const fetchBackgroundServices = async () => {
                 serviceCheck.status = 'available'
                 console.log(`${service.name} is available (${responseTime}ms) - Version: ${serviceCheck.version}`)
               } else {
-                serviceCheck.status = 'unknown'
-                console.log(`${service.name} returned OK but no version info (${responseTime}ms) - Status: unknown`, data)
+                serviceCheck.status = 'unavailable'
+                console.log(`${service.name} returned OK but no version info (${responseTime}ms) - Status: unavailable`, data)
               }
             } catch (jsonError) {
-              serviceCheck.status = 'unknown'
-              console.log(`${service.name} returned OK but could not parse version info (${responseTime}ms) - Status: unknown`, jsonError)
+              serviceCheck.status = 'unavailable'
+              console.log(`${service.name} returned OK but could not parse version info (${responseTime}ms) - Status: unavailable`, jsonError)
             }
           } else {
             serviceCheck.status = 'available'
@@ -1503,13 +1488,20 @@ const fetchBackgroundServices = async () => {
       } catch (err) {
         serviceCheck.status = 'unavailable'
         serviceCheck.lastChecked = new Date()
-        console.error(`${service.name} is unavailable:`, err)
-        if (err instanceof Error) {
-          console.error(`Error details for ${service.name}:`, {
-            message: err.message,
-            name: err.name,
-            stack: err.stack
-          })
+
+        // Special handling for DSP backend - show "No DSP hardware detected" instead of connection error
+        if (service.name === 'DSP backend') {
+          serviceCheck.version = 'No DSP hardware detected'
+          console.log(`${service.name}: No DSP hardware detected (service not running)`)
+        } else {
+          console.error(`${service.name} is unavailable:`, err)
+          if (err instanceof Error) {
+            console.error(`Error details for ${service.name}:`, {
+              message: err.message,
+              name: err.name,
+              stack: err.stack
+            })
+          }
         }
       }
     }
@@ -2230,6 +2222,20 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
+
+  &:hover {
+    color: var(--color-primary-dark, #1e40af);
+    text-decoration: underline;
+  }
+}
+
+// Config.txt link style
+.config-link {
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  text-decoration: none;
 
   &:hover {
     color: var(--color-primary-dark, #1e40af);

@@ -313,12 +313,69 @@ export const setSoundCardDetection = async (enabled: boolean): Promise<{ status:
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/soundcard/detection`, {
+  // Use the correct endpoint based on enabled/disabled
+  const endpoint = enabled ? '/soundcard/detection/enable' : '/soundcard/detection/disable'
+
+  const response = await fetch(`${baseUrl}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ enabled }),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
+/**
+ * Get sound card detection status and configured card
+ */
+export const getSoundCardDetectionStatus = async (): Promise<{
+  status: string
+  data: {
+    detection_enabled: boolean
+    detection_disabled: boolean
+    configured_card_name: string | null
+    configured_dtoverlay: string | null
+  }
+}> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/soundcard/detection`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
+/**
+ * Disable automatic sound card detection and set a fixed sound card
+ */
+export const disableSoundCardDetection = async (card_name: string): Promise<SetDtoverlayResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/soundcard/detection/disable`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ card_name }),
   })
 
   const data = await response.json()

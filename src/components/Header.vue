@@ -32,7 +32,7 @@ import VolumeControl from '@/components/VolumeControl.vue'
   z-index: 9;
   width: 100%;
 
-  @media (max-width: 1024px) { /* breakpoint for tablets/mobiles */
+  @include media-down(lg) {
     display: none; /* hide completely */
   }
 }

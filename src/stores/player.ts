@@ -258,7 +258,6 @@ export const usePlayerStore = defineStore('player', () => {
       }
       return Promise.resolve(data)
     } catch (error) {
-      toastStore.showErrorToast("Failed to fetch current player.")
       console.error('Failed to fetch current player:', error)
       return Promise.resolve(null)
     }

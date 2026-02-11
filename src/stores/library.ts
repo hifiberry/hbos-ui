@@ -31,7 +31,7 @@ export const useLibraryStore = defineStore('library', () => {
     const { error, data } = await useFetch<LibraryPlayerResponse>(`${apiBase}/library`).json()
 
     if (error.value) {
-      toastStore.showErrorToast(`Get Available Library Error: ${error.value}`)
+      toastStore.showErrorToast("Could not fetch library.")
       loading.value = false
       return Promise.reject(error.value)
     }

@@ -118,7 +118,6 @@ async function updateSetting(key: string, newValue: boolean | number) {
     return data
   } catch (error) {
     console.error("Failed to update setting:", error)
-    toastStore.showErrorToast('Failed to update setting.')
     throw error
   }
 }

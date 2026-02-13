@@ -336,7 +336,7 @@ import { type RoomEQFilter } from '@/api/roomeq';
 
 import {
   type LinkedChannelConfig,
-  type ChannelMode as LinkedChannelMode,
+ previousFilterStates.value type ChannelMode as LinkedChannelMode,
   addFilterToLinkedChannels,
   removeFilterFromLinkedChannels,
   toggleFilterEnabledLinked,
@@ -555,7 +555,7 @@ const isBypassed = ref(false);
   * and `'right'` be in this array at once (if linked
   * mode is activated).
   */
-const previousFilterStates = ref<string[]>;
+const previousFilterStates = ref<string[]>([]);
 
 const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
 
@@ -833,7 +833,7 @@ async function endBypass() {
   isBypassed.value = false;
 
   // If there were no filter banks to restore, just return
-  if (previousFilterStates.value.size === 0) {
+  if (previousFilterStates.value.length === 0) {
     console.log('speaker-equalizer: No filter banks to restore from bypass');
     return;
   }
@@ -842,7 +842,7 @@ async function endBypass() {
     // Restore all filter banks from bypass using the REST API
     const restorePromises: Promise<FilterBypassSetResponse>[] = [];
 
-    for (const bankName of previousFilterStates.value.entries()) {
+    for (const bankName of previousFilterStates.value {
       restorePromises.push(
         setFilterBankBypassState(bankName, false).catch((error: Error) => {
           console.error(`speaker-equalizer: Failed to restore filter bank ${bankName}:`, error);

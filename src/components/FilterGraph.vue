@@ -147,7 +147,7 @@ const currentFilter = computed<Filter>(() => {
 const { activeFilterBandwidthStart, activeFilterBandwidthEnd } = useBandwidthLines(currentFilter, SAMPLE_RATE.value)
 
 const activeFilterGraphData = computed(() => {
-  if (!props.activeFilterId === null) return null
+  if (props.activeFilterId === null) return null
   const band = props.filters.find(f => f.id === props.activeFilterId)
   if (!band || !band.enabled) return null
 
@@ -209,7 +209,7 @@ const startDrag = (e: MouseEvent, band: Filter) => {
 
 const startBandwidthDrag = (e: MouseEvent, side: 'start' | 'end') => {
   e.preventDefault(); e.stopPropagation()
-  if (!props.activeFilterId === null) return
+  if (props.activeFilterId === null) return
   isDraggingBandwidth.value = true
   bandwidthDragSide.value = side
   if (svgElement.value) svgElement.value.style.cursor = 'ew-resize'

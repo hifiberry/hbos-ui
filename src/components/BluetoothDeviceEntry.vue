@@ -46,7 +46,7 @@ const handleDisconnect = async () => {
       toastStore.showErrorToast(`Failed to unpair: ${data.error}`)
     }
   } catch (err) {
-    alert(`Error: ${err}`)
+    toastStore.showErrorToast(`Failed to unpair: ${err}`)
   }
 }
 </script>

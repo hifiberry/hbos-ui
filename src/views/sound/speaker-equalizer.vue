@@ -346,7 +346,7 @@ import {
 } from '@/utils/linked-channel-operations';
 
 import { DEFAULT_FREQ_RANGE, DEFAULT_GAIN_RANGE } from '@/utils/filtergraph';
-
+import { useToastStore } from '@/stores/toast'
 import { convertUIFilterToStore, convertStoreFilterToUI } from '@/utils/filter-conversions';
 
 // Constants
@@ -365,6 +365,7 @@ type ChannelMode = 'individual' | 'both';
 
 // Initialize filter store
 const filterStore = useFilterStore();
+const toastStore = useToastStore()
 
 // Backend capabilities and filter limits
 const backendCapabilities = ref<BackendCapabilities | null>(null);
@@ -927,7 +928,7 @@ const addFilterOfType = async (type: BiquadFilterType) => {
   } catch (error) {
     console.error('speaker-equalizer: Failed to add filter:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    alert(`Failed to add filter: ${errorMessage}`);
+    toastStore.showErrorToast('Failed to add filter.')
   }
 };
 
@@ -1010,7 +1011,7 @@ const loadEQSettings = () => {
           }
         } catch (error) {
           console.error('speaker-equalizer: Error loading Speaker EQ settings:', error);
-          alert('Error loading Speaker EQ settings. Please check the file format.');
+          toastStore.showErrorToast('Error loading Speaker EQ settings. Please check the file format.')
         }
       };
       reader.readAsText(file);
@@ -1180,7 +1181,7 @@ const loadSelectedRoomEQConfig = async () => {
     console.log(`speaker-equalizer: Loaded Room EQ configuration "${config.name}" to ${roomEQChannelMode.value} channel(s)`);
   } catch (error) {
     console.error('speaker-equalizer: Failed to load Room EQ configuration:', error);
-    alert('Error loading Room EQ configuration. Please try again.');
+    toastStore.showErrorToast('Error loading Room EQ configuration. Please try again.')
   }
 };
 
@@ -1303,7 +1304,7 @@ function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
 
 /**
   * Toggles a filter to be either enabled or disabled.
-  * Logs out an error and displays an alert if it failed
+  * Logs out an error and displays a toast if it failed
   * to toggle the filter.
   *
   * @param {Filter} filter - The filter that should be toggled
@@ -1314,8 +1315,7 @@ async function toggleFilterEnabled(filter: Filter) {
     await toggleFilterEnabledLinked(config, filter.id);
   } catch (error) {
     console.error('speaker-equalizer: Failed to toggle filter enabled state:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    alert(`Failed to toggle filter: ${errorMessage}`);
+    toastStore.showErrorToast('Failed to toggle filter. For further information read the console logs.')
   }
 }
 

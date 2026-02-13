@@ -97,6 +97,9 @@
 import { ref, watch } from 'vue'
 import Icon from '@/components/Icon.vue'
 import type { RadioFavorite } from '@/stores/radio'
+import { useToastStore } from '@/stores/toast'
+
+const toastStore = useToastStore()
 
 interface Props {
   isVisible: boolean
@@ -170,13 +173,13 @@ const handleImageUpload = (event: Event) => {
   if (file) {
     // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB')
+      toastStore.showErrorToast("Image size must be less than 5MB.")
       return
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file')
+      toastStore.showErrorToast("Please select a valid image file")
       return
     }
 

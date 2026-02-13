@@ -257,7 +257,9 @@ const switchToBackend = async (backendId: 'console' | 'dspToolkit') => {
     console.log(`Successfully switched to backend: ${backendId}`);
   } catch (error) {
     console.error('Failed to switch backend:', error);
-    toastStore.showErrorToast("Failed to switch to ", ${availableBackends.value[backendId].name})
+    toastStore.showErrorToast(
+      `Failed to switch to ${availableBackends.value[backendId].name}`
+    )
   } finally {
     switchingBackend.value = false;
     pendingBackend.value = null;

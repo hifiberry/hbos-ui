@@ -83,10 +83,12 @@ import { useDSPToolkitStore } from '@/stores/dsp-toolkit';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import Icon from '@/components/Icon.vue';
 import PageContent from '@/components/PageContent.vue';
+import { useToastStore } from '@/stores/toast'
 
 // Initialize stores
 const filterStore = useFilterStore();
 const dspToolkitStore = useDSPToolkitStore();
+const toastStore = useToastStore()
 
 // Reactive state
 const selectedBackend = ref<'console' | 'dspToolkit'>('console');
@@ -237,7 +239,7 @@ const switchToBackend = async (backendId: 'console' | 'dspToolkit') => {
     } else {
       message += 'DSP is not available';
     }
-    alert(message);
+    toastStore.showErrorToast(message);
     return;
   }
 
@@ -255,7 +257,9 @@ const switchToBackend = async (backendId: 'console' | 'dspToolkit') => {
     console.log(`Successfully switched to backend: ${backendId}`);
   } catch (error) {
     console.error('Failed to switch backend:', error);
-    alert(`Failed to switch to ${availableBackends.value[backendId].name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    toastStore.showErrorToast(
+      `Failed to switch to ${availableBackends.value[backendId].name}`
+    )
   } finally {
     switchingBackend.value = false;
     pendingBackend.value = null;

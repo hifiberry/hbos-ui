@@ -147,7 +147,7 @@ const currentFilter = computed<Filter>(() => {
 const { activeFilterBandwidthStart, activeFilterBandwidthEnd } = useBandwidthLines(currentFilter, SAMPLE_RATE.value)
 
 const activeFilterGraphData = computed(() => {
-  if (!props.activeFilterId) return null
+  if (props.activeFilterId === null) return null
   const band = props.filters.find(f => f.id === props.activeFilterId)
   if (!band || !band.enabled) return null
 
@@ -209,7 +209,7 @@ const startDrag = (e: MouseEvent, band: Filter) => {
 
 const startBandwidthDrag = (e: MouseEvent, side: 'start' | 'end') => {
   e.preventDefault(); e.stopPropagation()
-  if (!props.activeFilterId) return
+  if (props.activeFilterId === null) return
   isDraggingBandwidth.value = true
   bandwidthDragSide.value = side
   if (svgElement.value) svgElement.value.style.cursor = 'ew-resize'
@@ -224,7 +224,7 @@ const handleMouseMove = (e: MouseEvent) => {
   const xInPlot = e.clientX - rect.left - margin.left
   const yInPlot = e.clientY - rect.top - margin.top
 
-  if (isDraggingBandwidth.value && props.activeFilterId && bandwidthDragSide.value) {
+  if (isDraggingBandwidth.value && props.activeFilterId !== null && bandwidthDragSide.value) {
     const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot))
     const newFreq = xToFrequencyLocal(clampedX)
     const filter = props.filters.find(f => f.id === props.activeFilterId)
@@ -242,7 +242,7 @@ const handleMouseMove = (e: MouseEvent) => {
     const omega0 = (2 * Math.PI * centerFreq) / SAMPLE_RATE.value
     const newQ = Math.max(0.1, Math.min(25.0, bandwidthToQ(newBandwidthOctaves, omega0)))
     emit('update:q', { id: filter.id, Q: newQ })
-  } else if (isDragging.value && props.activeFilterId) {
+  } else if (isDragging.value && props.activeFilterId !== null) {
     const clampedX = Math.max(0, Math.min(plotWidth.value, xInPlot))
     const clampedY = Math.max(0, Math.min(plotHeight.value, yInPlot))
     const newFreq = Math.round(xToFrequencyLocal(clampedX) / 10) * 10

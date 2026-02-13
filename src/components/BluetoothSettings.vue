@@ -44,9 +44,13 @@
 /* IMPORTS */
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
-const configStore = useAppConfigStore()
+import { useToastStore } from '@/stores/toast'
 import ContentBox from '@/components/ContentBox.vue'
 import BluetoothSettingsModal from '@/components/BluetoothSettings/BluetoothSettingsModal.vue'
+
+/* STORES */
+const configStore = useAppConfigStore()
+const toastStore = useToastStore()
 
 
 /* GLOBAL DEFINITIONS */
@@ -81,6 +85,7 @@ onMounted(async () => {
 
   } catch (error) {
     console.error('Failed to fetch bluetooth config:', error)
+    toastStore.showErrorToast('Failed to fetch bluetooth config.')
   }
 })
 
@@ -168,6 +173,7 @@ async function showModalIfTrue()
     }
   } catch (error) {
     console.error("Failed to fetch bluetooth modal:", error);
+    toastStore.showErrorToast('Failed to fetch bluetooth modal.')
   }
 }
 
@@ -198,6 +204,7 @@ async function toggleDiscoverable() {
     else stopCountdown()
   } catch (error) {
     console.error("Failed to toggle discoverable state:", error)
+    toastStore.showErrorToast('Failed to toggle discoverable state.')
   }
 }
 
@@ -221,7 +228,8 @@ async function togglePairingWithPassword() {
       capability.value = "NoInputNoOutput"
     }
   } catch (error) {
-    console.log("Failed to toggle pairing with password:", error)
+    console.error("Failed to toggle pairing with password:", error)
+    toastStore.showErrorToast('Failed to toggle pairing with password.')
   }
 }
 

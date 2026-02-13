@@ -7,7 +7,7 @@
         <div class="filtergraph-container">
           <div class="filtergraph-header">
             <h2>
-              {{ currentChannel }}
+              Channel {{ currentChannel }}
             </h2>
             <p>
               {{ backendName }}
@@ -27,58 +27,66 @@
           />
           <div class="filtergraph-channel-selector">
             <button
-              :class="{ 'channel-selector-active': currentChannel === 'Channel A' }"
-              @click="currentChannel='Channel A'">
-              Channel A
-            </button>
-            <button
-              :class="{ 'channel-selector-active': currentChannel === 'Channel B' }"
-              @click="currentChannel='Channel B'">
-              Channel B
-            </button>
-            <button
-              :class="{ 'channel-selector-active': currentChannel === 'Channel C' }"
-              @click="currentChannel='Channel C'">
-              Channel C
-            </button>
-            <button
-              :class="{ 'channel-selector-active': currentChannel === 'Channel D' }"
-              @click="currentChannel='Channel D'">
-              Channel D
+              v-for="ch in channelNames"
+              :key="ch"
+              :class="{ 'channel-selector-active': currentChannel === ch }"
+              @click="currentChannel = ch"
+            >
+              Channel {{ ch }}
             </button>
           </div>
         </div>
       </ContentBox>
+      <CrossoverDesignFilterList
+        :filterList="currentFilterArray"
+        :currentChannel="currentChannel"
+        v-model:activeFilterId="activeFilterId"
+        @filters-updated="getFiltersFromFilterStore"
+        />
       <ContentBox>
-        <button @click="addItemToFilters">
-          add filter
-        </button>
+        <div class="add-button-div">
+          <button @click="modalOpen = true"  class="add-button">
+            <Icon
+              icon="add"
+              />
+            <p>
+              Add filter
+            </p>
+          </button>
+        </div>
       </ContentBox>
+      <CrossoverDesignAddFilterModal v-model:open="modalOpen" :currentChannel="currentChannel" />
     </div>
   </PageContent>
 </template>
 
 <script setup lang="ts">
 /* IMPORTS */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { type Filter } from '@/utils/filtercalc';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
+import Icon from '@/components/Icon.vue';
 import { convertStoreFilterToUI } from '@/utils/filter-conversions';
 import PageContent from '@/components/PageContent.vue'
 import ContentBox from '@/components/ContentBox.vue'
 import FilterGraph from '@/components/FilterGraph.vue'
+import CrossoverDesignAddFilterModal from
+'@/components/crossover-design/CrossoverDesignAddFilterModal.vue';
+import CrossoverDesignFilterList from
+'@/components/crossover-design/CrossoverDesignFilterList.vue';
 
 
 /* GLOBAL DEFINITIONS */
-const activeFilterId = ref<number | null>(1)
-const channelAFilters = ref<Filter[]>([]);
-const channelBFilters = ref<Filter[]>([]);
-const channelCFilters = ref<Filter[]>([]);
-const channelDFilters = ref<Filter[]>([]);
-const currentChannel = ref<string>("Channel A");
+const activeFilterId = ref<number | null>(0)
+const channels = ref<Record<string, Filter[]>>({});
+const currentChannel = ref<string>("A");
+
+// this ref defines the count of the channels.
+const channelNames = ref<string[]>([])
 const currentFilterArray = computed(() => {
-  return getCurrentFilterArray();
+  return channels.value[currentChannel.value] ?? []
 });
+const modalOpen = ref(false)
 
 const filterStore = useFilterStore();
 const backendCapabilities = ref<BackendCapabilities | null>(null);
@@ -91,9 +99,11 @@ const backendName = ref("");
   * This function will be run after the component has been mounted.
   * Initialisations should be done here.
   */
-onMounted(() => {
-  loadBackendCapabilities();
-  loadFiltersFromBackend();
+onMounted(async () => {
+  channelNames.value = await filterStore.getFilterBanksByType('crossover-designer');
+  await loadBackendCapabilities();
+  await filterStore.createMultipleFilterBanks(channelNames.value);
+  getFiltersFromFilterStore();
 })
 
 /**
@@ -112,83 +122,39 @@ const loadBackendCapabilities = async () => {
 }
 
 /**
-  * Loads the filters from the given backend and stores them in
-  * the according `channelX` filter array, where `X` is the
-  * channel letter.
+  * Gets the filters for all the channels from the filterstore (backend),
+  * converts them to ui-filters and loads them into the corresponding
+  * filter array.
   */
-const loadFiltersFromBackend = async () => {
-  try {
-    await filterStore.syncFromBackend();
-    const backendFilters = filterStore.filterBanks;
-
-    if (backendFilters.channelA?.filters) {
-      channelAFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelA_${index + 1}`));
-    }
-
-    if (backendFilters.channelB?.filters) {
-      channelBFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelB_${index + 1}`));
-    }
-
-    if (backendFilters.channelC?.filters) {
-      channelCFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelC_${index + 1}`));
-    }
-
-    if (backendFilters.channelD?.filters) {
-      channelDFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `channelD_${index + 1}`));
-    }
-
-    console.log("Loaded filters from backend:", {
-      channelACount: channelAFilters.value.length,
-      channelBCount: channelBFilters.value.length,
-      channelCCount: channelCFilters.value.length,
-      channelDCount: channelDFilters.value.length
-    });
-  } catch (error) {
-    console.error("Failed to load filters from backend:", error);
-  }
+function getFiltersFromFilterStore() {
+  channelNames.value.forEach(channel => {
+    channels.value[channel] =
+      filterStore
+        .getFiltersFromBank(channel)
+        .map(filter => convertStoreFilterToUI(filter, filter.id))
+  })
+  console.log("crossover-design: Filters loaded from the filterStore");
 }
 
-/**
-  * Returns the current filter array based on the `currentChannel` string.
-  * @returns {Filter[]} the `channelXFilters.value` where `X` is the current channels letter.
-  */
-function getCurrentFilterArray(): Filter[] {
-  switch (currentChannel.value) {
-    case "Channel A":
-      return channelAFilters.value;
-      break;
-    case "Channel B":
-      return channelBFilters.value;
-      break;
-    case "Channel C":
-      return channelCFilters.value;
-      break;
-    case "Channel D":
-      return channelDFilters.value;
-      break;
-
-    default:
-      return channelAFilters.value;
-      break;
-  }
-}
 
 /**
-  * Adds a filter to the global `filters` array.
+  * Watches for changes in the `openModal` ref.
+  * When the value is changed, it reloads the filters from the
+  * filterStore (the backend). This is done so after closing the
+  * modal (after adding a filter), the ui gets updated.
   */
-function addItemToFilters() {
-  // Get current filter length so the id can be calculated later on
-  const filterLength = currentFilterArray.value.length;
+watch(modalOpen, async () => {
+  getFiltersFromFilterStore();
+})
 
-  currentFilterArray.value.push({
-    id: filterLength+1,
-    icon: 'peaking',
-    text: 'Band ' + filterLength+1,
-    frequency: 800,
-    gain: 0,
-    Q: 1.2,
-    enabled: true
-  });
+
+/**
+  * Helper function to get the backend position.
+  * This is used to find the filter to update in the
+  * backend while dragging the filter in the filtergraph.
+  */
+function findFilterPositionById(id: number): number {
+  return currentFilterArray.value.findIndex(f => f.id === id);
 }
 
 /**
@@ -200,19 +166,22 @@ function addItemToFilters() {
   * @param {number} payload.frequency - The new frequency value (in Hz).
   * @param {number} payload.gain - The new gain value (in dB).
   */
-const onUpdateFreqGain = ({ id, frequency, gain }) => {
-  // Find the filter object that matches the supplied id.
-  const target = currentFilterArray.value.find(f => f.id === id);
+const onUpdateFreqGain = async ({ id, frequency, gain }) => {
+  const position = findFilterPositionById(id);
+  if (position === -1) return;
 
-  // Return if no matching filter was found.
-  if (!target) {
-    return;
-  }
+  // Update backend
+  await filterStore.updateFilter(currentChannel.value, position, {
+    frequency,
+    gain
+  });
 
-  // Update the properties.
+  // Optional: update UI immediately (optimistic)
+  const target = currentFilterArray.value[position];
   target.frequency = frequency;
   target.gain = gain;
-}
+};
+
 
 /**
   * Updates a filter's q in the global `filters` array.
@@ -220,18 +189,16 @@ const onUpdateFreqGain = ({ id, frequency, gain }) => {
   * @param {number} payload.id
   * @param {number} payload.Q
   */
-const onUpdateQ = ({ id, Q }) => {
-  // Find the filter that matches the supplied id.
-  const target = currentFilterArray.value.find(f => f.id === id);
+const onUpdateQ = async ({ id, Q }) => {
+  const position = findFilterPositionById(id);
+  if (position === -1) return;
 
-  // Return if no matching filter was found
-  if (!target) {
-    return;
-  }
+  await filterStore.updateFilter(currentChannel.value, position, { Q });
 
-  // Update the property.
+  const target = currentFilterArray.value[position];
   target.Q = Q;
-}
+};
+
 
 /**
   * Function that will be called when a filter is dragged.
@@ -255,6 +222,34 @@ button {
   padding: 10px;
   width: 100%;
 }
+
+.add-button-div {
+  transition: all 0.25s;
+
+  margin: 20px;
+
+  border: 1px solid var(--color-body);
+  border-radius: 8px;
+
+
+  &:hover {
+    border: 1px solid #E11E4AAA;
+    background: rgba(225, 30, 74, 0.02);
+  }
+}
+
+.add-button {
+  display: flex;
+  flex-direction: row;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+}
+
+.add-button>* {
+  margin-right: 10px;
+}
+
 
 .main-container {
   display: flex;
@@ -281,16 +276,16 @@ button {
 }
 
 .filtergraph-channel-selector button:first-child {
-  border-radius: 5px 0 0 5px;
+  border-radius: 4px 0 0 4px;
 }
 
 .filtergraph-channel-selector button:last-child {
-  border-radius: 0 5px 5px 0;
+  border-radius: 0 4px 4px 0;
 }
 
 .channel-selector-active {
   background: var(--primary);
-  color: var(--color-body);
+  color: #fafafa;
   border-color: var(--primary);
 }
 </style>

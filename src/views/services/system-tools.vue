@@ -256,7 +256,7 @@ const loadSoundCards = async () => {
     }
   } catch (err) {
     console.error('Error loading sound cards:', err)
-    toastStore.showErrorToast('Failed to load available sound cards')
+    toastStore.showErrorToast('Failed to load available sound cards.')
   } finally {
     loadingSoundCards.value = false
   }

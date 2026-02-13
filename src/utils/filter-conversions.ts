@@ -36,7 +36,7 @@ export const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'
 })
 
 export const convertStoreFilterToUI = (storeFilter: StoreFilter, id: string): Filter => ({
-  id: parseInt(id.split('_')[1]) || Date.now(),
+  id: parseInt(id.split('_')[1]) || 0,
   icon: iconMapping[storeFilter.type] || 'peaking',
   text: storeFilter.frequency.toString(),
   frequency: storeFilter.frequency,

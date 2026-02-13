@@ -73,7 +73,6 @@ Technical documentation is available in the [`docs/`](./docs/) directory:
 
 - **[Development Setup](./docs/setup.md)** - Environment setup and build instructions
 - **[Button System](./docs/button-system.md)** - Component styling system and mixins
-- **[Development Roadmap](./docs/development.md)** - Project phases and features  
 - **[Known Issues](./docs/fixes-needed.md)** - Current fixes needed
 
 For a complete overview, see the [documentation index](./docs/README.md).

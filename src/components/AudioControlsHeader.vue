@@ -113,13 +113,6 @@ const toggleCurrentSongFavourite = () => {
   playerStore.toggleCurrentSongFavourite()
 }
 
-// Lyrics functions
-const openLyrics = () => {
-  if (song.value?.metadata?.lyrics_available) {
-    showLyricsOverlay.value = true
-  }
-}
-
 const closeLyrics = () => {
   showLyricsOverlay.value = false
 }

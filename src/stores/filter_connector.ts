@@ -341,6 +341,18 @@ export const useFilterStore = defineStore('filter', () => {
   }
 
   /**
+   * Get filter banks by backend-defined type
+   * Example: getFilterBanksByType('crossover-designer')
+   */
+  const getFilterBanksByType = async (type: string): Promise<string[]> => {
+    const capabilities = await getBackendCapabilities()
+
+    return capabilities.availableFilterBanks
+      .filter(bank => bank.filterBankType === type)
+      .map(bank => bank.name)
+  }
+
+  /**
    * Apply an operation to multiple filter banks
    * Useful for operations that need to affect multiple channels simultaneously
    */
@@ -387,6 +399,7 @@ export const useFilterStore = defineStore('filter', () => {
     getFilterCount,
     bankExists,
     getFilterBanksByPattern,
+    getFilterBanksByType,
     applyToMultipleBanks,
     bulkUpdateFilter,
     resetAllBanks,

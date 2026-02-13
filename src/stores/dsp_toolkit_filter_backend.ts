@@ -22,7 +22,6 @@ import {
   setBiquadFilter,
   getStoredFilters,
   storeFilters,
-  deleteStoredFilters,
   type DSPFilter,
   type FilterCoefficients,
   type BiquadRequest,

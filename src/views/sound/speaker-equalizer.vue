@@ -29,7 +29,7 @@
           :class="{ bypassed: isBypassed }"
           class="icon-btn"
           title="Bypass" />
-        <Icon icon="armchair" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
+        <Icon icon="tabler/armchair" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
         <Icon icon="folder_open" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
         <Icon icon="save" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
       </div>
@@ -323,10 +323,7 @@ import FilterGraph from '@/components/FilterGraph.vue';
 import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
 import { type Filter } from '@/utils/filtercalc';
 
-import {
-  type BiquadFilterType,
-
-} from '@/utils/biquad';
+import { type BiquadFilterType } from '@/utils/biquad';
 import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
 
 import {
@@ -335,6 +332,7 @@ import {
 } from '@/api/dsptoolkit';
 
 import { getConfigKeys, getConfigValue } from '@/api/config';
+import { type RoomEQFilter } from '@/api/roomeq';
 
 import {
   type LinkedChannelConfig,
@@ -348,7 +346,7 @@ import {
 } from '@/utils/linked-channel-operations';
 
 import { DEFAULT_FREQ_RANGE, DEFAULT_GAIN_RANGE } from '@/utils/filtergraph';
-
+import { useToastStore } from '@/stores/toast'
 import { convertUIFilterToStore, convertStoreFilterToUI } from '@/utils/filter-conversions';
 
 // Constants
@@ -367,23 +365,37 @@ type ChannelMode = 'individual' | 'both';
 
 // Initialize filter store
 const filterStore = useFilterStore();
+const toastStore = useToastStore()
 
 // Backend capabilities and filter limits
 const backendCapabilities = ref<BackendCapabilities | null>(null);
 const backendName = ref('');
 
-// Load backend capabilities on mount
+/**
+  * Loads the backend capabilities from the backend
+  * pinia store called `useFilterStore()`.
+  * Logs either `'Backend capabilities loaded:', backendCapabilities.value`
+  * when the loading was successful or `'Failed to load backend capabilities:', error`
+  * when the loading wasn't successful.
+  *
+  * This function should be run in the `onMount()` function.
+  */
 const loadBackendCapabilities = async () => {
   try {
     backendCapabilities.value = await filterStore.getBackendCapabilities();
     backendName.value = backendCapabilities.value?.backendName || '';
-    console.log('Backend capabilities loaded:', backendCapabilities.value);
+    console.log('speaker-equalizer: Backend capabilities loaded:', backendCapabilities.value);
   } catch (error) {
-    console.error('Failed to load backend capabilities:', error);
+    console.error('speaker-equalizer: Failed to load backend capabilities:', error);
   }
 };
 
-// Load existing filters from the backend
+/**
+  * Loads the filters into each filter array from the backend.
+  * Uses the pinia store called `useFilterStore()`.
+  *
+  * This function should be run in the `onMount()` function.
+  */
 const loadFiltersFromBackend = async () => {
   try {
     // Sync from backend to get the current filter configuration
@@ -402,13 +414,17 @@ const loadFiltersFromBackend = async () => {
       rightFilters.value = backendFilters.right.filters.map((filter, index) => convertStoreFilterToUI(filter, `right_${index + 1}`));
     }
 
-    console.log('Loaded filters from backend:', { leftCount: leftFilters.value.length, rightCount: rightFilters.value.length });
+    console.log('speaker-equalizer: Loaded filters from backend:', { leftCount: leftFilters.value.length, rightCount: rightFilters.value.length });
   } catch (error) {
-    console.error('Failed to load filters from backend:', error);
+    console.error('speaker-equalizer: Failed to load filters from backend:', error);
   }
 };
 
-// Computed property to check if current channel can accept more filters
+/**
+  * Computed property to check if current channel can accept more filters.
+  *
+  * @returns {boolean} false if can't add, true if can add.
+  */
 const canAddFilterToCurrentChannel = computed(() => {
   if (!backendCapabilities.value) return false;
 
@@ -422,7 +438,13 @@ const canAddFilterToCurrentChannel = computed(() => {
   return bankInfo.currentFilterCount < bankInfo.maxFilters;
 });
 
-// Computed property to get current filter count and limit for UI display
+/**
+  * Computed property to get the currently active filter bank information
+  * on the selected channel.
+  *
+  * @returns { FilterBankInfo | null} Returns the filterbankinfo if available and null if it didn't
+  * found anything.
+  */
 const currentChannelFilterInfo = computed(() => {
   if (!backendCapabilities.value) return null;
 
@@ -436,6 +458,12 @@ const currentChannelFilterInfo = computed(() => {
 
 
 // Initialize filter banks in the store
+/**
+  * Initializes the backend, loads the capabilities and loads the filter
+  * banks. Reloads the backend afterwards to update the filter count.
+  *
+  * Also checks for query parameters inside of the url so they can be applied.
+  */
 onMounted(async () => {
   const route = useRoute();
 
@@ -479,15 +507,14 @@ const channelMode = ref<ChannelMode>('individual');
 const leftFilters = ref<Filter[]>([]);
 const rightFilters = ref<Filter[]>([]);
 
-// Computed property for current filters based on channel mode
+/**
+  * Computed property that returns the current filter bank. The filterbank
+  * that gets returned is based on the `activeChannel.value`.
+
+  * @returns { Filter[] } The current active filter bank.
+  */
 const filters = computed(() => {
-  if (channelMode.value === 'both') {
-    // In both mode, show filters from the active channel
-    return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
-  } else {
-    // In individual mode, show filters from the active channel
-    return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
-  }
+  return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
 });
 
 const showAddFilterModal = ref(false);
@@ -520,33 +547,34 @@ const roomEQChannelMode = ref<'left' | 'right' | 'both'>('both');
 
 // Bypass functionality state
 const isBypassed = ref(false);
-const previousFilterStates = ref<Map<string, boolean>>(new Map());
+/** Array ref object containing the names for the filter
+  * states that were bypassed. For example: the left
+  * channel gets bypassed: this ref now stores `['left']`.
+  *
+  * It is an array because there can be both `'left'`
+  * and `'right'` be in this array at once (if linked
+  * mode is activated).
+  */
+const previousFilterStates = ref<string[]>([]);
 
 const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
 
 const isDragging = ref(false);
 
-// Helper functions for managing channel-specific filters
-const getCurrentFilterArray = () => {
-  return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
-};
-
-const setCurrentFilterArray = (newFilters: Filter[]) => {
-  if (channelMode.value === 'both') {
-    // When in both mode, update both channels
-    leftFilters.value = [...newFilters];
-    rightFilters.value = [...newFilters];
-  } else {
-    // When in individual mode, update only the active channel
-    if (activeChannel.value === 'left') {
-      leftFilters.value = newFilters;
-    } else {
-      rightFilters.value = newFilters;
-    }
-  }
-};
-
-// Create configuration for linked channel operations
+/**
+  * Returns a config for both channels (linked channels). This is useful
+  * when trying to change both channels at once. For example: i want to
+  * change the frequency of a filter on both channels. Normally i would
+  * first need to read out the `leftFilters.value` and the `rightFilters.value`
+  * to get both the filter arrays. also i would need to write the changes
+  * into both back again.
+  *
+  * This function returns an object, that contains all of this information,
+  * so only one object is used (the returned one) instead of two (`leftFilters.value`
+  * and `rightFilters.value`).
+  *
+  * @returns { LinkedChannelConfig } The channel configuration object.
+  */
 const createLinkedChannelConfig = (): LinkedChannelConfig => {
   return {
     channelMode: channelMode.value as LinkedChannelMode,
@@ -574,17 +602,28 @@ const createLinkedChannelConfig = (): LinkedChannelConfig => {
   };
 };
 
-const addFilterToCurrentChannel = async (filter: Filter) => {
-  const config = createLinkedChannelConfig();
-  await addFilterToLinkedChannels(config, filter);
-};
-
+/**
+  * Removes a filter from the linked channels by id.
+  *
+  * @param {number} filterId - The filter that should be added to the linked channels
+  */
 const removeFilterFromCurrentChannel = async (filterId: number) => {
   const config = createLinkedChannelConfig();
   await removeFilterFromLinkedChannels(config, filterId);
 };
 
-// Graph handlers from reusable FilterGraph
+/**
+  * Callback function for what the `FilterGraph` should do on an frequency
+  * gain change. This function should not be called on it's own but rather
+  * passed into the `FilterGraph` object:
+  * ```typescript
+  * <FilterGraph
+  * ...
+  * @update:freq-gain="onGraphUpdateFreqGain"
+  * ...
+  * />
+  * ```
+  */
 const onGraphUpdateFreqGain = ({ id, frequency, gain }: { id: number, frequency: number, gain: number }) => {
   if (channelMode.value === 'both') {
     const lf = leftFilters.value.find(f => f.id === id)
@@ -592,11 +631,23 @@ const onGraphUpdateFreqGain = ({ id, frequency, gain }: { id: number, frequency:
     if (lf) { lf.frequency = frequency; lf.gain = gain }
     if (rf) { rf.frequency = frequency; rf.gain = gain }
   } else {
-    const f = getCurrentFilterArray().find(f => f.id === id)
+    const f = filters.value.find(f => f.id === id)
     if (f) { f.frequency = frequency; f.gain = gain }
   }
 }
 
+/**
+  * Callback function for what the `FilterGraph` should do when updating
+  * the `q` of a filter. This function should not be called on it's own
+  * but rather passed into the `FilterGraph` object:
+  * ```typescript
+  * <FilterGraph
+  * ...
+  * @update:q="onGraphUpdateQ"
+  * ...
+  * />
+  * ```
+  */
 const onGraphUpdateQ = ({ id, Q }: { id: number, Q: number }) => {
   if (channelMode.value === 'both') {
     const lf = leftFilters.value.find(f => f.id === id)
@@ -604,29 +655,68 @@ const onGraphUpdateQ = ({ id, Q }: { id: number, Q: number }) => {
     if (lf && typeof lf.Q === 'number') lf.Q = Q
     if (rf && typeof rf.Q === 'number') rf.Q = Q
   } else {
-    const f = getCurrentFilterArray().find(f => f.id === id)
+    const f = filters.value.find(f => f.id === id)
     if (f && typeof f.Q === 'number') f.Q = Q
   }
 }
 
+/**
+  * This is a callback function. Gets called when a filter is
+  * started dragging in the `FilterGraph` object.
+  * ```typescript
+  * <FilterGraph
+  * ...
+  * @drag-start="onGraphDragStart"
+  * ...
+  * />
+  * ```
+  */
 const onGraphDragStart = () => {
   isDragging.value = true
 }
 
+/**
+  * This is a callback function. Gets called when a filter is
+  * stopped dragging in the `FilterGraph` object.
+  * ```typescript
+  * <FilterGraph
+  * ...
+  * @drag-end="onGraphDragEnd"
+  * ...
+  * />
+  * ```
+  */
 const onGraphDragEnd = async (id: number) => {
   const config = createLinkedChannelConfig();
   await updateFilterPropertyLinked(config, id, () => { /* persist current values */ })
   isDragging.value = false
 }
 
+/**
+  * Sets the active channel (`activeMode` ref object). This
+  * function can only set the active channel to `left` or
+  * `right`.
+  *
+  * Also it sets the `activeFilterId` ref object to
+  * the first one in the new filter array, so it doesn't
+  * store an old value, that might not be available.
+  * If no filter is in this filter array, the `activeFilterId`
+  * is set to `null`.
+  *
+  * @param { Channel } channel - The new channel that should be set
+  */
 function setActiveChannel(channel: Channel) {
+  // Return to individual mode since this function is only run to switch to
+  // or between individual modes and not back into both mode.
   if (channelMode.value === 'both') {
-    // In "both" mode, clicking a channel tab should switch back to individual mode
     channelMode.value = 'individual';
   }
+
+  // Set the global `activeChannel` ref object to the passed `channel` object.
   activeChannel.value = channel;
 
-  // Update activeFilterId to match the first filter in the new channel, if any
+  // Update `activeFilterId` ref object to the first filter in the new channel.
+  // This is to prevent `activeFilterId` to contain false information.
   const currentFilters = channel === 'left' ? leftFilters.value : rightFilters.value;
   if (currentFilters.length > 0) {
     activeFilterId.value = currentFilters[0].id;
@@ -635,6 +725,15 @@ function setActiveChannel(channel: Channel) {
   }
 }
 
+/**
+  * Toggles the `channelMode` ref object between `'individual'` and `'both'`.
+  *
+  * When switching from `'individual'` mode to `'both'` mode, it copies the
+  * current filter array (for example the left one) into the other one
+  * (for example the right one).
+  *
+  * Logs if the filters were synced correctly or if they failed.
+  */
 async function toggleChannelMode() {
   const previousMode = channelMode.value;
   channelMode.value = channelMode.value === 'individual' ? 'both' : 'individual';
@@ -648,14 +747,25 @@ async function toggleChannelMode() {
       const config = createLinkedChannelConfig();
       await copyFiltersToChannels(config, sourceChannelName, [targetChannelName]);
 
-      console.log(`Synced filters from ${sourceChannelName} to ${targetChannelName} channel when linking channels`);
+      console.log(`speaker-equalizer: Copied filters from ${sourceChannelName} to ${targetChannelName} channel.`);
     } catch (error) {
-      console.error(`Failed to sync filters to ${targetChannelName} channel:`, error);
+      console.error(`speaker-equalizer: Failed to sync filters to ${targetChannelName} channel:`, error);
     }
   }
 }
 
-// Bypass functionality using REST API - bypass entire filter banks while pressed
+/**
+  * Starts bypassing the current filter bank. If channel mode is set to both,
+  * it bypasses both filter banks. This function uses the function `setFilterBankBypassState()`
+  * from `src/api/dsptoolkit.ts` to send a post request to the dsp backend.
+  *
+  * This will store the current bank/s names inside of the `previousFilterStates`.
+  * This is a `string[]` ref object, which just stores the `bankName`
+  * (the name of the current active filter bank/s).
+  *
+  * If the request fails, it will `console.error` with an error message. Also it will throw
+  * this but not always. Only in the `bypassPromises()` arrow function.
+  */
 async function startBypass() {
   if (isBypassed.value || isDragging.value) return;
 
@@ -677,15 +787,15 @@ async function startBypass() {
     }
 
     // Store the previous bypass states (assuming all banks are currently enabled)
-    previousFilterStates.value.clear();
+    previousFilterStates.value = [];
     for (const bankName of banksToBypass) {
-      previousFilterStates.value.set(bankName, false); // false = not previously bypassed
+      previousFilterStates.value.push(bankName);
     }
 
     // Bypass all filter banks using the REST API
     const bypassPromises: Promise<FilterBypassSetResponse>[] = banksToBypass.map(bankName =>
       setFilterBankBypassState(bankName, true).catch((error: Error) => {
-        console.error(`Failed to bypass filter bank ${bankName}:`, error);
+        console.error(`speaker-equalizer: Failed to bypass filter bank ${bankName}:`, error);
         throw error;
       })
     );
@@ -700,23 +810,31 @@ async function startBypass() {
       successfulOperations += result.successful || 0;
     });
 
-    console.log(`Successfully bypassed ${successfulOperations}/${totalFilters} filters across ${banksToBypass.length} banks`);
+    console.log(`speaker-equalizer: Successfully bypassed ${successfulOperations}/${totalFilters} filters across ${banksToBypass.length} banks`);
 
   } catch (error) {
-    console.error('Failed to start bypass:', error);
+    console.error('speaker-equalizer: Failed to start bypass:', error);
     // Reset bypass state if something went wrong
     isBypassed.value = false;
   }
 }
 
+/**
+  * Ends the bypass mode using `setFilterBankBypassState()`
+  * from `src/api/dsptoolkit.ts` for the request. The bypass mode was most
+  * likely set from the function `startBypass()` function.
+  *
+  * This function will restore the filter banks that are in the
+  * `previousFilterStates` ref object array.
+  */
 async function endBypass() {
   if (!isBypassed.value) return;
 
   isBypassed.value = false;
 
   // If there were no filter banks to restore, just return
-  if (previousFilterStates.value.size === 0) {
-    console.log('No filter banks to restore from bypass');
+  if (previousFilterStates.value.length === 0) {
+    console.log('speaker-equalizer: No filter banks to restore from bypass');
     return;
   }
 
@@ -724,16 +842,13 @@ async function endBypass() {
     // Restore all filter banks from bypass using the REST API
     const restorePromises: Promise<FilterBypassSetResponse>[] = [];
 
-    for (const [bankName, wasPreviouslyBypassed] of previousFilterStates.value.entries()) {
-      // Only restore banks that were not originally bypassed
-      if (wasPreviouslyBypassed === false) {
-        restorePromises.push(
-          setFilterBankBypassState(bankName, false).catch((error: Error) => {
-            console.error(`Failed to restore filter bank ${bankName}:`, error);
-            throw error;
-          })
-        );
-      }
+    for (const bankName of previousFilterStates.value) {
+      restorePromises.push(
+        setFilterBankBypassState(bankName, false).catch((error: Error) => {
+          console.error(`speaker-equalizer: Failed to restore filter bank ${bankName}:`, error);
+          throw error;
+        })
+      );
     }
 
     // Wait for all restore operations to complete
@@ -746,20 +861,38 @@ async function endBypass() {
       successfulOperations += result.successful || 0;
     });
 
-    console.log(`Successfully restored ${successfulOperations}/${totalFilters} filters across ${restorePromises.length} banks`);
+    console.log(`speaker-equalizer: Successfully restored ${successfulOperations}/${totalFilters} filters across ${restorePromises.length} banks`);
 
     // Clear the stored states
-    previousFilterStates.value.clear();
+    previousFilterStates.value = [];
 
   } catch (error) {
-    console.error('Failed to end bypass:', error);
+    console.error('speaker-equalizer: Failed to end bypass:', error);
   }
 }
 
+/**
+  * Sets the value of the `activeFilterId` ref object.
+  *
+  * @param {number} id - The id that should be written into the `activeFilterId`
+  */
 function setActiveFilter(id: number) {
   activeFilterId.value = id;
 }
 
+/**
+  * Adds a filter of a given type. This function is run
+  * when pressing onto a button (a filter type) inside
+  * of the add filter modal. The available filter types
+  * are stored inside the `AVAILABLE_FILTER_TYPES` variable.
+  *
+  * It also handles the ui by setting the newly added filter
+  * as the active one, reloading the backend's capabilities
+  * so it shows the filter count correctly and also closes
+  * the add filter modal.
+  *
+  * @param {BiquadFilterType} type - The type that the new filter should be
+  */
 const addFilterOfType = async (type: BiquadFilterType) => {
   try {
     const newId = Date.now();
@@ -784,7 +917,8 @@ const addFilterOfType = async (type: BiquadFilterType) => {
       };
     }
 
-    await addFilterToCurrentChannel(newFilter);
+    const config = createLinkedChannelConfig();
+    await addFilterToLinkedChannels(config, newFilter);
     setActiveFilter(newId); // Make the newly added filter active
 
     // Reload capabilities to update the UI filter counts
@@ -792,18 +926,25 @@ const addFilterOfType = async (type: BiquadFilterType) => {
 
     showAddFilterModal.value = false;
   } catch (error) {
-    console.error('Failed to add filter:', error);
+    console.error('speaker-equalizer: Failed to add filter:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    alert(`Failed to add filter: ${errorMessage}`);
+    toastStore.showErrorToast('Failed to add filter.')
   }
 };
 
+/**
+  * Removes a filter from the current channel by its index.
+  * It will first delete the filter from the backend and
+  * then sync the frontend with the backend.
+  *
+  * @param {number} filterId - The filter that should be removed
+  */
 const removeFilter = async (filterId: number) => {
   await removeFilterFromCurrentChannel(filterId);
 
   // If we removed the active filter, set active to first available filter or null
   if (activeFilterId.value === filterId) {
-    const currentFilters = getCurrentFilterArray();
+    const currentFilters = filters.value;
     activeFilterId.value = currentFilters[0]?.id || null;
   }
 
@@ -811,7 +952,16 @@ const removeFilter = async (filterId: number) => {
   await loadBackendCapabilities();
 };
 
-// Load EQ settings from a JSON file
+/**
+  * Loads the settings for the roomeq from a json file.
+  * Tells the browser to open a new file explorer and
+  * to only accept `.json` files.
+  *
+  * First reads the json file, then clears the old
+  * filters and then adds the new filters to the
+  * filter store: `filterStore.addFilter()`
+  *
+  */
 const loadEQSettings = () => {
   const input = document.createElement('input');
   input.type = 'file';
@@ -823,51 +973,34 @@ const loadEQSettings = () => {
       reader.onload = async (e) => {
         try {
           const data = JSON.parse(e.target?.result as string);
-          if (data.filters && Array.isArray(data.filters)) {
-            const loadedFilters = data.filters.map((filter: Filter, index: number) => ({
+          // Load filters to current channel or both channels based on mode
+          if (data.leftFilters && data.rightFilters) {
+            // New format with separate channels
+            leftFilters.value = data.leftFilters.map((filter: Filter, index: number) => ({
               ...filter,
               frequency: Math.round(filter.frequency), // Round frequency to full hertz
-              id: Date.now() + index // Ensure unique IDs
+              id: Date.now() + index
+            }));
+            rightFilters.value = data.rightFilters.map((filter: Filter, index: number) => ({
+              ...filter,
+              frequency: Math.round(filter.frequency), // Round frequency to full hertz
+              id: Date.now() + index + 1000
             }));
 
-            // Load filters to current channel or both channels based on mode
-            if (data.leftFilters && data.rightFilters) {
-              // New format with separate channels
-              leftFilters.value = data.leftFilters.map((filter: Filter, index: number) => ({
-                ...filter,
-                frequency: Math.round(filter.frequency), // Round frequency to full hertz
-                id: Date.now() + index
-              }));
-              rightFilters.value = data.rightFilters.map((filter: Filter, index: number) => ({
-                ...filter,
-                frequency: Math.round(filter.frequency), // Round frequency to full hertz
-                id: Date.now() + index + 1000
-              }));
+            // Update filter store with loaded filters
+            await filterStore.clearFiltersFromBank('left');
+            await filterStore.clearFiltersFromBank('right');
 
-              // Update filter store with loaded filters
-              await filterStore.clearFiltersFromBank('left');
-              await filterStore.clearFiltersFromBank('right');
+            for (const [index, filter] of leftFilters.value.entries()) {
+              await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
+            }
 
-              for (const [index, filter] of leftFilters.value.entries()) {
-                await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
-              }
-
-              for (const [index, filter] of rightFilters.value.entries()) {
-                await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
-              }
-            } else {
-              // Legacy format - load to current channel
-              setCurrentFilterArray(loadedFilters);
-
-              // Update filter store for current channel
-              await filterStore.clearFiltersFromBank(activeChannel.value);
-              for (const [index, filter] of loadedFilters.entries()) {
-                await filterStore.addFilter(activeChannel.value, index, convertUIFilterToStore(filter));
-              }
+            for (const [index, filter] of rightFilters.value.entries()) {
+              await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
             }
 
             // Set the first filter as active if any exist
-            const currentFilters = getCurrentFilterArray();
+            const currentFilters = filters.value;
             if (currentFilters.length > 0) {
               activeFilterId.value = currentFilters[0].id;
             }
@@ -877,8 +1010,8 @@ const loadEQSettings = () => {
             if (data.activeChannel) activeChannel.value = data.activeChannel;
           }
         } catch (error) {
-          console.error('Error loading Speaker EQ settings:', error);
-          alert('Error loading Speaker EQ settings. Please check the file format.');
+          console.error('speaker-equalizer: Error loading Speaker EQ settings:', error);
+          toastStore.showErrorToast('Error loading Speaker EQ settings. Please check the file format.')
         }
       };
       reader.readAsText(file);
@@ -887,7 +1020,15 @@ const loadEQSettings = () => {
   input.click();
 };
 
-// Save current EQ settings to a JSON file
+/**
+  * Saves the eq settings into a json file. This json
+  * file is then automatically downloaded via the browser.
+  *
+  * This also stores the current filters (`filters`) into
+  * a seperate variable for legacy code, even though the
+  * left- and right filter banks are stored too. It might
+  * be possible to remove this in the future.
+  */
 const saveEQSettings = () => {
   const data = {
     filters: filters.value, // Keep for legacy compatibility
@@ -911,7 +1052,11 @@ const saveEQSettings = () => {
   URL.revokeObjectURL(url);
 };
 
-// Load Room EQ configurations from config API
+/**
+  * Loads the eq settings from the room acoustics correction.
+  * If none is set up, or if it can't find any it will print
+  * a console log.
+  */
 const loadRoomEQSettings = async () => {
   showRoomEQModal.value = true;
   loadingRoomEQConfigs.value = true;
@@ -935,7 +1080,7 @@ const loadRoomEQSettings = async () => {
               configs.push({ key, data: configData });
             }
           } catch (parseError) {
-            console.warn(`Failed to parse Room EQ config ${key}:`, parseError);
+            console.warn(`speaker-equalizer: Failed to parse Room EQ config ${key}:`, parseError);
           }
         }
       }
@@ -947,10 +1092,10 @@ const loadRoomEQSettings = async () => {
   } catch (error) {
     // If we get a 404 or other error, it likely means no configurations exist yet
     if (error instanceof Error && error.message.includes('404')) {
-      console.log('No Room EQ configurations found (404) - this is normal for a fresh installation');
+      console.log('speaker-equalizer: No Room EQ configurations found (404) - this is normal for a fresh installation');
       roomEQConfigs.value = [];
     } else {
-      console.error('Failed to load Room EQ configurations:', error);
+      console.error('speaker-equalizer: Failed to load Room EQ configurations:', error);
       roomEQConfigs.value = [];
     }
   } finally {
@@ -958,8 +1103,15 @@ const loadRoomEQSettings = async () => {
   }
 };
 
-// Convert Room EQ filter to Speaker EQ filter format
-const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: RoomEQConfig['filters'][0], index: number): Filter => {
+/**
+  * Convert room acoustics correction eq to speaker
+  * eq filter format (`BiquadFilterType`).
+  *
+  * @param {RoomEQFilter} roomEQFilter - the room acoustics correction filter's string for
+  * the type.
+  * @param {number} index - the index inside of the filters array
+  */
+const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: RoomEQFilter, index: number): Filter => {
   // Map Room EQ filter types to Speaker EQ filter types
   const filterTypeMap: Record<string, BiquadFilterType> = {
     'hp': 'highpass',        // Room EQ uses 'hp'
@@ -986,7 +1138,9 @@ const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: RoomEQConfig['filters'][0]
   };
 };
 
-// Load the selected Room EQ configuration
+/**
+  * Loads the selected room acoustics correction eq config.
+  */
 const loadSelectedRoomEQConfig = async () => {
   if (!selectedRoomEQConfig.value) return;
 
@@ -1024,15 +1178,19 @@ const loadSelectedRoomEQConfig = async () => {
     }
 
     showRoomEQModal.value = false;
-    console.log(`✅ Loaded Room EQ configuration "${config.name}" to ${roomEQChannelMode.value} channel(s)`);
+    console.log(`speaker-equalizer: Loaded Room EQ configuration "${config.name}" to ${roomEQChannelMode.value} channel(s)`);
   } catch (error) {
-    console.error('Failed to load Room EQ configuration:', error);
-    alert('Error loading Room EQ configuration. Please try again.');
+    console.error('speaker-equalizer: Failed to load Room EQ configuration:', error);
+    toastStore.showErrorToast('Error loading Room EQ configuration. Please try again.')
   }
 };
 
-// Helper function to apply changes to multiple channels based on current mode
-// Supports future expansion beyond left/right to A,B,C,D,E,F,G,H or C1,C2,C3,C4 etc.
+/**
+  * Increments the filter's frequency. How much the frequency
+  * changes is based on the global const `CONFIG_STEPS_PER_OCTAVE`.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function incrementFilterFrequency(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1046,6 +1204,12 @@ function incrementFilterFrequency(filter: Filter) {
   });
 }
 
+/**
+  * Decrements the filter's frequency. How much the frequency
+  * changes is based on the global const `CONFIG_STEPS_PER_OCTAVE`.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function decrementFilterFrequency(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1059,6 +1223,11 @@ function decrementFilterFrequency(filter: Filter) {
   });
 }
 
+/**
+  * Increments the passed filter's gain by 0.5.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function incrementFilterGain(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1066,6 +1235,11 @@ function incrementFilterGain(filter: Filter) {
   });
 }
 
+/**
+  * Decrements the passed filter's gain by 0.5.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function decrementFilterGain(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1073,6 +1247,13 @@ function decrementFilterGain(filter: Filter) {
   });
 }
 
+/**
+  * Widens the passed filter's band based on the global const
+  * `CONFIG_Q_STEP_FACTOR`. The minimal value that the Q can
+  * go to is `0.1`.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function widenFilterBand(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1083,6 +1264,13 @@ function widenFilterBand(filter: Filter) {
   });
 }
 
+/**
+  * Narrows the passed filter's band based on the global const
+  * `CONFIG_Q_STEP_FACTOR`. The maximum value that the Q can
+  * go to is `25.0`.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  */
 function narrowFilterBand(filter: Filter) {
   const config = createLinkedChannelConfig();
   updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
@@ -1093,6 +1281,14 @@ function narrowFilterBand(filter: Filter) {
   });
 }
 
+/**
+  * Updates a generic biquad filter, where the coefficients
+  * can be typed in manually.
+  *
+  * @param {Filter} filter - The filter that should be adjusted
+  * @param {string} coeffName - The name of the coefficient (B0, B1, B2, A1, A2)
+  * @param {event} event - Event object to find the value of the input field
+  */
 function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
   const target = event.target as HTMLInputElement;
   const value = parseFloat(target.value);
@@ -1106,19 +1302,33 @@ function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
   updateGenericCoeffLinked(config, filter.id, coeffName, value);
 }
 
+/**
+  * Toggles a filter to be either enabled or disabled.
+  * Logs out an error and displays a toast if it failed
+  * to toggle the filter.
+  *
+  * @param {Filter} filter - The filter that should be toggled
+  */
 async function toggleFilterEnabled(filter: Filter) {
   try {
     const config = createLinkedChannelConfig();
     await toggleFilterEnabledLinked(config, filter.id);
   } catch (error) {
-    console.error('Failed to toggle filter enabled state:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    alert(`Failed to toggle filter: ${errorMessage}`);
+    console.error('speaker-equalizer: Failed to toggle filter enabled state:', error);
+    toastStore.showErrorToast('Failed to toggle filter. For further information read the console logs.')
   }
 }
 
-// Inline graph code removed in favor of FilterGraph component
-
+/**
+  * Callback function to handle a keypress event.
+  * Closes theopen modal if the ESC-key is pressed.
+  *
+  * If the spacebar is pressed, it will start the
+  * bypass mode.
+  *
+  * @param {KeyboardEvent} e - Keyboard event that contains more information about what key is being
+  * pressed.
+  */
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     if (showAddFilterModal.value) {
@@ -1137,6 +1347,11 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 };
 
+/**
+  * Callback function to hanlde a key up event.
+  * This will end the bypass that was enabled
+  * using the space key (or any other bypass).
+  */
 const handleKeyup = (e: KeyboardEvent) => {
   // Release spacebar to end bypass
   if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value) {
@@ -1145,18 +1360,31 @@ const handleKeyup = (e: KeyboardEvent) => {
   }
 };
 
+/**
+  * Adds eventlistener for the keydown and keyup events.
+  * Attaches the corresponding callback functions onto
+  * the events.
+  */
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('keyup', handleKeyup);
 });
 
+/**
+  * Removes the eventlisteners from the window when
+  * the component is unloaded.
+  */
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('keyup', handleKeyup);
   document.body.style.userSelect = '';
 });
 
-// Watch both filter arrays for changes
+/**
+  * Watch both filter arrays for changes.
+  * If any change occured, update the filter's
+  * frequency in the ui.
+  */
 watch([leftFilters, rightFilters], () => {
   leftFilters.value.forEach((f) => {
     f.text = `${f.frequency}`;
@@ -1166,7 +1394,10 @@ watch([leftFilters, rightFilters], () => {
   });
 }, { deep: true });
 
-// Watch for active channel changes to reload capabilities
+/**
+  * Reload the backend's capabilities if any
+  * changes happen in the active channel.
+  */
 watch(activeChannel, async () => {
   await loadBackendCapabilities();
 });
@@ -1574,7 +1805,6 @@ watch(activeChannel, async () => {
             .filter-icon {
               width: 32px;
               height: 32px;
-              fill: #e11e4a;
             }
 
             .filter-details {
@@ -1934,7 +2164,6 @@ watch(activeChannel, async () => {
         width: 40px; // Make icon big
         height: 40px; // Make icon big
         margin-bottom: 8px; // Space between icon and name
-        fill: #707070; // Default icon color
         transition: fill 0.3s ease;
       }
 

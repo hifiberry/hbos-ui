@@ -24,7 +24,7 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 /* IMPORTS */
 import { ref } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
@@ -32,7 +32,7 @@ import ContentBox from '@/components/ContentBox.vue'
 
 
 /* PROPS */
-const props = defineProps({
+const { open } = defineProps({
   open: { type: Boolean, required: true }
 })
 

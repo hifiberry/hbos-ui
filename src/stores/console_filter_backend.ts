@@ -39,12 +39,12 @@ export class ConsoleFilterBackend extends FilterBackend {
 
   // Configuration for predefined filter banks
   private readonly PREDEFINED_BANKS = {
-    left: { maxFilters: 16 },
-    right: { maxFilters: 16 },
-    channelA: { maxFilters: 16 },
-    channelB: { maxFilters: 16 },
-    channelC: { maxFilters: 16 },
-    channelD: { maxFilters: 16 }
+    left: { maxFilters: 16, type: "speaker-equalizer" },
+    right: { maxFilters: 16, type: "speaker-equalizer"},
+    A: { maxFilters: 16, type: "crossover-designer" },
+    B: { maxFilters: 16, type: "crossover-designer" },
+    C: { maxFilters: 16, type: "crossover-designer" },
+    D: { maxFilters: 16, type: "crossover-designer"}
   }
 
   constructor() {
@@ -95,7 +95,8 @@ export class ConsoleFilterBackend extends FilterBackend {
       availableFilterBanks.push({
         name: bankName,
         maxFilters: config.maxFilters,
-        currentFilterCount: bank?.filters.length || 0
+        currentFilterCount: bank?.filters.length || 0,
+        filterBankType: config.type
       })
     }
 
@@ -106,7 +107,6 @@ export class ConsoleFilterBackend extends FilterBackend {
       availableFilterBanks
     }
 
-    console.log(`[${this.name}] Backend capabilities:`, capabilities)
     return capabilities
   }
 

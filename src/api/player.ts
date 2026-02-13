@@ -1,5 +1,6 @@
 import { useAppConfigStore } from '@/stores/appconfig'
 import { rewriteAudiocontrolApiUrl } from './utils'
+import { useToastStore } from '@/stores/toast'
 
 // Re-export for backward compatibility
 export const rewrite_audiocontrol_api_url = rewriteAudiocontrolApiUrl
@@ -70,6 +71,7 @@ export const addTrackToPlayer = async (
  * @returns Promise<boolean> - Success or failure
  */
 export const sendPlayerCommand = async (playerName: string, command: string): Promise<boolean> => {
+  const toastStore = useToastStore()
   try {
     const configStore = useAppConfigStore()
     const apiBaseUrl = configStore.getApiBaseUrl()
@@ -98,6 +100,7 @@ export const sendPlayerCommand = async (playerName: string, command: string): Pr
     return true
 
   } catch (error) {
+    toastStore.showErrorToast("Could not send player command.")
     console.error('Error sending player command:', error)
     throw error
   }

@@ -91,6 +91,7 @@
 <script setup lang="ts">
 /* IMPORTS */
 import { type Filter } from '@/utils/filtercalc';
+import { useToastStore } from '@/stores/toast'
 import { getFilterIconName } from '@/utils/filter-display';
 import { useFilterStore } from '@/stores/filter_connector';
 import { setIndividualFilterBypassState } from '@/api/dsptoolkit';
@@ -111,6 +112,7 @@ const emit = defineEmits<{
 
 /* GLOBAL DEFINITIONS */
 const filterStore = useFilterStore();
+const toastStore = useToastStore()
 
 /* FUNCTIONS */
 /**
@@ -269,6 +271,7 @@ async function toggleFilterBypassState(index: number) {
     emit('filters-updated');
   } catch (error) {
     console.error("CrossoverDesignFilterList: Failed to toggle filter.");
+    toastStore.showErrorToast('Failed to toggle filter.')
 
     filter.enabled = oldValue;
   }

@@ -23,8 +23,7 @@
                 <input
                   type="checkbox"
                   :checked="filter.enabled"
-                  @click.stop.prevent
-                  @change="toggleFilterBypassState(index, filter.enabled)"
+                  @click.stop.prevent="toggleFilterBypassState(index)"
                 />
                 <span class="toggle-slider"></span>
               </label>
@@ -250,14 +249,29 @@ async function incrementFilterQ(index) {
   * Toggles the bypas state of a filter. Currently
   * only sets the filter to `bypassed=true`.
   */
-function toggleFilterBypassState(index, isEnabledOrNot) {
-  const data = {
-    bankAddress: props.currentChannel,
-    filterOffset: index,
-    bypassed: !isEnabledOrNot
+async function toggleFilterBypassState(index: number) {
+  const filter = props.filterList[index];
+  if (!filter) return;
+
+  const oldValue = filter.enabled;
+  const newValue = !oldValue;
+
+  // Optimistically update UI
+  filter.enabled = newValue;
+
+  try {
+    await setIndividualFilterBypassState({
+      bankAddress: props.currentChannel,
+      filterOffset: index,
+      bypassed: !newValue
+    });
+
+    emit('filters-updated');
+  } catch (error) {
+    console.error("CrossoverDesignFilterList: Failed to toggle filter.");
+
+    filter.enabled = oldValue;
   }
-  setIndividualFilterBypassState(data);
-  emit('filters-updated');
 }
 </script>
 

@@ -5,7 +5,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h1>
-              add a filter
+              Add New Filter:
             </h1>
             <button @click="close()">
               <Icon icon="close" />

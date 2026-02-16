@@ -927,7 +927,6 @@ const addFilterOfType = async (type: BiquadFilterType) => {
     showAddFilterModal.value = false;
   } catch (error) {
     console.error('speaker-equalizer: Failed to add filter:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     toastStore.showErrorToast('Failed to add filter.')
   }
 };

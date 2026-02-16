@@ -3,6 +3,7 @@
     <div class="filter-list-container">
       <div
         v-for="(filter, index) in props.filterList"
+        :key="filter.id"
         class="filter-list-entry"
         @click="emit('update:activeFilterId', filter.id)"
         :class="{ active: filter.id === activeFilterId }"
@@ -101,7 +102,7 @@ import Icon from '@/components/Icon.vue';
 /* PROPS */
 const props = defineProps<{
   filterList: Filter[];
-  currentChannel: String;
+  currentChannel: string;
   activeFilterId: number | null;
 }>();
 
@@ -270,7 +271,7 @@ async function toggleFilterBypassState(index: number) {
 
     emit('filters-updated');
   } catch (error) {
-    console.error("CrossoverDesignFilterList: Failed to toggle filter.");
+    console.error("CrossoverDesignFilterList: Failed to toggle filter", error);
     toastStore.showErrorToast('Failed to toggle filter.')
 
     filter.enabled = oldValue;

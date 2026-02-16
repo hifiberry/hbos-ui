@@ -33,8 +33,6 @@
 
 <script setup lang="ts">
 /* IMPORTS */
-import { ref } from 'vue'
-import { useAppConfigStore } from '@/stores/appconfig'
 import { useFilterStore } from '@/stores/filter_connector';
 import { type BiquadFilterType } from '@/utils/biquad';
 import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';

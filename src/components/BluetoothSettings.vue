@@ -102,11 +102,11 @@ onUnmounted(() => {
   * Updates a setting in the hbos-bluetooth-service via the config-server.
   *
   * @param {string} key - The key of the setting.
-  * @param {boolean | number} newValue - The new value that should be written into the config-server.
+  * @param {boolean | number | string} newValue - The new value that should be written into the config-server.
   * @throws Will throw an error if the http response status code is not `response.ok`.
   * @throws Will throw an error if it could not update the setting inside the config-server.
   */
-async function updateSetting(key: string, newValue: boolean | number) {
+async function updateSetting(key: string, newValue: boolean | number | string) {
   const valueString = typeof newValue === "boolean" ? String(newValue).toLowerCase() : newValue
   const url = `${apiBaseUrl}/bluetooth/settings?${key}=${valueString}`
 

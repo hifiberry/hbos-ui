@@ -36,16 +36,18 @@
 import { useFilterStore } from '@/stores/filter_connector';
 import { type BiquadFilterType } from '@/utils/biquad';
 import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
+import { convertUIFilterToStore } from '@/utils/filter-conversions';
 import Icon from '@/components/Icon.vue';
 import ContentBox from '@/components/ContentBox.vue'
 
 
 
 /* PROPS */
-const { open, currentChannel } = defineProps({
-  open: Boolean,
-  currentChannel: String
-})
+interface Props {
+  open: boolean
+  currentChannel: string
+}
+const { open, currentChannel } = defineProps<Props>()
 
 
 /* GLOBAL DEFINITIONS */
@@ -67,14 +69,16 @@ function close() {
 
 async function addFilter(type: BiquadFilterType) {
   const filter = {
-    type: type,
+    id: 0,
+    icon: type,
+    text: "A filter.",
     frequency: 800,
     gain: 0,
     q: 0.8,
     enabled: true
   };
 
-  await filterStore.addFilter(currentChannel, 0, filter);
+  await filterStore.addFilter(currentChannel, 0, convertUIFilterToStore(filter));
 
   close();
 }

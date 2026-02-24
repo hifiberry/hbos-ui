@@ -98,46 +98,7 @@ const isDark = useDark()
 
 .filter-toggle {
   .toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-    cursor: pointer;
-
-    input {
-      opacity: 0;
-    }
-
-    .toggle-slider {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #555;
-      transition: background-color 0.3s ease;
-      border-radius: 24px;
-
-      &:before {
-        position: absolute;
-        content: '';
-        height: 18px;
-        width: 18px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: transform 0.3s ease;
-        border-radius: 50%;
-      }
-    }
-
-    input:checked + .toggle-slider {
-      background-color: #e11e4a;
-    }
-
-    input:checked + .toggle-slider:before {
-      transform: translateX(20px);
-    }
+    @include toggle-switch;
   }
 }
 

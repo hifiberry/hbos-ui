@@ -34,6 +34,7 @@
         <Icon icon="save" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
       </div>
     </div>
+
     <div class="card">
       <div class="graph">
         <FilterGraph
@@ -59,11 +60,6 @@
           <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'right' }]" @click="setActiveChannel('right')">
             Right
           </button>
-        </div>
-
-        <div class="filters">
-          <div class="filter-header-wrapper">
-          </div>
         </div>
 
         <div class="filters-list">
@@ -106,7 +102,6 @@
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -266,7 +261,6 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('keyup', handleKeyup);
-  document.body.style.userSelect = '';
 });
 
 // --- Watchers ---
@@ -281,13 +275,6 @@ watch(activeChannel, async () => {
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/scss/mixins.scss';
-
-.sound-page {
-  width: 100%;
-  height: 100%;
-}
-
 .sound {
   padding: 20px;
 
@@ -297,34 +284,25 @@ watch(activeChannel, async () => {
     align-items: center;
     margin-bottom: 20px;
 
-    .title-section {
+    .backend-info {
+      font-size: 14px;
+      color: #aaa;
       display: flex;
-      flex-direction: column;
-      gap: 5px;
+      align-items: center;
+      gap: 8px;
 
-      .backend-info {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: #aaa;
+      .backend-name {
+        font-weight: 500;
+        cursor: pointer;
+        color: #00b8ff;
+        text-decoration: underline;
 
-        .backend-name {
-          font-weight: 500;
-          cursor: pointer;
-          color: #00b8ff;
-          text-decoration: underline;
-          transition: color 0.2s ease;
+        &:hover { color: #0096cc; }
+      }
 
-          &:hover {
-            color: #0096cc;
-          }
-        }
-
-        .filter-limits {
-          color: #00b8ff;
-          font-weight: 500;
-        }
+      .filter-limits {
+        color: #00b8ff;
+        font-weight: 500;
       }
     }
 
@@ -332,31 +310,16 @@ watch(activeChannel, async () => {
       display: flex;
       gap: 20px;
 
-      svg {
-        cursor: pointer;
-        width: 24px;
-        height: 24px;
-        transition: fill 0.2s ease;
-        stroke: var(--color-icon);
-
-        &.bypassed {
-          stroke: blue;
-        }
-      }
-
       .icon-btn {
         cursor: pointer;
         width: 24px;
         height: 24px;
+        stroke: var(--color-icon);
         transition: opacity 0.2s ease;
 
-        &:hover {
-          opacity: 0.5;
-        }
-
-        &.linked {
-          stroke: red;
-        }
+        &:hover { opacity: 0.5; }
+        &.linked { stroke: red; }
+        &.bypassed { stroke: blue; }
       }
     }
   }
@@ -373,28 +336,11 @@ watch(activeChannel, async () => {
     border-radius: 8px;
     width: 100%;
     user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-
-    svg {
-      width: 100%;
-      overflow: visible;
-      user-select: none;
-
-      .x-axis-labels,
-      .y-axis-labels {
-        font-family: 'Metropolis', sans-serif;
-        font-weight: 400;
-        font-size: 10px;
-      }
-    }
   }
 
   .equaliser-panel {
     .tabs {
       display: flex;
-      flex-wrap: nowrap;
 
       .tab {
         flex: 1 1 50%;
@@ -408,9 +354,7 @@ watch(activeChannel, async () => {
         background-color: transparent;
         color: #707070;
 
-        &:first-child {
-          border-radius: 8px 0 0 8px;
-        }
+        &:first-child { border-radius: 8px 0 0 8px; }
 
         &:last-child {
           border-radius: 0 8px 8px 0;
@@ -418,19 +362,11 @@ watch(activeChannel, async () => {
         }
 
         &.active {
-          background: #e11e4a;
+          background: var(--primary, #e11e4a);
           color: white;
-          border-color: #e11e4a;
+          border-color: var(--primary, #e11e4a);
         }
       }
-    }
-
-    .filter-header-wrapper {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-top: 15px;
     }
 
     .filters-list {
@@ -447,47 +383,24 @@ watch(activeChannel, async () => {
         transition: all 0.2s ease-in-out;
         cursor: pointer;
 
-        &.active {
-          border-color: #e11e4a;
-          background: rgba(225, 30, 74, 0.05);
-        }
-
         &.add-filter-item {
-          cursor: pointer;
           border-style: dashed;
 
           &:hover:not(.disabled) {
-            border-color: #e11e4a;
+            border-color: var(--primary, #e11e4a);
             background: rgba(225, 30, 74, 0.05);
           }
 
           &.disabled {
             cursor: not-allowed;
             opacity: 0.5;
-            border-color: #555;
-            color: #777;
-
-            .filter-icon {
-              opacity: 0.5;
-            }
-
-            &:hover {
-              border-color: #555;
-              background: rgba(255, 255, 255, 0.02);
-            }
           }
-        }
-
-        &:hover:not(.add-filter-item) {
-          border-color: rgba(225, 30, 74, 0.5);
-          background: rgba(225, 30, 74, 0.02);
         }
 
         .filter-main {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 15px;
 
           .filter-info {
             display: flex;
@@ -499,17 +412,15 @@ watch(activeChannel, async () => {
               height: 32px;
             }
 
-            .filter-details {
-              h3 {
-                font-size: 18px;
-                font-weight: 500;
-                margin: 0 0 5px 0;
-              }
+            .filter-details h3 {
+              font-size: 18px;
+              font-weight: 500;
+              margin: 0 0 5px 0;
+            }
 
-              .filter-frequency {
-                font-size: 14px;
-                color: #666;
-              }
+            .filter-frequency {
+              font-size: 14px;
+              color: #666;
             }
           }
         }
@@ -522,297 +433,9 @@ watch(activeChannel, async () => {
   .sound {
     padding: 10px;
 
-    .equaliser-panel {
-      .tabs {
-        flex-wrap: nowrap;
-      }
-
-      .tabs .tab {
-        font-size: 16px;
-        padding: 10px;
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .sound {
-    .equaliser-panel {
-      .tabs {
-        flex-wrap: nowrap;
-      }
-
-      .tabs .tab {
-        flex: 1 1 50%;
-      }
-    }
-  }
-}
-
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.modal-content {
-  background-color: var(--background-card);
-  padding: 30px;
-  border-radius: 10px;
-  width: max-content;
-  min-width: 400px;
-  max-width: 90vw;
-  text-align: center;
-  font-family: 'Metropolis', sans-serif;
-  border: 1px solid #333;
-  color: white;
-
-  h2, p {
-    font-size: 22px;
-    margin-bottom: 15px;
-    color: var(--color-text);
-  }
-
-  p {
-    font-size: 16px;
-    margin-bottom: 20px;
-  }
-
-  .filter-type-selector {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 30px;
-
-    .filter-type-option {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 15px 20px;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      background-color: transparent;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      color: var(--color-text);
-      min-width: 120px;
-      max-width: 140px;
-
-      .filter-icon {
-        width: 40px;
-        height: 40px;
-        margin-bottom: 8px;
-        transition: fill 0.3s ease;
-      }
-
-      .filter-name {
-        font-size: 14px;
-        font-weight: 500;
-        text-transform: capitalize;
-        white-space: pre-line;
-        text-align: center;
-        line-height: 1.2;
-      }
-
-      &.selected {
-        background-color: #e11e4a;
-        border-color: #e11e4a;
-        color: white;
-
-        .filter-icon {
-          fill: white;
-        }
-      }
-
-      &:hover {
-        background-color: rgba(225, 30, 74, 0.1);
-        border-color: #e11e4a;
-      }
-    }
-  }
-}
-
-.backend-info-modal {
-  width: 600px !important;
-  max-width: 90% !important;
-  text-align: left !important;
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #333;
-
-    h2 {
-      margin: 0;
-      color: var(--color-head);
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
-      font-weight: bold;
-      color: #666;
-      cursor: pointer;
-      padding: 0;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background-color: #f0f0f0;
-        color: #000;
-      }
-    }
-  }
-
-  .modal-body {
-    color: var(--color-text);
-    line-height: 1.6;
-  }
-}
-
-// Room EQ Modal Styles
-.room-eq-modal {
-  min-width: 500px !important;
-  max-width: 700px !important;
-
-  .modal-body {
-    text-align: left;
-  }
-
-  .loading-message, .no-configs-message {
-    text-align: center;
-    padding: 2rem;
-    color: #666;
-  }
-
-  .config-selection {
-    margin-bottom: 1.5rem;
-
-    h4 {
-      margin-bottom: 1rem;
-      color: #333;
-    }
-
-    .config-list {
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-    }
-
-    .config-item {
-      padding: 1rem;
-      border-bottom: 1px solid #eee;
-      cursor: pointer;
-      transition: background-color 0.2s;
-
-      &:hover {
-        background-color: #f8f9fa;
-      }
-
-      &.selected {
-        background-color: #e3f2fd;
-        border-color: #2196f3;
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      .config-name {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 0.25rem;
-      }
-
-      .config-details {
-        font-size: 0.875rem;
-        color: #666;
-      }
-    }
-  }
-
-  .channel-selection {
-    margin-bottom: 1.5rem;
-
-    h4 {
-      margin-bottom: 1rem;
-      color: #333;
-    }
-
-    .channel-options {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .channel-option {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      color: #333;
-
-      input[type="radio"] {
-        margin: 0;
-      }
-    }
-  }
-
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1.5rem;
-
-    .btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background-color 0.2s;
-
-      &.secondary {
-        background: #6c757d;
-        color: white;
-
-        &:hover {
-          background: #5a6268;
-        }
-      }
-
-      &.primary {
-        background: #007bff;
-        color: white;
-
-        &:hover:not(:disabled) {
-          background: #0056b3;
-        }
-
-        &:disabled {
-          background: #6c757d;
-          cursor: not-allowed;
-        }
-      }
+    .equaliser-panel .tabs .tab {
+      font-size: 16px;
+      padding: 10px;
     }
   }
 }

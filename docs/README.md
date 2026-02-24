@@ -8,7 +8,12 @@ This project is built on [VueJS][1]. [VueJS][1] provides a way to seperate
 different components, thus creating [separation of concerns][2]. Using this
 framework also improves the reusability of code.
 
-The project also uses the [pinia store][4] for local storage synchronization.
+The project also uses the [Pinia Store][4] for local storage synchronization.
+
+The main *entry point* of the project is the `index.html`. This then loads the
+`src/main.ts` file, which then loads the `src/App.vue` file. The `src/main.ts`
+sets up the [Pinia Stores][4], the Toast service and then starts the main
+application. (`src/App.vue`)
 
 ### Folder overview
 - `.vscode`: Recommended [VSCode][3] extensions

@@ -24,3 +24,39 @@ defineEmits<{
   close: []
 }>();
 </script>
+
+<style scoped lang="scss">
+@use '@/assets/scss/popup' as *;
+
+.modal-backdrop {
+  @include popup-overlay;
+}
+
+.modal-content {
+  @include popup-container(600px);
+}
+
+.modal-header {
+  @include popup-header;
+
+  .close-btn {
+    @include popup-close-button;
+    font-size: 24px;
+    line-height: 1;
+  }
+}
+
+.modal-body {
+  @include popup-content;
+  color: var(--color-body, #666);
+  line-height: 1.6;
+
+  :deep(a) {
+    color: var(--primary, #e11e4a);
+  }
+
+  :deep(p) {
+    margin: 0 0 12px;
+  }
+}
+</style>

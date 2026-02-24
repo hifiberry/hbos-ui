@@ -618,6 +618,7 @@ watch(filters, () => {
 
 <style scoped lang="scss">
 @import '@/assets/scss/mixins.scss';
+@use '@/assets/scss/service-item' as *;
 
 .sound-page {
   // Wrapper to ensure single root element for transitions
@@ -989,46 +990,7 @@ watch(filters, () => {
 
             .filter-toggle {
               .toggle-switch {
-                position: relative;
-                display: inline-block;
-                width: 44px;
-                height: 24px;
-                cursor: pointer;
-
-                input {
-                  opacity: 0;
-                }
-
-                .toggle-slider {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  right: 0;
-                  bottom: 0;
-                  background-color: #555;
-                  transition: 0.3s;
-                  border-radius: 24px;
-
-                  &:before {
-                    position: absolute;
-                    content: '';
-                    height: 18px;
-                    width: 18px;
-                    left: 3px;
-                    bottom: 3px;
-                    background-color: white;
-                    transition: 0.3s;
-                    border-radius: 50%;
-                  }
-                }
-
-                input:checked + .toggle-slider {
-                  background-color: #e11e4a;
-                }
-
-                input:checked + .toggle-slider:before {
-                  transform: translateX(20px);
-                }
+                @include toggle-switch;
               }
             }
 
@@ -1107,46 +1069,7 @@ watch(filters, () => {
     }
 
     .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 44px;
-      height: 24px;
-      cursor: pointer;
-
-      input {
-        opacity: 0;
-      }
-
-      .toggle-slider {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #555;
-        transition: 0.3s;
-        border-radius: 24px;
-
-        &:before {
-          position: absolute;
-          content: '';
-          height: 18px;
-          width: 18px;
-          left: 3px;
-          bottom: 3px;
-          background-color: white;
-          transition: 0.3s;
-          border-radius: 50%;
-        }
-      }
-
-      input:checked+.toggle-slider {
-        background-color: #e11e4a;
-      }
-
-      input:checked+.toggle-slider:before {
-        transform: translateX(20px);
-      }
+      @include toggle-switch;
     }
   }
 }

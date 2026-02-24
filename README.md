@@ -1,93 +1,46 @@
 # HiFiBerryOS WebUI
 
-A modern Vue 3 web interface for HiFiBerryOS, providing an intuitive way to control and configure your HiFiBerry audio system.
-
-## Overview
-
-This project is a complete rewrite of the HiFiBerryOS web interface using modern web technologies:
-
-- **Vue 3** with Composition API for reactive user interfaces
-- **TypeScript** for type safety and better development experience  
-- **Vite** for fast development and optimized production builds
-- **SCSS** with a comprehensive design system and component mixins
+A modern Vue 3 web interface for HiFiBerryOS — an intuitive way to control and configure your HiFiBerry audio system.
 
 ## Features
 
-### Music Control & Playback
+- **Music library** — browse by artist, album, and track
+- **Playback controls** — play, pause, skip, shuffle, repeat, queue management
+- **Now playing** — real-time album art, lyrics, and metadata
+- **Sound settings** — parametric EQ, crossover design, room acoustics
+- **System configuration** — players, DSP programs, network, Bluetooth, display
+- **Responsive** — desktop and mobile, dark/light mode
 
-- Browse music library with artist, album, and track views
-- Full playback controls (play, pause, skip, shuffle, repeat)
-- Real-time now-playing interface with album artwork
-- **Interactive lyrics display** with real-time synchronization
-- **Metadata tooltip** showing detailed song information on cover art hover
-- Queue management and playlist functionality
+## Quick start
 
-### System Configuration
-
-- Audio device and HAT configuration
-- Network and wireless setup
-- System information and diagnostics
-- Service management and status monitoring
-
-### Modern UI/UX
-
-- Responsive design for desktop and mobile devices
-- Dark/light mode theming
-- Consistent component library with reusable mixins
-- Smooth animations and transitions
-
-## Quick Start
-
-### Development
-
-```sh
-# Install dependencies
+```bash
+git clone https://github.com/hifiberry/hbos-ui.git
+cd hbos-ui
 npm install
-
-# Start development server
 npm run dev
 ```
 
-### Production Build
-
-```sh
-# Build for production
-npm run build
-```
-
-For detailed setup instructions, see the [Development Setup Guide](./docs/setup.md).
-
-## Architecture
-
-The project follows Vue 3 best practices with:
-
-- **Composition API** for logic organization
-- **TypeScript** throughout for type safety
-- **Pinia** for state management
-- **Vue Router** for navigation
-- **Component-based architecture** with reusable design system
+Open `http://localhost:5173`. The UI loads but API calls won't return data without a backend — see [Getting Started](./docs/getting-started.md) to connect to a real device.
 
 ## Documentation
 
-Technical documentation is available in the [`docs/`](./docs/) directory:
+All documentation is in the [`docs/`](./docs/) directory.
 
-- **[Development Setup](./docs/setup.md)** - Environment setup and build instructions
-- **[Button System](./docs/button-system.md)** - Component styling system and mixins
-- **[Known Issues](./docs/fixes-needed.md)** - Current fixes needed
-
-For a complete overview, see the [documentation index](./docs/README.md).
+| Document | Contents |
+|----------|---------|
+| [Getting Started](./docs/getting-started.md) | Setup, local dev, connecting to a HiFiBerry device |
+| [Architecture](./docs/architecture.md) | Tech stack, folder structure, routing, state management |
+| [Development](./docs/development.md) | Commands, code style, debugging |
+| [Deployment](./docs/deployment.md) | Production build and Debian packaging |
+| [Button System](./docs/button-system.md) | SCSS button mixin system |
+| [Known Issues](./docs/known-issues.md) | Current limitations and workarounds |
 
 ## Contributing
 
-Please review the documentation before contributing:
-
-1. Follow the [Development Setup](./docs/setup.md) guide
-2. Check [Known Issues](./docs/fixes-needed.md) for current limitations
-3. Use the established [Button System](./docs/button-system.md) for UI components
-4. Run `npm run lint` before submitting changes
+1. Read [Getting Started](./docs/getting-started.md) and [Development](./docs/development.md)
+2. Run `npm run lint` and `npm run type-check` before submitting changes
+3. Follow the code style and component structure described in [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-This project is part of the HiFiBerryOS ecosystem.
+MIT — see [LICENSE](./LICENSE).

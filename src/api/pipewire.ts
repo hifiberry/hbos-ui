@@ -686,7 +686,7 @@ export async function listInputPorts(): Promise<ApiResponse<PortsList>> {
  * Get audio topology in DOT format
  */
 export async function getGraphDot(): Promise<string> {
-  const response = await fetch(`${API_BASE_URL}/graph`)
+  const response = await fetch(`${getApiBaseUrl()}/graph`)
   return response.text()
 }
 
@@ -694,7 +694,7 @@ export async function getGraphDot(): Promise<string> {
  * Get audio topology as PNG image
  */
 export async function getGraphPng(): Promise<Blob> {
-  const response = await fetch(`${API_BASE_URL}/graph/png`)
+  const response = await fetch(`${getApiBaseUrl()}/graph/png`)
   return response.blob()
 }
 

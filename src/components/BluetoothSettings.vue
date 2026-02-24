@@ -4,20 +4,12 @@
       <div class="bluetooth-settings-pairs-div">
         <p>Enable pairing</p>
         <div class="toggle-container">
-          <span
-            v-if="discoverable && isCountdownActive"
-            @click="resetCountdown"
-            class="countdown"
-            title="Click to reset timer"
-          >
+          <span v-if="discoverable && isCountdownActive" @click="resetCountdown" class="countdown"
+            title="Click to reset timer">
             {{ discoverableCountdown }}s
           </span>
           <label class="toggle-switch">
-            <input
-              type="checkbox"
-              :checked="discoverable"
-              @change="toggleDiscoverable"
-            >
+            <input type="checkbox" :checked="discoverable" @change="toggleDiscoverable">
             <span class="toggle-slider"></span>
           </label>
         </div>
@@ -26,11 +18,7 @@
         <p>Pairing with password</p>
         <div class="toggle-container">
           <label class="toggle-switch">
-            <input
-              type="checkbox"
-              :checked="capability === 'KeyboardOnly'"
-              @change="togglePairingWithPassword"
-            >
+            <input type="checkbox" :checked="capability === 'KeyboardOnly'" @change="togglePairingWithPassword">
             <span class="toggle-slider"></span>
           </label>
         </div>
@@ -102,11 +90,11 @@ onUnmounted(() => {
   * Updates a setting in the hbos-bluetooth-service via the config-server.
   *
   * @param {string} key - The key of the setting.
-  * @param {boolean | number} newValue - The new value that should be written into the config-server.
+  * @param {boolean | number | string} newValue - The new value that should be written into the config-server.
   * @throws Will throw an error if the http response status code is not `response.ok`.
   * @throws Will throw an error if it could not update the setting inside the config-server.
   */
-async function updateSetting(key: string, newValue: boolean | number) {
+async function updateSetting(key: string, newValue: boolean | number | string) {
   const valueString = typeof newValue === "boolean" ? String(newValue).toLowerCase() : newValue
   const url = `${apiBaseUrl}/bluetooth/settings?${key}=${valueString}`
 
@@ -160,8 +148,7 @@ function startCountdown() {
 /**
   * Request the backend modal API. Show the modal if it returns `"true"`.
   */
-async function showModalIfTrue()
-{
+async function showModalIfTrue() {
   try {
     const response = await fetch(`${apiBaseUrl}/bluetooth/modal`);
     const data = await response.json();
@@ -249,6 +236,7 @@ function resetCountdown() {
 
 <style scoped lang="scss">
 @use '@/assets/scss/service-item' as *;
+
 .card-content {
   padding: 20px;
   @include service-item-base;
@@ -260,6 +248,7 @@ function resetCountdown() {
   width: 100%;
   margin-bottom: 15px;
 }
+
 .bluetooth-settings-pairs-div p:nth-child(odd) {
   font-weight: bold;
 }
@@ -312,15 +301,15 @@ function resetCountdown() {
     }
   }
 
-  input:checked + .toggle-slider {
+  input:checked+.toggle-slider {
     background-color: var(--primary);
   }
 
-  input:checked + .toggle-slider:before {
+  input:checked+.toggle-slider:before {
     transform: translateX(20px);
   }
 
-  input:focus + .toggle-slider {
+  input:focus+.toggle-slider {
     box-shadow: 0 0 1px var(--primary);
   }
 }

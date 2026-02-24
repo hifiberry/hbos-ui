@@ -3,6 +3,7 @@
     <div class="filter-list-container">
       <div
         v-for="(filter, index) in props.filterList"
+        :key="filter.id"
         class="filter-list-entry"
         @click="emit('update:activeFilterId', filter.id)"
         :class="{ active: filter.id === activeFilterId }"
@@ -23,8 +24,7 @@
                 <input
                   type="checkbox"
                   :checked="filter.enabled"
-                  @click.stop.prevent
-                  @change="toggleFilterBypassState(index, filter.enabled)"
+                  @click.stop.prevent="toggleFilterBypassState(index)"
                 />
                 <span class="toggle-slider"></span>
               </label>
@@ -92,6 +92,7 @@
 <script setup lang="ts">
 /* IMPORTS */
 import { type Filter } from '@/utils/filtercalc';
+import { useToastStore } from '@/stores/toast'
 import { getFilterIconName } from '@/utils/filter-display';
 import { useFilterStore } from '@/stores/filter_connector';
 import { setIndividualFilterBypassState } from '@/api/dsptoolkit';
@@ -101,7 +102,7 @@ import Icon from '@/components/Icon.vue';
 /* PROPS */
 const props = defineProps<{
   filterList: Filter[];
-  currentChannel: String;
+  currentChannel: string;
   activeFilterId: number | null;
 }>();
 
@@ -112,6 +113,7 @@ const emit = defineEmits<{
 
 /* GLOBAL DEFINITIONS */
 const filterStore = useFilterStore();
+const toastStore = useToastStore()
 
 /* FUNCTIONS */
 /**
@@ -250,14 +252,30 @@ async function incrementFilterQ(index) {
   * Toggles the bypas state of a filter. Currently
   * only sets the filter to `bypassed=true`.
   */
-function toggleFilterBypassState(index, isEnabledOrNot) {
-  const data = {
-    bankAddress: props.currentChannel,
-    filterOffset: index,
-    bypassed: !isEnabledOrNot
+async function toggleFilterBypassState(index: number) {
+  const filter = props.filterList[index];
+  if (!filter) return;
+
+  const oldValue = filter.enabled;
+  const newValue = !oldValue;
+
+  // Optimistically update UI
+  filter.enabled = newValue;
+
+  try {
+    await setIndividualFilterBypassState({
+      bankAddress: props.currentChannel,
+      filterOffset: index,
+      bypassed: !newValue
+    });
+
+    emit('filters-updated');
+  } catch (error) {
+    console.error("CrossoverDesignFilterList: Failed to toggle filter", error);
+    toastStore.showErrorToast('Failed to toggle filter.')
+
+    filter.enabled = oldValue;
   }
-  setIndividualFilterBypassState(data);
-  emit('filters-updated');
 }
 </script>
 

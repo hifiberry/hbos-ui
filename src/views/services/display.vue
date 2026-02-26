@@ -19,15 +19,7 @@
           <h2>
             Dark mode
           </h2>
-          <div class="filter-toggle">
-            <label class="toggle-switch">
-              <input
-                  type="checkbox"
-                  v-model="isDark"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
+          <ToggleSwitch v-model="isDark" />
         </div>
       </div>
     </div>
@@ -39,13 +31,12 @@ import { useDark } from '@vueuse/core'
 import BackRouter from '@/components/BackRouter.vue'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
 const isDark = useDark()
 </script>
 
 <style scoped lang="scss">
-@use '@/assets/scss/service-item' as *;
-
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -93,12 +84,6 @@ const isDark = useDark()
       color: var(--color-body-secondary);
       line-height: 1.6;
     }
-  }
-}
-
-.filter-toggle {
-  .toggle-switch {
-    @include toggle-switch;
   }
 }
 

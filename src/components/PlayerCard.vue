@@ -21,20 +21,12 @@
         </div>
         <div class="player-actions">
           <div class="player-toggle">
-            <label class="toggle-switch" :class="{
-              'disabled': player.allow_change === false || player.exists === false
-            }">
-              <input
-                type="checkbox"
-                :checked="player.status === 'active'"
-                :disabled="player.loading || player.allow_change === false || player.exists === false"
-                @click="$emit('toggle', $event)"
-              >
-              <span class="toggle-slider" :class="{
-                loading: player.loading,
-                'not-allowed': player.allow_change === false || player.exists === false
-              }"></span>
-            </label>
+            <ToggleSwitch
+              :model-value="player.status === 'active'"
+              :disabled="player.loading || player.allow_change === false || player.exists === false"
+              :loading="player.loading"
+              @update:model-value="$emit('toggle')"
+            />
           </div>
           <!-- Caret column for expandable services -->
           <div class="player-expand">
@@ -131,6 +123,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Icon from '@/components/Icon.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
 interface Player {
   name: string
@@ -152,7 +145,7 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-  toggle: [event: Event]
+  toggle: []
   'toggle-config': []
   'navigate-bluetooth': []
   'update-airplay-version': [version: number]
@@ -272,32 +265,6 @@ const getStatusText = (player: Player) => {
       }
     }
 
-    .toggle-switch {
-      @include toggle-switch;
-
-      &.disabled {
-        .toggle-slider {
-          background-color: #e5e5e5;
-          cursor: not-allowed;
-
-          &.not-allowed {
-            background-color: #f0f0f0;
-          }
-
-          &:before {
-            background-color: #d0d0d0;
-          }
-        }
-
-        input:checked + .toggle-slider {
-          background-color: #c0c0c0;
-
-          &:before {
-            background-color: #a0a0a0;
-          }
-        }
-      }
-    }
   }
 
   .config-section {

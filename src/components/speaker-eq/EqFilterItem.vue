@@ -19,10 +19,7 @@
         </div>
       </div>
       <div class="filter-actions" @click.stop>
-        <label class="toggle-switch">
-          <input type="checkbox" :checked="filter.enabled" @change="$emit('toggle-enabled', filter)" />
-          <span class="toggle-slider"></span>
-        </label>
+        <ToggleSwitch :model-value="filter.enabled" @update:model-value="$emit('toggle-enabled', filter)" />
         <div class="filter-remove" @click="$emit('remove', filter.id)">
           <Icon icon="close" />
         </div>
@@ -64,6 +61,7 @@
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import { type Filter } from '@/utils/filtercalc';
 import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
 
@@ -109,7 +107,6 @@ const standardControls = [
 
 <style scoped lang="scss">
 @use '@/assets/scss/mixins' as *;
-@use '@/assets/scss/service-item' as *;
 
 .filter-item {
   padding: 20px;
@@ -162,10 +159,6 @@ const standardControls = [
   .filter-remove {
     @include delete-button-small;
   }
-}
-
-.toggle-switch {
-  @include toggle-switch;
 }
 
 // Standard parameter controls

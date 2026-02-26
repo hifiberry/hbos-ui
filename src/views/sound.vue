@@ -98,10 +98,7 @@
                 </div>
                 <div class="filter-actions" @click.stop>
                   <div class="filter-toggle">
-                    <label class="toggle-switch">
-                      <input type="checkbox" v-model="filter.enabled" />
-                      <span class="toggle-slider"></span>
-                    </label>
+                    <ToggleSwitch v-model="filter.enabled" />
                   </div>
                   <div class="filter-remove" @click="removeFilter(filter.id)">
                     <Icon icon="close" />
@@ -194,6 +191,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import Icon from '@/components/Icon.vue';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import {
   type Filter,
@@ -618,7 +616,6 @@ watch(filters, () => {
 
 <style scoped lang="scss">
 @import '@/assets/scss/mixins.scss';
-@use '@/assets/scss/service-item' as *;
 
 .sound-page {
   // Wrapper to ensure single root element for transitions
@@ -989,9 +986,6 @@ watch(filters, () => {
             gap: 15px;
 
             .filter-toggle {
-              .toggle-switch {
-                @include toggle-switch;
-              }
             }
 
             .filter-remove {
@@ -1066,10 +1060,6 @@ watch(filters, () => {
     .player-toggle {
       display: flex;
       align-items: center;
-    }
-
-    .toggle-switch {
-      @include toggle-switch;
     }
   }
 }

@@ -8,19 +8,13 @@
             title="Click to reset timer">
             {{ discoverableCountdown }}s
           </span>
-          <label class="toggle-switch">
-            <input type="checkbox" :checked="discoverable" @change="toggleDiscoverable">
-            <span class="toggle-slider"></span>
-          </label>
+          <ToggleSwitch :model-value="discoverable" @update:model-value="toggleDiscoverable" />
         </div>
       </div>
       <div class="bluetooth-settings-pairs-div">
         <p>Pairing with password</p>
         <div class="toggle-container">
-          <label class="toggle-switch">
-            <input type="checkbox" :checked="capability === 'KeyboardOnly'" @change="togglePairingWithPassword">
-            <span class="toggle-slider"></span>
-          </label>
+          <ToggleSwitch :model-value="capability === 'KeyboardOnly'" @update:model-value="togglePairingWithPassword" />
         </div>
       </div>
       <BluetoothSettingsModal v-model:open="modalOpen" />
@@ -35,6 +29,7 @@ import { useAppConfigStore } from '@/stores/appconfig'
 import { useToastStore } from '@/stores/toast'
 import ContentBox from '@/components/ContentBox.vue'
 import BluetoothSettingsModal from '@/components/BluetoothSettings/BluetoothSettingsModal.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
 /* STORES */
 const configStore = useAppConfigStore()
@@ -271,7 +266,4 @@ function resetCountdown() {
   }
 }
 
-.toggle-switch {
-  @include toggle-switch;
-}
 </style>

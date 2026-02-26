@@ -7,9 +7,10 @@
         @mouseleave="showTooltip = false"
         @mousemove="updateTooltipPosition"
       >
-        <Cover
-          :src="getCoverImageUrl(song)"
-          :alt="song.artist || 'Artist'"
+        <CoverArt
+          :song="song"
+          size="small"
+          adaptToContainer
         />
 
         <!-- Metadata Tooltip -->
@@ -59,43 +60,15 @@ import { useRouter } from 'vue-router'
 import AudioControls from '@/components/AudioControls.vue'
 import AudioControlsHeader from '@/components/AudioControlsHeader.vue'
 import ProgressControl from '@/components/ProgressControl.vue'
-import Cover from '@/components/Cover.vue'
+import CoverArt from '@/components/CoverArt.vue'
 import CustomMarquee from '@/components/CustomMarquee.vue'
 import MetadataTooltip from '@/components/MetadataTooltip.vue'
-import { rewriteImageUrl } from '@/api/utils'
-import type { Song } from '@/types/player'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
 
 const router = useRouter()
 const { currentSong: song } = storeToRefs(usePlayerStore())
-
-// Function to get the best available cover image URL
-const getCoverImageUrl = (song: Song): string => {
-  // For radio stations, prefer logo_url from metadata first
-  if (song.metadata && typeof song.metadata === 'object') {
-    const metadata = song.metadata as Record<string, unknown>
-
-    // Check for logo_url first (preferred for radio stations)
-    if (metadata.logo_url && typeof metadata.logo_url === 'string') {
-      return rewriteImageUrl(metadata.logo_url)
-    }
-
-    // Then check for coverart_url in metadata
-    if (metadata.coverart_url && typeof metadata.coverart_url === 'string') {
-      return rewriteImageUrl(metadata.coverart_url)
-    }
-  }
-
-  // Fall back to song's cover art URL if no metadata image found
-  if (song.cover_art_url) {
-    return rewriteImageUrl(song.cover_art_url)
-  }
-
-  // Return empty string if no image found
-  return ''
-}
 
 interface AudioSongControlInfoProps {
   isOnSticky?: boolean
@@ -171,13 +144,10 @@ const tooltipStyles = computed(() => {
     position: relative;
     cursor: help;
 
-    &:deep(.app-cover) {
+    &:deep(.cover-art) {
       width: 100%;
       height: 100%;
-      svg {
-        width: 50%;
-        height: 50%;
-      }
+      border-radius: 5px;
     }
   }
 

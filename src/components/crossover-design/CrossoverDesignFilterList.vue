@@ -20,14 +20,10 @@
           </h2>
           <div class="filter-list-entry-controls">
             <div class="filter-toggle">
-              <label class="toggle-switch">
-                <input
-                  type="checkbox"
-                  :checked="filter.enabled"
-                  @click.stop.prevent="toggleFilterBypassState(index)"
-                />
-                <span class="toggle-slider"></span>
-              </label>
+              <ToggleSwitch
+                :model-value="filter.enabled"
+                @update:model-value="toggleFilterBypassState(index)"
+              />
             </div>
             <button @click="removeFilter(index)">
               <Icon icon="close" />
@@ -98,6 +94,7 @@ import { useFilterStore } from '@/stores/filter_connector';
 import { setIndividualFilterBypassState } from '@/api/dsptoolkit';
 import ContentBox from '@/components/ContentBox.vue';
 import Icon from '@/components/Icon.vue';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
 
 /* PROPS */
 const props = defineProps<{
@@ -280,8 +277,6 @@ async function toggleFilterBypassState(index: number) {
 </script>
 
 <style scoped lang="scss">
-@use '@/assets/scss/service-item' as *;
-
 button {
   transition: all 0.25s;
   background: rgba(225, 255, 255, 0.1);
@@ -298,10 +293,6 @@ button {
     border: 1px solid var(--primary);
     background: rgba(225, 30, 74, 0.1);
   }
-}
-
-.toggle-switch {
-  @include toggle-switch;
 }
 
 .filter-list-container {
@@ -371,9 +362,4 @@ button {
   align-content: center;
 }
 
-.filter-toggle {
-  .toggle-switch {
-    @include toggle-switch;
-  }
-}
 </style>

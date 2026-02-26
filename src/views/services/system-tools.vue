@@ -119,15 +119,12 @@
           </div>
           <div class="tool-actions">
             <div class="expert-toggle">
-              <label class="toggle-switch" :class="{ disabled: updatingExpertMode }">
-                <input
-                  type="checkbox"
-                  :checked="getExpertMode"
-                  :disabled="updatingExpertMode"
-                  @change="toggleExpertMode"
-                >
-                <span class="toggle-slider" :class="{ loading: updatingExpertMode }"></span>
-              </label>
+              <ToggleSwitch
+                :model-value="getExpertMode"
+                :disabled="updatingExpertMode"
+                :loading="updatingExpertMode"
+                @update:model-value="toggleExpertMode"
+              />
             </div>
           </div>
         </div>
@@ -191,6 +188,7 @@ import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
 import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection, disableSoundCardDetection, getSoundCardDetectionStatus } from '@/api/system'
@@ -462,8 +460,6 @@ const stopAllMusicPlayers = async () => {
 </script>
 
 <style scoped lang="scss">
-@use '@/assets/scss/service-item' as *;
-
 .services-header {
   margin-bottom: 32px;
 
@@ -647,9 +643,6 @@ const stopAllMusicPlayers = async () => {
     }
 
     .expert-toggle {
-      .toggle-switch {
-        @include toggle-switch;
-      }
     }
   }
 }

@@ -259,7 +259,6 @@ const heartButtonTitle = computed(() => {
   }
 
   .heart-button {
-    opacity: 0.4;
     margin-left: 30px;
     margin-right: 30px;
 
@@ -275,7 +274,7 @@ const heartButtonTitle = computed(() => {
     img {
       width: 32px;
       height: 32px;
-      filter: invert(17%) sepia(89%) saturate(6472%) hue-rotate(342deg) brightness(92%) contrast(89%) opacity(0.4); /* Light red color for inactive state */
+      filter: invert(17%) sepia(89%) saturate(6472%) hue-rotate(342deg) brightness(92%) contrast(89%); /* Red color matching play/pause controls */
 
       @include media-down(md) {
         width: 24px;
@@ -284,8 +283,6 @@ const heartButtonTitle = computed(() => {
     }
 
     &--active {
-      opacity: 1;
-
       img {
         filter: invert(17%) sepia(89%) saturate(6472%) hue-rotate(342deg) brightness(92%) contrast(89%) !important; /* Full red color for active state */
       }

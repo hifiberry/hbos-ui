@@ -1,3 +1,11 @@
+hifiberry-webui (0.17.21) stable; urgency=medium
+
+  * Move API nginx includes to /etc/nginx/hifiberry-api.d/*.nginx
+  * Add upgrade migration for legacy /etc/nginx/hifiberry-*.nginx API includes
+  * Keep webui nginx include in /etc/nginx/hifiberry-webui.nginx
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 27 Feb 2026 23:10:00 +0000
+
 hifiberry-webui (0.17.20) stable; urgency=medium
 
   * Add VU meter component to header (horizontal bar style, L/R channels)

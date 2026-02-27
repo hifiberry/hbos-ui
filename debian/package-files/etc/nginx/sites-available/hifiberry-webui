@@ -4,23 +4,8 @@ server {
     listen [::]:80 default_server;
     server_name _;
 
-    # Include HiFiBerry Audio Control API proxy configuration
-    include /etc/nginx/hifiberry-audiocontrol.nginx;
-
-    # Include HiFiBerry Config API proxy configuration
-    include /etc/nginx/hifiberry-config.nginx;
-
-    # Include HiFiBerry PipeWire API proxy configuration
-    include /etc/nginx/hifiberry-pipewire.nginx;
-
-    # Include HiFiBerry DSP Toolkit API proxy configuration
-    include /etc/nginx/hifiberry-sigmatcp.nginx;
-
-    # Include HiFiBerry RoomEQ API proxy configuration
-    include /etc/nginx/hifiberry-roomeq.nginx;
-
-    # Include HiFiBerry VU Meter WebSocket proxy configuration
-    include /etc/nginx/hifiberry-vu-meter.nginx;
+    # Include all HiFiBerry API proxy configurations
+    include /etc/nginx/hifiberry-api.d/*.nginx;
 
     # Include HiFiBerry Web UI configuration
     include /etc/nginx/hifiberry-webui.nginx;

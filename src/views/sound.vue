@@ -98,10 +98,7 @@
                 </div>
                 <div class="filter-actions" @click.stop>
                   <div class="filter-toggle">
-                    <label class="toggle-switch">
-                      <input type="checkbox" v-model="filter.enabled" />
-                      <span class="toggle-slider"></span>
-                    </label>
+                    <ToggleSwitch v-model="filter.enabled" />
                   </div>
                   <div class="filter-remove" @click="removeFilter(filter.id)">
                     <Icon icon="close" />
@@ -194,6 +191,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import Icon from '@/components/Icon.vue';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import { getFilterBankDisplayName } from '@/helpers/dspFilterBankTranslations';
 import {
   type Filter,
@@ -988,48 +986,6 @@ watch(filters, () => {
             gap: 15px;
 
             .filter-toggle {
-              .toggle-switch {
-                position: relative;
-                display: inline-block;
-                width: 44px;
-                height: 24px;
-                cursor: pointer;
-
-                input {
-                  opacity: 0;
-                }
-
-                .toggle-slider {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  right: 0;
-                  bottom: 0;
-                  background-color: #555;
-                  transition: 0.3s;
-                  border-radius: 24px;
-
-                  &:before {
-                    position: absolute;
-                    content: '';
-                    height: 18px;
-                    width: 18px;
-                    left: 3px;
-                    bottom: 3px;
-                    background-color: white;
-                    transition: 0.3s;
-                    border-radius: 50%;
-                  }
-                }
-
-                input:checked + .toggle-slider {
-                  background-color: #e11e4a;
-                }
-
-                input:checked + .toggle-slider:before {
-                  transform: translateX(20px);
-                }
-              }
             }
 
             .filter-remove {
@@ -1104,49 +1060,6 @@ watch(filters, () => {
     .player-toggle {
       display: flex;
       align-items: center;
-    }
-
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 44px;
-      height: 24px;
-      cursor: pointer;
-
-      input {
-        opacity: 0;
-      }
-
-      .toggle-slider {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #555;
-        transition: 0.3s;
-        border-radius: 24px;
-
-        &:before {
-          position: absolute;
-          content: '';
-          height: 18px;
-          width: 18px;
-          left: 3px;
-          bottom: 3px;
-          background-color: white;
-          transition: 0.3s;
-          border-radius: 50%;
-        }
-      }
-
-      input:checked+.toggle-slider {
-        background-color: #e11e4a;
-      }
-
-      input:checked+.toggle-slider:before {
-        transform: translateX(20px);
-      }
     }
   }
 }

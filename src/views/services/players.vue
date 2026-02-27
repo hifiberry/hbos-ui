@@ -10,7 +10,7 @@
           :key="player.name"
           :player="player"
           :is-expanded="isConfigExpanded(player.name)"
-          @toggle="handleToggleClick($event, player.name)"
+          @toggle="handleToggleClick(player.name)"
           @toggle-config="toggleConfigExpanded(player.name)"
           @navigate-bluetooth="goToBluetoothSettings"
           @update-airplay-version="(version) => updateAirplayVersion(player.name, version)"
@@ -350,10 +350,7 @@ const refreshSingleServiceStatus = async (serviceName: string, playerIndex: numb
   }
 }
 
-const handleToggleClick = async (event: Event, playerName: string) => {
-  // Prevent the default checkbox behavior
-  event.preventDefault()
-
+const handleToggleClick = async (playerName: string) => {
   const playerIndex = findPlayerIndex(playerName)
   if (playerIndex === -1) return
 

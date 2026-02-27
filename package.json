@@ -17,6 +17,9 @@
     "preview-expose": "vite preview --host",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint . --fix",
     "format": "prettier --write src/"
   },
@@ -44,9 +47,11 @@
     "@vitejs/plugin-vue": "^5.2.3",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.5.0",
+    "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.22.0",
     "eslint-plugin-vue": "~10.0.0",
+    "happy-dom": "^20.7.0",
     "jiti": "^2.4.2",
     "npm-run-all2": "^7.0.2",
     "prettier": "3.5.3",
@@ -55,6 +60,7 @@
     "vite": "^6.2.4",
     "vite-plugin-remove-console": "^2.2.0",
     "vite-plugin-vue-devtools": "^8.0.3",
+    "vitest": "^4.0.18",
     "vue-tsc": "^2.2.8"
   }
 }

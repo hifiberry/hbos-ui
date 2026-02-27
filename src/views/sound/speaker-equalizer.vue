@@ -34,6 +34,7 @@
         <Icon icon="save" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
       </div>
     </div>
+
     <div class="card">
       <div class="graph">
         <FilterGraph
@@ -41,7 +42,7 @@
           :active-filter-id="activeFilterId"
           :show-bandwidth-lines="true"
           :sample-rate="SAMPLE_RATE"
-          @set-active-filter="setActiveFilter"
+          @set-active-filter="activeFilterId = $event"
           @update:freq-gain="onGraphUpdateFreqGain"
           @update:q="onGraphUpdateQ"
           @drag-start="onGraphDragStart"
@@ -53,142 +54,30 @@
     <div class="card mt-3">
       <div class="equaliser-panel">
         <div class="tabs">
-        <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'left' }]" @click="setActiveChannel('left')">
-          Left
-        </button>
-        <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'right' }]" @click="setActiveChannel('right')">
-          Right
-        </button>
-      </div>
-
-      <div class="filters">
-        <div class="filter-header-wrapper">
+          <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'left' }]" @click="setActiveChannel('left')">
+            Left
+          </button>
+          <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'right' }]" @click="setActiveChannel('right')">
+            Right
+          </button>
         </div>
-      </div>
 
-      <div class="filters-list">
-        <div v-for="filter in filters" :key="filter.id" class="card">
-          <div class="filter-item" :class="{ active: activeFilterId === filter.id }" @click="setActiveFilter(filter.id)">
-            <div class="filter-main">
-              <div class="filter-info">
-                <Icon :icon="getFilterIconName(filter.icon)" class="filter-icon"
-                  :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
-                <div class="filter-details">
-                  <h3 v-if="filter.icon === 'generic_normalized'">
-                    {{ formatFilterTypeName(filter.icon) }} |
-                    b0={{ filter.genericCoeffs?.b0 || 1 }}
-                    b1={{ filter.genericCoeffs?.b1 || 0 }}
-                    b2={{ filter.genericCoeffs?.b2 || 0 }}
-                    a1={{ filter.genericCoeffs?.a1 || 0 }}
-                    a2={{ filter.genericCoeffs?.a2 || 0 }}
-                  </h3>
-                  <h3 v-else>
-                    {{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}
-                  </h3>
-                </div>
-              </div>
-              <div class="filter-actions" @click.stop>
-                <div class="filter-toggle">
-                  <label class="toggle-switch">
-                    <input type="checkbox" :checked="filter.enabled" @change="toggleFilterEnabled(filter)" />
-                    <span class="toggle-slider"></span>
-                  </label>
-                </div>
-                <div class="filter-remove" @click="removeFilter(filter.id)">
-                  <Icon icon="close" />
-                </div>
-              </div>
-            </div>
-
-            <div class="filter-controls" @click.stop>
-              <!-- Standard filter controls for non-generic filters -->
-              <template v-if="filter.icon !== 'generic_normalized'">
-                <div class="standard-controls">
-                  <div class="control-group">
-                    <label>Frequency</label>
-                    <div class="control-buttons">
-                      <button @click="decrementFilterFrequency(filter)" class="control-btn">
-                        <Icon icon="minus-small" />
-                      </button>
-                      <span class="control-value">{{ filter.frequency }} Hz</span>
-                      <button @click="incrementFilterFrequency(filter)" class="control-btn">
-                        <Icon icon="plus-small" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="control-group">
-                    <label>Gain</label>
-                    <div class="control-buttons">
-                      <button @click="decrementFilterGain(filter)" class="control-btn">
-                        <Icon icon="minus-small" />
-                      </button>
-                      <span class="control-value">{{ filter.gain }} dB</span>
-                      <button @click="incrementFilterGain(filter)" class="control-btn">
-                        <Icon icon="plus-small" />
-                      </button>
-                    </div>
-                  </div>
-
-                    <div class="control-group">
-                      <label>Q (width)</label>
-                      <div class="control-buttons">
-                        <button @click="widenFilterBand(filter)" class="control-btn">
-                          <Icon icon="minus-small" />
-                        </button>
-                        <span class="control-value">{{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</span>
-                        <button @click="narrowFilterBand(filter)" class="control-btn">
-                          <Icon icon="plus-small" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-
-                <!-- Generic biquad coefficient controls -->
-                <template v-else>
-                  <div class="generic-coefficients">
-                    <div class="coefficient-inputs">
-                      <div class="coefficient-group">
-                        <label>b0</label>
-                        <input type="number" step="0.001"
-                               :value="filter.genericCoeffs?.b0 || 1"
-                               @input="updateGenericCoeff(filter, 'b0', $event)"
-                               placeholder="1.000" />
-                      </div>
-                      <div class="coefficient-group">
-                        <label>b1</label>
-                        <input type="number" step="0.001"
-                               :value="filter.genericCoeffs?.b1 || 0"
-                               @input="updateGenericCoeff(filter, 'b1', $event)"
-                               placeholder="0.000" />
-                      </div>
-                      <div class="coefficient-group">
-                        <label>b2</label>
-                        <input type="number" step="0.001"
-                               :value="filter.genericCoeffs?.b2 || 0"
-                               @input="updateGenericCoeff(filter, 'b2', $event)"
-                               placeholder="0.000" />
-                      </div>
-                      <div class="coefficient-group">
-                        <label>a1</label>
-                        <input type="number" step="0.001"
-                               :value="filter.genericCoeffs?.a1 || 0"
-                               @input="updateGenericCoeff(filter, 'a1', $event)"
-                               placeholder="0.000" />
-                      </div>
-                      <div class="coefficient-group">
-                        <label>a2</label>
-                        <input type="number" step="0.001"
-                               :value="filter.genericCoeffs?.a2 || 0"
-                               @input="updateGenericCoeff(filter, 'a2', $event)"
-                               placeholder="0.000" />
-                      </div>
-                    </div>
-                  </div>
-                </template>
-              </div>
-            </div>
+        <div class="filters-list">
+          <div v-for="filter in filters" :key="filter.id" class="card">
+            <EqFilterItem
+              :filter="filter"
+              :is-active="activeFilterId === filter.id"
+              @select="activeFilterId = $event"
+              @remove="removeFilter"
+              @toggle-enabled="toggleFilterEnabled"
+              @increment-frequency="incrementFilterFrequency"
+              @decrement-frequency="decrementFilterFrequency"
+              @increment-gain="incrementFilterGain"
+              @decrement-gain="decrementFilterGain"
+              @widen-band="widenFilterBand"
+              @narrow-band="narrowFilterBand"
+              @update-generic-coeff="updateGenericCoeff"
+            />
           </div>
 
           <div class="card">
@@ -213,1121 +102,116 @@
             </div>
           </div>
         </div>
-
-        </div>
       </div>
     </div>
+  </div>
 
-    <teleport to="body">
-      <div v-if="showAddFilterModal" class="modal-backdrop" @click.self="showAddFilterModal = false">
-        <div class="modal-content">
-          <h2>Add New Filter</h2>
-          <p>Select filter type</p>
+  <AddFilterModal
+    :open="showAddFilterModal"
+    :filter-types="AVAILABLE_FILTER_TYPES"
+    @close="showAddFilterModal = false"
+    @add="handleAddFilter"
+  />
 
-          <div class="filter-type-selector">
-            <button v-for="type in AVAILABLE_FILTER_TYPES" :key="type"
-              :class="['filter-type-option']"
-              @click="addFilterOfType(type)">
-              <Icon :icon="getFilterIconName(type)" class="filter-icon" />
-              <span class="filter-name">{{ formatFilterTypeName(type) }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
+  <BackendInfoModal
+    :open="showBackendInfoModal"
+    :capabilities="backendCapabilities"
+    @close="showBackendInfoModal = false"
+  />
 
-      <div v-if="showBackendInfoModal" class="modal-backdrop" @click.self="showBackendInfoModal = false">
-        <div class="modal-content backend-info-modal">
-          <div class="modal-header">
-            <h2>{{ backendCapabilities?.backendName || 'Backend' }} Information</h2>
-            <button class="close-btn" @click="showBackendInfoModal = false">×</button>
-          </div>
-          <div class="modal-body" v-html="backendCapabilities?.backendDescription"></div>
-        </div>
-      </div>
-
-      <!-- Room EQ Loader Modal -->
-      <div v-if="showRoomEQModal" class="modal-backdrop" @click.self="showRoomEQModal = false">
-        <div class="modal-content room-eq-modal">
-          <div class="modal-header">
-            <h2>Load Room EQ Configuration</h2>
-            <button class="close-btn" @click="showRoomEQModal = false">×</button>
-          </div>
-          <div class="modal-body">
-            <div v-if="loadingRoomEQConfigs" class="loading-message">
-              Loading configurations...
-            </div>
-            <div v-else-if="roomEQConfigs.length === 0" class="no-configs-message">
-              No Room EQ configurations found. Create one using the Room Equalisation Wizard first.
-            </div>
-            <div v-else>
-              <div class="config-selection">
-                <h4>Select Configuration:</h4>
-                <div class="config-list">
-                  <div
-                    v-for="config in roomEQConfigs"
-                    :key="config.key"
-                    :class="['config-item', { selected: selectedRoomEQConfig === config }]"
-                    @click="selectedRoomEQConfig = config"
-                  >
-                    <div class="config-name">{{ config.data.name }}</div>
-                    <div class="config-details">
-                      {{ config.data.filters.length }} filters •
-                      {{ new Date(config.data.created_at).toLocaleDateString() }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="selectedRoomEQConfig" class="channel-selection">
-                <h4>Apply to Channels:</h4>
-                <div class="channel-options">
-                  <label class="channel-option">
-                    <input type="radio" v-model="roomEQChannelMode" value="left" />
-                    <span>Left Channel Only</span>
-                  </label>
-                  <label class="channel-option">
-                    <input type="radio" v-model="roomEQChannelMode" value="right" />
-                    <span>Right Channel Only</span>
-                  </label>
-                  <label class="channel-option">
-                    <input type="radio" v-model="roomEQChannelMode" value="both" />
-                    <span>Both Channels</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="modal-actions">
-                <button @click="showRoomEQModal = false" class="btn secondary">Cancel</button>
-                <button
-                  @click="loadSelectedRoomEQConfig"
-                  :disabled="!selectedRoomEQConfig"
-                  class="btn primary"
-                >
-                  Load Configuration
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </teleport>
-  </PageContent>
+  <RoomEqLoaderModal
+    :open="showRoomEQModal"
+    :loading="loadingRoomEQConfigs"
+    :configs="roomEQConfigs"
+    @close="showRoomEQModal = false"
+    @load="handleLoadRoomEQ"
+  />
+</PageContent>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import Icon from '@/components/Icon.vue';
 import PageContent from '@/components/PageContent.vue';
 import FilterGraph from '@/components/FilterGraph.vue';
-import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
-import { type Filter } from '@/utils/filtercalc';
+import EqFilterItem from '@/components/speaker-eq/EqFilterItem.vue';
+import AddFilterModal from '@/components/speaker-eq/AddFilterModal.vue';
+import BackendInfoModal from '@/components/speaker-eq/BackendInfoModal.vue';
+import RoomEqLoaderModal, { type RoomEQConfigItem } from '@/components/speaker-eq/RoomEqLoaderModal.vue';
 
 import { type BiquadFilterType } from '@/utils/biquad';
-import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
-
-import {
-  setFilterBankBypassState,
-  type FilterBypassSetResponse
-} from '@/api/dsptoolkit';
-
-import { getConfigKeys, getConfigValue } from '@/api/config';
-import { type RoomEQFilter } from '@/api/roomeq';
-
-import {
-  type LinkedChannelConfig,
-  type ChannelMode as LinkedChannelMode,
-  addFilterToLinkedChannels,
-  removeFilterFromLinkedChannels,
-  toggleFilterEnabledLinked,
-  copyFiltersToChannels,
-  updateFilterPropertyLinked,
-  updateGenericCoeffLinked
-} from '@/utils/linked-channel-operations';
-
-import { DEFAULT_FREQ_RANGE, DEFAULT_GAIN_RANGE } from '@/utils/filtergraph';
-import { useToastStore } from '@/stores/toast'
-import { convertUIFilterToStore, convertStoreFilterToUI } from '@/utils/filter-conversions';
-
-// Constants
-const SAMPLE_RATE = 48000; // Default sample rate for biquad calculations
-const CONFIG_STEPS_PER_OCTAVE = 10; // Number of frequency steps per octave for logarithmic scaling
-const CONFIG_Q_STEP_FACTOR = 1.07; // Logarithmic step factor for Q value changes
-const EQ_FILE_PREFIX = 'speaker-eq'; // File prefix for save/load functionality
-// const SHOW_BANDWIDTH_LINES = true; // handled inside FilterGraph
+import { useEqFilters } from '@/composables/useEqFilters';
+import { useBypass } from '@/composables/useBypass';
+import { useEqFileIO } from '@/composables/useEqFileIO';
+import { useRoomEQ } from '@/composables/useRoomEQ';
 
 // Available filter types for the UI
 const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf', 'generic_normalized'];
 
+// --- Composables ---
+const {
+  activeChannel,
+  channelMode,
+  leftFilters,
+  rightFilters,
+  activeFilterId,
+  isDragging,
+  backendCapabilities,
+  backendName,
+  filters,
+  canAddFilterToCurrentChannel,
+  currentChannelFilterInfo,
+  initialize,
+  loadBackendCapabilities,
+  setActiveChannel,
+  toggleChannelMode,
+  addFilterOfType,
+  removeFilter,
+  toggleFilterEnabled,
+  incrementFilterFrequency,
+  decrementFilterFrequency,
+  incrementFilterGain,
+  decrementFilterGain,
+  widenFilterBand,
+  narrowFilterBand,
+  updateGenericCoeff,
+  onGraphUpdateFreqGain,
+  onGraphUpdateQ,
+  onGraphDragStart,
+  onGraphDragEnd,
+  SAMPLE_RATE,
+} = useEqFilters();
 
-type Channel = 'left' | 'right';
-type ChannelMode = 'individual' | 'both';
+const { isBypassed, startBypass, endBypass } = useBypass(activeChannel, channelMode, isDragging);
 
-// Initialize filter store
-const filterStore = useFilterStore();
-const toastStore = useToastStore()
+const { saveEQSettings, loadEQSettings } = useEqFileIO(
+  leftFilters, rightFilters, activeChannel, channelMode, filters, activeFilterId
+);
 
-// Backend capabilities and filter limits
-const backendCapabilities = ref<BackendCapabilities | null>(null);
-const backendName = ref('');
+const {
+  showRoomEQModal,
+  loadingRoomEQConfigs,
+  roomEQConfigs,
+  loadRoomEQSettings,
+  loadSelectedRoomEQConfig,
+} = useRoomEQ(leftFilters, rightFilters, activeFilterId);
 
-/**
-  * Loads the backend capabilities from the backend
-  * pinia store called `useFilterStore()`.
-  * Logs either `'Backend capabilities loaded:', backendCapabilities.value`
-  * when the loading was successful or `'Failed to load backend capabilities:', error`
-  * when the loading wasn't successful.
-  *
-  * This function should be run in the `onMount()` function.
-  */
-const loadBackendCapabilities = async () => {
-  try {
-    backendCapabilities.value = await filterStore.getBackendCapabilities();
-    backendName.value = backendCapabilities.value?.backendName || '';
-    console.log('speaker-equalizer: Backend capabilities loaded:', backendCapabilities.value);
-  } catch (error) {
-    console.error('speaker-equalizer: Failed to load backend capabilities:', error);
-  }
-};
-
-/**
-  * Loads the filters into each filter array from the backend.
-  * Uses the pinia store called `useFilterStore()`.
-  *
-  * This function should be run in the `onMount()` function.
-  */
-const loadFiltersFromBackend = async () => {
-  try {
-    // Sync from backend to get the current filter configuration
-    await filterStore.syncFromBackend();
-
-    // Convert backend filters to UI format
-    const backendFilters = filterStore.filterBanks;
-
-    // Update left channel filters
-    if (backendFilters.left?.filters) {
-      leftFilters.value = backendFilters.left.filters.map((filter, index) => convertStoreFilterToUI(filter, `left_${index + 1}`));
-    }
-
-    // Update right channel filters
-    if (backendFilters.right?.filters) {
-      rightFilters.value = backendFilters.right.filters.map((filter, index) => convertStoreFilterToUI(filter, `right_${index + 1}`));
-    }
-
-    console.log('speaker-equalizer: Loaded filters from backend:', { leftCount: leftFilters.value.length, rightCount: rightFilters.value.length });
-  } catch (error) {
-    console.error('speaker-equalizer: Failed to load filters from backend:', error);
-  }
-};
-
-/**
-  * Computed property to check if current channel can accept more filters.
-  *
-  * @returns {boolean} false if can't add, true if can add.
-  */
-const canAddFilterToCurrentChannel = computed(() => {
-  if (!backendCapabilities.value) return false;
-
-  const currentBankName = activeChannel.value;
-  const bankInfo = backendCapabilities.value.availableFilterBanks.find(
-    bank => bank.name === currentBankName
-  );
-
-  if (!bankInfo) return false;
-
-  return bankInfo.currentFilterCount < bankInfo.maxFilters;
-});
-
-/**
-  * Computed property to get the currently active filter bank information
-  * on the selected channel.
-  *
-  * @returns { FilterBankInfo | null} Returns the filterbankinfo if available and null if it didn't
-  * found anything.
-  */
-const currentChannelFilterInfo = computed(() => {
-  if (!backendCapabilities.value) return null;
-
-  const currentBankName = activeChannel.value;
-  const bankInfo = backendCapabilities.value.availableFilterBanks.find(
-    bank => bank.name === currentBankName
-  );
-
-  return bankInfo;
-});
-
-
-// Initialize filter banks in the store
-/**
-  * Initializes the backend, loads the capabilities and loads the filter
-  * banks. Reloads the backend afterwards to update the filter count.
-  *
-  * Also checks for query parameters inside of the url so they can be applied.
-  */
-onMounted(async () => {
-  const route = useRoute();
-
-  // Initialize backend from settingsDB first
-  await filterStore.initializeBackend();
-
-  // Load backend capabilities first
-  await loadBackendCapabilities();
-
-  // Create both current and prepare for future channel expansion
-  const currentChannels = ['left', 'right'];
-  await filterStore.createMultipleFilterBanks(currentChannels);
-
-  // Load existing filters from the backend
-  await loadFiltersFromBackend();
-
-  // Reload capabilities after loading filters to get updated counts
-  await loadBackendCapabilities();
-
-  // Check for Room EQ query parameters
-  if (route.query.applyRoomEQ && route.query.channel) {
-    await loadRoomEQSettings();
-    const roomEQKey = route.query.applyRoomEQ as string;
-    const channel = route.query.channel as 'left' | 'right' | 'both';
-
-    // Find and select the Room EQ configuration
-    const config = roomEQConfigs.value.find(config => config.key === roomEQKey);
-    if (config) {
-      selectedRoomEQConfig.value = config;
-      roomEQChannelMode.value = channel;
-      // Automatically apply the Room EQ configuration
-      await loadSelectedRoomEQConfig();
-    }
-  }
-});
-
-const activeChannel = ref<Channel>('left');
-const channelMode = ref<ChannelMode>('individual');
-
-// Separate filter banks for left and right channels
-const leftFilters = ref<Filter[]>([]);
-const rightFilters = ref<Filter[]>([]);
-
-/**
-  * Computed property that returns the current filter bank. The filterbank
-  * that gets returned is based on the `activeChannel.value`.
-
-  * @returns { Filter[] } The current active filter bank.
-  */
-const filters = computed(() => {
-  return activeChannel.value === 'left' ? leftFilters.value : rightFilters.value;
-});
-
+// --- Modal state ---
 const showAddFilterModal = ref(false);
 const showBackendInfoModal = ref(false);
 
-// Room EQ Configuration Types
-interface RoomEQConfig {
-  name: string;
-  filters: Array<{
-    filter_type: string;
-    frequency: number;
-    gain_db: number;
-    q: number;
-    description?: string;
-  }>;
-  created_at: string;
+// --- Event handlers ---
+async function handleAddFilter(type: BiquadFilterType) {
+  await addFilterOfType(type);
+  showAddFilterModal.value = false;
 }
 
-interface RoomEQConfigItem {
-  key: string;
-  data: RoomEQConfig;
+async function handleLoadRoomEQ(config: RoomEQConfigItem, channelMode: 'left' | 'right' | 'both') {
+  await loadSelectedRoomEQConfig(config, channelMode);
 }
 
-// Room EQ loader modal state
-const showRoomEQModal = ref(false);
-const loadingRoomEQConfigs = ref(false);
-const roomEQConfigs = ref<RoomEQConfigItem[]>([]);
-const selectedRoomEQConfig = ref<RoomEQConfigItem | null>(null);
-const roomEQChannelMode = ref<'left' | 'right' | 'both'>('both');
-
-// Bypass functionality state
-const isBypassed = ref(false);
-/** Array ref object containing the names for the filter
-  * states that were bypassed. For example: the left
-  * channel gets bypassed: this ref now stores `['left']`.
-  *
-  * It is an array because there can be both `'left'`
-  * and `'right'` be in this array at once (if linked
-  * mode is activated).
-  */
-const previousFilterStates = ref<string[]>([]);
-
-const activeFilterId = ref<number | null>(leftFilters.value[0]?.id || null);
-
-const isDragging = ref(false);
-
-/**
-  * Returns a config for both channels (linked channels). This is useful
-  * when trying to change both channels at once. For example: i want to
-  * change the frequency of a filter on both channels. Normally i would
-  * first need to read out the `leftFilters.value` and the `rightFilters.value`
-  * to get both the filter arrays. also i would need to write the changes
-  * into both back again.
-  *
-  * This function returns an object, that contains all of this information,
-  * so only one object is used (the returned one) instead of two (`leftFilters.value`
-  * and `rightFilters.value`).
-  *
-  * @returns { LinkedChannelConfig } The channel configuration object.
-  */
-const createLinkedChannelConfig = (): LinkedChannelConfig => {
-  return {
-    channelMode: channelMode.value as LinkedChannelMode,
-    activeChannel: activeChannel.value,
-    channelArrays: {
-      left: leftFilters.value,
-      right: rightFilters.value
-    },
-    bankAddresses: {
-      left: 'customFilterRegisterBankLeft',
-      right: 'customFilterRegisterBankRight'
-    },
-    updateStoreCallback: async (channelName: string, filterIndex: number, filter: Filter) => {
-      await filterStore.updateFilter(channelName, filterIndex, convertUIFilterToStore(filter));
-    },
-    addStoreCallback: async (channelName: string, filterIndex: number, filter: Filter) => {
-      await filterStore.addFilter(channelName, filterIndex, convertUIFilterToStore(filter));
-    },
-    removeStoreCallback: async (channelName: string, filterIndex: number) => {
-      await filterStore.removeFilter(channelName, filterIndex);
-    },
-    clearStoreCallback: async (channelName: string) => {
-      await filterStore.clearFiltersFromBank(channelName);
-    }
-  };
-};
-
-/**
-  * Removes a filter from the linked channels by id.
-  *
-  * @param {number} filterId - The filter that should be added to the linked channels
-  */
-const removeFilterFromCurrentChannel = async (filterId: number) => {
-  const config = createLinkedChannelConfig();
-  await removeFilterFromLinkedChannels(config, filterId);
-};
-
-/**
-  * Callback function for what the `FilterGraph` should do on an frequency
-  * gain change. This function should not be called on it's own but rather
-  * passed into the `FilterGraph` object:
-  * ```typescript
-  * <FilterGraph
-  * ...
-  * @update:freq-gain="onGraphUpdateFreqGain"
-  * ...
-  * />
-  * ```
-  */
-const onGraphUpdateFreqGain = ({ id, frequency, gain }: { id: number, frequency: number, gain: number }) => {
-  if (channelMode.value === 'both') {
-    const lf = leftFilters.value.find(f => f.id === id)
-    const rf = rightFilters.value.find(f => f.id === id)
-    if (lf) { lf.frequency = frequency; lf.gain = gain }
-    if (rf) { rf.frequency = frequency; rf.gain = gain }
-  } else {
-    const f = filters.value.find(f => f.id === id)
-    if (f) { f.frequency = frequency; f.gain = gain }
-  }
-}
-
-/**
-  * Callback function for what the `FilterGraph` should do when updating
-  * the `q` of a filter. This function should not be called on it's own
-  * but rather passed into the `FilterGraph` object:
-  * ```typescript
-  * <FilterGraph
-  * ...
-  * @update:q="onGraphUpdateQ"
-  * ...
-  * />
-  * ```
-  */
-const onGraphUpdateQ = ({ id, Q }: { id: number, Q: number }) => {
-  if (channelMode.value === 'both') {
-    const lf = leftFilters.value.find(f => f.id === id)
-    const rf = rightFilters.value.find(f => f.id === id)
-    if (lf && typeof lf.Q === 'number') lf.Q = Q
-    if (rf && typeof rf.Q === 'number') rf.Q = Q
-  } else {
-    const f = filters.value.find(f => f.id === id)
-    if (f && typeof f.Q === 'number') f.Q = Q
-  }
-}
-
-/**
-  * This is a callback function. Gets called when a filter is
-  * started dragging in the `FilterGraph` object.
-  * ```typescript
-  * <FilterGraph
-  * ...
-  * @drag-start="onGraphDragStart"
-  * ...
-  * />
-  * ```
-  */
-const onGraphDragStart = () => {
-  isDragging.value = true
-}
-
-/**
-  * This is a callback function. Gets called when a filter is
-  * stopped dragging in the `FilterGraph` object.
-  * ```typescript
-  * <FilterGraph
-  * ...
-  * @drag-end="onGraphDragEnd"
-  * ...
-  * />
-  * ```
-  */
-const onGraphDragEnd = async (id: number) => {
-  const config = createLinkedChannelConfig();
-  await updateFilterPropertyLinked(config, id, () => { /* persist current values */ })
-  isDragging.value = false
-}
-
-/**
-  * Sets the active channel (`activeMode` ref object). This
-  * function can only set the active channel to `left` or
-  * `right`.
-  *
-  * Also it sets the `activeFilterId` ref object to
-  * the first one in the new filter array, so it doesn't
-  * store an old value, that might not be available.
-  * If no filter is in this filter array, the `activeFilterId`
-  * is set to `null`.
-  *
-  * @param { Channel } channel - The new channel that should be set
-  */
-function setActiveChannel(channel: Channel) {
-  // Return to individual mode since this function is only run to switch to
-  // or between individual modes and not back into both mode.
-  if (channelMode.value === 'both') {
-    channelMode.value = 'individual';
-  }
-
-  // Set the global `activeChannel` ref object to the passed `channel` object.
-  activeChannel.value = channel;
-
-  // Update `activeFilterId` ref object to the first filter in the new channel.
-  // This is to prevent `activeFilterId` to contain false information.
-  const currentFilters = channel === 'left' ? leftFilters.value : rightFilters.value;
-  if (currentFilters.length > 0) {
-    activeFilterId.value = currentFilters[0].id;
-  } else {
-    activeFilterId.value = null;
-  }
-}
-
-/**
-  * Toggles the `channelMode` ref object between `'individual'` and `'both'`.
-  *
-  * When switching from `'individual'` mode to `'both'` mode, it copies the
-  * current filter array (for example the left one) into the other one
-  * (for example the right one).
-  *
-  * Logs if the filters were synced correctly or if they failed.
-  */
-async function toggleChannelMode() {
-  const previousMode = channelMode.value;
-  channelMode.value = channelMode.value === 'individual' ? 'both' : 'individual';
-
-  // When switching to 'both' mode, copy filters from the currently active channel to the other channel
-  if (previousMode === 'individual' && channelMode.value === 'both') {
-    const sourceChannelName = activeChannel.value;
-    const targetChannelName = activeChannel.value === 'left' ? 'right' : 'left';
-
-    try {
-      const config = createLinkedChannelConfig();
-      await copyFiltersToChannels(config, sourceChannelName, [targetChannelName]);
-
-      console.log(`speaker-equalizer: Copied filters from ${sourceChannelName} to ${targetChannelName} channel.`);
-    } catch (error) {
-      console.error(`speaker-equalizer: Failed to sync filters to ${targetChannelName} channel:`, error);
-    }
-  }
-}
-
-/**
-  * Starts bypassing the current filter bank. If channel mode is set to both,
-  * it bypasses both filter banks. This function uses the function `setFilterBankBypassState()`
-  * from `src/api/dsptoolkit.ts` to send a post request to the dsp backend.
-  *
-  * This will store the current bank/s names inside of the `previousFilterStates`.
-  * This is a `string[]` ref object, which just stores the `bankName`
-  * (the name of the current active filter bank/s).
-  *
-  * If the request fails, it will `console.error` with an error message. Also it will throw
-  * this but not always. Only in the `bypassPromises()` arrow function.
-  */
-async function startBypass() {
-  if (isBypassed.value || isDragging.value) return;
-
-  isBypassed.value = true;
-
-  try {
-    // Determine which filter banks to bypass based on channel mode
-    const banksToBypass: string[] = [];
-
-    if (channelMode.value === 'both') {
-      // Bypass both left and right filter banks
-      banksToBypass.push('customFilterRegisterBankLeft', 'customFilterRegisterBankRight');
-    } else {
-      // Bypass only the active channel's filter bank
-      const bankName = activeChannel.value === 'left'
-        ? 'customFilterRegisterBankLeft'
-        : 'customFilterRegisterBankRight';
-      banksToBypass.push(bankName);
-    }
-
-    // Store the previous bypass states (assuming all banks are currently enabled)
-    previousFilterStates.value = [];
-    for (const bankName of banksToBypass) {
-      previousFilterStates.value.push(bankName);
-    }
-
-    // Bypass all filter banks using the REST API
-    const bypassPromises: Promise<FilterBypassSetResponse>[] = banksToBypass.map(bankName =>
-      setFilterBankBypassState(bankName, true).catch((error: Error) => {
-        console.error(`speaker-equalizer: Failed to bypass filter bank ${bankName}:`, error);
-        throw error;
-      })
-    );
-
-    // Wait for all bypass operations to complete
-    const results = await Promise.all(bypassPromises);
-
-    let totalFilters = 0;
-    let successfulOperations = 0;
-    results.forEach(result => {
-      totalFilters += result.total_filters || 0;
-      successfulOperations += result.successful || 0;
-    });
-
-    console.log(`speaker-equalizer: Successfully bypassed ${successfulOperations}/${totalFilters} filters across ${banksToBypass.length} banks`);
-
-  } catch (error) {
-    console.error('speaker-equalizer: Failed to start bypass:', error);
-    // Reset bypass state if something went wrong
-    isBypassed.value = false;
-  }
-}
-
-/**
-  * Ends the bypass mode using `setFilterBankBypassState()`
-  * from `src/api/dsptoolkit.ts` for the request. The bypass mode was most
-  * likely set from the function `startBypass()` function.
-  *
-  * This function will restore the filter banks that are in the
-  * `previousFilterStates` ref object array.
-  */
-async function endBypass() {
-  if (!isBypassed.value) return;
-
-  isBypassed.value = false;
-
-  // If there were no filter banks to restore, just return
-  if (previousFilterStates.value.length === 0) {
-    console.log('speaker-equalizer: No filter banks to restore from bypass');
-    return;
-  }
-
-  try {
-    // Restore all filter banks from bypass using the REST API
-    const restorePromises: Promise<FilterBypassSetResponse>[] = [];
-
-    for (const bankName of previousFilterStates.value) {
-      restorePromises.push(
-        setFilterBankBypassState(bankName, false).catch((error: Error) => {
-          console.error(`speaker-equalizer: Failed to restore filter bank ${bankName}:`, error);
-          throw error;
-        })
-      );
-    }
-
-    // Wait for all restore operations to complete
-    const results = await Promise.all(restorePromises);
-
-    let totalFilters = 0;
-    let successfulOperations = 0;
-    results.forEach(result => {
-      totalFilters += result.total_filters || 0;
-      successfulOperations += result.successful || 0;
-    });
-
-    console.log(`speaker-equalizer: Successfully restored ${successfulOperations}/${totalFilters} filters across ${restorePromises.length} banks`);
-
-    // Clear the stored states
-    previousFilterStates.value = [];
-
-  } catch (error) {
-    console.error('speaker-equalizer: Failed to end bypass:', error);
-  }
-}
-
-/**
-  * Sets the value of the `activeFilterId` ref object.
-  *
-  * @param {number} id - The id that should be written into the `activeFilterId`
-  */
-function setActiveFilter(id: number) {
-  activeFilterId.value = id;
-}
-
-/**
-  * Adds a filter of a given type. This function is run
-  * when pressing onto a button (a filter type) inside
-  * of the add filter modal. The available filter types
-  * are stored inside the `AVAILABLE_FILTER_TYPES` variable.
-  *
-  * It also handles the ui by setting the newly added filter
-  * as the active one, reloading the backend's capabilities
-  * so it shows the filter count correctly and also closes
-  * the add filter modal.
-  *
-  * @param {BiquadFilterType} type - The type that the new filter should be
-  */
-const addFilterOfType = async (type: BiquadFilterType) => {
-  try {
-    const newId = Date.now();
-    const newFilter: Filter = {
-      id: newId,
-      icon: type,
-      text: 'New',
-      frequency: 1000,
-      gain: 0,
-      Q: 0.71, // Default Q set to 0.71 as requested
-      enabled: true,
-    };
-
-    // For generic normalized filters, add default coefficients
-    if (type === 'generic_normalized') {
-      newFilter.genericCoeffs = {
-        b0: 1.0,
-        b1: 0.0,
-        b2: 0.0,
-        a1: 0.0,
-        a2: 0.0
-      };
-    }
-
-    const config = createLinkedChannelConfig();
-    await addFilterToLinkedChannels(config, newFilter);
-    setActiveFilter(newId); // Make the newly added filter active
-
-    // Reload capabilities to update the UI filter counts
-    await loadBackendCapabilities();
-
-    showAddFilterModal.value = false;
-  } catch (error) {
-    console.error('speaker-equalizer: Failed to add filter:', error);
-    toastStore.showErrorToast('Failed to add filter.')
-  }
-};
-
-/**
-  * Removes a filter from the current channel by its index.
-  * It will first delete the filter from the backend and
-  * then sync the frontend with the backend.
-  *
-  * @param {number} filterId - The filter that should be removed
-  */
-const removeFilter = async (filterId: number) => {
-  await removeFilterFromCurrentChannel(filterId);
-
-  // If we removed the active filter, set active to first available filter or null
-  if (activeFilterId.value === filterId) {
-    const currentFilters = filters.value;
-    activeFilterId.value = currentFilters[0]?.id || null;
-  }
-
-  // Reload capabilities to update the UI filter counts
-  await loadBackendCapabilities();
-};
-
-/**
-  * Loads the settings for the roomeq from a json file.
-  * Tells the browser to open a new file explorer and
-  * to only accept `.json` files.
-  *
-  * First reads the json file, then clears the old
-  * filters and then adds the new filters to the
-  * filter store: `filterStore.addFilter()`
-  *
-  */
-const loadEQSettings = () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = (event: Event) => {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const data = JSON.parse(e.target?.result as string);
-          // Load filters to current channel or both channels based on mode
-          if (data.leftFilters && data.rightFilters) {
-            // New format with separate channels
-            leftFilters.value = data.leftFilters.map((filter: Filter, index: number) => ({
-              ...filter,
-              frequency: Math.round(filter.frequency), // Round frequency to full hertz
-              id: Date.now() + index
-            }));
-            rightFilters.value = data.rightFilters.map((filter: Filter, index: number) => ({
-              ...filter,
-              frequency: Math.round(filter.frequency), // Round frequency to full hertz
-              id: Date.now() + index + 1000
-            }));
-
-            // Update filter store with loaded filters
-            await filterStore.clearFiltersFromBank('left');
-            await filterStore.clearFiltersFromBank('right');
-
-            for (const [index, filter] of leftFilters.value.entries()) {
-              await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
-            }
-
-            for (const [index, filter] of rightFilters.value.entries()) {
-              await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
-            }
-
-            // Set the first filter as active if any exist
-            const currentFilters = filters.value;
-            if (currentFilters.length > 0) {
-              activeFilterId.value = currentFilters[0].id;
-            }
-
-            // Restore other settings if available
-            if (data.channelMode) channelMode.value = data.channelMode;
-            if (data.activeChannel) activeChannel.value = data.activeChannel;
-          }
-        } catch (error) {
-          console.error('speaker-equalizer: Error loading Speaker EQ settings:', error);
-          toastStore.showErrorToast('Error loading Speaker EQ settings. Please check the file format.')
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-  input.click();
-};
-
-/**
-  * Saves the eq settings into a json file. This json
-  * file is then automatically downloaded via the browser.
-  *
-  * This also stores the current filters (`filters`) into
-  * a seperate variable for legacy code, even though the
-  * left- and right filter banks are stored too. It might
-  * be possible to remove this in the future.
-  */
-const saveEQSettings = () => {
-  const data = {
-    filters: filters.value, // Keep for legacy compatibility
-    leftFilters: leftFilters.value,
-    rightFilters: rightFilters.value,
-    channelMode: channelMode.value,
-    activeChannel: activeChannel.value,
-    timestamp: new Date().toISOString()
-  };
-
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${EQ_FILE_PREFIX}-${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  URL.revokeObjectURL(url);
-};
-
-/**
-  * Loads the eq settings from the room acoustics correction.
-  * If none is set up, or if it can't find any it will print
-  * a console log.
-  */
-const loadRoomEQSettings = async () => {
-  showRoomEQModal.value = true;
-  loadingRoomEQConfigs.value = true;
-  roomEQConfigs.value = [];
-  selectedRoomEQConfig.value = null;
-
-  try {
-    const configs: RoomEQConfigItem[] = [];
-
-    // First get all config keys with the correction-filters prefix
-    const keysResponse = await getConfigKeys('correction-filters.');
-
-    if (keysResponse.status === 'success' && keysResponse.data && Array.isArray(keysResponse.data)) {
-      // For each key, get the actual value
-      for (const key of keysResponse.data) {
-        if (key.startsWith('correction-filters.')) {
-          try {
-            const valueResponse = await getConfigValue(key);
-            if (valueResponse.status === 'success' && valueResponse.data?.value) {
-              const configData = JSON.parse(valueResponse.data.value) as RoomEQConfig;
-              configs.push({ key, data: configData });
-            }
-          } catch (parseError) {
-            console.warn(`speaker-equalizer: Failed to parse Room EQ config ${key}:`, parseError);
-          }
-        }
-      }
-    }
-
-    // Sort by creation date (newest first)
-    configs.sort((a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime());
-    roomEQConfigs.value = configs;
-  } catch (error) {
-    // If we get a 404 or other error, it likely means no configurations exist yet
-    if (error instanceof Error && error.message.includes('404')) {
-      console.log('speaker-equalizer: No Room EQ configurations found (404) - this is normal for a fresh installation');
-      roomEQConfigs.value = [];
-    } else {
-      console.error('speaker-equalizer: Failed to load Room EQ configurations:', error);
-      roomEQConfigs.value = [];
-    }
-  } finally {
-    loadingRoomEQConfigs.value = false;
-  }
-};
-
-/**
-  * Convert room acoustics correction eq to speaker
-  * eq filter format (`BiquadFilterType`).
-  *
-  * @param {RoomEQFilter} roomEQFilter - the room acoustics correction filter's string for
-  * the type.
-  * @param {number} index - the index inside of the filters array
-  */
-const convertRoomEQFilterToSpeakerEQ = (roomEQFilter: RoomEQFilter, index: number): Filter => {
-  // Map Room EQ filter types to Speaker EQ filter types
-  const filterTypeMap: Record<string, BiquadFilterType> = {
-    'hp': 'highpass',        // Room EQ uses 'hp'
-    'lp': 'lowpass',         // Room EQ uses 'lp'
-    'eq': 'peaking',         // Room EQ uses 'eq' for peaking/parametric EQ
-    'peak': 'peaking',
-    'peaking': 'peaking',
-    'lowpass': 'lowpass',
-    'highpass': 'highpass',
-    'lowshelf': 'lowshelf',
-    'highshelf': 'highshelf'
-  };
-
-  const filterType = filterTypeMap[roomEQFilter.filter_type] || 'peaking';
-
-  return {
-    id: Date.now() + index,
-    icon: filterType,
-    text: formatFilterTypeName(filterType),
-    frequency: Math.round(roomEQFilter.frequency),
-    gain: roomEQFilter.gain_db,
-    Q: roomEQFilter.q,
-    enabled: true
-  };
-};
-
-/**
-  * Loads the selected room acoustics correction eq config.
-  */
-const loadSelectedRoomEQConfig = async () => {
-  if (!selectedRoomEQConfig.value) return;
-
-  try {
-    const config = selectedRoomEQConfig.value.data;
-    const convertedFilters = config.filters.map(convertRoomEQFilterToSpeakerEQ);
-
-    // Clear existing filters first
-    if (roomEQChannelMode.value === 'both' || roomEQChannelMode.value === 'left') {
-      await filterStore.clearFiltersFromBank('left');
-      leftFilters.value = [];
-    }
-    if (roomEQChannelMode.value === 'both' || roomEQChannelMode.value === 'right') {
-      await filterStore.clearFiltersFromBank('right');
-      rightFilters.value = [];
-    }
-
-    // Apply filters to selected channels
-    if (roomEQChannelMode.value === 'both' || roomEQChannelMode.value === 'left') {
-      leftFilters.value = [...convertedFilters];
-      for (const [index, filter] of convertedFilters.entries()) {
-        await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
-      }
-    }
-    if (roomEQChannelMode.value === 'both' || roomEQChannelMode.value === 'right') {
-      rightFilters.value = [...convertedFilters];
-      for (const [index, filter] of convertedFilters.entries()) {
-        await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
-      }
-    }
-
-    // Set first filter as active
-    if (convertedFilters.length > 0) {
-      activeFilterId.value = convertedFilters[0].id;
-    }
-
-    showRoomEQModal.value = false;
-    console.log(`speaker-equalizer: Loaded Room EQ configuration "${config.name}" to ${roomEQChannelMode.value} channel(s)`);
-  } catch (error) {
-    console.error('speaker-equalizer: Failed to load Room EQ configuration:', error);
-    toastStore.showErrorToast('Error loading Room EQ configuration. Please try again.')
-  }
-};
-
-/**
-  * Increments the filter's frequency. How much the frequency
-  * changes is based on the global const `CONFIG_STEPS_PER_OCTAVE`.
-  *
-  * @param {Filter} filter - The filter that should be adjusted
-  */
-function incrementFilterFrequency(filter: Filter) {
-  const config = createLinkedChannelConfig();
-  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
-    // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
-    const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
-    const currentLog = Math.log2(f.frequency);
-    const newLog = currentLog + logStep;
-    const newFreq = Math.pow(2, newLog);
-
-    f.frequency = Math.min(DEFAULT_FREQ_RANGE.max, Math.round(newFreq));
-  });
-}
-
-/**
-  * Decrements the filter's frequency. How much the frequency
-  * changes is based on the global const `CONFIG_STEPS_PER_OCTAVE`.
-  *
-  * @param {Filter} filter - The filter that should be adjusted
-  */
-function decrementFilterFrequency(filter: Filter) {
-  const config = createLinkedChannelConfig();
-  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
-    // Calculate logarithmic step size based on CONFIG_STEPS_PER_OCTAVE
-    const logStep = Math.log2(2) / CONFIG_STEPS_PER_OCTAVE; // Each step is 1/10th of an octave
-    const currentLog = Math.log2(f.frequency);
-    const newLog = currentLog - logStep;
-    const newFreq = Math.pow(2, newLog);
-
-    f.frequency = Math.max(DEFAULT_FREQ_RANGE.min, Math.round(newFreq));
-  });
-}
-
-/**
-  * Increments the passed filter's gain by 0.5.
-  *
-  * @param {Filter} filter - The filter that should be adjusted
-  */
-function incrementFilterGain(filter: Filter) {
-  const config = createLinkedChannelConfig();
-  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
-    f.gain = Math.min(DEFAULT_GAIN_RANGE.max, f.gain + 0.5);
-  });
-}
-
-/**
-  * Decrements the passed filter's gain by 0.5.
-  *
-  * @param {Filter} filter - The filter that should be adjusted
-  */
-function decrementFilterGain(filter: Filter) {
-  const config = createLinkedChannelConfig();
-  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
-    f.gain = Math.max(DEFAULT_GAIN_RANGE.min, f.gain - 0.5);
-  });
-}
-
-/**
-  * Widens the passed filter's band based on the global const
-  * `CONFIG_Q_STEP_FACTOR`. The minimal value that the Q can
-  * go to is `0.1`.
-  *
-  * @param {Filter} filter - The filter that should be adjusted
-  */
-function widenFilterBand(filter: Filter) {
-  const config = createLinkedChannelConfig();
-  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
-    if (typeof f.Q === 'number') {
-      // Widening the band means DECREASING the Q value using logarithmic scaling
-      f.Q = Math.max(0.1, f.Q / CONFIG_Q_STEP_FACTOR);
-    }
-  });
-}
-
-/**
-  * Narrows the passed filter's band based on the global const
-  * `CONFIG_Q_STEP_FACTOR`. The maximum value that the Q can
-  * go to is `25.0`.
-  *
-  * @param {Filter} filter - The filter that should be adjusted
-  */
-function narrowFilterBand(filter: Filter) {
-  const config = createLinkedChannelConfig();
-  updateFilterPropertyLinked(config, filter.id, (f: Filter) => {
-    if (typeof f.Q === 'number') {
-      // Narrowing the band means INCREASING the Q value using logarithmic scaling
-      f.Q = Math.min(25.0, f.Q * CONFIG_Q_STEP_FACTOR);
-    }
-  });
-}
-
-/**
-  * Updates a generic biquad filter, where the coefficients
-  * can be typed in manually.
-  *
-  * @param {Filter} filter - The filter that should be adjusted
-  * @param {string} coeffName - The name of the coefficient (B0, B1, B2, A1, A2)
-  * @param {event} event - Event object to find the value of the input field
-  */
-function updateGenericCoeff(filter: Filter, coeffName: string, event: Event) {
-  const target = event.target as HTMLInputElement;
-  const value = parseFloat(target.value);
-
-  // Validate that the value is a real number
-  if (isNaN(value)) {
-    return;
-  }
-
-  const config = createLinkedChannelConfig();
-  updateGenericCoeffLinked(config, filter.id, coeffName, value);
-}
-
-/**
-  * Toggles a filter to be either enabled or disabled.
-  * Logs out an error and displays a toast if it failed
-  * to toggle the filter.
-  *
-  * @param {Filter} filter - The filter that should be toggled
-  */
-async function toggleFilterEnabled(filter: Filter) {
-  try {
-    const config = createLinkedChannelConfig();
-    await toggleFilterEnabledLinked(config, filter.id);
-  } catch (error) {
-    console.error('speaker-equalizer: Failed to toggle filter enabled state:', error);
-    toastStore.showErrorToast('Failed to toggle filter. For further information read the console logs.')
-  }
-}
-
-/**
-  * Callback function to handle a keypress event.
-  * Closes theopen modal if the ESC-key is pressed.
-  *
-  * If the spacebar is pressed, it will start the
-  * bypass mode.
-  *
-  * @param {KeyboardEvent} e - Keyboard event that contains more information about what key is being
-  * pressed.
-  */
+// --- Keyboard shortcuts ---
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     if (showAddFilterModal.value) {
@@ -1339,78 +223,58 @@ const handleKeydown = (e: KeyboardEvent) => {
     }
   }
 
-  // Spacebar for bypass (common in audio software)
   if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value && !showRoomEQModal.value) {
-    e.preventDefault(); // Prevent page scroll
+    e.preventDefault();
     startBypass();
   }
 };
 
-/**
-  * Callback function to hanlde a key up event.
-  * This will end the bypass that was enabled
-  * using the space key (or any other bypass).
-  */
 const handleKeyup = (e: KeyboardEvent) => {
-  // Release spacebar to end bypass
   if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value) {
     e.preventDefault();
     endBypass();
   }
 };
 
-/**
-  * Adds eventlistener for the keydown and keyup events.
-  * Attaches the corresponding callback functions onto
-  * the events.
-  */
-onMounted(() => {
+// --- Lifecycle ---
+onMounted(async () => {
+  const route = useRoute();
+
+  await initialize();
+
+  // Check for Room EQ query parameters
+  if (route.query.applyRoomEQ && route.query.channel) {
+    await loadRoomEQSettings();
+    const roomEQKey = route.query.applyRoomEQ as string;
+    const channel = route.query.channel as 'left' | 'right' | 'both';
+
+    const config = roomEQConfigs.value.find(c => c.key === roomEQKey);
+    if (config) {
+      await loadSelectedRoomEQConfig(config, channel);
+    }
+  }
+
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('keyup', handleKeyup);
 });
 
-/**
-  * Removes the eventlisteners from the window when
-  * the component is unloaded.
-  */
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('keyup', handleKeyup);
-  document.body.style.userSelect = '';
 });
 
-/**
-  * Watch both filter arrays for changes.
-  * If any change occured, update the filter's
-  * frequency in the ui.
-  */
+// --- Watchers ---
 watch([leftFilters, rightFilters], () => {
-  leftFilters.value.forEach((f) => {
-    f.text = `${f.frequency}`;
-  });
-  rightFilters.value.forEach((f) => {
-    f.text = `${f.frequency}`;
-  });
+  leftFilters.value.forEach((f) => { f.text = `${f.frequency}`; });
+  rightFilters.value.forEach((f) => { f.text = `${f.frequency}`; });
 }, { deep: true });
 
-/**
-  * Reload the backend's capabilities if any
-  * changes happen in the active channel.
-  */
 watch(activeChannel, async () => {
   await loadBackendCapabilities();
 });
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/scss/mixins.scss';
-
-.sound-page {
-  // Wrapper to ensure single root element for transitions
-  width: 100%;
-  height: 100%;
-}
-
 .sound {
   padding: 20px;
 
@@ -1420,34 +284,25 @@ watch(activeChannel, async () => {
     align-items: center;
     margin-bottom: 20px;
 
-    .title-section {
+    .backend-info {
+      font-size: 14px;
+      color: #aaa;
       display: flex;
-      flex-direction: column;
-      gap: 5px;
+      align-items: center;
+      gap: 8px;
 
-      .backend-info {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: #aaa;
+      .backend-name {
+        font-weight: 500;
+        cursor: pointer;
+        color: #00b8ff;
+        text-decoration: underline;
 
-        .backend-name {
-          font-weight: 500;
-          cursor: pointer;
-          color: #00b8ff;
-          text-decoration: underline;
-          transition: color 0.2s ease;
+        &:hover { color: #0096cc; }
+      }
 
-          &:hover {
-            color: #0096cc;
-          }
-        }
-
-        .filter-limits {
-          color: #00b8ff;
-          font-weight: 500;
-        }
+      .filter-limits {
+        color: #00b8ff;
+        font-weight: 500;
       }
     }
 
@@ -1455,31 +310,16 @@ watch(activeChannel, async () => {
       display: flex;
       gap: 20px;
 
-      svg {
-        cursor: pointer;
-        width: 24px;
-        height: 24px;
-        transition: fill 0.2s ease;
-        stroke: var(--color-icon);
-
-        &.bypassed {
-          stroke: blue;
-        }
-      }
-
       .icon-btn {
         cursor: pointer;
         width: 24px;
         height: 24px;
+        stroke: var(--color-icon);
         transition: opacity 0.2s ease;
 
-        &:hover {
-          opacity: 0.5;
-        }
-
-        &.linked {
-          stroke: red;
-        }
+        &:hover { opacity: 0.5; }
+        &.linked { stroke: red; }
+        &.bypassed { stroke: blue; }
       }
     }
   }
@@ -1495,32 +335,12 @@ watch(activeChannel, async () => {
     position: relative;
     border-radius: 8px;
     width: 100%;
-    user-select: none; /* Prevent text selection */
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-
-    svg {
-      width: 100%;
-      // **MODIFICATION 3: Removed or commented out height: 100%;**
-      /* height: 100%; */
-      // The height attribute bound via Vue (:height="svgHeight") will now control the height.
-      overflow: visible;
-      user-select: none; /* Prevent text selection in SVG */
-
-      .x-axis-labels,
-      .y-axis-labels {
-        font-family: 'Metropolis', sans-serif;
-        font-weight: 400;
-        font-size: 10px;
-      }
-    }
+    user-select: none;
   }
 
   .equaliser-panel {
     .tabs {
       display: flex;
-      flex-wrap: nowrap;
 
       .tab {
         flex: 1 1 50%;
@@ -1534,9 +354,7 @@ watch(activeChannel, async () => {
         background-color: transparent;
         color: #707070;
 
-        &:first-child {
-          border-radius: 8px 0 0 8px;
-        }
+        &:first-child { border-radius: 8px 0 0 8px; }
 
         &:last-child {
           border-radius: 0 8px 8px 0;
@@ -1544,200 +362,11 @@ watch(activeChannel, async () => {
         }
 
         &.active {
-          background: #e11e4a;
+          background: var(--primary, #e11e4a);
           color: white;
-          border-color: #e11e4a;
+          border-color: var(--primary, #e11e4a);
         }
       }
-    }
-
-    .filter-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 15px;
-
-      .filter {
-        padding: 15px 30px;
-        border: 1px solid #707070;
-        cursor: pointer;
-        border-radius: 5px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease-in-out;
-        background-color: transparent;
-
-        svg {
-          width: 24px;
-          height: 24px;
-        }
-
-        &.active {
-          color: #e11e4a;
-          background: rgba(225, 30, 74, 0.1);
-          border: 2px solid #e11e4a;
-
-          svg {
-            fill: #e11e4a;
-          }
-        }
-
-        &.add-filter-button {
-          background-color: transparent;
-          color: #fff;
-          border: 1px solid #707070;
-
-          &:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-          }
-
-          &.active {
-            background: transparent;
-            color: #fff;
-            border: 1px solid #707070;
-
-            svg {
-              fill: #fff;
-            }
-          }
-        }
-
-        .filter-text {
-          margin-top: 5px;
-          font-weight: 500;
-          font-size: 14px;
-        }
-      }
-    }
-
-    .filter-control {
-      margin-top: 20px;
-
-      .control-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        border: 1px solid rgba(112, 112, 112, 0.5);
-        border-radius: 8px;
-        overflow: hidden;
-        background: rgba(255, 255, 255, 0.02);
-        backdrop-filter: blur(4px);
-      }
-
-      .control-item {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        border-right: 1px solid rgba(112, 112, 112, 0.5);
-
-        &:last-child {
-          border-right: none;
-        }
-
-        .control-value {
-          width: 100%;
-          text-align: center;
-          padding: 12px;
-          font-weight: 600;
-          font-size: 16px;
-          border-bottom: 1px solid rgba(112, 112, 112, 0.5);
-          background: rgba(255, 255, 255, 0.05);
-
-          .chevron {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-            gap: 20px;
-
-            svg {
-              cursor: pointer;
-
-              &:hover {
-                fill: #e11e4a;
-              }
-            }
-          }
-        }
-
-        .control-label {
-          width: 100%;
-          text-align: center;
-          padding: 12px;
-          font-weight: 500;
-          font-size: 14px;
-        }
-      }
-    }
-
-    .filter-header-wrapper {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-top: 15px;
-
-      .save-listen-mode {
-        color: #e11e4a;
-        border: 2px solid #e11e4a;
-        width: 100%;
-        padding: 15px 0px;
-        border-radius: 5px;
-        font-size: 23px;
-        font-weight: 500;
-        background: transparent;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-
-        &:hover {
-          background-color: rgba(225, 30, 74, 0.1);
-        }
-      }
-
-      .channel-text {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 14px;
-      }
-
-      .more-option {
-        display: flex;
-        min-width: 90px;
-        justify-content: space-between;
-        margin: 11px 1px;
-
-        svg {
-          cursor: pointer;
-
-          &:hover {
-            fill: #e11e4a;
-          }
-        }
-      }
-
-      .icon-stroke path {
-        stroke: #e11e4a !important;
-        stroke-width: 2px;
-        fill: none;
-      }
-
-      .remove-filter-text {
-        color: #e11e4a;
-        cursor: pointer;
-        font-size: 14px;
-
-        &:hover {
-          text-decoration: underline;
-        }
-      }
-    }
-
-    .channel-title {
-      font-family: 'Metropolis', sans-serif;
-      font-weight: 500;
-      font-size: 20px;
-      line-height: 1;
-      margin: 15px 1px;
     }
 
     .filters-list {
@@ -1754,47 +383,24 @@ watch(activeChannel, async () => {
         transition: all 0.2s ease-in-out;
         cursor: pointer;
 
-        &.active {
-          border-color: #e11e4a;
-          background: rgba(225, 30, 74, 0.05);
-        }
-
         &.add-filter-item {
-          cursor: pointer;
           border-style: dashed;
 
           &:hover:not(.disabled) {
-            border-color: #e11e4a;
+            border-color: var(--primary, #e11e4a);
             background: rgba(225, 30, 74, 0.05);
           }
 
           &.disabled {
             cursor: not-allowed;
             opacity: 0.5;
-            border-color: #555;
-            color: #777;
-
-            .filter-icon {
-              opacity: 0.5;
-            }
-
-            &:hover {
-              border-color: #555;
-              background: rgba(255, 255, 255, 0.02);
-            }
           }
-        }
-
-        &:hover:not(.add-filter-item) {
-          border-color: rgba(225, 30, 74, 0.5);
-          background: rgba(225, 30, 74, 0.02);
         }
 
         .filter-main {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 15px;
 
           .filter-info {
             display: flex;
@@ -1806,250 +412,18 @@ watch(activeChannel, async () => {
               height: 32px;
             }
 
-            .filter-details {
-              h3 {
-                font-size: 18px;
-                font-weight: 500;
-                margin: 0 0 5px 0;
-                color: #color-text;
-              }
-
-              .filter-frequency {
-                font-size: 14px;
-                color: #666;
-              }
-            }
-          }
-
-          .filter-actions {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-
-            .filter-toggle {
-              .toggle-switch {
-                position: relative;
-                display: inline-block;
-                width: 44px;
-                height: 24px;
-                cursor: pointer;
-
-                input {
-                  opacity: 0;
-                }
-
-                .toggle-slider {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  right: 0;
-                  bottom: 0;
-                  background-color: #555;
-                  transition: 0.3s;
-                  border-radius: 24px;
-
-                  &:before {
-                    position: absolute;
-                    content: '';
-                    height: 18px;
-                    width: 18px;
-                    left: 3px;
-                    bottom: 3px;
-                    background-color: white;
-                    transition: 0.3s;
-                    border-radius: 50%;
-                  }
-                }
-
-                input:checked + .toggle-slider {
-                  background-color: #e11e4a;
-                }
-
-                input:checked + .toggle-slider:before {
-                  transform: translateX(20px);
-                }
-              }
+            .filter-details h3 {
+              font-size: 18px;
+              font-weight: 500;
+              margin: 0 0 5px 0;
             }
 
-            .filter-remove {
-              @include delete-button-small;
-            }
-          }
-        }
-
-        .filter-controls {
-          display: block;
-
-          .standard-controls {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-          }
-
-          .control-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-
-            label {
-              font-size: 12px;
+            .filter-frequency {
+              font-size: 14px;
               color: #666;
-              margin-bottom: 8px;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-
-            .control-buttons {
-              display: flex;
-              align-items: center;
-              gap: 10px;
-
-              .control-btn {
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(112, 112, 112, 0.5);
-                border-radius: 4px;
-                padding: 8px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-
-                &:hover {
-                  background: rgba(225, 30, 74, 0.2);
-                  border-color: #e11e4a;
-                }
-
-                svg {
-                  width: 14px;
-                  height: 14px;
-                  fill: white;
-                }
-              }
-
-              .control-value {
-                font-size: 14px;
-                font-weight: 500;
-                min-width: 60px;
-                text-align: center;
-                color: var(--color-text);
-              }
             }
           }
         }
-
-        .generic-coefficients {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          width: 100%;
-
-          .coefficient-inputs {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-            width: 100%;
-
-            .coefficient-group {
-              display: flex;
-              flex-direction: column;
-              align-items: stretch;
-              gap: 8px;
-
-              label {
-                font-size: 12px;
-                color: #666;
-                font-weight: 600;
-                text-transform: uppercase;
-                text-align: center;
-                letter-spacing: 0.5px;
-              }
-
-              input {
-                width: 100%;
-                padding: 10px 12px;
-                border: 1px solid rgba(112, 112, 112, 0.5);
-                border-radius: 6px;
-                background: rgba(255, 255, 255, 0.95);
-                color: #333;
-                font-size: 13px;
-                font-weight: 500;
-                text-align: center;
-                transition: all 0.2s ease;
-                font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-
-                &:focus {
-                  outline: none;
-                  border-color: #e11e4a;
-                  background: white;
-                  box-shadow: 0 0 0 2px rgba(225, 30, 74, 0.1);
-                }
-
-                &:hover {
-                  border-color: rgba(225, 30, 74, 0.7);
-                  background: white;
-                }
-
-                &::placeholder {
-                  color: #999;
-                  font-style: italic;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  .player-actions {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    .player-toggle {
-      display: flex;
-      align-items: center;
-    }
-
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 44px;
-      height: 24px;
-      cursor: pointer;
-
-      input {
-        opacity: 0;
-      }
-
-      .toggle-slider {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #555;
-        transition: 0.3s;
-        border-radius: 24px;
-
-        &:before {
-          position: absolute;
-          content: '';
-          height: 18px;
-          width: 18px;
-          left: 3px;
-          bottom: 3px;
-          background-color: white;
-          transition: 0.3s;
-          border-radius: 50%;
-        }
-      }
-
-      input:checked+.toggle-slider {
-        background-color: #e11e4a;
-      }
-
-      input:checked+.toggle-slider:before {
-        transform: translateX(20px);
       }
     }
   }
@@ -2059,312 +433,9 @@ watch(activeChannel, async () => {
   .sound {
     padding: 10px;
 
-    .equaliser-panel {
-      .tabs {
-        flex-wrap: nowrap;
-      }
-
-      .tabs .tab {
-        font-size: 16px;
-        padding: 10px;
-      }
-
-      .filter-control .control-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .filter-control .control-item {
-        border-right: none;
-        border-bottom: 1px solid rgba(112, 112, 112, 0.5);
-
-        &:last-child {
-          border-bottom: none;
-        }
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .sound {
-    .equaliser-panel {
-      .tabs {
-        flex-wrap: nowrap;
-      }
-
-      .tabs .tab {
-        flex: 1 1 50%;
-      }
-    }
-  }
-}
-
-/* Your existing SCSS styles remain unchanged as per the request */
-
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.modal-content {
-  background-color: var(--background-card);
-  padding: 30px;
-  border-radius: 10px;
-  width: max-content;
-  min-width: 400px;
-  max-width: 90vw;
-  text-align: center;
-  font-family: 'Metropolis', sans-serif;
-  border: 1px solid #333;
-  color: white;
-
-  h2, p {
-    font-size: 22px;
-    margin-bottom: 15px;
-    color: var(--color-text);
-  }
-
-  p {
-    font-size: 16px;
-    margin-bottom: 20px;
-  }
-
-  .filter-type-selector {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 30px;
-
-    .filter-type-option {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 15px 20px;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      background-color: transparent;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      color: var(--color-text); // Text color for default state
-      min-width: 120px; // Set a minimum width to make boxes more compact
-      max-width: 140px; // Set a maximum width
-
-      .filter-icon {
-        width: 40px; // Make icon big
-        height: 40px; // Make icon big
-        margin-bottom: 8px; // Space between icon and name
-        transition: fill 0.3s ease;
-      }
-
-      .filter-name {
-        font-size: 14px; // Adjust font size for the name
-        font-weight: 500;
-        text-transform: capitalize; // Capitalize the first letter of each word
-        white-space: pre-line; // Allow line breaks from \n characters
-        text-align: center; // Center the multi-line text
-        line-height: 1.2; // Tighter line spacing for compact appearance
-      }
-
-      &.selected {
-        background-color: #e11e4a; // Fill color on click
-        border-color: #e11e4a; // Border color on click
-        color: white; // Text color when selected
-
-        .filter-icon {
-          fill: white; // Icon color when selected
-        }
-      }
-
-      &:hover {
-        background-color: rgba(225, 30, 74, 0.1); // Light background on hover
-        border-color: #e11e4a;
-      }
-    }
-  }
-}
-
-.backend-info-modal {
-  width: 600px !important;
-  max-width: 90% !important;
-  text-align: left !important;
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #333;
-
-    h2 {
-      margin: 0;
-      color: var(--color-head);
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
-      font-weight: bold;
-      color: #666;
-      cursor: pointer;
-      padding: 0;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background-color: #f0f0f0;
-        color: #000;
-      }
-    }
-  }
-
-  .modal-body {
-    color: var(--color-text);
-    line-height: 1.6;
-  }
-}
-
-// Room EQ Modal Styles
-.room-eq-modal {
-  min-width: 500px !important;
-  max-width: 700px !important;
-
-  .modal-body {
-    text-align: left;
-  }
-
-  .loading-message, .no-configs-message {
-    text-align: center;
-    padding: 2rem;
-    color: #666;
-  }
-
-  .config-selection {
-    margin-bottom: 1.5rem;
-
-    h4 {
-      margin-bottom: 1rem;
-      color: #333;
-    }
-
-    .config-list {
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-    }
-
-    .config-item {
-      padding: 1rem;
-      border-bottom: 1px solid #eee;
-      cursor: pointer;
-      transition: background-color 0.2s;
-
-      &:hover {
-        background-color: #f8f9fa;
-      }
-
-      &.selected {
-        background-color: #e3f2fd;
-        border-color: #2196f3;
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      .config-name {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 0.25rem;
-      }
-
-      .config-details {
-        font-size: 0.875rem;
-        color: #666;
-      }
-    }
-  }
-
-  .channel-selection {
-    margin-bottom: 1.5rem;
-
-    h4 {
-      margin-bottom: 1rem;
-      color: #333;
-    }
-
-    .channel-options {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .channel-option {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      color: #333;
-
-      input[type="radio"] {
-        margin: 0;
-      }
-    }
-  }
-
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1.5rem;
-
-    .btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background-color 0.2s;
-
-      &.secondary {
-        background: #6c757d;
-        color: white;
-
-        &:hover {
-          background: #5a6268;
-        }
-      }
-
-      &.primary {
-        background: #007bff;
-        color: white;
-
-        &:hover:not(:disabled) {
-          background: #0056b3;
-        }
-
-        &:disabled {
-          background: #6c757d;
-          cursor: not-allowed;
-        }
-      }
+    .equaliser-panel .tabs .tab {
+      font-size: 16px;
+      padding: 10px;
     }
   }
 }

@@ -54,27 +54,19 @@
             <div class="settings-form">
               <div class="setting-option">
                 <span class="setting-label">Enable scrobbling:</span>
-                <label class="toggle-switch disabled">
-                  <input
-                    type="checkbox"
-                    v-model="settingsStore.getLastfmSettings.scrobble"
-                    @change="saveLastfmSettings"
-                    disabled
-                  />
-                  <span class="toggle-slider"></span>
-                </label>
+                <ToggleSwitch
+                  :model-value="settingsStore.getLastfmSettings.scrobble"
+                  disabled
+                  @update:model-value="settingsStore.getLastfmSettings.scrobble = $event; saveLastfmSettings()"
+                />
               </div>
               <div class="setting-option">
                 <span class="setting-label">Manage favourites:</span>
-                <label class="toggle-switch disabled">
-                  <input
-                    type="checkbox"
-                    v-model="settingsStore.getLastfmSettings.manageFavourites"
-                    @change="saveLastfmSettings"
-                    disabled
-                  />
-                  <span class="toggle-slider"></span>
-                </label>
+                <ToggleSwitch
+                  :model-value="settingsStore.getLastfmSettings.manageFavourites"
+                  disabled
+                  @update:model-value="settingsStore.getLastfmSettings.manageFavourites = $event; saveLastfmSettings()"
+                />
               </div>
             </div>
           </div>
@@ -105,6 +97,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Icon from '@/components/Icon.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import {
   getLastFMStatus,
   startLastFMAuth,
@@ -566,7 +559,6 @@ onUnmounted(() => {
         }
       }
 
-      @include service-toggle-switch;
     }
   }
 }

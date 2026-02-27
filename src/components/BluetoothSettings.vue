@@ -8,19 +8,13 @@
             title="Click to reset timer">
             {{ discoverableCountdown }}s
           </span>
-          <label class="toggle-switch">
-            <input type="checkbox" :checked="discoverable" @change="toggleDiscoverable">
-            <span class="toggle-slider"></span>
-          </label>
+          <ToggleSwitch :model-value="discoverable" @update:model-value="toggleDiscoverable" />
         </div>
       </div>
       <div class="bluetooth-settings-pairs-div">
         <p>Pairing with password</p>
         <div class="toggle-container">
-          <label class="toggle-switch">
-            <input type="checkbox" :checked="capability === 'KeyboardOnly'" @change="togglePairingWithPassword">
-            <span class="toggle-slider"></span>
-          </label>
+          <ToggleSwitch :model-value="capability === 'KeyboardOnly'" @update:model-value="togglePairingWithPassword" />
         </div>
       </div>
       <BluetoothSettingsModal v-model:open="modalOpen" />
@@ -35,6 +29,7 @@ import { useAppConfigStore } from '@/stores/appconfig'
 import { useToastStore } from '@/stores/toast'
 import ContentBox from '@/components/ContentBox.vue'
 import BluetoothSettingsModal from '@/components/BluetoothSettings/BluetoothSettingsModal.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
 /* STORES */
 const configStore = useAppConfigStore()
@@ -271,46 +266,4 @@ function resetCountdown() {
   }
 }
 
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-  cursor: pointer;
-
-  .toggle-slider {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--color-body-secondary);
-    transition: 0.3s;
-    border-radius: 24px;
-
-    &:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.3s;
-      border-radius: 50%;
-    }
-  }
-
-  input:checked+.toggle-slider {
-    background-color: var(--primary);
-  }
-
-  input:checked+.toggle-slider:before {
-    transform: translateX(20px);
-  }
-
-  input:focus+.toggle-slider {
-    box-shadow: 0 0 1px var(--primary);
-  }
-}
 </style>

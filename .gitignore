@@ -35,6 +35,17 @@ coverage
 vite.config.dev-server.ts
 src/constants/api.dev-server.ts
 
+# Claude Code
+.claude/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Temporary review files
+*.diff
+PR15-REVIEW-ISSUES.md
+CLAUDE.md
+
 # Debian build artifacts
 debian/webui-dist/
 *.deb

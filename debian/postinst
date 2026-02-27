@@ -14,13 +14,34 @@ case "$1" in
         # Create necessary directories
         mkdir -p /var/log/nginx
         mkdir -p /etc/nginx/sites-available
+        mkdir -p /etc/nginx/hifiberry-api.d
+
+        # On upgrade, migrate legacy API include files to the API include directory
+        if [ -n "$2" ]; then
+            for legacy_file in /etc/nginx/hifiberry-*.nginx; do
+                [ -e "$legacy_file" ] || continue
+                filename=$(basename "$legacy_file")
+
+                # Keep Web UI include in /etc/nginx
+                if [ "$filename" = "hifiberry-webui.nginx" ]; then
+                    continue
+                fi
+
+                mv -f "$legacy_file" /etc/nginx/hifiberry-api.d/"$filename"
+                echo "Migrated legacy nginx include: $filename"
+            done
+        fi
         
         # Always install nginx configuration files from templates
         echo "Installing HiFiBerry nginx configuration files"
         for nginx_file in /usr/share/hifiberry-webui/nginx/*.nginx; do
             if [ -f "$nginx_file" ]; then
                 filename=$(basename "$nginx_file")
-                cp "$nginx_file" /etc/nginx/"$filename"
+                if [ "$filename" = "hifiberry-webui.nginx" ]; then
+                    cp "$nginx_file" /etc/nginx/"$filename"
+                else
+                    cp "$nginx_file" /etc/nginx/hifiberry-api.d/"$filename"
+                fi
             fi
         done
         

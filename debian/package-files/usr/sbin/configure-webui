@@ -61,16 +61,21 @@ def setup_webui():
     
     # Check if required files exist
     webui_include = Path("/etc/nginx/hifiberry-webui.nginx")
-    audiocontrol_include = Path("/etc/nginx/hifiberry-audiocontrol.nginx")
-    config_include = Path("/etc/nginx/hifiberry-config.nginx")
-    pipewire_include = Path("/etc/nginx/hifiberry-pipewire.nginx")
-    sigmatcp_include = Path("/etc/nginx/hifiberry-sigmatcp.nginx")
-    roomeq_include = Path("/etc/nginx/hifiberry-roomeq.nginx")
+    api_includes_dir = Path("/etc/nginx/hifiberry-api.d")
+    audiocontrol_include = api_includes_dir / "hifiberry-audiocontrol.nginx"
+    config_include = api_includes_dir / "hifiberry-config.nginx"
+    pipewire_include = api_includes_dir / "hifiberry-pipewire.nginx"
+    sigmatcp_include = api_includes_dir / "hifiberry-sigmatcp.nginx"
+    roomeq_include = api_includes_dir / "hifiberry-roomeq.nginx"
     webui_dir = Path("/usr/share/hifiberry/webui")
     nginx_conf = Path("/etc/nginx/nginx.conf")
     
     if not webui_include.exists():
         print(f"Error: Web UI nginx include file not found at {webui_include}")
+        return 1
+
+    if not api_includes_dir.exists():
+        print(f"Error: API includes directory not found at {api_includes_dir}")
         return 1
     
     if not audiocontrol_include.exists():
@@ -118,34 +123,10 @@ server {{
     listen [::]:80 default_server;
     server_name _;
     
-    # Include HiFiBerry Audio Control API proxy configuration
-    include {audiocontrol_include};
-    
-    # Include HiFiBerry Config API proxy configuration
-    include {config_include};
+    # Include all HiFiBerry API proxy configurations
+    include {api_includes_dir}/*.nginx;
 '''
-            
-            # Add PipeWire include if available
-            if pipewire_include.exists():
-                config_content += f'''    
-    # Include HiFiBerry PipeWire API proxy configuration
-    include {pipewire_include};
-'''
-            
-            # Add DSP Toolkit include if available
-            if sigmatcp_include.exists():
-                config_content += f'''    
-    # Include HiFiBerry DSP Toolkit API proxy configuration
-    include {sigmatcp_include};
-'''
-            
-            # Add RoomEQ include if available
-            if roomeq_include.exists():
-                config_content += f'''    
-    # Include HiFiBerry RoomEQ API proxy configuration
-    include {roomeq_include};
-'''
-            
+
             config_content += f'''    
     # Include HiFiBerry Web UI configuration
     include {webui_include};
@@ -170,7 +151,7 @@ server {{
     else:
         # Fallback: modify main nginx.conf directly
         print("Warning: sites-available not found, manual configuration required")
-        print(f"Please add 'include {audiocontrol_include};', 'include {config_include};', 'include {pipewire_include};', 'include {sigmatcp_include};', 'include {roomeq_include};' and 'include {webui_include};' to your nginx server block")
+        print(f"Please add 'include {api_includes_dir}/*.nginx;' and 'include {webui_include};' to your nginx server block")
         return 1
     
     # Test nginx configuration

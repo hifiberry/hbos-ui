@@ -6,7 +6,7 @@
       </div>
       <div class="players-list">
         <PlayerCard
-          v-for="player in visiblePlayers"
+          v-for="player in builtinPlayers"
           :key="player.name"
           :player="player"
           :is-expanded="isConfigExpanded(player.name)"
@@ -19,6 +19,27 @@
           @save-config="saveConfig(player.name)"
         />
       </div>
+      <template v-if="externalVisiblePlayers.length > 0">
+        <div class="section-header">
+          <h3>3rd Party Players</h3>
+          <p>Additional players provided by community packages.</p>
+        </div>
+        <div class="players-list">
+          <PlayerCard
+            v-for="player in externalVisiblePlayers"
+            :key="player.name"
+            :player="player"
+            :is-expanded="isConfigExpanded(player.name)"
+            @toggle="handleToggleClick(player.name)"
+            @toggle-config="toggleConfigExpanded(player.name)"
+            @navigate-bluetooth="goToBluetoothSettings"
+            @update-airplay-version="(version) => updateAirplayVersion(player.name, version)"
+            @update-toslink-sensitivity="(sensitivity) => updateTOSLinkSensitivity(player.name, sensitivity)"
+            @cancel-config="cancelConfig(player.name)"
+            @save-config="saveConfig(player.name)"
+          />
+        </div>
+      </template>
     </div>
   </PageContent>
 </template>
@@ -43,7 +64,8 @@ import {
   getMultipleServiceStatus,
   enableNowService,
   disableNowService,
-  checkSystemdServiceExists
+  checkSystemdServiceExists,
+  getExternalPlayers
 } from '@/api/config'
 import {
   getTOSLinkStatus,
@@ -64,6 +86,8 @@ interface Player {
   error?: string
   allow_change?: boolean
   exists?: boolean
+  isExternal?: boolean
+  iconUrl?: string
 }
 
 const players = ref<Player[]>([
@@ -94,45 +118,6 @@ const players = ref<Player[]>([
     exists: true
   },
   {
-    name: 'Airplay',
-    providedBy: 'shairport express',
-    systemdService: 'shairport',
-    config: { airplayVersion: 2 },
-    status: 'inactive',
-    icon: 'airplay',
-    enabled: false,
-    loading: false,
-    error: undefined,
-    allow_change: true,
-    exists: true
-  },
-  {
-    name: 'Spotify',
-    providedBy: 'librespot',
-    systemdService: 'librespot',
-    config: 'none',
-    status: 'inactive',
-    icon: 'spotify',
-    enabled: false,
-    loading: false,
-    error: undefined,
-    allow_change: true,
-    exists: true
-  },
-  {
-    name: 'LMS',
-    providedBy: 'squeezelite',
-    systemdService: 'squeezelite',
-    config: 'none',
-    status: 'inactive',
-    icon: 'squeezelite',
-    enabled: false,
-    loading: false,
-    error: undefined,
-    allow_change: true,
-    exists: true
-  },
-  {
     name: 'TOSLink',
     providedBy: 'DSP',
     systemdService: 'alsa-toslink',
@@ -147,8 +132,8 @@ const players = ref<Player[]>([
   },
   {
   name: 'Bluetooth',
-  providedBy: 'hbos-bluetooth',
-  systemdService: 'hbos-bluetooth.service',
+  providedBy: 'hifiberry-bluetooth',
+  systemdService: 'hifiberry-bluetooth',
   config: 'none',
   status: 'inactive',
   icon: 'tabler/bluetooth',
@@ -160,19 +145,17 @@ const players = ref<Player[]>([
   }
 ])
 
-// Filter out non-installed players unless in expert mode
-const visiblePlayers = computed(() => {
-  console.log('[visiblePlayers] Expert mode:', getExpertMode.value)
-  console.log('[visiblePlayers] All players:', players.value.map(p => ({ name: p.name, exists: p.exists })))
+// Filter players into built-in and external, hiding non-installed unless expert mode
+const builtinPlayers = computed(() => {
+  const builtin = players.value.filter(p => !p.isExternal)
+  if (getExpertMode.value) return builtin
+  return builtin.filter(p => p.exists !== false)
+})
 
-  if (getExpertMode.value) {
-    console.log('[visiblePlayers] Showing all players (expert mode enabled)')
-    return players.value
-  }
-
-  const filtered = players.value.filter(player => player.exists !== false)
-  console.log('[visiblePlayers] Filtered players:', filtered.map(p => p.name))
-  return filtered
+const externalVisiblePlayers = computed(() => {
+  const external = players.value.filter(p => p.isExternal)
+  const filtered = getExpertMode.value ? external : external.filter(p => p.exists !== false)
+  return filtered.sort((a, b) => a.name.localeCompare(b.name))
 })
 
 // State for tracking which config sections are expanded
@@ -190,6 +173,30 @@ onMounted(async () => {
 
 const loadServiceStatus = async () => {
   try {
+    // Fetch external players and merge into the list
+    const externalPlayers = await getExternalPlayers()
+    const knownServices = new Set(players.value.map(p => p.systemdService))
+    for (const ext of externalPlayers) {
+      if (!knownServices.has(ext.systemd_service)) {
+        players.value.push({
+          name: ext.name,
+          providedBy: ext.provided_by,
+          systemdService: ext.systemd_service,
+          config: 'none',
+          status: 'inactive',
+          icon: ext.icon_url,
+          enabled: false,
+          loading: false,
+          error: undefined,
+          allow_change: ext.allow_change,
+          exists: true,
+          isExternal: true,
+          iconUrl: ext.icon_url
+        })
+        knownServices.add(ext.systemd_service)
+      }
+    }
+
     // Handle TOSLink separately
     const toslinkPlayer = players.value.find(p => p.name === 'TOSLink');
     if (toslinkPlayer) {
@@ -534,5 +541,22 @@ const saveConfig = async (playerName: string) => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.section-header {
+  margin-top: 32px;
+  margin-bottom: 16px;
+
+  h3 {
+    margin: 0 0 4px 0;
+    color: var(--color-head);
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-body-secondary);
+    font-size: 0.875rem;
+  }
 }
 </style>

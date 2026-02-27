@@ -531,3 +531,38 @@ export const scanI2CDevices = async (busNumber?: number): Promise<ConfigApiRespo
 
   return response.json()
 }
+
+// External player registry
+
+export interface ExternalPlayer {
+  name: string
+  provided_by: string
+  systemd_service: string
+  icon_url: string
+  allow_change: boolean
+}
+
+/**
+ * Get external players registered via drop-in descriptors
+ */
+export const getExternalPlayers = async (): Promise<ExternalPlayer[]> => {
+  const configStore = useAppConfigStore()
+  const baseUrl = configStore.getConfigApiBaseUrl()
+  const url = `${baseUrl}/players`
+
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return []
+    const data = await response.json()
+    const players: ExternalPlayer[] = data.data?.players || []
+    // Rewrite icon_url to go through the config API proxy
+    for (const p of players) {
+      if (p.icon_url?.startsWith('/api/v1/')) {
+        p.icon_url = `${baseUrl}/${p.icon_url.slice('/api/v1/'.length)}`
+      }
+    }
+    return players
+  } catch {
+    return []
+  }
+}

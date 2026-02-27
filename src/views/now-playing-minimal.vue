@@ -54,7 +54,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import CoverArt from '@/components/CoverArt.vue'
 import ProgressControl from '@/components/ProgressControl.vue'
 import AudioControls from '@/components/AudioControls.vue'
@@ -65,6 +66,12 @@ import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
 
 const { currentSong: song } = storeToRefs(usePlayerStore())
+
+const route = useRoute()
+if (route.query.dark !== undefined) {
+  onMounted(() => document.documentElement.classList.add('dark'))
+  onUnmounted(() => document.documentElement.classList.remove('dark'))
+}
 
 // Cover art event handlers
 const onCoverArtLoaded = (result: { success: boolean; urls: string[]; source: string }) => {

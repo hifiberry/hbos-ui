@@ -28,7 +28,7 @@ export interface RoomMeasurement {
 export interface UISettings {
   service: ServiceSettings
   expertMode: boolean
-  // Add other UI settings here as needed
+  vuMeterEnabled: boolean
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -44,7 +44,8 @@ export const useSettingsStore = defineStore('settings', () => {
         manageFavourites: true
       }
     },
-    expertMode: false
+    expertMode: false,
+    vuMeterEnabled: true
   })
 
   const loading = ref(false)
@@ -58,6 +59,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const getLastfmSettings = computed(() => settings.value.service.lastfm)
   const getSpotifySettings = computed(() => settings.value.service.spotify)
   const getExpertMode = computed(() => settings.value.expertMode)
+  const getVuMeterEnabled = computed(() => settings.value.vuMeterEnabled)
 
   // Actions
   const updateServiceSettings = async <T extends keyof ServiceSettings>(
@@ -85,6 +87,11 @@ export const useSettingsStore = defineStore('settings', () => {
     await saveSettings()
   }
 
+  const updateVuMeterEnabled = async (enabled: boolean) => {
+    settings.value.vuMeterEnabled = enabled
+    await saveSettings()
+  }
+
   const saveSettings = async () => {
     loading.value = true
     try {
@@ -92,6 +99,7 @@ export const useSettingsStore = defineStore('settings', () => {
       // TODO: Replace with API call when backend is ready
       localStorage.setItem('ui.service.settings', JSON.stringify(settings.value.service))
       localStorage.setItem('ui.expertMode', JSON.stringify(settings.value.expertMode))
+      localStorage.setItem('ui.vuMeterEnabled', JSON.stringify(settings.value.vuMeterEnabled))
       console.log('Settings saved:', settings.value)
     } catch (error) {
       console.error('Failed to save settings:', error)
@@ -120,6 +128,11 @@ export const useSettingsStore = defineStore('settings', () => {
         settings.value.expertMode = JSON.parse(savedExpertMode)
       }
 
+      const savedVuMeter = localStorage.getItem('ui.vuMeterEnabled')
+      if (savedVuMeter !== null) {
+        settings.value.vuMeterEnabled = JSON.parse(savedVuMeter)
+      }
+
       console.log('Settings loaded:', settings.value)
       loaded.value = true
     } catch (error) {
@@ -143,7 +156,8 @@ export const useSettingsStore = defineStore('settings', () => {
           manageFavourites: true
         }
   },
-  expertMode: false
+  expertMode: false,
+  vuMeterEnabled: true
     }
     await saveSettings()
   }
@@ -255,12 +269,14 @@ export const useSettingsStore = defineStore('settings', () => {
     getLastfmSettings,
     getSpotifySettings,
     getExpertMode,
+    getVuMeterEnabled,
 
     // Actions
     updateServiceSettings,
     updateLastfmSettings,
     updateSpotifySettings,
     updateExpertMode,
+    updateVuMeterEnabled,
     saveSettings,
     loadSettings,
     resetSettings,

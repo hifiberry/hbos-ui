@@ -265,7 +265,7 @@
               <tr v-if="volumeInfo.control_info?.decibel_range">
                 <td class="label">Range</td>
                 <td class="value">
-                  {{ volumeInfo.control_info.decibel_range.min_db }} dB to {{ volumeInfo.control_info.decibel_range.max_db }} dB
+                  {{ Math.round(volumeInfo.control_info.decibel_range.min_db) }} dB to {{ Math.round(volumeInfo.control_info.decibel_range.max_db) }} dB
                 </td>
               </tr>
               <tr>
@@ -1417,6 +1417,10 @@ const fetchBackgroundServices = async () => {
       {
         name: 'Room EQ',
         url: `${appConfigStore.getRoomEQApiBaseUrl()}/version`
+      },
+      {
+        name: 'VU Meter',
+        url: `${window.location.origin}/api/vu-meter/api/v1/version`
       }
     ]
 
@@ -1461,7 +1465,7 @@ const fetchBackgroundServices = async () => {
 
         if (response.ok) {
           // Try to extract version information for APIs that support it
-          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API' || service.name === 'Room EQ') {
+          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API' || service.name === 'Room EQ' || service.name === 'VU Meter') {
             try {
               const data = await response.json()
               console.log(`${service.name} response data:`, data)

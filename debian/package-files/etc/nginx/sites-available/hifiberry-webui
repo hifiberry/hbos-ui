@@ -16,6 +16,12 @@ server {
     # Include HiFiBerry DSP Toolkit API proxy configuration
     include /etc/nginx/hifiberry-sigmatcp.nginx;
 
+    # Include HiFiBerry RoomEQ API proxy configuration
+    include /etc/nginx/hifiberry-roomeq.nginx;
+
+    # Include HiFiBerry VU Meter WebSocket proxy configuration
+    include /etc/nginx/hifiberry-vu-meter.nginx;
+
     # Include HiFiBerry Web UI configuration
     include /etc/nginx/hifiberry-webui.nginx;
 }

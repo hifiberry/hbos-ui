@@ -15,11 +15,18 @@
         <p>Configure display settings for your system.</p>
       </div>
       <div class="info-card">
-        <div class="dark-mode-card">
-          <h2>
-            Dark mode
-          </h2>
+        <div class="toggle-row">
+          <h2>Dark mode</h2>
           <ToggleSwitch v-model="isDark" />
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="toggle-row">
+          <h2>VU meter</h2>
+          <ToggleSwitch
+            :modelValue="settingsStore.getVuMeterEnabled"
+            @update:modelValue="settingsStore.updateVuMeterEnabled"
+          />
         </div>
       </div>
     </div>
@@ -32,8 +39,10 @@ import BackRouter from '@/components/BackRouter.vue'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
+import { useSettingsStore } from '@/stores/settings'
 
 const isDark = useDark()
+const settingsStore = useSettingsStore()
 </script>
 
 <style scoped lang="scss">
@@ -87,7 +96,7 @@ const isDark = useDark()
   }
 }
 
-.dark-mode-card {
+.toggle-row {
   display: flex;
   flex-direction: row;
   justify-content: space-between;

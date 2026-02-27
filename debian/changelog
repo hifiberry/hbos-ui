@@ -1,3 +1,51 @@
+hifiberry-webui (0.17.19) stable; urgency=medium
+
+  * Move Spotify, Airplay, and LMS from hardcoded players to external player mechanism
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 27 Feb 2026 20:00:00 +0000
+
+hifiberry-webui (0.17.18) stable; urgency=medium
+
+  * Separate built-in and 3rd party players into distinct UI sections
+  * Fix external player icon rendering using inline SVG (same as built-in icons)
+  * Fix icon URL rewriting to work through nginx config API proxy
+  * Fix Bluetooth service name (hbos-bluetooth -> hifiberry-bluetooth)
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 27 Feb 2026 17:00:00 +0000
+
+hifiberry-webui (0.17.17) stable; urgency=medium
+
+  * Add external player support: dynamically discover and display players
+    from /etc/hifiberry/players.d/ drop-in descriptors
+  * Support external player icons served by configurator API
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 27 Feb 2026 15:00:00 +0000
+
+hifiberry-webui (0.17.16) stable; urgency=medium
+
+  * Show warning toast when SMB mount apply succeeds but MPD reconcile fails
+  * Display backend mount-all warning in add and remove SMB mount flows
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 26 Feb 2026 19:45:00 +0000
+
+hifiberry-webui (0.17.15) stable; urgency=medium
+
+  * Refactored speaker-equalizer into composables and added vitest
+  * Extracted shared ToggleSwitch component
+  * Fixed crossover-design filter toggling and error toast
+  * Fixed Bluetooth settings type and styling
+  * Fixed PipeWire variable references
+  * Fixed SVG icon viewBox attributes and heart icon fill state
+  * Updated .gitignore for dev tooling
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 26 Feb 2026 10:00:00 +0000
+
+hifiberry-webui (0.17.14) stable; urgency=medium
+
+  * Added RoomEQ API proxy include to nginx site configuration
+
+ -- HiFiBerry <support@hifiberry.com>  Sat, 08 Feb 2026 14:00:00 +0000
+
 hifiberry-webui (0.17.13) stable; urgency=medium
 
   * Fixed sound card configuration display and auto-detect functionality

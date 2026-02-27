@@ -6,7 +6,8 @@
     }">
       <div class="player-main">
         <div class="player-info">
-          <Icon :icon="player.icon" class="player-icon" />
+          <inline-svg v-if="player.iconUrl" :src="player.iconUrl" class="player-icon" :width="24" :height="24" />
+          <Icon v-else :icon="player.icon" class="player-icon" />
           <div class="player-details">
             <h3>{{ player.name }} ({{ player.providedBy }})</h3>
             <div class="player-status">
@@ -123,6 +124,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Icon from '@/components/Icon.vue'
+import InlineSvg from 'vue-inline-svg'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
 interface Player {
@@ -137,6 +139,8 @@ interface Player {
   error?: string
   allow_change?: boolean
   exists?: boolean
+  isExternal?: boolean
+  iconUrl?: string
 }
 
 const props = defineProps<{

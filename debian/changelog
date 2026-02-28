@@ -1,3 +1,28 @@
+hifiberry-webui (0.17.26) stable; urgency=medium
+
+  * Categories page: replace chip list with a proper card grid layout
+
+ -- HiFiBerry <info@hifiberry.com>  Sat, 28 Feb 2026 16:30:00 +0000
+
+hifiberry-webui (0.17.25) stable; urgency=medium
+
+  * Add Web MCP service to system-info background services panel
+
+ -- HiFiBerry <support@hifiberry.com>  Sat, 28 Feb 2026 14:00:00 +0000
+
+hifiberry-webui (0.17.24) stable; urgency=medium
+
+  * Hide full top bar on Now Playing page
+
+ -- HiFiBerry <support@hifiberry.com>  Sat, 28 Feb 2026 13:00:00 +0000
+
+hifiberry-webui (0.17.23) stable; urgency=medium
+
+  * Move API nginx include files to their respective packages
+  * Remove configure-webui helper script (superseded by postinst)
+
+ -- HiFiBerry <support@hifiberry.com>  Sat, 28 Feb 2026 12:00:00 +0000
+
 hifiberry-webui (0.17.22) stable; urgency=medium
 
   * Force dark mode on now-playing-minimal via ?dark URL parameter

@@ -1,21 +1,32 @@
 <template>
   <PageContent title="Categories" :backrouterLink="{ name: 'library' }">
-    <div v-if="loading" class="category-grid">
-      <div v-for="n in 16" :key="n" class="category-card skeleton" />
-    </div>
+    <div class="card">
+      <div :class="['poster-grid', 'cell']">
+        <template v-if="loading">
+          <PosterSkeleton :posterForm="'square'" :is-note="false" />
+        </template>
 
-    <div v-else-if="categories.length === 0" class="empty-state">
-      <p>No categories found. Add genre mappings to create categories.</p>
-    </div>
+        <template v-else>
+          <div
+            v-for="category in categories"
+            :key="category"
+            class="poster-item"
+            @click="router.push({ name: 'albums-by-category', params: { category } })"
+          >
+            <div class="poster">
+              <div class="poster-img square placeholder">
+                <Icon class="poster-img__placeholder" icon="notebook-thin" />
+              </div>
+              <div class="poster-attr">
+                <div class="h4">{{ category }}</div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
 
-    <div v-else class="category-grid">
-      <div
-        v-for="category in categories"
-        :key="category"
-        class="category-card"
-        @click="router.push({ name: 'albums-by-category', params: { category } })"
-      >
-        <span class="category-name">{{ category }}</span>
+      <div v-if="!loading && categories.length === 0" class="no-items">
+        No categories found. Add genre mappings to create categories.
       </div>
     </div>
   </PageContent>
@@ -26,6 +37,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import PageContent from '@/components/PageContent.vue'
+import PosterSkeleton from '@/components/skeletons/PosterSkeleton.vue'
+import Icon from '@/components/Icon.vue'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { useToastStore } from '@/stores/toast'
 import { useLibraryStore } from '@/stores/library.ts'
@@ -59,70 +72,85 @@ onMounted(loadCategories)
 </script>
 
 <style scoped lang="scss">
-.category-grid {
+.poster-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
-  padding: 24px;
+  gap: 30px;
 
-  @include media-down(md) {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    padding: 16px;
+  &.cell {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    @include media-down(md) {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 24px 15px;
+    }
   }
 }
 
-.category-card {
+.poster-item {
+  display: contents;
+}
+
+.poster {
+  color: var(--color-body-secondary);
+  cursor: pointer;
+  transition: all 0.2s linear;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 14px;
+  white-space: nowrap;
+
+  &:hover {
+    color: $primary;
+
+    .h4 {
+      color: $primary;
+    }
+  }
+
+  &-img {
+    width: 140px;
+    height: 140px;
+    margin-bottom: 10px;
+    overflow: hidden;
+
+    @include media-down(lg) {
+      width: 100px;
+      height: 100px;
+    }
+
+    &.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--cover-placeholder-bg);
+
+      svg {
+        width: 50px;
+        height: 50px;
+        color: var(--color-icon-primary);
+      }
+    }
+  }
+
+  &-attr {
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+
+    .h4 {
+      @include poster-title;
+      text-transform: capitalize;
+    }
+  }
+}
+
+.no-items {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
-  padding: 16px 12px;
-  border-radius: 12px;
-  background-color: var(--color-background-secondary);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  min-height: 140px;
+  color: var(--color-body-secondary);
+  padding: 24px;
   text-align: center;
-
-  &:hover {
-    background-color: var(--color-accent);
-    border-color: var(--color-accent);
-    transform: translateY(-2px);
-
-    .category-name {
-      color: white;
-    }
-  }
-
-  &.skeleton {
-    animation: pulse 1.5s ease-in-out infinite;
-    cursor: default;
-
-    &:hover {
-      background-color: var(--color-background-secondary);
-      border-color: var(--color-border);
-      transform: none;
-    }
-  }
-}
-
-.category-name {
-  color: var(--color-head);
-  font-size: 15px;
-  font-weight: 600;
-  text-transform: capitalize;
-  line-height: 1.3;
-}
-
-.empty-state {
-  padding: 40px 24px;
-  text-align: center;
-  color: var(--color-text-secondary);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
 }
 </style>

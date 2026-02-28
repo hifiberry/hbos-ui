@@ -1,3 +1,10 @@
+hifiberry-webui (0.17.29) stable; urgency=medium
+
+  * Albums: add multi-select genre filter chips above album grid
+  * Rename "Categories" to "Genres" throughout UI (routes, labels, nav)
+
+ -- HiFiBerry <info@hifiberry.com>  Fri, 28 Feb 2026 18:30:00 +0000
+
 hifiberry-webui (0.17.28) stable; urgency=medium
 
   * Albums: add shuffle/random sort button — click to randomize, click again to reshuffle

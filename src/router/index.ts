@@ -48,6 +48,22 @@ const router = createRouter({
               name: 'radio',
               component: () => import('@/views/library/radio.vue'),
             },
+            {
+              path: 'genres',
+              component: () => import('@/views/router-view.vue'),
+              children: [
+                {
+                  path: '',
+                  name: 'genres',
+                  component: () => import('@/views/library/genres.vue'),
+                },
+                {
+                  path: ':category',
+                  name: 'albums-by-genre',
+                  component: () => import('@/views/library/albums-by-genre.vue'),
+                },
+              ],
+            },
           ],
         },
         {

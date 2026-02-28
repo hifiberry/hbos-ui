@@ -31,6 +31,10 @@ export const useAlbumStore = defineStore('album', () => {
   const sortOrder = ref<'asc' | 'desc'>('desc')
   // Map from album.$id to a random sort key, rebuilt on each shuffle
   const randomKeys = ref<Map<string, number>>(new Map())
+  // Genre filter state
+  const genres = ref<string[]>([])
+  const selectedGenres = ref<string[]>([])
+  const genreAlbumIds = ref<Set<string>>(new Set())
 
   // Getter
   const sortedAlbums = computed(() => {
@@ -89,19 +93,51 @@ export const useAlbumStore = defineStore('album', () => {
     })
   })
 
-  // Filter function that updates the albums array directly
+  // Filter function that updates the albums array directly (applies both search and genre filters)
   const filterAlbums = (query: string) => {
-    if (!query.trim()) {
-      // If no query, show all albums
-      albums.value = [...allAlbums.value]
-    } else {
-      // Filter albums by name or artist
+    let filtered = [...allAlbums.value]
+
+    if (genreAlbumIds.value.size > 0) {
+      filtered = filtered.filter(a => genreAlbumIds.value.has(a.$id!))
+    }
+
+    if (query.trim()) {
       const lowerQuery = query.toLowerCase().trim()
-      albums.value = allAlbums.value.filter(album =>
+      filtered = filtered.filter(album =>
         album.name.toLowerCase().includes(lowerQuery) ||
         album.artists.some(artist => artist.toLowerCase().includes(lowerQuery))
       )
     }
+
+    albums.value = filtered
+  }
+
+  const loadGenres = async () => {
+    const { data } = await libraryFetch<{ categories: string[] }>(
+      '/library/:activeLibrary/categories',
+    ).json()
+    if (data.value?.categories) {
+      genres.value = data.value.categories
+    }
+  }
+
+  const setGenreFilter = async (newGenres: string[]) => {
+    selectedGenres.value = newGenres
+    if (newGenres.length === 0) {
+      genreAlbumIds.value = new Set()
+    } else {
+      const ids = new Set<string>()
+      for (const genre of newGenres) {
+        const { data } = await libraryFetch<{ albums: Array<{ id: string }> }>(
+          `/library/:activeLibrary/albums/by-category/${encodeURIComponent(genre)}`,
+        ).json()
+        if (data.value?.albums) {
+          for (const a of data.value.albums) ids.add(a.id)
+        }
+      }
+      genreAlbumIds.value = ids
+    }
+    filterAlbums(searchQuery.value)
   }
 
   // Action
@@ -245,6 +281,8 @@ export const useAlbumStore = defineStore('album', () => {
     searchQuery,
     sortBy,
     sortOrder,
+    genres,
+    selectedGenres,
 
     // Getter
     sortedAlbums,
@@ -258,6 +296,8 @@ export const useAlbumStore = defineStore('album', () => {
     setSearchQuery,
     clearSearch,
     filterAlbums,
+    loadGenres,
+    setGenreFilter,
     setSortBy,
     setSortOrder,
     toggleSortOrder,

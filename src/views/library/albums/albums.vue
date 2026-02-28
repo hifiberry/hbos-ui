@@ -1,7 +1,7 @@
 <template>
   <PageContent title="Albums" :backrouterLink="{ name: 'library' }">
-    <div class="breadcrumbs">
-      <div class="controls">
+    <div class="controls-bar">
+      <div class="controls-row">
         <SortSelector
           :sort-by="sortBy"
           :sort-order="sortOrder"
@@ -16,6 +16,16 @@
             @change="onSearch"
           />
         </div>
+      </div>
+      <div v-if="genres.length > 0" class="genre-filter">
+        <button
+          v-for="genre in genres"
+          :key="genre"
+          :class="['genre-chip', { active: selectedGenres.includes(genre) }]"
+          @click="toggleGenre(genre)"
+        >
+          {{ genre }}
+        </button>
       </div>
     </div>
     <div class="card">
@@ -45,14 +55,13 @@ import { useAlbumStore } from '@/stores/album.ts'
 import PosterGrid from '@/components/PosterGrid.vue'
 
 const albumStore = useAlbumStore()
-const { loading, loaded, sortedAlbums, sortBy, sortOrder } = storeToRefs(albumStore)
-const { getAlbums, clearSearch, setSortBy, toggleSortOrder, shuffleAlbums } = albumStore
+const { loading, loaded, sortedAlbums, sortBy, sortOrder, genres, selectedGenres } = storeToRefs(albumStore)
+const { getAlbums, clearSearch, setSortBy, toggleSortOrder, shuffleAlbums, loadGenres, setGenreFilter } = albumStore
 
 const search = ref<string>('')
 
 const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => {
   if (newSortBy === 'random') {
-    // Always reshuffle, even if already in random mode
     shuffleAlbums()
   } else {
     setSortBy(newSortBy)
@@ -60,7 +69,6 @@ const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => 
 }
 
 const handleToggleOrder = () => {
-  // Only toggle order for release_date (year) sorting
   if (sortBy.value === 'release_date') {
     toggleSortOrder()
   }
@@ -71,30 +79,69 @@ const onSearch = (searchValue: string) => {
   albumStore.setSearchQuery(searchValue)
 }
 
-onMounted(() => {
+const toggleGenre = (genre: string) => {
+  const current = [...selectedGenres.value]
+  const idx = current.indexOf(genre)
+  if (idx >= 0) {
+    current.splice(idx, 1)
+  } else {
+    current.push(genre)
+  }
+  setGenreFilter(current)
+}
+
+onMounted(async () => {
   getAlbums()
-  // Clear any existing search when component mounts
   clearSearch()
   search.value = ''
+  await loadGenres()
 })
 </script>
 
 <style scoped lang="scss">
-.albums {
-  .breadcrumbs {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.controls-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 
-      .search-bar {
-        max-width: 200px;
-      }
-    }
+  .search-bar {
+    max-width: 200px;
+  }
+}
+
+.genre-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.genre-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+
+  &.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary-text);
   }
 }
 </style>

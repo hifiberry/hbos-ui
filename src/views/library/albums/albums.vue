@@ -46,12 +46,17 @@ import PosterGrid from '@/components/PosterGrid.vue'
 
 const albumStore = useAlbumStore()
 const { loading, loaded, sortedAlbums, sortBy, sortOrder } = storeToRefs(albumStore)
-const { getAlbums, clearSearch, setSortBy, toggleSortOrder } = albumStore
+const { getAlbums, clearSearch, setSortBy, toggleSortOrder, shuffleAlbums } = albumStore
 
 const search = ref<string>('')
 
-const handleSortByChange = (newSortBy: 'release_date' | 'artist') => {
-  setSortBy(newSortBy)
+const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => {
+  if (newSortBy === 'random') {
+    // Always reshuffle, even if already in random mode
+    shuffleAlbums()
+  } else {
+    setSortBy(newSortBy)
+  }
 }
 
 const handleToggleOrder = () => {

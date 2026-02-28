@@ -27,11 +27,18 @@ export const useAlbumStore = defineStore('album', () => {
   const allAlbums = ref<Album[]>([]) // Store all albums
   const album = ref<AlbumDetails | null>(null)
   const searchQuery = ref<string>('')
-  const sortBy = ref<'release_date' | 'artist'>('release_date')
+  const sortBy = ref<'release_date' | 'artist' | 'random'>('release_date')
   const sortOrder = ref<'asc' | 'desc'>('desc')
+  // Map from album.$id to a random sort key, rebuilt on each shuffle
+  const randomKeys = ref<Map<string, number>>(new Map())
 
   // Getter
   const sortedAlbums = computed(() => {
+    if (sortBy.value === 'random') {
+      const keys = randomKeys.value
+      return [...albums.value].sort((a, b) => (keys.get(a.$id!) ?? 0) - (keys.get(b.$id!) ?? 0))
+    }
+
     const sorted = [...albums.value].sort((a, b) => {
       let comparison = 0
 
@@ -198,7 +205,20 @@ export const useAlbumStore = defineStore('album', () => {
     filterAlbums('')
   }
 
-  const setSortBy = (newSortBy: 'release_date' | 'artist') => {
+  const shuffleAlbums = () => {
+    const keys = new Map<string, number>()
+    for (const album of albums.value) {
+      keys.set(album.$id!, Math.random())
+    }
+    randomKeys.value = keys
+    sortBy.value = 'random'
+  }
+
+  const setSortBy = (newSortBy: 'release_date' | 'artist' | 'random') => {
+    if (newSortBy === 'random') {
+      shuffleAlbums()
+      return
+    }
     sortBy.value = newSortBy
 
     // When switching to artist sorting, always set to ascending
@@ -241,5 +261,6 @@ export const useAlbumStore = defineStore('album', () => {
     setSortBy,
     setSortOrder,
     toggleSortOrder,
+    shuffleAlbums,
   }
 })

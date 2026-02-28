@@ -23,6 +23,14 @@
       >
         Artist
       </button>
+
+      <button
+        @click="handleSortByChange('random')"
+        :class="['sort-btn', { active: sortBy === 'random' }]"
+        title="Shuffle"
+      >
+        <Icon icon="shuffle" :width="14" :height="14" />
+      </button>
     </div>
   </div>
 </template>
@@ -31,27 +39,25 @@
 import Icon from '@/components/Icon.vue'
 
 interface SortSelectorProps {
-  sortBy: 'release_date' | 'artist'
+  sortBy: 'release_date' | 'artist' | 'random'
   sortOrder: 'asc' | 'desc'
 }
 
 const props = defineProps<SortSelectorProps>()
 
 const emit = defineEmits<{
-  sortByChange: [value: 'release_date' | 'artist']
+  sortByChange: [value: 'release_date' | 'artist' | 'random']
   toggleOrder: []
 }>()
 
-const handleSortByChange = (newSortBy: 'release_date' | 'artist') => {
+const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => {
   if (newSortBy === 'release_date') {
-    // For year sorting, emit the sort change first
     emit('sortByChange', newSortBy)
-    // Then toggle order only if it was already active
     if (props.sortBy === 'release_date') {
       emit('toggleOrder')
     }
   } else {
-    // For artist sorting, just emit the sort change (always ascending)
+    // artist and random: just emit (random always reshuffles in the store)
     emit('sortByChange', newSortBy)
   }
 }

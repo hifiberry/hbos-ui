@@ -1,3 +1,9 @@
+hifiberry-webui (0.17.28) stable; urgency=medium
+
+  * Albums: add shuffle/random sort button — click to randomize, click again to reshuffle
+
+ -- HiFiBerry <info@hifiberry.com>  Sat, 28 Feb 2026 17:30:00 +0000
+
 hifiberry-webui (0.17.27) stable; urgency=medium
 
   * Categories page: poster grid with placeholder icon, same style as albums

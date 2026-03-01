@@ -1,3 +1,11 @@
+hifiberry-webui (0.17.30) stable; urgency=medium
+
+  * Albums: fix controls bar layout — search field right-aligned in single row
+  * Albums: replace genre chips with compact dropdown (multi-select checkboxes, solid background, capitalized labels)
+  * Albums: move shuffle button to after genre dropdown
+
+ -- HiFiBerry <info@hifiberry.com>  Sat, 01 Mar 2026 08:20:00 +0000
+
 hifiberry-webui (0.17.29) stable; urgency=medium
 
   * Albums: add multi-select genre filter chips above album grid

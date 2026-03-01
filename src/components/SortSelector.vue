@@ -24,13 +24,6 @@
         Artist
       </button>
 
-      <button
-        @click="handleSortByChange('random')"
-        :class="['sort-btn', { active: sortBy === 'random' }]"
-        title="Shuffle"
-      >
-        <Icon icon="shuffle" :width="14" :height="14" />
-      </button>
     </div>
   </div>
 </template>

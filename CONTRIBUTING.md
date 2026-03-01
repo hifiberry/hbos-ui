@@ -1,100 +1,73 @@
 # Contributing to HBOS-UI
-This document describes the process of contributing
-to the *HBOS-UI* project.
 
 ## Setup
-### Prerequisites
-To start contributing, some knowledge of the following
-technologies is required:
-- [nodejs](https://nodejs.org/en)
-- [typescript](https://www.typescriptlang.org/)
-- [vuejs](https://vuejs.org/)
-- [jsdoc](https://jsdoc.app/)
 
-### Project setup
-1. Install [nodejs](https://nodejs.org/en)
-2. Clone repository: `git clone https://github.com/hifiberry/hbos-ui.git`
-3. Install packages: `cd hbos-ui && npm install`
-4. Start dev-server: `npm run dev`
+See **[Getting Started](./docs/getting-started.md)** for the full setup guide.
 
-### Connect with backend
-To connect the *HBOS-UI* dev server with a backend (most likely an RPi),
-use the `vite.config.dev-server.ts`. In there, you will need to configure
-the backend's ip-address. A sample of this file is [available](https://github.com/hifiberry/hbos-ui/blob/dev/vite.config.dev-server.ts.sample).
-To start the frontend using this `vite.config.dev-server.ts` use:
+Short version:
+
 ```bash
-npm run dev-server
+git clone https://github.com/hifiberry/hbos-ui.git
+cd hbos-ui && npm install
+npm run dev
 ```
 
+To develop against a real HiFiBerry device, copy `vite.config.dev-server.ts.sample` to `vite.config.dev-server.ts`, set your device IP, then run `npm run dev-server`.
+
+## Prerequisites
+
+Working knowledge of:
+- [Vue 3](https://vuejs.org/) Composition API
+- [TypeScript](https://www.typescriptlang.org/)
+- [Pinia](https://pinia.vuejs.org/) for state management
+- [JSDoc](https://jsdoc.app/) for code documentation
 
 ## Code guidelines
-Please follow the code guidelines described in this section.
-This is to improve readability and avoid poorly written code.
 
-### Components
-Please organize the component to follow this scheme:
+See **[Development](./docs/development.md)** for the full reference. Key rules:
+
+### Component structure
+
 ```typescript
-    <script setup lang="ts">
-        /* IMPORTS */
-        /* PROPS */
-        /* GLOBAL DEFINITIONS */
-        /* FUNCTIONS */
-    </script>
+<script setup lang="ts">
+  /* IMPORTS */
+  /* PROPS */
+  /* GLOBAL DEFINITIONS */
+  /* FUNCTIONS */
+</script>
 ```
 
-### Casing
-- Global variables: `UPPER_CASE_SNAKE_CASE`
-- Functions: `camelCase`
-- Types: `PascalCase`
-- CSS Classes: `kebab-case`
+### Naming
+
+| Context | Convention |
+|---------|-----------|
+| Global constants | `UPPER_CASE_SNAKE_CASE` |
+| Functions | `camelCase` |
+| Types | `PascalCase` |
+| CSS classes | `kebab-case` |
 
 ### Separation of concerns
-A function should only have one purpose. If two functions serve
-one purpose, make one function out of it. If one function serves
-two purpuses, split them into two seperate functions.
 
-### Code documentation
-Document your typescript code using [jsdoc](https://jsdoc.app/).
-This will help code readability and maintainability.
+Each function should have a single purpose. Split functions that do two things; merge functions that do the same thing.
 
 ### Console logs
-While developing, you might want to use console logs to debug
-this website. To make the console log output better readable
-create console logs like this:
+
 ```typescript
-console.log("<filename>: <Console log message>");
-console.log("example-file: Some example log message");
-```
-With this, log messages can be easily traceable and thus
-its easier to see where an error/log happened.
-
-
-## Build for production
-In this section, the process of building this repository
-for a production environment is described.
-
-### Linting
-Before building for production, always first run the linter.
-The *linter* will analyze the code statically and display any
-errors that he can find. This is done to prevent further issues
-and to find issues that might be overlooked otherwise.
-```bash
-npm run lint
+console.log("filename: descriptive message")
 ```
 
-### Type checking
-Since TypeScript has a typing system, this should also be taken
-into account while developing. Use the [vue-tsc](https://www.npmjs.com/package/vue-tsc)
-to check if your types are correct:
+### TypeScript
+
+Document public APIs with JSDoc. Run `npm run type-check` before committing.
+
+## Before submitting
 
 ```bash
-npm run type-check
+npm run lint       # auto-fixes style issues
+npm run type-check # confirms TypeScript is valid
+npm run build      # confirms the production build works
 ```
 
-### Building
-To build this project, use the following command:
-```bash
-npm run build
-```
-This command performs type-checking, compilation and minification
-for production deployment.
+## Architecture
+
+See **[Architecture](./docs/architecture.md)** for a technical overview of the folder structure, routing, state management, and API layer.

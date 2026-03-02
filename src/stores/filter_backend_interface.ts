@@ -39,6 +39,7 @@ export interface FilterBankInfo {
   maxFilters: number
   currentFilterCount: number
   filterBankType: string
+  bankAddress?: string // Metadata key for hardware communication (e.g., 'IIR_A', 'customFilterRegisterBankLeft')
 }
 
 export interface BackendCapabilities {

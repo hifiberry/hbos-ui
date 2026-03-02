@@ -1,6 +1,6 @@
 /**
- * Composable for managing speaker EQ filter operations.
- * Uses dynamic bank discovery from backend (same architecture as useCrossoverFilters).
+ * Composable for managing crossover design filter operations.
+ * Handles dynamic channel count (A-H), pair-based linking, and filter CRUD.
  */
 
 import { ref, computed } from 'vue';
@@ -26,21 +26,22 @@ const SAMPLE_RATE = 48000;
 const CONFIG_STEPS_PER_OCTAVE = 10;
 const CONFIG_Q_STEP_FACTOR = 1.07;
 
-export function useEqFilters() {
+export function useCrossoverFilters() {
   const filterStore = useFilterStore();
   const toastStore = useToastStore();
 
-  // State — dynamic channels (discovered from backend)
+  // State — dynamic channels
   const channelNames = ref<string[]>([]);
   const activeChannel = ref<string>('');
   const channelFilters = ref<Record<string, Filter[]>>({});
   const activeFilterId = ref<number | null>(null);
   const isDragging = ref(false);
 
-  // Bank addresses: channel name → metadata key (e.g., 'left' → 'customFilterRegisterBankLeft')
+  // Bank addresses: channel name → metadata key (e.g., 'iir_a' → 'IIR_A')
   const bankAddresses = ref<Record<string, string>>({});
 
-  // Pair linking state (left↔right)
+  // Pair linking state: each pair has an independent link toggle
+  // Pairs are sequential: [A,B], [C,D], [E,F], [G,H]
   const linkedPairs = ref<Record<string, boolean>>({});
 
   // Backend capabilities
@@ -50,10 +51,6 @@ export function useEqFilters() {
   // Computed
   const filters = computed(() => {
     return channelFilters.value[activeChannel.value] ?? [];
-  });
-
-  const channelMode = computed(() => {
-    return isCurrentPairLinked.value ? 'both' : 'individual';
   });
 
   const canAddFilterToCurrentChannel = computed(() => {
@@ -72,7 +69,7 @@ export function useEqFilters() {
     ) ?? null;
   });
 
-  // Get the pair partner for a channel
+  // Get the pair partner for a channel, or null if unpaired (odd channel count)
   function getPairPartner(channel: string): string | null {
     const idx = channelNames.value.indexOf(channel);
     if (idx === -1) return null;
@@ -99,14 +96,16 @@ export function useEqFilters() {
     return isCurrentPairLinked.value ? 'both' : 'individual';
   }
 
-  // Linked channel config helper (same pattern as crossover)
+  // Linked channel config helper
   function createLinkedChannelConfig(): LinkedChannelConfig {
+    // Determine which channels are affected
     const targetChannels: string[] = [activeChannel.value];
     if (isCurrentPairLinked.value) {
       const partner = getPairPartner(activeChannel.value);
       if (partner) targetChannels.push(partner);
     }
 
+    // Build channel arrays and bank addresses for target channels
     const arrays: Record<string, Filter[]> = {};
     const addresses: Record<string, string> = {};
     for (const ch of targetChannels) {
@@ -140,7 +139,7 @@ export function useEqFilters() {
       backendCapabilities.value = await filterStore.getBackendCapabilities();
       backendName.value = backendCapabilities.value?.backendName || '';
     } catch (error) {
-      console.error('speaker-equalizer: Failed to load backend capabilities:', error);
+      console.error('crossover-design: Failed to load backend capabilities:', error);
     }
   }
 
@@ -157,7 +156,7 @@ export function useEqFilters() {
         }
       }
     } catch (error) {
-      console.error('speaker-equalizer: Failed to load filters from backend:', error);
+      console.error('crossover-design: Failed to load filters from backend:', error);
     }
   }
 
@@ -165,12 +164,12 @@ export function useEqFilters() {
     await filterStore.initializeBackend();
     await loadBackendCapabilities();
 
-    // Discover speaker-eq channels from backend
-    const eqBanks = await filterStore.getFilterBanksByType('speaker-equalizer');
-    channelNames.value = eqBanks;
+    // Discover crossover channels from backend
+    const crossoverBanks = await filterStore.getFilterBanksByType('crossover-designer');
+    channelNames.value = crossoverBanks;
 
-    if (eqBanks.length > 0) {
-      activeChannel.value = eqBanks[0];
+    if (crossoverBanks.length > 0) {
+      activeChannel.value = crossoverBanks[0];
     }
 
     // Build bank addresses from capabilities
@@ -183,40 +182,35 @@ export function useEqFilters() {
     }
 
     // Initialize empty filter arrays for each channel
-    for (const ch of eqBanks) {
+    for (const ch of crossoverBanks) {
       if (!channelFilters.value[ch]) {
         channelFilters.value[ch] = [];
       }
     }
 
     // Initialize pair linking state (all unlinked by default)
-    for (let i = 0; i < eqBanks.length - 1; i += 2) {
-      linkedPairs.value[eqBanks[i]] = false;
+    for (let i = 0; i < crossoverBanks.length - 1; i += 2) {
+      linkedPairs.value[crossoverBanks[i]] = false;
     }
 
-    await filterStore.createMultipleFilterBanks(eqBanks);
+    await filterStore.createMultipleFilterBanks(crossoverBanks);
     await loadFiltersFromBackend();
     await loadBackendCapabilities();
   }
 
   // Channel operations
   function setActiveChannel(channel: string) {
-    if (isCurrentPairLinked.value) {
-      // Unlink when switching channels
-      const pairKey = getPairKey(activeChannel.value);
-      if (pairKey) linkedPairs.value[pairKey] = false;
-    }
     activeChannel.value = channel;
     const currentFilters = channelFilters.value[channel] ?? [];
     activeFilterId.value = currentFilters[0]?.id ?? null;
   }
 
-  async function toggleChannelMode() {
-    const pairKey = getPairKey(activeChannel.value);
-    if (!pairKey) return;
+  async function togglePairLink(pairKey?: string) {
+    const key = pairKey ?? getPairKey(activeChannel.value);
+    if (!key) return;
 
-    const wasLinked = linkedPairs.value[pairKey] ?? false;
-    linkedPairs.value[pairKey] = !wasLinked;
+    const wasLinked = linkedPairs.value[key] ?? false;
+    linkedPairs.value[key] = !wasLinked;
 
     // When linking, copy active channel's filters to partner
     if (!wasLinked) {
@@ -225,9 +219,10 @@ export function useEqFilters() {
         try {
           const config = createLinkedChannelConfig();
           await copyFiltersToChannels(config, activeChannel.value, [partner]);
+          // Reload to reflect the copied filters
           await loadFiltersFromBackend();
         } catch (error) {
-          console.error(`speaker-equalizer: Failed to sync filters to ${partner} channel:`, error);
+          console.error(`crossover-design: Failed to sync filters to ${partner}:`, error);
         }
       }
     }
@@ -256,7 +251,7 @@ export function useEqFilters() {
       activeFilterId.value = newId;
       await loadBackendCapabilities();
     } catch (error) {
-      console.error('speaker-equalizer: Failed to add filter:', error);
+      console.error('crossover-design: Failed to add filter:', error);
       toastStore.showErrorToast('Failed to add filter.');
     }
   }
@@ -276,7 +271,7 @@ export function useEqFilters() {
       const config = createLinkedChannelConfig();
       await toggleFilterEnabledLinked(config, filter.id);
     } catch (error) {
-      console.error('speaker-equalizer: Failed to toggle filter enabled state:', error);
+      console.error('crossover-design: Failed to toggle filter enabled state:', error);
       toastStore.showErrorToast('Failed to toggle filter.');
     }
   }
@@ -386,7 +381,6 @@ export function useEqFilters() {
     // State
     channelNames,
     activeChannel,
-    channelMode,
     channelFilters,
     activeFilterId,
     isDragging,
@@ -397,16 +391,17 @@ export function useEqFilters() {
     currentChannelFilterInfo,
 
     // Pair linking
+    linkedPairs,
     isCurrentPairLinked,
     getPairPartner,
     getPairKey,
+    togglePairLink,
 
     // Operations
     initialize,
     loadBackendCapabilities,
     loadFiltersFromBackend,
     setActiveChannel,
-    toggleChannelMode,
     addFilterOfType,
     removeFilter,
     toggleFilterEnabled,
@@ -423,9 +418,6 @@ export function useEqFilters() {
     onGraphUpdateQ,
     onGraphDragStart,
     onGraphDragEnd,
-
-    // Bank addresses (for bypass and other composables)
-    bankAddresses,
 
     // Internals exposed for other composables
     createLinkedChannelConfig,

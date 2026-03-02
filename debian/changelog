@@ -1,3 +1,17 @@
+hifiberry-webui (0.19.0) stable; urgency=medium
+
+  * Rewrite crossover-design page using speaker-eq architecture
+  * Dynamic channel detection (A-H) from DSP profile metadata
+  * Pair-based channel linking (A/B, C/D, E/F, G/H)
+  * Reuse EqFilterItem, FilterGraph, AddFilterModal from speaker-eq
+  * Support highpass/lowpass filter types in crossover designer
+  * Generalize useBypass composable for both speaker-eq and crossover
+  * Fix filterBankType not being set in DSP backend capabilities
+  * Add bankAddress to FilterBankInfo for hardware communication
+  * Remove stale compiled .js files from src/
+
+ -- HiFiBerry <info@hifiberry.com>  Mon, 02 Mar 2026 23:30:00 +0000
+
 hifiberry-webui (0.18.6) stable; urgency=medium
 
   * Fix stored filter loading: pack densely by offset instead of sparse array assignment

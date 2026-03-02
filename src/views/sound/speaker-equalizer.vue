@@ -1,6 +1,6 @@
 <template>
 <PageContent
-  :title="`Speaker Equalizer ${channelMode === 'both' ? 'Both' : (activeChannel === 'left' ? 'Left' : 'Right')}`"
+  :title="`Speaker Equalizer ${channelMode === 'both' ? 'Both' : (activeChannel === channelNames[0] ? 'Left' : 'Right')}`"
   :backrouterLink="{ name: 'sound' }"
   :headerHasContentBelow=true
 >
@@ -54,11 +54,13 @@
     <div class="card mt-3">
       <div class="equaliser-panel">
         <div class="tabs">
-          <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'left' }]" @click="setActiveChannel('left')">
-            Left
-          </button>
-          <button :class="['tab', { active: channelMode === 'both' || activeChannel === 'right' }]" @click="setActiveChannel('right')">
-            Right
+          <button
+            v-for="ch in channelNames"
+            :key="ch"
+            :class="['tab', { active: channelMode === 'both' || activeChannel === ch }]"
+            @click="setActiveChannel(ch)"
+          >
+            {{ ch === channelNames[0] ? 'Left' : 'Right' }}
           </button>
         </div>
 
@@ -151,17 +153,19 @@ const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'high
 
 // --- Composables ---
 const {
+  channelNames,
   activeChannel,
   channelMode,
-  leftFilters,
-  rightFilters,
+  channelFilters,
   activeFilterId,
   isDragging,
   backendCapabilities,
   backendName,
+  bankAddresses,
   filters,
   canAddFilterToCurrentChannel,
   currentChannelFilterInfo,
+  isCurrentPairLinked,
   initialize,
   loadBackendCapabilities,
   setActiveChannel,
@@ -183,10 +187,25 @@ const {
   SAMPLE_RATE,
 } = useEqFilters();
 
-const { isBypassed, startBypass, endBypass } = useBypass(activeChannel, channelMode, isDragging);
+// Bypass: resolve bank addresses for the active channel (and partner if linked)
+const { isBypassed, startBypass, endBypass } = useBypass(() => {
+  const banks: string[] = [];
+  const addr = bankAddresses.value[activeChannel.value];
+  if (addr) banks.push(addr);
+
+  if (isCurrentPairLinked.value) {
+    for (const ch of channelNames.value) {
+      if (ch !== activeChannel.value) {
+        const partnerAddr = bankAddresses.value[ch];
+        if (partnerAddr) banks.push(partnerAddr);
+      }
+    }
+  }
+  return banks;
+}, isDragging);
 
 const { saveEQSettings, loadEQSettings } = useEqFileIO(
-  leftFilters, rightFilters, activeChannel, channelMode, filters, activeFilterId
+  channelNames, channelFilters, activeChannel, channelMode, filters, activeFilterId
 );
 
 const {
@@ -195,7 +214,7 @@ const {
   roomEQConfigs,
   loadRoomEQSettings,
   loadSelectedRoomEQConfig,
-} = useRoomEQ(leftFilters, rightFilters, activeFilterId);
+} = useRoomEQ(channelNames, channelFilters, activeFilterId);
 
 // --- Modal state ---
 const showAddFilterModal = ref(false);
@@ -264,9 +283,13 @@ onUnmounted(() => {
 });
 
 // --- Watchers ---
-watch([leftFilters, rightFilters], () => {
-  leftFilters.value.forEach((f) => { f.text = `${f.frequency}`; });
-  rightFilters.value.forEach((f) => { f.text = `${f.frequency}`; });
+watch(channelFilters, () => {
+  for (const ch of channelNames.value) {
+    const chFilters = channelFilters.value[ch];
+    if (chFilters) {
+      chFilters.forEach((f) => { f.text = `${f.frequency}`; });
+    }
+  }
 }, { deep: true });
 
 watch(activeChannel, async () => {

@@ -35,6 +35,7 @@ interface ExtendedFilterBank extends FilterBank {
   maxFilters: number
   baseAddress?: number // Memory base address for DSP hardware
   metadataKey?: string // Original metadata key for this bank
+  filterBankType?: string // 'speaker-equalizer' or 'crossover-designer'
 }
 
 // Extended FilterBanks interface
@@ -191,6 +192,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
         if (bankInfo) {
           // Store the metadata key for later use in hardware communication
           bankInfo.metadataKey = metadataKey
+          bankInfo.filterBankType = 'speaker-equalizer'
           this.filterBanks[uiName] = bankInfo
           console.log(`Parsed ${uiName} filter bank: ${metadataKey} = ${bankValue} -> ${bankInfo.maxFilters} filters at address ${bankInfo.baseAddress}`)
         }
@@ -226,6 +228,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       if (bankInfo) {
         // Store the original metadata key for hardware communication
         bankInfo.metadataKey = key
+        bankInfo.filterBankType = 'crossover-designer'
         this.filterBanks[key.toLowerCase()] = bankInfo
         console.log(`Parsed IIR filter bank: ${key} = ${value} -> ${bankInfo.maxFilters} filters at address ${bankInfo.baseAddress}`)
       }
@@ -477,7 +480,9 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     const availableFilterBanks: FilterBankInfo[] = sortedBankEntries.map(([bankKey, bank]) => ({
       name: bankKey, // Use bank key instead of display name for compatibility
       maxFilters: bank.maxFilters,
-      currentFilterCount: bank.filters.length
+      currentFilterCount: bank.filters.length,
+      filterBankType: bank.filterBankType || '',
+      bankAddress: bank.metadataKey || this.getMetadataKeyForBank(bankKey)
     }))
 
     return {

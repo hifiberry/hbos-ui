@@ -1,291 +1,446 @@
 <template>
-  <PageContent
-  :title="`Crossover Design`"
-  :backrouterLink="{ name: 'sound' }">
-    <div class="main-container">
-      <ContentBox>
-        <div class="filtergraph-container">
-          <div class="filtergraph-header">
-            <h2>
-              Channel {{ currentChannel }}
-            </h2>
-            <p>
-              {{ backendName }}
-            </p>
-          </div>
-          <FilterGraph
-            :filters="currentFilterArray"
-            :activeFilterId="activeFilterId"
-            :showBandwidthLines="true"
-            :sampleRate="48000"
-
-            @set-active-filter="activeFilterId = $event"
-            @update:freq-gain="onUpdateFreqGain"
-            @update:q="onUpdateQ"
-            @drag-start="onDragStart"
-            @drag-end="onDragEnd"
-          />
-          <div class="filtergraph-channel-selector">
-            <button
-              v-for="ch in channelNames"
-              :key="ch"
-              :class="{ 'channel-selector-active': currentChannel === ch }"
-              @click="currentChannel = ch"
-            >
-              Channel {{ ch }}
-            </button>
-          </div>
+<PageContent
+  :title="`Crossover Design — Channel ${activeChannel.replace(/^iir_/i, '').toUpperCase()}`"
+  :backrouterLink="{ name: 'sound' }"
+  :headerHasContentBelow=true
+>
+  <div class="sound">
+    <div class="page-header">
+      <div class="title-section">
+        <div class="backend-info" v-if="backendName">
+          <span class="backend-name" @click="showBackendInfoModal = true">{{ backendName }}</span>
+          <span class="filter-limits" v-if="currentChannelFilterInfo">
+            • {{ currentChannelFilterInfo.currentFilterCount }}/{{ currentChannelFilterInfo.maxFilters }} filters
+          </span>
         </div>
-      </ContentBox>
-      <CrossoverDesignFilterList
-        :filterList="currentFilterArray"
-        :currentChannel="currentChannel"
-        v-model:activeFilterId="activeFilterId"
-        @filters-updated="getFiltersFromFilterStore"
-        />
-      <ContentBox>
-        <div class="add-button-div">
-          <button @click="modalOpen = true"  class="add-button">
-            <Icon
-              icon="add"
-              />
-            <p>
-              Add filter
-            </p>
-          </button>
-        </div>
-      </ContentBox>
-      <CrossoverDesignAddFilterModal v-model:open="modalOpen" :currentChannel="currentChannel" />
+      </div>
+      <div class="header-actions">
+        <Icon icon="link"
+          v-if="getPairPartner(activeChannel)"
+          @click="togglePairLink()"
+          title="Link Channel Pair"
+          :class="{ linked: isCurrentPairLinked }"
+          class="icon-btn" />
+        <Icon icon="ear"
+          @mousedown="startBypass"
+          @mouseup="endBypass"
+          @mouseleave="endBypass"
+          @touchstart="startBypass"
+          @touchend="endBypass"
+          :class="{ bypassed: isBypassed }"
+          class="icon-btn"
+          title="Bypass" />
+      </div>
     </div>
-  </PageContent>
+
+    <div class="card">
+      <div class="graph">
+        <FilterGraph
+          :filters="filters"
+          :active-filter-id="activeFilterId"
+          :show-bandwidth-lines="true"
+          :sample-rate="SAMPLE_RATE"
+          @set-active-filter="activeFilterId = $event"
+          @update:freq-gain="onGraphUpdateFreqGain"
+          @update:q="onGraphUpdateQ"
+          @drag-start="onGraphDragStart"
+          @drag-end="onGraphDragEnd"
+        />
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="equaliser-panel">
+        <div class="tabs">
+          <template v-for="(ch, idx) in channelNames" :key="ch">
+            <div v-if="idx > 0 && idx % 2 === 0" class="tab-pair-separator" />
+            <button
+              :class="['tab', {
+                active: activeChannel === ch || (isChannelLinkedToActive(ch)),
+              }]"
+              @click="setActiveChannel(ch)"
+            >
+              {{ ch.replace('iir_', '').toUpperCase() }}
+            </button>
+          </template>
+        </div>
+
+        <div class="filters-list">
+          <div v-for="filter in filters" :key="filter.id" class="card">
+            <EqFilterItem
+              :filter="filter"
+              :is-active="activeFilterId === filter.id"
+              @select="activeFilterId = $event"
+              @remove="removeFilter"
+              @toggle-enabled="toggleFilterEnabled"
+              @increment-frequency="incrementFilterFrequency"
+              @decrement-frequency="decrementFilterFrequency"
+              @increment-gain="incrementFilterGain"
+              @decrement-gain="decrementFilterGain"
+              @widen-band="widenFilterBand"
+              @narrow-band="narrowFilterBand"
+              @update-generic-coeff="updateGenericCoeff"
+            />
+          </div>
+
+          <div class="card">
+            <div class="filter-item add-filter-item"
+                 :class="{ disabled: !canAddFilterToCurrentChannel }"
+                 @click="canAddFilterToCurrentChannel && (showAddFilterModal = true)">
+              <div class="filter-main">
+                <div class="filter-info">
+                  <Icon icon="plus" class="filter-icon" />
+                  <div class="filter-details">
+                    <h3>{{ canAddFilterToCurrentChannel ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
+                    <div class="filter-frequency">
+                      <span v-if="currentChannelFilterInfo">
+                        {{ currentChannelFilterInfo.currentFilterCount }}/{{ currentChannelFilterInfo.maxFilters }} filters
+                      </span>
+                      <span v-else-if="canAddFilterToCurrentChannel">Click to add</span>
+                      <span v-else>Cannot add more filters</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <AddFilterModal
+    :open="showAddFilterModal"
+    :filter-types="AVAILABLE_FILTER_TYPES"
+    @close="showAddFilterModal = false"
+    @add="handleAddFilter"
+  />
+
+  <BackendInfoModal
+    :open="showBackendInfoModal"
+    :capabilities="backendCapabilities"
+    @close="showBackendInfoModal = false"
+  />
+</PageContent>
 </template>
 
 <script setup lang="ts">
-/* IMPORTS */
-import { ref, computed, onMounted, watch } from 'vue'
-import { type Filter } from '@/utils/filtercalc';
-import { useFilterStore, type BackendCapabilities } from '@/stores/filter_connector';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import Icon from '@/components/Icon.vue';
-import { convertStoreFilterToUI } from '@/utils/filter-conversions';
-import PageContent from '@/components/PageContent.vue'
-import ContentBox from '@/components/ContentBox.vue'
-import FilterGraph from '@/components/FilterGraph.vue'
-import CrossoverDesignAddFilterModal from
-'@/components/crossover-design/CrossoverDesignAddFilterModal.vue';
-import CrossoverDesignFilterList from
-'@/components/crossover-design/CrossoverDesignFilterList.vue';
+import PageContent from '@/components/PageContent.vue';
+import FilterGraph from '@/components/FilterGraph.vue';
+import EqFilterItem from '@/components/speaker-eq/EqFilterItem.vue';
+import AddFilterModal from '@/components/speaker-eq/AddFilterModal.vue';
+import BackendInfoModal from '@/components/speaker-eq/BackendInfoModal.vue';
 
+import { type BiquadFilterType } from '@/utils/biquad';
+import { useCrossoverFilters } from '@/composables/useCrossoverFilters';
+import { useBypass } from '@/composables/useBypass';
 
-/* GLOBAL DEFINITIONS */
-const activeFilterId = ref<number | null>(0)
-const channels = ref<Record<string, Filter[]>>({});
-const currentChannel = ref<string>("A");
+// Available filter types for crossover design (includes highpass/lowpass)
+const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = [
+  'highpass', 'lowshelf', 'peaking', 'highshelf', 'lowpass', 'generic_normalized'
+];
 
-// this ref defines the count of the channels.
-const channelNames = ref<string[]>([])
-const currentFilterArray = computed(() => {
-  return channels.value[currentChannel.value] ?? []
-});
-const modalOpen = ref(false)
+// --- Composables ---
+const {
+  channelNames,
+  activeChannel,
+  channelFilters,
+  activeFilterId,
+  isDragging,
+  backendCapabilities,
+  backendName,
+  filters,
+  canAddFilterToCurrentChannel,
+  currentChannelFilterInfo,
+  isCurrentPairLinked,
+  getPairPartner,
+  getPairKey,
+  togglePairLink,
+  initialize,
+  loadBackendCapabilities,
+  setActiveChannel,
+  addFilterOfType,
+  removeFilter,
+  toggleFilterEnabled,
+  incrementFilterFrequency,
+  decrementFilterFrequency,
+  incrementFilterGain,
+  decrementFilterGain,
+  widenFilterBand,
+  narrowFilterBand,
+  updateGenericCoeff,
+  onGraphUpdateFreqGain,
+  onGraphUpdateQ,
+  onGraphDragStart,
+  onGraphDragEnd,
+  SAMPLE_RATE,
+} = useCrossoverFilters();
 
-const filterStore = useFilterStore();
-const backendCapabilities = ref<BackendCapabilities | null>(null);
-const backendName = ref("");
+// Bypass: resolve bank addresses for the active channel (and partner if linked)
+const { isBypassed, startBypass, endBypass } = useBypass(() => {
+  const banks: string[] = [];
+  const caps = backendCapabilities.value;
+  if (!caps) return banks;
 
+  const addBank = (ch: string) => {
+    const bankInfo = caps.availableFilterBanks.find(b => b.name === ch);
+    if (bankInfo?.bankAddress) banks.push(bankInfo.bankAddress);
+  };
 
-/* FUNCTIONS */
-
-/**
-  * This function will be run after the component has been mounted.
-  * Initialisations should be done here.
-  */
-onMounted(async () => {
-  channelNames.value = await filterStore.getFilterBanksByType('crossover-designer');
-  await loadBackendCapabilities();
-  await filterStore.createMultipleFilterBanks(channelNames.value);
-  getFiltersFromFilterStore();
-})
-
-/**
-  * Loads the backend capabilities using the `filterStore` and
-  * stores it inside `const backendCapabilities`. The backend name
-  * also gets saved into `const backendName`.
-  */
-const loadBackendCapabilities = async () => {
-  try {
-    backendCapabilities.value = await filterStore.getBackendCapabilities();
-    backendName.value = backendCapabilities.value?.backendName || "";
-    console.log("Backend capabilities loaded:", backendCapabilities.value);
-  } catch (error) {
-    console.error("Failed to load backend capabilities:", error);
+  addBank(activeChannel.value);
+  if (isCurrentPairLinked.value) {
+    const partner = getPairPartner(activeChannel.value);
+    if (partner) addBank(partner);
   }
+  return banks;
+}, isDragging);
+
+// --- Modal state ---
+const showAddFilterModal = ref(false);
+const showBackendInfoModal = ref(false);
+
+// --- Helpers ---
+function isChannelLinkedToActive(ch: string): boolean {
+  const partner = getPairPartner(activeChannel.value);
+  return isCurrentPairLinked.value && ch === partner;
 }
 
-/**
-  * Gets the filters for all the channels from the filterstore (backend),
-  * converts them to ui-filters and loads them into the corresponding
-  * filter array.
-  */
-function getFiltersFromFilterStore() {
-  channelNames.value.forEach(channel => {
-    channels.value[channel] =
-      filterStore
-        .getFiltersFromBank(channel)
-        .map(filter => convertStoreFilterToUI(filter, filter.id))
-  })
-  console.log("crossover-design: Filters loaded from the filterStore");
+// --- Event handlers ---
+async function handleAddFilter(type: BiquadFilterType) {
+  await addFilterOfType(type);
+  showAddFilterModal.value = false;
 }
 
+// --- Keyboard shortcuts ---
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    if (showAddFilterModal.value) {
+      showAddFilterModal.value = false;
+    } else if (showBackendInfoModal.value) {
+      showBackendInfoModal.value = false;
+    }
+  }
 
-/**
-  * Watches for changes in the `openModal` ref.
-  * When the value is changed, it reloads the filters from the
-  * filterStore (the backend). This is done so after closing the
-  * modal (after adding a filter), the ui gets updated.
-  */
-watch(modalOpen, async () => {
-  getFiltersFromFilterStore();
-})
-
-
-/**
-  * Helper function to get the backend position.
-  * This is used to find the filter to update in the
-  * backend while dragging the filter in the filtergraph.
-  */
-function findFilterPositionById(id: number): number {
-  return currentFilterArray.value.findIndex(f => f.id === id);
-}
-
-/**
-  * Updates a filter's frequency and gain in the global `filters`
-  * array.
-  *
-  * @param {Object} payload
-  * @param {number} payload.id - The unique identifier of the filter to edit.
-  * @param {number} payload.frequency - The new frequency value (in Hz).
-  * @param {number} payload.gain - The new gain value (in dB).
-  */
-const onUpdateFreqGain = async ({ id, frequency, gain }) => {
-  const position = findFilterPositionById(id);
-  if (position === -1) return;
-
-  // Update backend
-  await filterStore.updateFilter(currentChannel.value, position, {
-    frequency,
-    gain
-  });
-
-  // Optional: update UI immediately (optimistic)
-  const target = currentFilterArray.value[position];
-  target.frequency = frequency;
-  target.gain = gain;
+  if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value) {
+    e.preventDefault();
+    startBypass();
+  }
 };
 
-
-/**
-  * Updates a filter's q in the global `filters` array.
-  * @param {Object} payload
-  * @param {number} payload.id
-  * @param {number} payload.Q
-  */
-const onUpdateQ = async ({ id, Q }) => {
-  const position = findFilterPositionById(id);
-  if (position === -1) return;
-
-  await filterStore.updateFilter(currentChannel.value, position, { Q });
-
-  const target = currentFilterArray.value[position];
-  target.Q = Q;
+const handleKeyup = (e: KeyboardEvent) => {
+  if (e.code === 'Space' && !showAddFilterModal.value && !showBackendInfoModal.value) {
+    e.preventDefault();
+    endBypass();
+  }
 };
 
+// --- Lifecycle ---
+onMounted(async () => {
+  await initialize();
 
-/**
-  * Function that will be called when a filter is dragged.
-  * @param {number} id
-  */
-const onDragStart = (id: number) => {
-  console.log('drag start', id)
-}
+  window.addEventListener('keydown', handleKeydown);
+  window.addEventListener('keyup', handleKeyup);
+});
 
-/**
-  * Function that will be called when a filter is let go.
-  * @param {number} id
-  */
-const onDragEnd = (id: number) => {
-  console.log('drag end', id)
-}
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+  window.removeEventListener('keyup', handleKeyup);
+});
+
+// --- Watchers ---
+watch(channelFilters, () => {
+  for (const ch of channelNames.value) {
+    const chFilters = channelFilters.value[ch];
+    if (chFilters) {
+      chFilters.forEach((f) => { f.text = `${f.frequency}`; });
+    }
+  }
+}, { deep: true });
+
+watch(activeChannel, async () => {
+  await loadBackendCapabilities();
+});
 </script>
 
-<style scoped>
-button {
-  padding: 10px;
-  width: 100%;
-}
+<style scoped lang="scss">
+.sound {
+  padding: 20px;
 
-.add-button-div {
-  transition: all 0.25s;
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
 
-  margin: 20px;
+    .backend-info {
+      font-size: 14px;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      gap: 8px;
 
-  border: 1px solid var(--color-body);
-  border-radius: 8px;
+      .backend-name {
+        font-weight: 500;
+        cursor: pointer;
+        color: #00b8ff;
+        text-decoration: underline;
 
+        &:hover { color: #0096cc; }
+      }
 
-  &:hover {
-    border: 1px solid #E11E4AAA;
-    background: rgba(225, 30, 74, 0.02);
+      .filter-limits {
+        color: #00b8ff;
+        font-weight: 500;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 20px;
+
+      .icon-btn {
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        stroke: var(--color-icon);
+        transition: opacity 0.2s ease;
+
+        &:hover { opacity: 0.5; }
+        &.linked { stroke: red; }
+        &.bypassed { stroke: blue; }
+      }
+    }
+  }
+
+  .card {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    width: 100%;
+  }
+
+  .graph {
+    position: relative;
+    border-radius: 8px;
+    width: 100%;
+    user-select: none;
+  }
+
+  .equaliser-panel {
+    .tabs {
+      display: flex;
+
+      .tab {
+        flex: 1;
+        padding: 14px;
+        cursor: pointer;
+        font-family: 'Metropolis', sans-serif;
+        font-size: 20px;
+        border: 1px solid #333;
+        border-right: none;
+        transition: all 0.2s ease-in-out;
+        background-color: transparent;
+        color: #707070;
+
+        &:first-child { border-radius: 8px 0 0 8px; }
+
+        &:last-child {
+          border-radius: 0 8px 8px 0;
+          border-right: 1px solid #333;
+        }
+
+        &.active {
+          background: var(--primary, #e11e4a);
+          color: white;
+          border-color: var(--primary, #e11e4a);
+        }
+      }
+
+      .tab-pair-separator {
+        width: 12px;
+        flex-shrink: 0;
+
+        // Reset border radius on adjacent tabs
+        & + .tab { border-radius: 8px 0 0 8px; border-left: 1px solid #333; }
+      }
+
+      // The tab before a separator needs right border and radius
+      .tab:has(+ .tab-pair-separator) {
+        border-radius: 0 8px 8px 0;
+        border-right: 1px solid #333;
+      }
+    }
+
+    .filters-list {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+
+      .filter-item {
+        padding: 20px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(112, 112, 112, 0.3);
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+
+        &.add-filter-item {
+          border-style: dashed;
+
+          &:hover:not(.disabled) {
+            border-color: var(--primary, #e11e4a);
+            background: rgba(225, 30, 74, 0.05);
+          }
+
+          &.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+          }
+        }
+
+        .filter-main {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .filter-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            .filter-icon {
+              width: 32px;
+              height: 32px;
+            }
+
+            .filter-details h3 {
+              font-size: 18px;
+              font-weight: 500;
+              margin: 0 0 5px 0;
+            }
+
+            .filter-frequency {
+              font-size: 14px;
+              color: #666;
+            }
+          }
+        }
+      }
+    }
   }
 }
 
-.add-button {
-  display: flex;
-  flex-direction: row;
-  flex-direction: row;
-  justify-content: start;
-  align-items: center;
-}
+@media (max-width: 768px) {
+  .sound {
+    padding: 10px;
 
-.add-button>* {
-  margin-right: 10px;
-}
-
-
-.main-container {
-  display: flex;
-  flex-direction: column;
-}
-
-.filtergraph-container {
-  padding: 10px;
-}
-
-.filtergraph-header {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  padding: 10px;
-}
-
-.filtergraph-channel-selector {
-  display: flex;
-  justify-content: space-between;
-  margin: 10px;
-  border: 1px solid var(--color-body);
-  border-radius: 5px;
-}
-
-.filtergraph-channel-selector button:first-child {
-  border-radius: 4px 0 0 4px;
-}
-
-.filtergraph-channel-selector button:last-child {
-  border-radius: 0 4px 4px 0;
-}
-
-.channel-selector-active {
-  background: var(--primary);
-  color: #fafafa;
-  border-color: var(--primary);
+    .equaliser-panel .tabs .tab {
+      font-size: 16px;
+      padding: 10px;
+    }
+  }
 }
 </style>

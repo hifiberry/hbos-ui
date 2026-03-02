@@ -29,8 +29,8 @@ export interface RoomEQConfigItem {
 }
 
 export function useRoomEQ(
-  leftFilters: Ref<Filter[]>,
-  rightFilters: Ref<Filter[]>,
+  channelNames: Ref<string[]>,
+  channelFilters: Ref<Record<string, Filter[]>>,
   activeFilterId: Ref<number | null>
 ) {
   const filterStore = useFilterStore();
@@ -105,22 +105,26 @@ export function useRoomEQ(
     }
   }
 
-  async function loadSelectedRoomEQConfig(config: RoomEQConfigItem, channelMode: 'left' | 'right' | 'both') {
+  async function loadSelectedRoomEQConfig(config: RoomEQConfigItem, targetMode: 'left' | 'right' | 'both') {
     try {
       const convertedFilters = config.data.filters.map(convertRoomEQFilterToSpeakerEQ);
 
-      if (channelMode === 'both' || channelMode === 'left') {
-        await filterStore.clearFiltersFromBank('left');
-        leftFilters.value = [...convertedFilters];
-        for (const [index, filter] of convertedFilters.entries()) {
-          await filterStore.addFilter('left', index, convertUIFilterToStore(filter));
-        }
+      // Map 'left'/'right'/'both' to actual channel names
+      const channels = channelNames.value;
+      const channelsToApply: string[] = [];
+      if (targetMode === 'both') {
+        channelsToApply.push(...channels);
+      } else if (targetMode === 'left' && channels.length > 0) {
+        channelsToApply.push(channels[0]);
+      } else if (targetMode === 'right' && channels.length > 1) {
+        channelsToApply.push(channels[1]);
       }
-      if (channelMode === 'both' || channelMode === 'right') {
-        await filterStore.clearFiltersFromBank('right');
-        rightFilters.value = [...convertedFilters];
+
+      for (const ch of channelsToApply) {
+        await filterStore.clearFiltersFromBank(ch);
+        channelFilters.value[ch] = [...convertedFilters];
         for (const [index, filter] of convertedFilters.entries()) {
-          await filterStore.addFilter('right', index, convertUIFilterToStore(filter));
+          await filterStore.addFilter(ch, index, convertUIFilterToStore(filter));
         }
       }
 
@@ -129,7 +133,7 @@ export function useRoomEQ(
       }
 
       showRoomEQModal.value = false;
-      console.log(`speaker-equalizer: Loaded Room EQ configuration "${config.data.name}" to ${channelMode} channel(s)`);
+      console.log(`speaker-equalizer: Loaded Room EQ configuration "${config.data.name}" to ${targetMode} channel(s)`);
     } catch (error) {
       console.error('speaker-equalizer: Failed to load Room EQ configuration:', error);
       toastStore.showErrorToast('Error loading Room EQ configuration. Please try again.');

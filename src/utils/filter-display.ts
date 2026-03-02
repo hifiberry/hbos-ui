@@ -17,6 +17,8 @@ export const formatFilterTypeName = (type: BiquadFilterType): string => {
     case 'lowshelf': return 'Low\nShelf'
     case 'peaking': return 'Peaking\nEQ'
     case 'highshelf': return 'High\nShelf'
+    case 'highpass': return 'High\nPass'
+    case 'lowpass': return 'Low\nPass'
     case 'generic_normalized': return 'Generic\nBiquad'
     default: return type
   }

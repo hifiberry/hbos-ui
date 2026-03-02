@@ -1,6 +1,9 @@
 /**
  * Composable for managing filter bank bypass (A/B comparison).
  * Supports momentary bypass via mouse/touch or spacebar.
+ *
+ * Accepts a getBanksToBypass function that returns the bank addresses
+ * to bypass based on current channel/mode state.
  */
 
 import { ref, type Ref } from 'vue';
@@ -9,12 +12,13 @@ import {
   type FilterBypassSetResponse
 } from '@/api/dsptoolkit';
 
-type Channel = 'left' | 'right';
-type ChannelMode = 'individual' | 'both';
-
+/**
+ * Generic bypass composable.
+ * @param getBanksToBypass - Returns list of bank addresses to bypass
+ * @param isDragging - Ref indicating if user is dragging a filter (suppresses bypass)
+ */
 export function useBypass(
-  activeChannel: Ref<Channel>,
-  channelMode: Ref<ChannelMode>,
+  getBanksToBypass: () => string[],
   isDragging: Ref<boolean>
 ) {
   const isBypassed = ref(false);
@@ -26,29 +30,20 @@ export function useBypass(
     isBypassed.value = true;
 
     try {
-      const banksToBypass: string[] = [];
-
-      if (channelMode.value === 'both') {
-        banksToBypass.push('customFilterRegisterBankLeft', 'customFilterRegisterBankRight');
-      } else {
-        const bankName = activeChannel.value === 'left'
-          ? 'customFilterRegisterBankLeft'
-          : 'customFilterRegisterBankRight';
-        banksToBypass.push(bankName);
-      }
+      const banksToBypass = getBanksToBypass();
 
       previousFilterStates.value = [...banksToBypass];
 
       const bypassPromises: Promise<FilterBypassSetResponse>[] = banksToBypass.map(bankName =>
         setFilterBankBypassState(bankName, true).catch((error: Error) => {
-          console.error(`speaker-equalizer: Failed to bypass filter bank ${bankName}:`, error);
+          console.error(`Failed to bypass filter bank ${bankName}:`, error);
           throw error;
         })
       );
 
       await Promise.all(bypassPromises);
     } catch (error) {
-      console.error('speaker-equalizer: Failed to start bypass:', error);
+      console.error('Failed to start bypass:', error);
       isBypassed.value = false;
     }
   }
@@ -63,7 +58,7 @@ export function useBypass(
     try {
       const restorePromises: Promise<FilterBypassSetResponse>[] = previousFilterStates.value.map(bankName =>
         setFilterBankBypassState(bankName, false).catch((error: Error) => {
-          console.error(`speaker-equalizer: Failed to restore filter bank ${bankName}:`, error);
+          console.error(`Failed to restore filter bank ${bankName}:`, error);
           throw error;
         })
       );
@@ -71,7 +66,7 @@ export function useBypass(
       await Promise.all(restorePromises);
       previousFilterStates.value = [];
     } catch (error) {
-      console.error('speaker-equalizer: Failed to end bypass:', error);
+      console.error('Failed to end bypass:', error);
     }
   }
 

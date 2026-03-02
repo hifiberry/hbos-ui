@@ -96,7 +96,8 @@ export class ConsoleFilterBackend extends FilterBackend {
         name: bankName,
         maxFilters: config.maxFilters,
         currentFilterCount: bank?.filters.length || 0,
-        filterBankType: config.type
+        filterBankType: config.type,
+        bankAddress: bankName
       })
     }
 

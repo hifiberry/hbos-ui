@@ -1,5 +1,8 @@
-hifiberry-webui (0.19.0) stable; urgency=medium
+hifiberry-webui (0.19.4) stable; urgency=medium
 
+  * Fix stored filter loading: pack densely by offset instead of sparse array assignment
+  * System reset now clears the entire ConfigDB instead of just the setup flag
+  * Auto-select DSP backend when DSP hardware is detected on first use
   * Rewrite crossover-design page using speaker-eq architecture
   * Dynamic channel detection (A-H) from DSP profile metadata
   * Pair-based channel linking (A/B, C/D, E/F, G/H)
@@ -9,16 +12,11 @@ hifiberry-webui (0.19.0) stable; urgency=medium
   * Fix filterBankType not being set in DSP backend capabilities
   * Add bankAddress to FilterBankInfo for hardware communication
   * Remove stale compiled .js files from src/
+  * Fix album right-click context menu styling and colors for light/dark mode
+  * Add delete album button to album detail view and context menu (only shown when library supports deletion)
+  * Move delete album to trash icon button in top-right corner of album detail card
 
  -- HiFiBerry <info@hifiberry.com>  Mon, 02 Mar 2026 23:30:00 +0000
-
-hifiberry-webui (0.18.6) stable; urgency=medium
-
-  * Fix stored filter loading: pack densely by offset instead of sparse array assignment
-  * System reset now clears the entire ConfigDB instead of just the setup flag
-  * Auto-select DSP backend when DSP hardware is detected on first use
-
- -- HiFiBerry <info@hifiberry.com>  Mon, 02 Mar 2026 23:00:00 +0000
 
 hifiberry-webui (0.18.2) stable; urgency=medium
 

@@ -26,6 +26,7 @@ export const useLibraryStore = defineStore('library', () => {
 
   // State for library loading status
   const isLibraryLoaded = ref<boolean>(false)
+  const supportsDelete = ref<boolean>(false)
 
   // Actions
   const getAvailableLibrary = async () => {
@@ -57,10 +58,12 @@ export const useLibraryStore = defineStore('library', () => {
       console.log('Selected library player:', availableLibrary.player_name)
       activeLibrary.value = availableLibrary.player_name
       isLibraryLoaded.value = availableLibrary.is_loaded
+      supportsDelete.value = availableLibrary.supports_delete ?? false
     } else {
       console.warn('No suitable library player found')
       activeLibrary.value = null
       isLibraryLoaded.value = false
+      supportsDelete.value = false
     }
 
     loading.value = false
@@ -107,6 +110,7 @@ export const useLibraryStore = defineStore('library', () => {
     loading,
     activeLibrary,
     isLibraryLoaded,
+    supportsDelete,
     libraryStats,
     libraryStatsLoading,
     libraryStatsError,

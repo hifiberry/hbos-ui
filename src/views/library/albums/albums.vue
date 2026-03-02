@@ -54,13 +54,26 @@
         :loaded="loaded"
         :items="sortedAlbums"
         @click="(album) => router.push({ name: 'album', params: { albumId: album.id }, query: { from: 'albums' } })"
+        @contextmenu="onAlbumContextMenu"
       />
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        class="album-context-menu"
+        :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
+      >
+        <button @click="playNow" class="ctx-item">Play now</button>
+        <button @click="addToQueue" class="ctx-item">Add to queue</button>
+        <button v-if="supportsDelete" @click="deleteAlbum" class="ctx-item ctx-item--danger">Delete album</button>
+      </div>
+    </Teleport>
   </PageContent>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -73,7 +86,12 @@ import SortSelector from '@/components/SortSelector.vue'
 import Icon from '@/components/Icon.vue'
 
 import { useAlbumStore } from '@/stores/album.ts'
+import { usePlayerStore } from '@/stores/player.ts'
+import { useToastStore } from '@/stores/toast'
+import { useLibraryStore } from '@/stores/library'
+import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import PosterGrid from '@/components/PosterGrid.vue'
+import { deleteAlbum as apiDeleteAlbum } from '@/api/audiocontrol-library'
 
 const albumStore = useAlbumStore()
 const { loading, loaded, sortedAlbums, sortBy, sortOrder, genres, selectedGenres } = storeToRefs(albumStore)
@@ -82,6 +100,71 @@ const { getAlbums, clearSearch, setSortBy, toggleSortOrder, shuffleAlbums, loadG
 const search = ref<string>('')
 const genreOpen = ref(false)
 const genreDropdownRef = ref<HTMLElement | null>(null)
+
+const playerStore = usePlayerStore()
+const toastStore = useToastStore()
+const libraryStore = useLibraryStore()
+const { supportsDelete, activeLibrary } = storeToRefs(libraryStore)
+const libraryFetch = useLibraryFetch()
+
+const contextMenu = reactive({ visible: false, x: 0, y: 0, albumId: '' })
+
+const onAlbumContextMenu = (album: { id: string }, event: MouseEvent) => {
+  contextMenu.albumId = album.id
+  contextMenu.x = event.clientX
+  contextMenu.y = event.clientY
+  contextMenu.visible = true
+}
+
+const closeContextMenu = () => { contextMenu.visible = false }
+
+const fetchAlbumTracks = async (albumId: string) => {
+  const { data } = await libraryFetch(`/library/:activeLibrary/album/by-id/${albumId}`).json()
+  return (data.value?.album?.tracks as Array<{ id?: string; uri?: string }>) || []
+}
+
+const playNow = async () => {
+  const albumId = contextMenu.albumId
+  closeContextMenu()
+  try {
+    const tracks = await fetchAlbumTracks(albumId)
+    if (!tracks.length) return
+    await playerStore.sendCommand('pause')
+    await playerStore.sendCommand('clear_queue')
+    for (const track of tracks) {
+      await playerStore.addTrackToQueue(track as Parameters<typeof playerStore.addTrackToQueue>[0])
+    }
+    await playerStore.sendLibraryCommand('play')
+  } catch (err) {
+    toastStore.showErrorToast('Failed to play album')
+  }
+}
+
+const addToQueue = async () => {
+  const albumId = contextMenu.albumId
+  closeContextMenu()
+  try {
+    const tracks = await fetchAlbumTracks(albumId)
+    for (const track of tracks) {
+      await playerStore.addTrackToQueue(track as Parameters<typeof playerStore.addTrackToQueue>[0])
+    }
+  } catch (err) {
+    toastStore.showErrorToast('Failed to add album to queue')
+  }
+}
+
+const deleteAlbum = async () => {
+  const albumId = contextMenu.albumId
+  closeContextMenu()
+  if (!confirm('Delete this album from the filesystem? This cannot be undone.')) return
+  try {
+    await apiDeleteAlbum(activeLibrary.value!, albumId)
+    toastStore.showSuccessToast('Album deleted')
+    await getAlbums()
+  } catch (err) {
+    toastStore.showErrorToast('Failed to delete album')
+  }
+}
 
 const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => {
   if (newSortBy === 'random') {
@@ -119,16 +202,21 @@ const onClickOutside = (event: MouseEvent) => {
   }
 }
 
+const onDocumentClick = (event: MouseEvent) => {
+  onClickOutside(event)
+  if (contextMenu.visible) closeContextMenu()
+}
+
 onMounted(async () => {
   getAlbums()
   clearSearch()
   search.value = ''
   await loadGenres()
-  document.addEventListener('click', onClickOutside)
+  document.addEventListener('click', onDocumentClick)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', onClickOutside)
+  document.removeEventListener('click', onDocumentClick)
 })
 </script>
 
@@ -231,6 +319,41 @@ onUnmounted(() => {
   max-height: 280px;
   overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+:global(.album-context-menu) {
+  position: fixed;
+  z-index: 1000;
+  background: var(--background-card);
+  border: 1px solid var(--color-header-border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 140px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+:global(.album-context-menu .ctx-item) {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 13px;
+  color: var(--color-head);
+  cursor: pointer;
+}
+
+:global(.album-context-menu .ctx-item:hover) {
+  background: var(--background-start-skeleton);
+}
+
+:global(.album-context-menu .ctx-item--danger) {
+  color: #c0392b;
+}
+
+:global(.album-context-menu .ctx-item--danger:hover) {
+  background: rgba(192, 57, 43, 0.1);
 }
 
 .genre-option {

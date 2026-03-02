@@ -1,5 +1,8 @@
 <template>
   <div class="app-album-details-card card">
+    <button v-if="supportsDelete && album && !loading" class="delete-icon-btn" @click="onDeleteAlbum" title="Delete album">
+      <Icon icon="delete" :width="18" :height="18" />
+    </button>
     <template v-if="loading">
       <div class="album-cover">
         <AppSkeleton />
@@ -39,6 +42,7 @@ import { computed } from 'vue'
 import Cover from '@/components/Cover.vue'
 import ListenNow from '@/components/ListenNow.vue'
 import AppSkeleton from '@/components/skeletons/AppSkeleton.vue'
+import Icon from '@/components/Icon.vue'
 
 import type { AlbumDetails, Track } from '@/types/library'
 interface AppAlbumDetailsProps {
@@ -49,16 +53,36 @@ interface AppAlbumDetailsProps {
 const { loading = false, album = null } = defineProps<AppAlbumDetailsProps>()
 
 import { useAlbumStore } from '@/stores/album.ts'
-const libraryStore = useAlbumStore()
+const albumStore = useAlbumStore()
 
-const albumCover = computed(() => libraryStore.getAlbumCoverById(album?.id || ''))
+const albumCover = computed(() => albumStore.getAlbumCoverById(album?.id || ''))
 
 import { usePlayerStore } from '@/stores/player.ts'
 import { useToastStore } from '@/stores/toast'
+import { useLibraryStore } from '@/stores/library'
+import { storeToRefs } from 'pinia'
+import { deleteAlbum as apiDeleteAlbum } from '@/api/audiocontrol-library'
+import { useRouter } from 'vue-router'
 
 const playerStore = usePlayerStore()
 const { sendLibraryCommand } = playerStore
 const toastStore = useToastStore()
+const libraryStore = useLibraryStore()
+const { supportsDelete, activeLibrary } = storeToRefs(libraryStore)
+const router = useRouter()
+
+const onDeleteAlbum = async () => {
+  if (!album || !activeLibrary.value) return
+  if (!confirm('Delete this album from the filesystem? This cannot be undone.')) return
+  try {
+    await apiDeleteAlbum(activeLibrary.value, album.id)
+    toastStore.showSuccessToast('Album deleted')
+    await albumStore.getAlbums()
+    router.push({ name: 'albums' })
+  } catch (err) {
+    toastStore.showErrorToast('Failed to delete album')
+  }
+}
 
 const onListenNow = async () => {
   try {
@@ -87,6 +111,7 @@ const onListenNow = async () => {
 
 <style scoped lang="scss">
 .app-album-details-card {
+  position: relative;
   display: grid;
   grid-template-columns: 400px 1fr;
   gap: 24px;
@@ -180,6 +205,30 @@ const onListenNow = async () => {
         }
       }
     }
+  }
+}
+
+.delete-icon-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-body-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.5;
+
+  &:hover {
+    background: rgba(192, 57, 43, 0.12);
+    color: #c0392b;
+    opacity: 1;
   }
 }
 </style>

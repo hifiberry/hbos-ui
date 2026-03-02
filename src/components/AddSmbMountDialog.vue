@@ -34,20 +34,6 @@
               <Icon icon="refresh" />
               Scan Again
             </button>
-            <p class="help-text">
-              You can also manually enter a server address below:
-            </p>
-            <div class="manual-server-input">
-              <input
-                v-model="manualServer"
-                type="text"
-                placeholder="Enter server IP or hostname"
-                class="server-input"
-              />
-              <button @click="addManualServer" :disabled="!manualServer" class="add-button">
-                Add
-              </button>
-            </div>
           </div>
 
           <div v-else class="servers-list">
@@ -73,6 +59,26 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <div v-if="!loadingServers" class="manual-entry-section">
+            <p class="help-text">
+              If your Samba server is not listed, enter its IP address manually:
+            </p>
+            <div class="manual-server-input">
+              <input
+                v-model="manualServer"
+                type="text"
+                placeholder="e.g. 192.168.1.10"
+                class="server-input"
+                :class="{ invalid: manualServerValidationError !== '' }"
+                @keyup.enter="addManualServer"
+              />
+              <button @click="addManualServer" :disabled="!isManualServerValid" class="add-button">
+                Add
+              </button>
+            </div>
+            <p v-if="manualServerValidationError" class="manual-server-error">{{ manualServerValidationError }}</p>
           </div>
         </div>
 
@@ -280,6 +286,7 @@ import {
   type SmbShare,
   type SmbMountRequest
 } from '@/api/smb'
+import { useToastStore } from '@/stores/toast'
 
 interface Props {
   isOpen: boolean
@@ -292,6 +299,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const toastStore = useToastStore()
 
 // State
 const currentStep = ref(1)
@@ -318,7 +326,32 @@ const authError = ref('')
 const shareError = ref('')
 const mountError = ref('')
 
+const ipv4Regex = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/
+const ipv6Regex = /^((?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(?:[0-9A-Fa-f]{1,4}:){1,7}:|(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}|(?:[0-9A-Fa-f]{1,4}:){1,5}(?::[0-9A-Fa-f]{1,4}){1,2}|(?:[0-9A-Fa-f]{1,4}:){1,4}(?::[0-9A-Fa-f]{1,4}){1,3}|(?:[0-9A-Fa-f]{1,4}:){1,3}(?::[0-9A-Fa-f]{1,4}){1,4}|(?:[0-9A-Fa-f]{1,4}:){1,2}(?::[0-9A-Fa-f]{1,4}){1,5}|[0-9A-Fa-f]{1,4}:(?::[0-9A-Fa-f]{1,4}){1,6}|:(?::[0-9A-Fa-f]{1,4}){1,7}|::)$/
+
+const isValidIpAddress = (value: string): boolean => {
+  return ipv4Regex.test(value) || ipv6Regex.test(value)
+}
+
 // Computed properties
+const manualServerTrimmed = computed(() => manualServer.value.trim())
+
+const isManualServerValid = computed(() => {
+  return manualServerTrimmed.value !== '' && isValidIpAddress(manualServerTrimmed.value)
+})
+
+const manualServerValidationError = computed(() => {
+  if (manualServerTrimmed.value === '') {
+    return ''
+  }
+
+  if (!isValidIpAddress(manualServerTrimmed.value)) {
+    return 'Please enter a valid IPv4 or IPv6 address.'
+  }
+
+  return ''
+})
+
 const canProceed = computed(() => {
   switch (currentStep.value) {
     case 1:
@@ -400,12 +433,23 @@ const selectServer = (server: SmbServer) => {
 }
 
 const addManualServer = () => {
-  if (!manualServer.value.trim()) return
+  const manualAddress = manualServerTrimmed.value
+  if (!isValidIpAddress(manualAddress)) return
+
+  const existingServer = servers.value.find((server) => {
+    return server.ip.toLowerCase() === manualAddress.toLowerCase()
+  })
+
+  if (existingServer) {
+    selectedServer.value = existingServer
+    manualServer.value = ''
+    return
+  }
 
   const server: SmbServer = {
-    ip: manualServer.value.trim(),
-    name: manualServer.value.trim(),
-    hostname: manualServer.value.trim(),
+    ip: manualAddress,
+    name: manualAddress,
+    hostname: manualAddress,
     is_file_server: true,
     services: ['SMB'],
     local_network: '',
@@ -502,6 +546,9 @@ const createMount = async () => {
     const response = await mountSmbShareWithRetry(mountRequest)
 
     if (response.status === 'success') {
+      if (response.data?.warning) {
+        toastStore.showInfoToast(response.data.warning)
+      }
       emit('mount-created')
       closeDialog()
     } else {
@@ -675,17 +722,22 @@ watch(() => props.isOpen, (isOpen) => {
       }
     }
 
+  }
+
+  .manual-entry-section {
+    margin-top: 20px;
+
     .help-text {
       color: var(--color-body-secondary);
       font-size: 0.9rem;
-      margin-top: 16px;
+      margin: 0 0 10px 0;
     }
 
     .manual-server-input {
       display: flex;
       gap: 8px;
       width: 100%;
-      max-width: 300px;
+      max-width: 380px;
 
       .server-input {
         flex: 1;
@@ -699,6 +751,10 @@ watch(() => props.isOpen, (isOpen) => {
         &:focus {
           outline: none;
           border-color: var(--primary);
+        }
+
+        &.invalid {
+          border-color: #ef4444;
         }
       }
 
@@ -721,6 +777,12 @@ watch(() => props.isOpen, (isOpen) => {
           cursor: not-allowed;
         }
       }
+    }
+
+    .manual-server-error {
+      margin: 8px 0 0 0;
+      color: #ef4444;
+      font-size: 0.85rem;
     }
   }
 

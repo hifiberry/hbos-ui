@@ -254,6 +254,9 @@ const removeMount = async (mount: SmbMount) => {
     const response = await unmountSmbShare(mount.server, mount.share)
 
     if (response.status === 'success') {
+      if (response.data?.warning) {
+        toastStore.showInfoToast(response.data.warning)
+      }
       await refreshMounts()
     } else {
       error.value = response.message || 'Failed to remove mount'

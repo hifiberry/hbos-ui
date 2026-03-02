@@ -191,7 +191,7 @@ import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
-import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection, disableSoundCardDetection, getSoundCardDetectionStatus } from '@/api/system'
+import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection, disableSoundCardDetection, getSoundCardDetectionStatus, resetConfigDB } from '@/api/system'
 import { stopAllPlayers } from '@/api/player'
 import type { SoundCard } from '@/api/system'
 
@@ -273,12 +273,13 @@ const resetSystem = async () => {
   resetting.value = true
 
   try {
-    // TODO: Implement actual reset functionality
-    // For now, just show a message that this is not implemented yet
+    // Clear the entire configuration database
+    await resetConfigDB()
 
-    await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate async operation
+    // Re-enable sound card auto-detection (removes fixed card config)
+    await setSoundCardDetection(true)
 
-    toastStore.showInfoToast('Reset functionality is not yet implemented. This is a placeholder for future development.')
+    toastStore.showInfoToast('System reset complete. The setup wizard will run on next visit.')
 
   } catch (err) {
     console.error('Error resetting system:', err)

@@ -16,14 +16,23 @@ add_header X-Frame-Options "SAMEORIGIN" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header X-XSS-Protection "1; mode=block" always;
 
-# Cache static assets with long expiry
-location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+# Cache hashed assets (Vite adds content hashes to filenames)
+location /assets/ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+    try_files $uri =404;
+}
+
+# Cache fonts and images
+location ~* \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
     expires 1y;
     add_header Cache-Control "public, immutable";
     try_files $uri =404;
 }
 
 # SPA fallback - serve index.html for all unmatched routes
+# index.html must not be cached so the browser always gets the latest asset references
 location / {
+    add_header Cache-Control "no-cache";
     try_files $uri $uri/ /index.html;
 }

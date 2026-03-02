@@ -54,6 +54,14 @@ fi
 VERSION=$(head -1 debian/changelog | sed 's/.*(\([^)]*\)).*/\1/')
 echo "Building version: $VERSION"
 
+# Verify package.json version matches debian/changelog
+PKG_VERSION=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
+if [ "$VERSION" != "$PKG_VERSION" ]; then
+    echo "Error: Version mismatch - debian/changelog has $VERSION but package.json has $PKG_VERSION" >&2
+    echo "Please update package.json to match." >&2
+    exit 1
+fi
+
 # Step 1: Build the Vue.js application using Docker
 echo "Building Vue.js application with Docker..."
 # Ensure dist directory exists and has correct permissions

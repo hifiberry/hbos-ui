@@ -26,28 +26,6 @@
     <ContentBox class="libaryContentBox">
       <div class="libaryCard">
         <div class="title">
-          <h2>Genres</h2>
-          <router-link :to="{ name: 'genres' }" class="text-link">View All</router-link>
-        </div>
-        <div v-if="categories.length === 0" class="empty-state">
-          <p>No genres found</p>
-        </div>
-        <div v-else class="category-chips">
-          <button
-            v-for="category in categories.slice(0, 10)"
-            :key="category"
-            class="category-chip"
-            @click="router.push({ name: 'albums-by-genre', params: { category } })"
-          >
-            {{ category }}
-          </button>
-        </div>
-      </div>
-    </ContentBox>
-
-    <ContentBox class="libaryContentBox">
-      <div class="libaryCard">
-        <div class="title">
           <h2>Radio</h2>
           <router-link :to="{ name: 'radio' }" class="text-link">View All</router-link>
         </div>
@@ -67,7 +45,7 @@
 <script setup lang="ts">
 import ContentBox from "@/components/ContentBox.vue"
 import PageContent from "@/components/PageContent.vue"
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useRouter } from 'vue-router'
@@ -75,10 +53,6 @@ const router = useRouter()
 
 import { useLibraryStore } from '@/stores/library'
 const libraryStore = useLibraryStore()
-
-import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
-const libraryFetch = useLibraryFetch()
-const categories = ref<string[]>([])
 
 import { useArtistStore } from '@/stores/artist'
 const artistStore = useArtistStore()
@@ -131,13 +105,6 @@ onMounted(async () => {
   getArtists()
   getAlbums()
   await radioStore.initialize()
-
-  const { data } = await libraryFetch<{ categories: string[] }>(
-    '/library/:activeLibrary/categories',
-  ).json()
-  if (data.value?.categories) {
-    categories.value = data.value.categories
-  }
 })
 </script>
 
@@ -170,32 +137,6 @@ onMounted(async () => {
   p {
     margin: 0;
     font-size: 16px;
-  }
-}
-
-.category-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.category-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 16px;
-  border-radius: 20px;
-  background-color: var(--color-background-secondary);
-  border: 1px solid var(--color-border);
-  color: var(--color-head);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
-
-  &:hover {
-    background-color: var(--color-accent);
-    border-color: var(--color-accent);
-    color: white;
   }
 }
 </style>

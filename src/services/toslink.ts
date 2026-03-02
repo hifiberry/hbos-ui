@@ -59,7 +59,7 @@ const SENSITIVITY_VALUES = [
 export async function checkDSPAvailability(): Promise<boolean> {
   try {
     const response = await check_dsp_toolkit();
-    return response !== null && response.toString().length > 0;
+    return response === 'yes';
   } catch (error) {
     console.error('Failed to check DSP availability:', error);
     return false;

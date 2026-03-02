@@ -347,16 +347,24 @@ export class DSPToolkitFilterBackend extends FilterBackend {
         return
       }
 
-      // Convert stored filters back to our internal format and populate filter banks
+      // Collect filters per bank with their offsets for sorting
+      const bankFilters: Record<string, { offset: number; filter: Filter }[]> = {}
+
       for (const [filterKey, storedFilter] of Object.entries(storedFilters.filters)) {
         const bankName = this.getBankNameFromMetadataKey(storedFilter.address)
         if (bankName && this.filterBanks[bankName]) {
           const internalFilter = this.convertDSPFilterToInternalFormat(storedFilter, filterKey)
           if (internalFilter) {
-            // Insert filter at the correct position based on offset
-            this.filterBanks[bankName].filters[storedFilter.offset] = internalFilter
+            if (!bankFilters[bankName]) bankFilters[bankName] = []
+            bankFilters[bankName].push({ offset: storedFilter.offset, filter: internalFilter })
           }
         }
+      }
+
+      // Sort by offset and pack densely into filter banks (no sparse holes)
+      for (const [bankName, entries] of Object.entries(bankFilters)) {
+        entries.sort((a, b) => a.offset - b.offset)
+        this.filterBanks[bankName].filters = entries.map(e => e.filter)
       }
 
       console.log('DSP Filter Store: Loaded stored filters for current profile', {

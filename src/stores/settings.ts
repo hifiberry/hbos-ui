@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { getConfigKeys, getConfigValue, setConfigValue, deleteConfigValue } from '@/api/config'
+import { enableService, disableService } from '@/api/config'
+import { getSystemInfo } from '@/api/system'
 
 export interface ServiceSettings {
   lastfm: {
@@ -50,6 +52,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const loading = ref(false)
   const loaded = ref(false)
+  const piVersion = ref<string>('unknown')
 
   // Getters
   const getServiceSettings = (service: keyof ServiceSettings) => {
@@ -60,6 +63,10 @@ export const useSettingsStore = defineStore('settings', () => {
   const getSpotifySettings = computed(() => settings.value.service.spotify)
   const getExpertMode = computed(() => settings.value.expertMode)
   const getVuMeterEnabled = computed(() => settings.value.vuMeterEnabled)
+  const isPi5OrHigher = computed(() => {
+    const v = parseInt(piVersion.value, 10)
+    return !isNaN(v) && v >= 5
+  })
 
   // Actions
   const updateServiceSettings = async <T extends keyof ServiceSettings>(
@@ -90,6 +97,16 @@ export const useSettingsStore = defineStore('settings', () => {
   const updateVuMeterEnabled = async (enabled: boolean) => {
     settings.value.vuMeterEnabled = enabled
     await saveSettings()
+    // Also control the backend vu-meter service
+    try {
+      if (enabled) {
+        await enableService('vu-meter')
+      } else {
+        await disableService('vu-meter')
+      }
+    } catch (error) {
+      console.error('Failed to control vu-meter service:', error)
+    }
   }
 
   const saveSettings = async () => {
@@ -131,6 +148,16 @@ export const useSettingsStore = defineStore('settings', () => {
       const savedVuMeter = localStorage.getItem('ui.vuMeterEnabled')
       if (savedVuMeter !== null) {
         settings.value.vuMeterEnabled = JSON.parse(savedVuMeter)
+      }
+
+      // Fetch Pi version for hardware-gated features
+      try {
+        const systemInfo = await getSystemInfo()
+        piVersion.value = systemInfo.pi_model?.version || 'unknown'
+        console.log('Pi version detected:', piVersion.value)
+      } catch (error) {
+        console.warn('Failed to fetch Pi version:', error)
+        piVersion.value = 'unknown'
       }
 
       console.log('Settings loaded:', settings.value)
@@ -270,6 +297,8 @@ export const useSettingsStore = defineStore('settings', () => {
     getSpotifySettings,
     getExpertMode,
     getVuMeterEnabled,
+    isPi5OrHigher,
+    piVersion,
 
     // Actions
     updateServiceSettings,

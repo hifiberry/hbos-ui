@@ -1,8 +1,32 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { getSetupStatus, resetSetup } from '@/api/system'
+
+let setupChecked = false
+let setupCompleted = false
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/setup',
+      name: 'setup',
+      component: () => import('@/views/setup.vue'),
+    },
+    {
+      path: '/setup/restart',
+      name: 'setup-restart',
+      beforeEnter: async () => {
+        try {
+          await resetSetup()
+        } catch (e) {
+          console.error('Failed to reset setup:', e)
+        }
+        setupCompleted = false
+        setupChecked = true
+        return { name: 'setup' }
+      },
+      component: () => import('@/views/setup.vue'),
+    },
     {
       path: '/',
       component: () => import('@/layouts/default.vue'),
@@ -181,5 +205,29 @@ const router = createRouter({
     },
   ],
 })
+
+router.beforeEach(async (to) => {
+  if (to.name === 'setup' || to.name === 'setup-restart') return true
+
+  if (!setupChecked) {
+    try {
+      const res = await getSetupStatus()
+      setupCompleted = res.data.setup_completed
+    } catch {
+      // If API fails, assume setup is done to avoid blocking the UI
+      setupCompleted = true
+    }
+    setupChecked = true
+  }
+
+  if (!setupCompleted) {
+    return { name: 'setup' }
+  }
+})
+
+export function markSetupCompleted() {
+  setupCompleted = true
+  setupChecked = true
+}
 
 export default router

@@ -187,7 +187,7 @@ const soundcardDisplayName = computed(() => {
 
   const card = cardName.toLowerCase()
   if (card.includes('beocreate')) return 'Beocreate'
-  if (card.includes('dac+dsp') || card.includes('dacdsp')) return 'DAC+DSP'
+  if (card.includes('dac+ dsp') || card.includes('dac+dsp') || card.includes('dacdsp')) return 'DAC+DSP'
   if (card.includes('dac2') && card.includes('pro')) return 'DAC2 Pro + DSP add-on'
   if (card.includes('dac2')) return 'DAC2 + DSP add-on'
   if (card.includes('dsp')) return 'DSP-enabled sound card'
@@ -201,7 +201,7 @@ const detectedModelName = computed(() => {
 
   const card = cardName.toLowerCase()
   if (card.includes('beocreate')) return 'Beocreate 4-Channel Amplifier'
-  if (card.includes('dac+dsp') || card.includes('dacdsp')) return 'DAC+ DSP'
+  if (card.includes('dac+ dsp') || card.includes('dac+dsp') || card.includes('dacdsp')) return 'DAC+ DSP'
   if (card.includes('dac2')) return 'DSP add-on'
 
   return null

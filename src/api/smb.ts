@@ -111,6 +111,14 @@ export interface SmbMountResponse {
     }>
     count?: number
     note?: string
+    warning?: string
+    mpd_reconcile?: {
+      service: string
+      status: 'success' | 'error'
+      message: string
+      details?: string
+      return_code?: number
+    }
   }
   error?: string
 }

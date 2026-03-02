@@ -512,3 +512,95 @@ export const checkFileExistence = async (filePaths: string[]): Promise<FileExist
 
   return results
 }
+
+// Types for Setup Status
+export interface SetupStatusResponse {
+  status: 'success' | 'error'
+  data: {
+    setup_completed: boolean
+  }
+}
+
+/**
+ * Get initial setup status
+ */
+export const getSetupStatus = async (): Promise<SetupStatusResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/setup/status`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
+}
+
+/**
+ * Mark initial setup as completed
+ */
+export const completeSetup = async (): Promise<{ status: string; message: string }> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/setup/complete`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
+}
+
+/**
+ * Reset initial setup status (allows re-running the wizard)
+ */
+export const resetSetup = async (): Promise<{ status: string; message: string }> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/setup/reset`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
+}
+
+/**
+ * Reset the entire configuration database (clear all keys)
+ */
+export const resetConfigDB = async (): Promise<{ status: string; message: string }> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/config/reset`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return await response.json()
+}

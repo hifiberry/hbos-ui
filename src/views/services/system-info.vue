@@ -374,6 +374,44 @@
           </table>
         </div>
 
+        <!-- Library Statistics -->
+        <div class="info-card">
+          <div class="card-header">
+            <Icon icon="tabler/music" class="card-icon" />
+            <h2>Music Library</h2>
+          </div>
+          <div v-if="libraryStatsLoading" class="loading-message">
+            Loading library statistics...
+          </div>
+          <div v-else-if="libraryStatsError" class="error-message">
+            {{ libraryStatsError }}
+          </div>
+          <div v-else-if="libraryStats.length === 0" class="error-message">
+            No library loaded
+          </div>
+          <table v-else class="info-table">
+            <tbody>
+              <template v-for="lib in libraryStats" :key="lib.player_name">
+                <tr v-if="libraryStats.length > 1">
+                  <td class="label" colspan="2"><strong>{{ lib.player_name }}</strong></td>
+                </tr>
+                <tr>
+                  <td class="label">Artists</td>
+                  <td class="value">{{ lib.artists_count.toLocaleString() }}</td>
+                </tr>
+                <tr>
+                  <td class="label">Albums</td>
+                  <td class="value">{{ lib.albums_count.toLocaleString() }}</td>
+                </tr>
+                <tr>
+                  <td class="label">Tracks</td>
+                  <td class="value">{{ lib.tracks_count.toLocaleString() }}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Cache Statistics -->
         <div class="info-card">
           <div class="card-header">
@@ -584,6 +622,7 @@
             </tbody>
           </table>
         </div>
+
       </div>
     </div>
 
@@ -685,6 +724,8 @@ import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart
 // import { listPipewireDevices, getPipewireMonoStereo, getPipewireBalance, type PipewireDevices } from '@/api/pipewire'
 import { getVersion as getPipewireVersion } from '@/api/pipewire'
 import { useAppConfigStore } from '@/stores/appconfig'
+import { useSettingsStore } from '@/stores/settings'
+import { getAllLibraryStats, type LibraryStatsResponse } from '@/api/audiocontrol-library'
 
 // State
 const loading = ref(true)
@@ -749,10 +790,28 @@ const i2cDevices = ref<I2CDeviceInfo | null>(null)
 const fileExistenceLoading = ref(true)
 const fileExistenceError = ref('')
 const fileExistence = ref<FileExistence[]>([])
+
 const filesToCheck = [
   '/etc/uuid',
   '/etc/hifiberry.user'
 ]
+
+// Library stats state
+const libraryStatsLoading = ref(true)
+const libraryStatsError = ref('')
+const libraryStats = ref<LibraryStatsResponse[]>([])
+
+const fetchLibraryStats = async () => {
+  libraryStatsLoading.value = true
+  libraryStatsError.value = ''
+  try {
+    libraryStats.value = await getAllLibraryStats()
+  } catch (err) {
+    libraryStatsError.value = err instanceof Error ? err.message : 'Failed to retrieve library statistics'
+  } finally {
+    libraryStatsLoading.value = false
+  }
+}
 
 // Pipewire devices state - TODO: Update to use new PipeWire API
 const pipewireLoading = ref(true)
@@ -1418,9 +1477,15 @@ const fetchBackgroundServices = async () => {
         name: 'Room EQ',
         url: `${appConfigStore.getRoomEQApiBaseUrl()}/version`
       },
-      {
+      // Only include VU Meter on Pi 5 or higher
+      ...(useSettingsStore().isPi5OrHigher ? [{
         name: 'VU Meter',
         url: `${window.location.origin}/api/vu-meter/api/v1/version`
+      }] : []),
+      {
+        name: 'Web MCP',
+        url: `${window.location.origin}/api/acr-webmcp/health`,
+        isWebMcp: true
       }
     ]
 
@@ -1465,7 +1530,7 @@ const fetchBackgroundServices = async () => {
 
         if (response.ok) {
           // Try to extract version information for APIs that support it
-          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API' || service.name === 'Room EQ' || service.name === 'VU Meter') {
+          if (service.name === 'Audio control' || service.name === 'Configuration' || service.name === 'DSP backend' || service.name === 'PipeWire API' || service.name === 'Room EQ' || service.name === 'VU Meter' || service.name === 'Web MCP') {
             try {
               const data = await response.json()
               console.log(`${service.name} response data:`, data)
@@ -1658,10 +1723,14 @@ onMounted(async () => {
     fetchPipewireDevices().then(result => {
       console.log('fetchPipewireDevices result:', result)
       return result
+    }),
+    fetchLibraryStats().then(result => {
+      console.log('fetchLibraryStats result:', result)
+      return result
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'file existence', 'volume info', 'DSP program info', 'background services', 'Pipewire devices']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'file existence', 'volume info', 'DSP program info', 'background services', 'Pipewire devices', 'library stats']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {

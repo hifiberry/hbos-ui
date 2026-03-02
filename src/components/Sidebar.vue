@@ -42,6 +42,10 @@
       </template>
     </div>
 
+    <div v-if="settingsStore.getVuMeterEnabled && settingsStore.isPi5OrHigher" class="sidebar-vu-meter">
+      <VuMeter />
+    </div>
+
     <div class="sidebar-logo">
       <img :src="logoUrl" alt="Logo" />
     </div>
@@ -57,7 +61,9 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
 import SongControlInfo from '@/components/SongControlInfo.vue'
+import VuMeter from '@/components/VuMeter.vue'
 import { usePlayerStore } from '@/stores/player'
+import { useSettingsStore } from '@/stores/settings'
 
 const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 const logoSmallUrl = computed(() => `${import.meta.env.BASE_URL}images/logo-small.svg`)
@@ -68,6 +74,7 @@ interface SidebarProps {
 const { isPlayerControls = true } = defineProps<SidebarProps>()
 
 const playerStore = usePlayerStore()
+const settingsStore = useSettingsStore()
 const { playerCapabilities } = storeToRefs(playerStore)
 
 interface Route {
@@ -440,6 +447,32 @@ const routes = computed(() => {
     @include media-down(lg) {
       display: block;
     }
+  }
+}
+
+.sidebar-vu-meter {
+  position: absolute;
+  bottom: 120px;
+  left: 0;
+  width: 56px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.2s linear;
+
+  .sidebar:hover & {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  :deep(.vu-meter) {
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    width: 200px;
+  }
+
+  @include media-down(lg) {
+    display: none !important;
   }
 }
 

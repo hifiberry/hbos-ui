@@ -19,17 +19,8 @@ override_dh_auto_install:
 	cp -r dist/* debian/hifiberry-webui/usr/share/hifiberry/webui/
 
 override_dh_install:
-	# Debug: Show what files exist
-	ls -la debian/package-files/usr/sbin/configure-webui || echo "configure-webui not found in debian/package-files/usr/sbin/"
-	ls -la debian/package-files/etc/nginx/hifiberry-webui.nginx || echo "hifiberry-webui.nginx not found in debian/package-files/etc/nginx/"
-	
-	# Use standard dh_install to process debian/install file
 	dh_install
-	
-	# Debug: Show what was installed
-	ls -la debian/hifiberry-webui/usr/sbin/ || echo "No /usr/sbin directory"
-	ls -la debian/hifiberry-webui/etc/nginx/ || echo "No /etc/nginx directory"
-	
+
 	# Fix file permissions for web assets
 	find debian/hifiberry-webui/usr/share/hifiberry/webui -type f -name "*.ttf" -exec chmod 644 {} \;
 	find debian/hifiberry-webui/usr/share/hifiberry/webui -type f -name "*.svg" -exec chmod 644 {} \;

@@ -23,7 +23,7 @@
         <div class="player-actions">
           <div class="player-toggle">
             <ToggleSwitch
-              :model-value="player.status === 'active'"
+              :model-value="player.providedBy === 'DSP' ? player.enabled : player.status === 'active'"
               :disabled="player.loading || player.allow_change === false || player.exists === false"
               :loading="player.loading"
               @update:model-value="$emit('toggle')"

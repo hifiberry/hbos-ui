@@ -2,12 +2,7 @@
   <header class="app-header">
     <!-- Player (left side) -->
     <div class="header-column header-column--player">
-      <SongControlInfo isOnHeader />
-    </div>
-
-    <!-- VU Meter (center) -->
-    <div v-if="settingsStore.getVuMeterEnabled" class="header-column header-column--meter">
-      <VuMeter />
+      <SongControlInfo v-if="isPlayerControls" isOnHeader />
     </div>
 
     <!-- Volume -->
@@ -20,10 +15,16 @@
 <script setup lang="ts">
 import SongControlInfo from '@/components/SongControlInfo.vue'
 import VolumeControl from '@/components/VolumeControl.vue'
-import VuMeter from '@/components/VuMeter.vue'
-import { useSettingsStore } from '@/stores/settings'
 
-const settingsStore = useSettingsStore()
+withDefaults(
+  defineProps<{
+    isPlayerControls?: boolean
+  }>(),
+  {
+    isPlayerControls: true,
+  },
+)
+
 </script>
 
 <style scoped lang="scss">
@@ -52,11 +53,6 @@ const settingsStore = useSettingsStore()
 
   &--player {
     justify-content: flex-start;
-  }
-
-  &--meter {
-    justify-content: center;
-    flex-shrink: 0;
   }
 
   &--volume {

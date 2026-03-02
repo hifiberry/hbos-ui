@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toast'
 import type { LibraryPlayer, LibraryPlayerResponse } from '@/types/library'
 
 import { useAppConfigStore } from '@/stores/appconfig'
+import { getAllLibraryStats, type LibraryStatsResponse } from '@/api/audiocontrol-library'
 
 export const useLibraryStore = defineStore('library', () => {
   const configStore = useAppConfigStore()
@@ -15,6 +16,9 @@ export const useLibraryStore = defineStore('library', () => {
   // State
   const loading = ref<boolean>(false)
   const activeLibrary = ref<string | null>(null)
+  const libraryStats = ref<LibraryStatsResponse[]>([])
+  const libraryStatsLoading = ref<boolean>(false)
+  const libraryStatsError = ref<string>('')
 
   // Getters
   const isAvailableLibrary = computed(() => Boolean(activeLibrary.value))
@@ -81,6 +85,18 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
+  const fetchLibraryStats = async () => {
+    libraryStatsLoading.value = true
+    libraryStatsError.value = ''
+    try {
+      libraryStats.value = await getAllLibraryStats()
+    } catch (err) {
+      libraryStatsError.value = err instanceof Error ? err.message : 'Failed to retrieve library statistics'
+    } finally {
+      libraryStatsLoading.value = false
+    }
+  }
+
   const getAlbumCover = (id: string) => {
     const apiBase = configStore.getApiBaseUrl()
     return `${apiBase}/library/${activeLibrary.value}/image/album:${id}`
@@ -91,6 +107,9 @@ export const useLibraryStore = defineStore('library', () => {
     loading,
     activeLibrary,
     isLibraryLoaded,
+    libraryStats,
+    libraryStatsLoading,
+    libraryStatsError,
 
     // Getters
     isAvailableLibrary,
@@ -99,6 +118,7 @@ export const useLibraryStore = defineStore('library', () => {
     // Actions
     getAvailableLibrary,
     refreshLibraryStatus,
+    fetchLibraryStats,
     getAlbumCover,
   }
 })

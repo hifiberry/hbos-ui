@@ -5,7 +5,6 @@
   >
     <!-- Left channel -->
     <div class="vu-meter__row">
-      <span class="vu-meter__label">L</span>
       <div class="vu-meter__track">
         <div
           class="vu-meter__fill"
@@ -20,7 +19,6 @@
     </div>
     <!-- Right channel -->
     <div class="vu-meter__row">
-      <span class="vu-meter__label">R</span>
       <div class="vu-meter__track">
         <div
           class="vu-meter__fill"

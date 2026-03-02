@@ -1,8 +1,8 @@
 <template>
   <div class="wrapper">
-    <Header :isPlayerControls="isPlayerControls" />
+    <Header v-if="isPlayerControls" :isPlayerControls="isPlayerControls" />
     <Sidebar :isPlayerControls="isPlayerControls" />
-    <main :class="[{ 'no-player-controls': !isPlayerControls }]">
+    <main :class="[{ 'no-player-controls': !isPlayerControls, 'no-header': !isPlayerControls }]">
       <router-view v-slot="{ Component }">
         <Transition name="page-opacity" mode="out-in">
           <component :is="Component" />
@@ -43,6 +43,14 @@ const isPlayerControls = computed(
       padding-bottom: 20px;
       @include media-down(lg) {
         padding-bottom: 100px;
+      }
+    }
+
+    &.no-header {
+      padding-top: 24px;
+
+      @include media-down(lg) {
+        padding-top: 15px;
       }
     }
   }

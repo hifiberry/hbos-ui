@@ -50,6 +50,7 @@ import { ConsoleFilterBackend } from './console_filter_backend'
 import { DSPToolkitFilterBackend } from './dsp_toolkit_filter_backend'
 import type { Filter, FilterBank, FilterBanks, FilterBackend, BackendCapabilities } from './filter_backend_interface'
 import { getConfigValue, setConfigValue } from '@/api/config'
+import { useDSPToolkitStore } from './dsp-toolkit'
 
 // Re-export types for convenience
 export type { Filter, FilterBank, FilterBanks, BackendCapabilities }
@@ -67,17 +68,17 @@ export const useFilterStore = defineStore('filter', () => {
   // Storage key for persisting backend selection
   const BACKEND_CONFIG_KEY = 'dsp.filter.backend'
 
-  // Load backend selection from settingsDB, defaulting to 'console'
-  const getStoredBackendType = async (): Promise<keyof typeof availableBackends> => {
+  // Load backend selection from settingsDB, returning null if no preference stored
+  const getStoredBackendType = async (): Promise<keyof typeof availableBackends | null> => {
     try {
       const response = await getConfigValue(BACKEND_CONFIG_KEY)
       if (response.data?.value && response.data.value in availableBackends) {
         return response.data.value as keyof typeof availableBackends
       }
     } catch (error) {
-      console.warn('Failed to load backend selection from settingsDB:', error)
+      // Key doesn't exist or request failed — no preference stored
     }
-    return 'console' // Default fallback
+    return null
   }
 
   // Save backend selection to settingsDB
@@ -92,13 +93,25 @@ export const useFilterStore = defineStore('filter', () => {
   // Current backend - starts with console, then loads from settingsDB
   const currentBackendType = ref<keyof typeof availableBackends>('console')
 
-  // Initialize backend from settingsDB
+  // Initialize backend from settingsDB, auto-detecting DSP if no preference stored
   const initializeBackend = async (): Promise<void> => {
     try {
       const storedType = await getStoredBackendType()
-      currentBackendType.value = storedType
+      if (storedType !== null) {
+        // User has an explicit preference — use it
+        currentBackendType.value = storedType
+        return
+      }
+      // No preference stored — auto-detect: use DSP backend if hardware is available
+      const dspStore = useDSPToolkitStore()
+      if (await dspStore.canUseDSP()) {
+        currentBackendType.value = 'dspToolkit'
+        await saveBackendType('dspToolkit')
+      } else {
+        currentBackendType.value = 'console'
+      }
     } catch (error) {
-      console.warn('Failed to initialize backend from settingsDB, using console:', error)
+      console.warn('Failed to initialize backend, using console:', error)
       currentBackendType.value = 'console'
     }
   }

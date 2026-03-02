@@ -20,7 +20,7 @@
           <ToggleSwitch v-model="isDark" />
         </div>
       </div>
-      <div class="info-card">
+      <div v-if="settingsStore.isPi5OrHigher" class="info-card">
         <div class="toggle-row">
           <h2>VU meter</h2>
           <ToggleSwitch

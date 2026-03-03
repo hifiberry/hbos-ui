@@ -11,6 +11,12 @@ import { useToastStore } from '@/stores/toast';
 import { convertUIFilterToStore, convertStoreFilterToUI } from '@/utils/filter-conversions';
 import { DEFAULT_FREQ_RANGE, DEFAULT_GAIN_RANGE } from '@/utils/filtergraph';
 import {
+  readChannelDelay, writeChannelDelay,
+  readChannelLevel, writeChannelLevel,
+  readChannelInvert, writeChannelInvert,
+  readChannelSelect, writeChannelSelect,
+} from '@/api/dsptoolkit';
+import {
   type LinkedChannelConfig,
   type ChannelMode as LinkedChannelMode,
   addFilterToLinkedChannels,
@@ -47,6 +53,27 @@ export function useCrossoverFilters() {
   // Backend capabilities
   const backendCapabilities = ref<BackendCapabilities | null>(null);
   const backendName = ref('');
+
+  // Per-channel settings (delay, level, invert, channel select)
+  const channelSettings = ref<Record<string, {
+    delay: number       // samples (UI converts: ms = samples / sampleRate * 1000)
+    level: number       // linear gain (UI shows dB = 20 * log10(level))
+    inverted: boolean
+    channelSelect: number  // 0=L, 1=R, 2=Mono, 3=Surround
+  }>>({});
+
+  const channelFeatures = ref<Record<string, {
+    hasDelay: boolean
+    hasLevel: boolean
+    hasInvert: boolean
+    hasChannelSelect: boolean
+    delayAddress?: number
+    levelAddress?: number
+    invertAddress?: number
+    channelSelectAddress?: number
+  }>>({});
+
+  const sampleRate = ref(SAMPLE_RATE);
 
   // Computed
   const filters = computed(() => {
@@ -178,6 +205,49 @@ export function useCrossoverFilters() {
         if (bankInfo.bankAddress) {
           bankAddresses.value[bankInfo.name] = bankInfo.bankAddress;
         }
+      }
+    }
+
+    // Store sample rate from backend
+    if (backendCapabilities.value?.sampleRate) {
+      sampleRate.value = backendCapabilities.value.sampleRate;
+    }
+
+    // Build channel features map and read current settings from hardware
+    if (backendCapabilities.value) {
+      for (const bankInfo of backendCapabilities.value.availableFilterBanks) {
+        const ch = bankInfo.name;
+        const features = {
+          hasDelay: bankInfo.delayAddress != null,
+          hasLevel: bankInfo.levelAddress != null,
+          hasInvert: bankInfo.invertAddress != null,
+          hasChannelSelect: bankInfo.channelSelectAddress != null,
+          delayAddress: bankInfo.delayAddress,
+          levelAddress: bankInfo.levelAddress,
+          invertAddress: bankInfo.invertAddress,
+          channelSelectAddress: bankInfo.channelSelectAddress,
+        };
+        channelFeatures.value[ch] = features;
+
+        // Read current values from hardware
+        const settings = { delay: 0, level: 1.0, inverted: false, channelSelect: 0 };
+        try {
+          if (features.hasDelay && features.delayAddress != null) {
+            settings.delay = await readChannelDelay(features.delayAddress);
+          }
+          if (features.hasLevel && features.levelAddress != null) {
+            settings.level = await readChannelLevel(features.levelAddress);
+          }
+          if (features.hasInvert && features.invertAddress != null) {
+            settings.inverted = await readChannelInvert(features.invertAddress);
+          }
+          if (features.hasChannelSelect && features.channelSelectAddress != null) {
+            settings.channelSelect = await readChannelSelect(features.channelSelectAddress);
+          }
+        } catch (error) {
+          console.warn(`crossover-design: Failed to read settings for channel ${ch}:`, error);
+        }
+        channelSettings.value[ch] = settings;
       }
     }
 
@@ -377,6 +447,62 @@ export function useCrossoverFilters() {
     isDragging.value = false;
   }
 
+  // Channel settings setters
+  async function setChannelDelay(channel: string, ms: number) {
+    const features = channelFeatures.value[channel];
+    if (!features?.hasDelay || features.delayAddress == null) return;
+    const samples = Math.round(ms / 1000 * sampleRate.value);
+    await writeChannelDelay(features.delayAddress, samples);
+    channelSettings.value[channel].delay = samples;
+  }
+
+  async function setChannelLevel(channel: string, dB: number) {
+    const features = channelFeatures.value[channel];
+    if (!features?.hasLevel || features.levelAddress == null) return;
+    const linearGain = Math.pow(10, dB / 20);
+    await writeChannelLevel(features.levelAddress, linearGain);
+    channelSettings.value[channel].level = linearGain;
+
+    // Level is linked: apply to partner when pair is linked
+    if (isCurrentPairLinked.value) {
+      const partner = getPairPartner(channel);
+      if (partner) {
+        const partnerFeatures = channelFeatures.value[partner];
+        if (partnerFeatures?.hasLevel && partnerFeatures.levelAddress != null) {
+          await writeChannelLevel(partnerFeatures.levelAddress, linearGain);
+          channelSettings.value[partner].level = linearGain;
+        }
+      }
+    }
+  }
+
+  async function setChannelInvert(channel: string, inverted: boolean) {
+    const features = channelFeatures.value[channel];
+    if (!features?.hasInvert || features.invertAddress == null) return;
+    await writeChannelInvert(features.invertAddress, inverted);
+    channelSettings.value[channel].inverted = inverted;
+  }
+
+  async function setChannelSelectMode(channel: string, mode: number) {
+    const features = channelFeatures.value[channel];
+    if (!features?.hasChannelSelect || features.channelSelectAddress == null) return;
+    await writeChannelSelect(features.channelSelectAddress, mode);
+    channelSettings.value[channel].channelSelect = mode;
+  }
+
+  // Computed helpers for UI display
+  function getChannelDelayMs(channel: string): number {
+    const settings = channelSettings.value[channel];
+    if (!settings) return 0;
+    return settings.delay / sampleRate.value * 1000;
+  }
+
+  function getChannelLevelDb(channel: string): number {
+    const settings = channelSettings.value[channel];
+    if (!settings || settings.level <= 0) return -60;
+    return 20 * Math.log10(settings.level);
+  }
+
   return {
     // State
     channelNames,
@@ -418,6 +544,17 @@ export function useCrossoverFilters() {
     onGraphUpdateQ,
     onGraphDragStart,
     onGraphDragEnd,
+
+    // Channel settings
+    channelSettings,
+    channelFeatures,
+    sampleRate,
+    setChannelDelay,
+    setChannelLevel,
+    setChannelInvert,
+    setChannelSelectMode,
+    getChannelDelayMs,
+    getChannelLevelDb,
 
     // Internals exposed for other composables
     createLinkedChannelConfig,

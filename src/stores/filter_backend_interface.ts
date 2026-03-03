@@ -40,6 +40,10 @@ export interface FilterBankInfo {
   currentFilterCount: number
   filterBankType: string
   bankAddress?: string // Metadata key for hardware communication (e.g., 'IIR_A', 'customFilterRegisterBankLeft')
+  delayAddress?: number    // memory address for per-channel delay register
+  levelAddress?: number    // memory address for per-channel level/volume register
+  invertAddress?: number   // memory address for per-channel invert register
+  channelSelectAddress?: number  // memory address for per-channel input source register
 }
 
 export interface BackendCapabilities {
@@ -47,6 +51,7 @@ export interface BackendCapabilities {
   backendName: string
   backendDescription: string
   backendShortDescription: string
+  sampleRate?: number  // DSP sample rate (e.g., 48000) for delay calculations
 }
 
 /**

@@ -599,6 +599,48 @@ export async function setIndividualFilterBypassState(
   })
 }
 
+// Channel Settings API — convenience wrappers around readMemory/writeMemory
+// for per-channel delay, level, invert, and channel-select registers
+
+export async function readChannelDelay(address: number): Promise<number> {
+  const res = await readMemory(String(address), undefined, 'int')
+  return Number(res.values[0])
+}
+
+export async function writeChannelDelay(address: number, samples: number): Promise<void> {
+  await writeMemory({ address: String(address), value: Math.round(samples) })
+}
+
+export async function readChannelLevel(address: number): Promise<number> {
+  const res = await readMemory(String(address), undefined, 'float')
+  return Number(res.values[0])
+}
+
+export async function writeChannelLevel(address: number, linearGain: number): Promise<void> {
+  // The DSP toolkit interprets integer JSON values (e.g. 1) as raw memory words,
+  // not floats. Nudge exact integers so JSON serializes with a decimal (e.g. 1.0000001).
+  const value = Number.isInteger(linearGain) ? linearGain + 1e-7 : linearGain
+  await writeMemory({ address: String(address), value })
+}
+
+export async function readChannelInvert(address: number): Promise<boolean> {
+  const res = await readMemory(String(address), undefined, 'int')
+  return Number(res.values[0]) !== 0
+}
+
+export async function writeChannelInvert(address: number, inverted: boolean): Promise<void> {
+  await writeMemory({ address: String(address), value: inverted ? 1 : 0 })
+}
+
+export async function readChannelSelect(address: number): Promise<number> {
+  const res = await readMemory(String(address), undefined, 'int')
+  return Number(res.values[0])
+}
+
+export async function writeChannelSelect(address: number, mode: number): Promise<void> {
+  await writeMemory({ address: String(address), value: mode })
+}
+
 // DSP Toolkit Status Check
 export type DSPToolkitStatus = 'yes' | 'no' | 'backend_error'
 

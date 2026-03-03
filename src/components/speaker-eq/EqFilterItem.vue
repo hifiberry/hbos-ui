@@ -19,7 +19,6 @@
         </div>
       </div>
       <div class="filter-actions" @click.stop>
-        <ToggleSwitch :model-value="filter.enabled" @update:model-value="$emit('toggle-enabled', filter)" />
         <div class="filter-remove" @click="$emit('remove', filter.id)">
           <Icon icon="close" />
         </div>
@@ -61,7 +60,6 @@
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue';
-import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import { type Filter } from '@/utils/filtercalc';
 import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
 
@@ -73,7 +71,6 @@ defineProps<{
 defineEmits<{
   select: [id: number]
   remove: [id: number]
-  'toggle-enabled': [filter: Filter]
   'increment-frequency': [filter: Filter]
   'decrement-frequency': [filter: Filter]
   'increment-gain': [filter: Filter]

@@ -65,6 +65,64 @@
           </template>
         </div>
 
+        <div v-if="activeChannelFeatures && hasAnyChannelFeature" class="channel-settings">
+          <div v-if="activeChannelFeatures.hasDelay" class="setting-group">
+            <label>Delay</label>
+            <div class="setting-control stepper">
+              <button class="step-btn" @click="stepDelay(-0.1)">
+                <Icon icon="minus-small" />
+              </button>
+              <span class="setting-value">{{ getChannelDelayMs(activeChannel).toFixed(1) }} ms</span>
+              <button class="step-btn" @click="stepDelay(0.1)">
+                <Icon icon="plus-small" />
+              </button>
+            </div>
+          </div>
+
+          <div v-if="activeChannelFeatures.hasLevel" class="setting-group">
+            <label>Level{{ isCurrentPairLinked ? ' (linked)' : '' }}</label>
+            <div class="setting-control stepper">
+              <button class="step-btn" @click="stepLevel(-0.1)">
+                <Icon icon="minus-small" />
+              </button>
+              <span class="setting-value">{{ getChannelLevelDb(activeChannel).toFixed(1) }} dB</span>
+              <button class="step-btn" @click="stepLevel(0.1)">
+                <Icon icon="plus-small" />
+              </button>
+            </div>
+          </div>
+
+          <div v-if="activeChannelFeatures.hasInvert" class="setting-group">
+            <label>Invert Polarity</label>
+            <div class="setting-control">
+              <button
+                class="toggle-btn"
+                :class="{ active: channelSettings[activeChannel]?.inverted }"
+                @click="setChannelInvert(activeChannel, !channelSettings[activeChannel]?.inverted)"
+              >
+                {{ channelSettings[activeChannel]?.inverted ? 'Inverted' : 'Normal' }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="activeChannelFeatures.hasChannelSelect" class="setting-group">
+            <label>Input Source</label>
+            <div class="setting-control segmented-buttons">
+              <button v-for="opt in channelSelectOptions" :key="opt.value"
+                :class="{ active: channelSettings[activeChannel]?.channelSelect === opt.value }"
+                @click="setChannelSelectMode(activeChannel, opt.value)"
+              >{{ opt.label }}</button>
+            </div>
+          </div>
+
+          <div class="setting-group reset-group">
+            <label>&nbsp;</label>
+            <div class="setting-control">
+              <button class="toggle-btn" @click="resetChannelSettings">Reset</button>
+            </div>
+          </div>
+        </div>
+
         <div class="filters-list">
           <div v-for="filter in filters" :key="filter.id" class="card">
             <EqFilterItem
@@ -125,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import Icon from '@/components/Icon.vue';
 import PageContent from '@/components/PageContent.vue';
 import FilterGraph from '@/components/FilterGraph.vue';
@@ -175,8 +233,56 @@ const {
   onGraphUpdateQ,
   onGraphDragStart,
   onGraphDragEnd,
+  channelSettings,
+  channelFeatures,
+  setChannelDelay,
+  setChannelLevel,
+  setChannelInvert,
+  setChannelSelectMode,
+  getChannelDelayMs,
+  getChannelLevelDb,
   SAMPLE_RATE,
 } = useCrossoverFilters();
+
+const channelSelectOptions = [
+  { value: 0, label: 'L' },
+  { value: 1, label: 'R' },
+  { value: 2, label: 'Mono' },
+  { value: 3, label: 'Surround' },
+];
+
+const activeChannelFeatures = computed(() => channelFeatures.value[activeChannel.value]);
+const hasAnyChannelFeature = computed(() => {
+  const f = activeChannelFeatures.value;
+  return f && (f.hasDelay || f.hasLevel || f.hasInvert || f.hasChannelSelect);
+});
+
+function stepDelay(delta: number) {
+  const current = getChannelDelayMs(activeChannel.value);
+  const next = Math.max(0, Math.min(10, Math.round((current + delta) * 10) / 10));
+  setChannelDelay(activeChannel.value, next);
+}
+
+function stepLevel(delta: number) {
+  const current = getChannelLevelDb(activeChannel.value);
+  const next = Math.max(-60, Math.min(6, Math.round((current + delta) * 10) / 10));
+  setChannelLevel(activeChannel.value, next);
+}
+
+async function resetChannelSettings() {
+  const ch = activeChannel.value;
+  const features = activeChannelFeatures.value;
+  if (!features) return;
+
+  // Even channels (0,2,4,6 = A,C,E,G) → left(0), odd (1,3,5,7 = B,D,F,H) → right(1)
+  const idx = channelNames.value.indexOf(ch);
+  const defaultInput = idx % 2 === 0 ? 0 : 1;
+
+  if (features.hasDelay) await setChannelDelay(ch, 0);
+  if (features.hasLevel) await setChannelLevel(ch, 0);
+  if (features.hasInvert) await setChannelInvert(ch, false);
+  if (features.hasChannelSelect) await setChannelSelectMode(ch, defaultInput);
+}
 
 // Bypass: resolve bank addresses for the active channel (and partner if linked)
 const { isBypassed, startBypass, endBypass } = useBypass(() => {
@@ -370,6 +476,128 @@ watch(activeChannel, async () => {
       .tab:has(+ .tab-pair-separator) {
         border-radius: 0 8px 8px 0;
         border-right: 1px solid #333;
+      }
+    }
+
+    .channel-settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(112, 112, 112, 0.2);
+
+      .setting-group {
+        flex: 1;
+        min-width: 140px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        label {
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+
+      .reset-group {
+        flex: 0;
+        min-width: auto;
+      }
+
+      .setting-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .setting-value {
+          font-size: 14px;
+          font-weight: 500;
+          min-width: 60px;
+          text-align: center;
+          color: var(--color-text);
+        }
+
+        &.stepper {
+          .step-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(112, 112, 112, 0.5);
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background: rgba(225, 30, 74, 0.2);
+              border-color: var(--primary, #e11e4a);
+            }
+
+            svg {
+              width: 14px;
+              height: 14px;
+              fill: white;
+            }
+          }
+        }
+      }
+
+      .toggle-btn {
+        padding: 8px 16px;
+        border: 1px solid rgba(112, 112, 112, 0.5);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--color-text);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+
+        &.active {
+          background: var(--primary, #e11e4a);
+          border-color: var(--primary, #e11e4a);
+          color: white;
+        }
+
+        &:hover:not(.active) {
+          background: rgba(225, 30, 74, 0.2);
+          border-color: var(--primary, #e11e4a);
+        }
+      }
+
+      .segmented-buttons {
+        display: flex;
+        gap: 0;
+
+        button {
+          padding: 8px 12px;
+          border: 1px solid rgba(112, 112, 112, 0.5);
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--color-text);
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+
+          &:first-child { border-radius: 4px 0 0 4px; }
+          &:last-child { border-radius: 0 4px 4px 0; }
+          &:not(:last-child) { border-right: none; }
+
+          &.active {
+            background: var(--primary, #e11e4a);
+            border-color: var(--primary, #e11e4a);
+            color: white;
+          }
+
+          &:hover:not(.active) {
+            background: rgba(225, 30, 74, 0.2);
+            border-color: var(--primary, #e11e4a);
+          }
+        }
       }
     }
 

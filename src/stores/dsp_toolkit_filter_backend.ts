@@ -36,6 +36,10 @@ interface ExtendedFilterBank extends FilterBank {
   baseAddress?: number // Memory base address for DSP hardware
   metadataKey?: string // Original metadata key for this bank
   filterBankType?: string // 'speaker-equalizer' or 'crossover-designer'
+  delayAddress?: number    // per-channel delay register address
+  levelAddress?: number    // per-channel level/volume register address
+  invertAddress?: number   // per-channel invert register address
+  channelSelectAddress?: number  // per-channel input source register address
 }
 
 // Extended FilterBanks interface
@@ -48,6 +52,20 @@ const FILTER_BANK_MAPPING: Record<string, string> = {
   'left': 'customFilterRegisterBankLeft',
   'right': 'customFilterRegisterBankRight'
   // Additional mappings can be added here for other filter banks
+}
+
+/**
+ * Convert Q factor to shelf slope S for the DSP toolkit's LowShelf/HighShelf API.
+ * Audio EQ Cookbook relationship: beta = sqrt(A)/Q (Q-form) = sqrt((A+1/A)*(1/S-1)+2) (S-form)
+ * Solving for S: S = (A + 1/A) / (A + 1/A + A/Q² - 2)
+ * where A = 10^(dBgain/40)
+ */
+function qToShelfSlope(Q: number, dBgain: number): number {
+  const A = Math.pow(10, dBgain / 40)
+  const sum = A + 1 / A           // A + 1/A
+  const denom = sum + A / (Q * Q) - 2
+  if (denom <= 0) return 1.0      // fallback for degenerate cases (e.g. 0 dB gain)
+  return sum / denom
 }
 
 export class DSPToolkitFilterBackend extends FilterBackend {
@@ -229,8 +247,21 @@ export class DSPToolkitFilterBackend extends FilterBackend {
         // Store the original metadata key for hardware communication
         bankInfo.metadataKey = key
         bankInfo.filterBankType = 'crossover-designer'
+
+        // Look for per-channel feature registers (delay, levels, invert, channelSelect)
+        const delayKey = `delay${letter}Register`
+        const levelsKey = `levels${letter}Register`
+        const invertKey = `invert${letter}Register`
+        const channelSelectKey = `channelSelect${letter}Register`
+
+        if (this.metadata![delayKey]) bankInfo.delayAddress = parseInt(String(this.metadata![delayKey]), 10)
+        if (this.metadata![levelsKey]) bankInfo.levelAddress = parseInt(String(this.metadata![levelsKey]), 10)
+        if (this.metadata![invertKey]) bankInfo.invertAddress = parseInt(String(this.metadata![invertKey]), 10)
+        if (this.metadata![channelSelectKey]) bankInfo.channelSelectAddress = parseInt(String(this.metadata![channelSelectKey]), 10)
+
         this.filterBanks[key.toLowerCase()] = bankInfo
-        console.log(`Parsed IIR filter bank: ${key} = ${value} -> ${bankInfo.maxFilters} filters at address ${bankInfo.baseAddress}`)
+        console.log(`Parsed IIR filter bank: ${key} = ${value} -> ${bankInfo.maxFilters} filters at address ${bankInfo.baseAddress}`,
+          { delay: bankInfo.delayAddress, level: bankInfo.levelAddress, invert: bankInfo.invertAddress, channelSelect: bankInfo.channelSelectAddress })
       }
     }
   }
@@ -482,14 +513,23 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       maxFilters: bank.maxFilters,
       currentFilterCount: bank.filters.length,
       filterBankType: bank.filterBankType || '',
-      bankAddress: bank.metadataKey || this.getMetadataKeyForBank(bankKey)
+      bankAddress: bank.metadataKey || this.getMetadataKeyForBank(bankKey) || undefined,
+      delayAddress: bank.delayAddress,
+      levelAddress: bank.levelAddress,
+      invertAddress: bank.invertAddress,
+      channelSelectAddress: bank.channelSelectAddress,
     }))
+
+    // Extract sample rate from metadata
+    const sampleRate = this.metadata?._system?.sampleRate
+      ?? (this.metadata?.sampleRate ? parseInt(String(this.metadata.sampleRate), 10) : undefined)
 
     return {
       availableFilterBanks,
       backendName: this.name,
       backendDescription: this.description,
-      backendShortDescription: this.shortDescription
+      backendShortDescription: this.shortDescription,
+      sampleRate: sampleRate || undefined,
     }
   }
 
@@ -803,7 +843,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
           type: 'HighShelf',
           f: filter.frequency,
           db: filter.gain || 0,
-          slope: 1.0,
+          slope: qToShelfSlope(filter.q || 0.707, filter.gain || 0),
           gain: filter.gain || 0
         }
       case 'shelf-low':
@@ -811,7 +851,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
           type: 'LowShelf',
           f: filter.frequency,
           db: filter.gain || 0,
-          slope: 1.0,
+          slope: qToShelfSlope(filter.q || 0.707, filter.gain || 0),
           gain: filter.gain || 0
         }
       case 'bandpass':

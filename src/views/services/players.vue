@@ -88,6 +88,8 @@ interface Player {
   exists?: boolean
   isExternal?: boolean
   iconUrl?: string
+  maintainerName?: string
+  maintainerUrl?: string
 }
 
 const players = ref<Player[]>([
@@ -191,7 +193,9 @@ const loadServiceStatus = async () => {
           allow_change: ext.allow_change,
           exists: true,
           isExternal: true,
-          iconUrl: ext.icon_url
+          iconUrl: ext.icon_url,
+          maintainerName: ext.maintainer_name || undefined,
+          maintainerUrl: ext.maintainer_url || undefined
         })
         knownServices.add(ext.systemd_service)
       }

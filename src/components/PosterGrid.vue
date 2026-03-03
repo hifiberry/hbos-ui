@@ -9,6 +9,7 @@
           :key="item.$id"
           :data-id="item.$id"
           class="poster-item"
+          @contextmenu.prevent="emit('contextmenu', item, $event)"
         >
           <Poster
             :posterForm="posterForm"
@@ -68,7 +69,10 @@ const {
   showAll = false,
 } = defineProps<PosterGridProps<T>>()
 
-const emit = defineEmits(['click'])
+const emit = defineEmits<{
+  click: [item: T]
+  contextmenu: [item: T, event: MouseEvent]
+}>()
 
 // Library store for checking update status
 const libraryStore = useLibraryStore()

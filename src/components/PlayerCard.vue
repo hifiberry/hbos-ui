@@ -18,6 +18,10 @@
             <div v-if="player.error" class="player-error">
               <span class="error-message">{{ player.error }}</span>
             </div>
+            <div v-if="player.maintainerName" class="player-maintainer">
+              <a v-if="player.maintainerUrl" :href="player.maintainerUrl" target="_blank" rel="noopener noreferrer" class="maintainer-link">{{ player.maintainerName }}</a>
+              <span v-else class="maintainer-name">{{ player.maintainerName }}</span>
+            </div>
           </div>
         </div>
         <div class="player-actions">
@@ -141,6 +145,8 @@ interface Player {
   exists?: boolean
   isExternal?: boolean
   iconUrl?: string
+  maintainerName?: string
+  maintainerUrl?: string
 }
 
 const props = defineProps<{
@@ -222,6 +228,21 @@ const getStatusText = (player: Player) => {
           font-weight: 600;
           background-color: rgba(239, 68, 68, 0.1);
           color: #dc2626;
+        }
+      }
+
+      .player-maintainer {
+        margin-top: 4px;
+        font-size: 0.75em;
+        color: var(--color-body-secondary);
+
+        .maintainer-link {
+          color: var(--primary);
+          text-decoration: none;
+
+          &:hover {
+            text-decoration: underline;
+          }
         }
       }
     }

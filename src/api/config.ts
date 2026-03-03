@@ -540,6 +540,8 @@ export interface ExternalPlayer {
   systemd_service: string
   icon_url: string
   allow_change: boolean
+  maintainer_name: string
+  maintainer_url: string
 }
 
 /**

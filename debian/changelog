@@ -1,3 +1,9 @@
+hifiberry-webui (0.19.6) stable; urgency=medium
+
+  * Setup wizard: after "Reboot Now", show a rebooting screen and auto-redirect to the main page once the system is back online
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 08 May 2026 14:00:00 +0200
+
 hifiberry-webui (0.19.5) stable; urgency=medium
 
   * Setup wizard: fix duplicate AirPlay entry by aligning systemd service name with player descriptor (shairport)

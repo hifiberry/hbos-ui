@@ -187,8 +187,18 @@
         />
       </div>
 
+      <!-- Rebooting overlay (replaces step 4 content while reboot is in progress) -->
+      <div v-if="rebooting" class="setup-step reboot-progress">
+        <h1>Rebooting</h1>
+        <p class="setup-subtitle">{{ rebootStatus }}</p>
+        <div class="reboot-spinner" aria-hidden="true"></div>
+        <p class="form-hint" style="text-align: center; margin-top: 16px;">
+          This usually takes about a minute. The page will reload automatically when the system is back.
+        </p>
+      </div>
+
       <!-- Step 4: Summary & Reboot -->
-      <div v-if="currentStep === 4" class="setup-step">
+      <div v-else-if="currentStep === 4" class="setup-step">
         <h1>Setup Complete</h1>
 
         <div class="summary">
@@ -217,7 +227,7 @@
       </div>
 
       <!-- Navigation -->
-      <div class="setup-nav">
+      <div v-if="!rebooting" class="setup-nav">
         <button
           v-if="currentStep > 1"
           class="btn btn-secondary"
@@ -291,6 +301,8 @@ const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 const currentStep = ref(1)
 const totalSteps = 4
 const saving = ref(false)
+const rebooting = ref(false)
+const rebootStatus = ref('')
 
 // Step 1: System Name
 const systemName = ref('')
@@ -562,9 +574,56 @@ async function finishSetup() {
   router.push({ name: 'now-playing' })
 }
 
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms))
+}
+
+async function pingServer(timeoutMs: number): Promise<boolean> {
+  // Treat any HTTP response (including 5xx) as "server reachable" — we only care
+  // about the TCP/HTTP layer being up, not the API being healthy.
+  try {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), timeoutMs)
+    await fetch(`${import.meta.env.BASE_URL}index.html?t=${Date.now()}`, {
+      method: 'HEAD',
+      cache: 'no-store',
+      signal: ctrl.signal,
+    })
+    clearTimeout(t)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function waitForReboot() {
+  // Phase 1: wait until the server stops responding (so we don't redirect before reboot starts).
+  // The reboot has a 2s delay; allow up to 30s for it to actually go down.
+  rebootStatus.value = 'Sending reboot command…'
+  const downBy = Date.now() + 30000
+  while (Date.now() < downBy) {
+    if (!(await pingServer(2000))) break
+    await sleep(1500)
+  }
+
+  // Phase 2: wait until the server comes back. No upper bound — reboot times vary.
+  rebootStatus.value = 'Waiting for the system to come back online…'
+  while (!(await pingServer(2000))) {
+    await sleep(2000)
+  }
+
+  // Give nginx + APIs a moment to fully settle.
+  rebootStatus.value = 'Almost there…'
+  await sleep(2000)
+}
+
 async function finishAndReboot() {
   await applySettings()
   await rebootSystem({ delay: 2 })
+  rebooting.value = true
+  await waitForReboot()
+  // Hard reload so the SPA re-evaluates setup_completed via the router and lands on the default page.
+  window.location.href = import.meta.env.BASE_URL || '/'
 }
 </script>
 
@@ -696,6 +755,24 @@ async function finishAndReboot() {
 
 .soundcard-search {
   margin-bottom: 12px;
+}
+
+.reboot-progress {
+  text-align: center;
+}
+
+.reboot-spinner {
+  width: 44px;
+  height: 44px;
+  margin: 24px auto 0;
+  border-radius: 50%;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--primary);
+  animation: reboot-spin 0.9s linear infinite;
+}
+
+@keyframes reboot-spin {
+  to { transform: rotate(360deg); }
 }
 
 .soundcard-list {

@@ -196,11 +196,11 @@
                 <td class="label">Name</td>
                 <td class="value">
                   <div class="soundcard-display">
-                    <span v-if="!systemInfo.soundcard.fixedInConfigTxt">{{ getSoundCardDisplayName(systemInfo.soundcard) }}</span>
-                    <span v-else>
+                    <template v-if="getSoundCardPinLabel(systemInfo.soundcard)">
                       {{ transformSoundCardName(systemInfo.soundcard.name) }}
-                      (<router-link to="/services/system-tools" class="config-link">config.txt</router-link>)
-                    </span>
+                      (<router-link to="/services/system-tools" class="config-link">{{ getSoundCardPinLabel(systemInfo.soundcard) }}</router-link>)
+                    </template>
+                    <span v-else>{{ transformSoundCardName(systemInfo.soundcard.name) }}</span>
                   </div>
                 </td>
               </tr>
@@ -875,17 +875,18 @@ const transformSoundCardName = (name: string): string => {
   return transformations[name] || name
 }
 
-// Get sound card display name with config.txt suffix if manually configured
-const getSoundCardDisplayName = (soundcard: any): string => {
-  const baseName = transformSoundCardName(soundcard.name)
-
-  // Show (config.txt) suffix if card is fixed in config.txt and working
-  // This indicates the card is loaded from config.txt
-  if (soundcard.fixedInConfigTxt === true) {
-    return `${baseName} (config.txt)`
-  }
-
-  return baseName
+// Resolve a human label for the active sound card pin source. Returns
+// "ConfigDB" / "config.txt" / "" — the empty string means "no pin in
+// effect, the card is auto-detected".
+//
+// Prefer the newer pinSource field; fall back to the legacy
+// fixedInConfigTxt boolean for older configurators that don't expose it.
+const getSoundCardPinLabel = (soundcard: any): string => {
+  const pinSource: string | undefined = soundcard?.pinSource
+  if (pinSource === 'configdb') return 'ConfigDB'
+  if (pinSource === 'config.txt') return 'config.txt'
+  if (soundcard?.fixedInConfigTxt === true) return 'config.txt'
+  return ''
 }
 
 // Format bytes for display

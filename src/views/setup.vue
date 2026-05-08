@@ -35,60 +35,85 @@
         </div>
 
         <div v-else class="soundcard-selection">
-          <!-- Autodetect option -->
-          <label class="soundcard-option" :class="{ selected: selectedCard === '__autodetect__' }">
-            <input
-              type="radio"
-              v-model="selectedCard"
-              value="__autodetect__"
-              name="soundcard"
-            />
-            <div class="soundcard-info">
-              <span class="soundcard-name">Autodetect</span>
-              <span class="soundcard-desc">
-                Automatically detect the connected sound card on each boot
-                <template v-if="detectedCardName">
-                  — currently detected: <strong>{{ detectedCardName }}</strong>
-                </template>
-              </span>
-            </div>
-          </label>
-
-          <div class="soundcard-divider"></div>
-
-          <!-- Category tabs -->
-          <div class="category-tabs">
-            <button
-              v-for="cat in categories"
-              :key="cat.key"
-              class="category-tab"
-              :class="{ active: selectedCategory === cat.key }"
-              @click="selectedCategory = cat.key"
-            >
-              {{ cat.label }}
-              <span class="category-count">{{ cat.count }}</span>
-            </button>
+          <!-- Detection confirmation panel: shown when autodetect succeeded and user hasn't switched to manual browse -->
+          <div v-if="!showManualBrowse" class="detected-panel">
+            <div class="detected-label">Detected sound card</div>
+            <div class="detected-name">{{ detectedCard?.name }}</div>
+            <p class="detected-help">
+              Autodetection will run on every boot. Click <strong>Next</strong> to keep this, or
+              <a href="#" class="link" @click.prevent="chooseManually">choose manually</a>
+              if it's not correct.
+            </p>
           </div>
 
-          <!-- Cards for selected category -->
-          <div class="soundcard-list">
-            <label
-              v-for="card in filteredCards"
-              :key="card.name"
-              class="soundcard-option"
-              :class="{ selected: selectedCard === card.name }"
-            >
+          <!-- Manual browse: search + category tabs + card list. Always includes autodetect option at top so it remains reversible. -->
+          <template v-if="showManualBrowse">
+            <label class="soundcard-option" :class="{ selected: selectedCard === '__autodetect__' }">
               <input
                 type="radio"
                 v-model="selectedCard"
-                :value="card.name"
+                value="__autodetect__"
                 name="soundcard"
               />
               <div class="soundcard-info">
-                <span class="soundcard-name">{{ card.name }}</span>
+                <span class="soundcard-name">Autodetect</span>
+                <span class="soundcard-desc">
+                  Automatically detect the connected sound card on each boot
+                  <template v-if="detectedCardName">
+                    — currently detected: <strong>{{ detectedCardName }}</strong>
+                  </template>
+                </span>
               </div>
             </label>
-          </div>
+
+            <div class="soundcard-divider"></div>
+
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search cards (e.g. Beocreate, Amp4, DAC2)"
+              class="form-input soundcard-search"
+            />
+
+            <!-- Hide category tabs while searching: search spans all categories -->
+            <div v-if="!searchQuery.trim()" class="category-tabs">
+              <button
+                v-for="cat in categories"
+                :key="cat.key"
+                class="category-tab"
+                :class="{ active: selectedCategory === cat.key }"
+                @click="selectedCategory = cat.key"
+              >
+                {{ cat.label }}
+                <span class="category-count">{{ cat.count }}</span>
+              </button>
+            </div>
+
+            <div class="soundcard-list">
+              <label
+                v-for="card in filteredCards"
+                :key="card.name"
+                class="soundcard-option"
+                :class="{ selected: selectedCard === card.name }"
+              >
+                <input
+                  type="radio"
+                  v-model="selectedCard"
+                  :value="card.name"
+                  name="soundcard"
+                />
+                <div class="soundcard-info">
+                  <span class="soundcard-name">
+                    {{ card.name }}
+                    <span v-if="card.name === detectedCardName" class="soundcard-badge">detected</span>
+                  </span>
+                </div>
+              </label>
+              <p v-if="filteredCards.length === 0" class="form-hint" style="padding: 12px;">
+                No cards match "{{ searchQuery }}".
+              </p>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -278,6 +303,8 @@ const selectedCard = ref('__autodetect__')
 const detectedCardName = ref('')
 const originalCardName = ref('')
 const selectedCategory = ref('DAC')
+const searchQuery = ref('')
+const manualBrowse = ref(false)
 
 // Step 3: Music Sources
 const useLocalMusic = ref(false)
@@ -307,7 +334,7 @@ interface StreamingService {
 
 const streamingServices = ref<StreamingService[]>([
   { id: 'spotify', name: 'Spotify Connect', systemdService: 'librespot', enabled: false, exists: true },
-  { id: 'airplay', name: 'AirPlay', systemdService: 'shairport-sync', enabled: false, exists: true },
+  { id: 'airplay', name: 'AirPlay', systemdService: 'shairport', enabled: false, exists: true },
   { id: 'roon', name: 'Roon', systemdService: 'raat', enabled: false, exists: true },
   { id: 'squeezebox', name: 'Squeezebox / LMS', systemdService: 'squeezelite', enabled: false, exists: true },
   { id: 'bluetooth', name: 'Bluetooth', systemdService: 'hifiberry-bluetooth', enabled: false, exists: true },
@@ -341,12 +368,38 @@ const categories = computed(() => {
   })).filter(c => c.count > 0)
 })
 
-const filteredCards = computed(() => {
-  const types = CATEGORY_MAP[selectedCategory.value]?.types || []
-  return availableCards.value.filter(
-    c => c.card_type.some(t => types.includes(t)) && !c.card_type.includes('Null')
-  )
+const detectedCard = computed(() => {
+  if (!detectedCardName.value) return null
+  return availableCards.value.find(c => c.name === detectedCardName.value) || null
 })
+
+const showManualBrowse = computed(() => {
+  if (loadingSoundCards.value) return false
+  return manualBrowse.value || !detectedCard.value
+})
+
+const filteredCards = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  const cards = availableCards.value.filter(c => !c.card_type.includes('Null'))
+  if (query) {
+    return cards.filter(c => c.name.toLowerCase().includes(query))
+  }
+  const types = CATEGORY_MAP[selectedCategory.value]?.types || []
+  return cards.filter(c => c.card_type.some(t => types.includes(t)))
+})
+
+function chooseManually() {
+  manualBrowse.value = true
+  // If autodetect found a card, pre-select its category for convenience
+  if (detectedCard.value) {
+    for (const [key, { types }] of Object.entries(CATEGORY_MAP)) {
+      if (detectedCard.value.card_type.some(t => types.includes(t))) {
+        selectedCategory.value = key
+        break
+      }
+    }
+  }
+}
 
 const canProceed = computed(() => {
   if (currentStep.value === 1) return systemName.value.trim().length > 0
@@ -603,6 +656,46 @@ async function finishAndReboot() {
 .soundcard-selection {
   margin: 0 -8px;
   padding: 0 8px;
+}
+
+.detected-panel {
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  padding: 18px 20px;
+  background: rgba(var(--primary-rgb, 99, 102, 241), 0.05);
+}
+
+.detected-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.detected-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-head);
+  margin-bottom: 10px;
+}
+
+.detected-help {
+  color: var(--color-body-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.link {
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.soundcard-search {
+  margin-bottom: 12px;
 }
 
 .soundcard-list {

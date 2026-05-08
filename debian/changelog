@@ -1,3 +1,12 @@
+hifiberry-webui (0.19.5) stable; urgency=medium
+
+  * Setup wizard: fix duplicate AirPlay entry by aligning systemd service name with player descriptor (shairport)
+  * Setup wizard: autodetect confirmation panel — primary CTA when a card is detected, with "choose manually" escape hatch
+  * Setup wizard: search box on card list filters across all categories (DAC/Digital/Amplifier)
+  * Setup wizard: highlight autodetected card with a "detected" badge in the manual list
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 08 May 2026 13:00:00 +0200
+
 hifiberry-webui (0.19.4) stable; urgency=medium
 
   * Fix stored filter loading: pack densely by offset instead of sparse array assignment

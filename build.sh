@@ -62,14 +62,22 @@ if [ "$VERSION" != "$PKG_VERSION" ]; then
     exit 1
 fi
 
-# Step 1: Build the Vue.js application using Docker
-echo "Building Vue.js application with Docker..."
-# Ensure dist directory exists and has correct permissions
+# Step 1: Build the Vue.js application
 mkdir -p dist
-docker build -f debian/Dockerfile -t hifiberry-webui-builder .
-# Run Docker as current user to avoid root-owned files
-docker run --rm --user "$(id -u):$(id -g)" -v "$(pwd)/dist:/output" hifiberry-webui-builder sh -c "cp -r /app/dist/* /output/"
-# Verify the build was successful
+if [ -f "dist/index.html" ] && [ -z "${FORCE_VUE_BUILD:-}" ]; then
+    echo "Using existing dist/ (set FORCE_VUE_BUILD=1 to rebuild)"
+elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    echo "Building Vue.js application with Docker..."
+    docker build -f debian/Dockerfile -t hifiberry-webui-builder .
+    docker run --rm --user "$(id -u):$(id -g)" -v "$(pwd)/dist:/output" hifiberry-webui-builder sh -c "cp -r /app/dist/* /output/"
+elif command -v npm >/dev/null 2>&1; then
+    echo "Building Vue.js application with local npm..."
+    npm ci --no-audit --no-fund
+    npx vite build --config vite.config.ts
+else
+    echo "Error: no Vue build method available (need Docker or npm, or pre-built dist/)" >&2
+    exit 1
+fi
 if [ ! -f "dist/index.html" ]; then
     echo "Error: Vue.js build failed - index.html not found in dist/" >&2
     exit 1

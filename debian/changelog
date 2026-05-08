@@ -1,3 +1,9 @@
+hifiberry-webui (0.19.7) stable; urgency=medium
+
+  * Setup wizard: enable+start create-uuid.service when finishing setup so /etc/uuid exists. Required by raat (Roon) which has ConditionPathExists=/etc/uuid
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 08 May 2026 15:00:00 +0200
+
 hifiberry-webui (0.19.6) stable; urgency=medium
 
   * Setup wizard: after "Reboot Now", show a rebooting screen and auto-redirect to the main page once the system is back online

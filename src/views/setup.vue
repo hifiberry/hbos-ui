@@ -545,6 +545,16 @@ async function applySettings() {
       await disableSoundCardDetection(selectedCard.value)
     }
 
+    // Ensure /etc/uuid exists. The unit is a oneshot guarded by
+    // ConditionPathExists=!/etc/uuid, so this is a no-op when the file
+    // is already present. Required by raat (Roon) which has its own
+    // ConditionPathExists=/etc/uuid and won't start without it.
+    try {
+      await enableNowService('create-uuid')
+    } catch (e) {
+      console.error('Failed to enable create-uuid service:', e)
+    }
+
     // Enable/disable streaming services
     if (useStreaming.value) {
       for (const svc of streamingServices.value) {

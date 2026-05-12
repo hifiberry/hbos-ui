@@ -1,3 +1,16 @@
+hifiberry-webui (0.19.10) stable; urgency=medium
+
+  * Setup wizard: when the user accepts the autodetected card, pin it
+    the same way a manual selection does (writes both the dtoverlay
+    and the `# HiFiBerry card:` comment via
+    /api/v1/soundcard/detection/disable). Previously this path only
+    cleared the pin, which left config.txt without a HiFiBerry
+    dtoverlay — on Beocreate-class hardware the kernel then didn't
+    load the audio driver at next boot and config-detect couldn't
+    recover.
+
+ -- HiFiBerry <info@hifiberry.com>  Tue, 12 May 2026 14:00:00 +0000
+
 hifiberry-webui (0.19.9) stable; urgency=medium
 
   * Setup wizard: read the detected sound card from the new

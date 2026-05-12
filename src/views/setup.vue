@@ -538,9 +538,24 @@ async function applySettings() {
       await updateHostname({ pretty_hostname: systemName.value.trim() })
     }
 
-    // Set sound card
+    // Set sound card. Either path pins the card (writes both the
+    // dtoverlay and the `# HiFiBerry card:` comment in config.txt), so
+    // the kernel loads the right audio driver at next boot. We treat
+    // "accept the autodetected card" the same as a manual selection —
+    // the user has confirmed the result, so we lock it in. If the user
+    // really wants every-boot autodetection later they can disable the
+    // pin from system tools.
     if (selectedCard.value === '__autodetect__') {
-      await setSoundCardDetection(true)
+      // detectedCardName.value comes from /api/v1/soundcard/detect-live
+      // (with DSP-checksum refinement applied), so it's the same name
+      // the user just saw and accepted.
+      if (detectedCardName.value) {
+        await disableSoundCardDetection(detectedCardName.value)
+      } else {
+        // No card was detected and the user clicked Next anyway —
+        // fall back to old behaviour (clear pin, hope next boot works).
+        await setSoundCardDetection(true)
+      }
     } else {
       await disableSoundCardDetection(selectedCard.value)
     }

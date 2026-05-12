@@ -279,7 +279,7 @@ import {
   getSystemInfo,
   updateHostname,
   getSoundCards,
-  detectSoundCard,
+  detectSoundCardLive,
   disableSoundCardDetection,
   setSoundCardDetection,
   completeSetup,
@@ -444,7 +444,7 @@ async function loadSoundCards() {
   try {
     const [cardsRes, detectRes] = await Promise.all([
       getSoundCards(),
-      detectSoundCard(),
+      detectSoundCardLive(),
     ])
     availableCards.value = cardsRes.data.soundcards.filter(
       c => !c.card_type.includes('Null')

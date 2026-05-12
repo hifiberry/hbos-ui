@@ -307,6 +307,32 @@ export const detectSoundCard = async (): Promise<SoundCardDetectionResponse> => 
 }
 
 /**
+ * Run a fresh hardware detection pass, ignoring any pin stored in
+ * ConfigDB or the config.txt `# HiFiBerry card:` comment. DSP-checksum
+ * refinement is still applied. Used by the setup wizard so it shows
+ * what's actually plugged in, not a stale pin from a previous run.
+ */
+export const detectSoundCardLive = async (): Promise<SoundCardDetectionResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await fetch(`${baseUrl}/soundcard/detect-live`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
+/**
  * Enable or disable automatic sound card detection
  */
 export const setSoundCardDetection = async (enabled: boolean): Promise<{ status: string; message: string }> => {

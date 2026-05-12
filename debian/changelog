@@ -1,3 +1,15 @@
+hifiberry-webui (0.19.9) stable; urgency=medium
+
+  * Setup wizard: read the detected sound card from the new
+    /api/v1/soundcard/detect-live endpoint, which ignores any pin
+    stored from a previous wizard run (ConfigDB / config.txt comment)
+    and runs a fresh hardware detection pass with DSP-checksum
+    refinement applied. Fixes the case where the wizard kept showing
+    the previously-pinned card name even after the actual hardware
+    changed.
+
+ -- HiFiBerry <info@hifiberry.com>  Tue, 12 May 2026 13:00:00 +0000
+
 hifiberry-webui (0.19.8) stable; urgency=medium
 
   * System info: label sound-card pin source as "ConfigDB" or "config.txt" based on the new pinSource field, instead of always saying "config.txt"

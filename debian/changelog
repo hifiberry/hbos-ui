@@ -1,3 +1,12 @@
+hifiberry-webui (0.19.11) stable; urgency=medium
+
+  * Setup wizard: Step 4 "Setup Complete" summary now shows the
+    actual detected card name when the user accepted autodetect.
+    Previously it just said "Autodetect" which was misleading since
+    0.19.10 pins the detected card on confirm.
+
+ -- HiFiBerry <info@hifiberry.com>  Tue, 12 May 2026 15:00:00 +0000
+
 hifiberry-webui (0.19.10) stable; urgency=medium
 
   * Setup wizard: when the user accepts the autodetected card, pin it

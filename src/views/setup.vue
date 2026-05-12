@@ -209,7 +209,11 @@
           <div class="summary-row">
             <span class="summary-label">Sound Card</span>
             <span class="summary-value">
-              {{ selectedCard === '__autodetect__' ? 'Autodetect' : selectedCard }}
+              {{
+                selectedCard === '__autodetect__'
+                  ? (detectedCardName || 'Autodetect')
+                  : selectedCard
+              }}
             </span>
           </div>
           <div class="summary-row">

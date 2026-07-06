@@ -1,3 +1,12 @@
+hifiberry-webui (0.19.12) stable; urgency=medium
+
+  * players: render and persist generic plugin settings for external
+    ("3rd Party") players — PlayerCard shows a plugin's declared settings
+    (toggle/select) and saves them via the config API. First consumer is the
+    analog-recognition "Recognize tracks" toggle.
+
+ -- HiFiBerry <info@hifiberry.com>  Mon, 06 Jul 2026 12:00:00 +0000
+
 hifiberry-webui (0.19.11) stable; urgency=medium
 
   * Setup wizard: Step 4 "Setup Complete" summary now shows the

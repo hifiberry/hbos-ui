@@ -121,6 +121,36 @@
           </div>
         </div>
       </div>
+
+      <!-- Generic external-plugin settings -->
+      <div v-if="player.isExternal && (player.settings?.length ?? 0) > 0" class="config-section">
+        <div v-if="isExpanded" class="config-content">
+          <div class="config-form">
+            <label v-for="setting in player.settings" :key="setting.key" class="config-option">
+              {{ setting.label }}
+              <ToggleSwitch
+                v-if="setting.type === 'toggle'"
+                :model-value="setting.value === true"
+                @update:model-value="(v) => $emit('update-external-setting', setting.key, v)"
+              />
+              <select
+                v-else-if="setting.type === 'select'"
+                :value="setting.value"
+                @change="$emit('update-external-setting', setting.key, ($event.target as HTMLSelectElement).value)"
+                class="version-select"
+              >
+                <option v-for="opt in setting.options" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+            </label>
+          </div>
+          <div class="config-actions">
+            <button class="config-btn config-btn--cancel" @click="$emit('cancel-config')" type="button">Cancel</button>
+            <button class="config-btn config-btn--save" @click="$emit('save-config')" type="button">Save</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -147,6 +177,7 @@ interface Player {
   iconUrl?: string
   maintainerName?: string
   maintainerUrl?: string
+  settings?: { key: string; type: 'toggle' | 'select'; label: string; description?: string; default: boolean | string; value: boolean | string; options?: { value: string; label: string }[] }[]
 }
 
 const props = defineProps<{
@@ -160,11 +191,15 @@ defineEmits<{
   'navigate-bluetooth': []
   'update-airplay-version': [version: number]
   'update-toslink-sensitivity': [sensitivity: string]
+  'update-external-setting': [key: string, value: boolean | string]
   'cancel-config': []
   'save-config': []
 }>()
 
 const hasConfig = computed(() => {
+  if (props.player.isExternal) {
+    return (props.player.settings?.length ?? 0) > 0
+  }
   return (props.player.name === 'Airplay' || props.player.name === 'TOSLink') &&
          typeof props.player.config === 'object'
 })

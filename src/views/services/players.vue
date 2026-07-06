@@ -17,6 +17,7 @@
           @update-toslink-sensitivity="(sensitivity) => updateTOSLinkSensitivity(player.name, sensitivity)"
           @cancel-config="cancelConfig(player.name)"
           @save-config="saveConfig(player.name)"
+          @update-external-setting="(key, value) => updateExternalSetting(player.name, key, value)"
         />
       </div>
       <template v-if="externalVisiblePlayers.length > 0">
@@ -37,6 +38,7 @@
             @update-toslink-sensitivity="(sensitivity) => updateTOSLinkSensitivity(player.name, sensitivity)"
             @cancel-config="cancelConfig(player.name)"
             @save-config="saveConfig(player.name)"
+            @update-external-setting="(key, value) => updateExternalSetting(player.name, key, value)"
           />
         </div>
       </template>
@@ -65,7 +67,8 @@ import {
   enableNowService,
   disableNowService,
   checkSystemdServiceExists,
-  getExternalPlayers
+  getExternalPlayers,
+  saveExternalPlayerSettings
 } from '@/api/config'
 import {
   getTOSLinkStatus,
@@ -90,6 +93,7 @@ interface Player {
   iconUrl?: string
   maintainerName?: string
   maintainerUrl?: string
+  settings?: import('@/api/config').PlayerSetting[]
 }
 
 const players = ref<Player[]>([
@@ -195,7 +199,8 @@ const loadServiceStatus = async () => {
           isExternal: true,
           iconUrl: ext.icon_url,
           maintainerName: ext.maintainer_name || undefined,
-          maintainerUrl: ext.maintainer_url || undefined
+          maintainerUrl: ext.maintainer_url || undefined,
+          settings: ext.settings
         })
         knownServices.add(ext.systemd_service)
       }
@@ -462,6 +467,13 @@ const updateAirplayVersion = (playerName: string, version: number) => {
   }
 }
 
+const updateExternalSetting = (playerName: string, key: string, value: boolean | string) => {
+  const player = players.value[findPlayerIndex(playerName)]
+  if (!player?.settings) return
+  const setting = player.settings.find(s => s.key === key)
+  if (setting) setting.value = value
+}
+
 const updateTOSLinkSensitivity = (playerName: string, sensitivity: string) => {
   const playerIndex = findPlayerIndex(playerName)
   if (playerIndex === -1) return
@@ -505,9 +517,21 @@ const saveConfig = async (playerName: string) => {
   const playerIndex = findPlayerIndex(playerName)
   if (playerIndex === -1) return
 
+  const player = players.value[playerIndex]
+  if (player?.isExternal && player.settings?.length) {
+    const values: Record<string, boolean | string> = {}
+    for (const s of player.settings) values[s.key] = s.value
+    try {
+      await saveExternalPlayerSettings(player.systemdService, values)
+    } catch (e) {
+      player.error = e instanceof Error ? e.message : 'Failed to save settings'
+    }
+    toggleConfigExpanded(playerName)
+    return
+  }
+
   // Save the configuration and close the section
   expandedConfigs.value.delete(playerIndex)
-  const player = players.value[playerIndex]
   console.log(`Configuration saved for ${player.name}`)
 
   try {

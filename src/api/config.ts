@@ -534,6 +534,16 @@ export const scanI2CDevices = async (busNumber?: number): Promise<ConfigApiRespo
 
 // External player registry
 
+export interface PlayerSetting {
+  key: string
+  type: 'toggle' | 'select'
+  label: string
+  description?: string
+  default: boolean | string
+  value: boolean | string
+  options?: { value: string; label: string }[]
+}
+
 export interface ExternalPlayer {
   name: string
   provided_by: string
@@ -542,6 +552,7 @@ export interface ExternalPlayer {
   allow_change: boolean
   maintainer_name: string
   maintainer_url: string
+  settings?: PlayerSetting[]
 }
 
 /**
@@ -566,5 +577,24 @@ export const getExternalPlayers = async (): Promise<ExternalPlayer[]> => {
     return players
   } catch {
     return []
+  }
+}
+
+/**
+ * Persist settings for an external player plugin.
+ */
+export const saveExternalPlayerSettings = async (
+  systemdService: string,
+  values: Record<string, boolean | string>,
+): Promise<void> => {
+  const configStore = useAppConfigStore()
+  const baseUrl = configStore.getConfigApiBaseUrl()
+  const response = await fetch(`${baseUrl}/players/${systemdService}/settings`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(values),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to save player settings: ${response.status}`)
   }
 }

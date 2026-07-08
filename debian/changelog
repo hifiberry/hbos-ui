@@ -1,3 +1,10 @@
+hifiberry-webui (0.19.13) stable; urgency=medium
+
+  * Track Metadata tooltip: show the audio stream format (codec, sample rate,
+    bit depth, channels) from the audiocontrol now-playing stream_details.
+
+ -- HiFiBerry <info@hifiberry.com>  Wed, 08 Jul 2026 17:30:00 +0000
+
 hifiberry-webui (0.19.12) stable; urgency=medium
 
   * players: render and persist generic plugin settings for external

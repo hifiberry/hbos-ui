@@ -28,6 +28,24 @@
         <span class="metadata-label">Duration:</span>
         <span class="metadata-value">{{ formatTime(song.duration) }}</span>
       </div>
+
+      <!-- Audio stream format -->
+      <div v-if="currentStreamDetails?.codec" class="metadata-item">
+        <span class="metadata-label">Codec:</span>
+        <span class="metadata-value">{{ currentStreamDetails.codec }}</span>
+      </div>
+      <div v-if="sampleRateText" class="metadata-item">
+        <span class="metadata-label">Sample Rate:</span>
+        <span class="metadata-value">{{ sampleRateText }}</span>
+      </div>
+      <div v-if="currentStreamDetails?.bits_per_sample" class="metadata-item">
+        <span class="metadata-label">Bit Depth:</span>
+        <span class="metadata-value">{{ currentStreamDetails.bits_per_sample }}-bit</span>
+      </div>
+      <div v-if="currentStreamDetails?.channels" class="metadata-item">
+        <span class="metadata-label">Channels:</span>
+        <span class="metadata-value">{{ currentStreamDetails.channels }}</span>
+      </div>
       <div v-if="song?.source" class="metadata-item">
         <span class="metadata-label">Source:</span>
         <span class="metadata-value capitalize">{{ song.source }}</span>
@@ -61,14 +79,25 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { Song } from '@/types/player'
 import { formatTime } from '@/helpers/formatTime'
+import { usePlayerStore } from '@/stores/player'
 
 interface Props {
   song: Song | null
 }
 
 const props = defineProps<Props>()
+
+const { currentStreamDetails } = storeToRefs(usePlayerStore())
+
+// Human-readable sample rate, e.g. "44.1 kHz"
+const sampleRateText = computed(() => {
+  const rate = currentStreamDetails.value?.sample_rate
+  if (!rate) return null
+  return rate >= 1000 ? `${(rate / 1000).toFixed(1)} kHz` : `${rate} Hz`
+})
 
 // Check if any meaningful metadata is available
 const hasAnyMetadata = computed(() => {
@@ -84,7 +113,9 @@ const hasAnyMetadata = computed(() => {
     props.song.source ||
     props.song.uri ||
     props.song.stream_url ||
-    props.song.metadata?.lyrics_available !== undefined
+    props.song.metadata?.lyrics_available !== undefined ||
+    currentStreamDetails.value?.codec ||
+    currentStreamDetails.value?.sample_rate
   )
 })
 </script>

@@ -41,6 +41,15 @@ export interface Song {
 export type LoopModeLowercase = 'no' | 'none' | 'song' | 'track' | 'playlist'
 export type LoopMode = LoopModeLowercase | Capitalize<LoopModeLowercase>
 
+export interface StreamDetails {
+  sample_rate?: number // Hz, e.g. 44100
+  bits_per_sample?: number // e.g. 16
+  channels?: number // e.g. 2
+  sample_type?: string // e.g. 'pcm', 'dsd'
+  lossless?: boolean
+  codec?: string // e.g. 'FLAC', 'Opus', 'PCM'
+}
+
 export interface CurrentPlayer {
   player?: Player
   song?: Song | null
@@ -49,6 +58,7 @@ export interface CurrentPlayer {
   loop_mode?: LoopMode
   position?: number | null // 9.561
   volume?: number // 0-100
+  stream_details?: StreamDetails | null
 }
 
 // Default player capabilities

@@ -66,6 +66,7 @@ export const usePlayerStore = defineStore('player', () => {
   // Getters
   const currentPlayerName = computed<string | null>(() => currentData.value?.player?.name || null)
   const currentSong = computed<Song | null>(() => currentData.value?.song || null)
+  const currentStreamDetails = computed(() => currentData.value?.stream_details || null)
 
   // Volume getters
   const currentVolume = computed<number>(() => {
@@ -495,6 +496,7 @@ export const usePlayerStore = defineStore('player', () => {
     // State
     updateIntervalID,
     currentData,
+    currentStreamDetails,
     isSendingCommand,
     loading,
     playerCapabilities,

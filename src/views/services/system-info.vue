@@ -1422,9 +1422,10 @@ const fetchInputs = async () => {
   try {
     const response = await getInputs()
     if (!response) {
-      // No route (audiocontrol < 0.8.0) or the request failed. Not an error
-      // worth alarming the user about -- say what is needed.
-      inputsError.value = 'Requires audiocontrol 0.8.1 or newer'
+      // getInputs() returns null for any failure: no route (audiocontrol
+      // older than 0.8.0), an HTTP error, or a network problem. We cannot tell
+      // which, so do not assert a cause.
+      inputsError.value = 'Input device status unavailable (requires audiocontrol 0.8.0 or newer)'
       inputsStatus.value = null
       return
     }

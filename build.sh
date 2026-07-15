@@ -69,6 +69,10 @@ if [ -f "dist/index.html" ] && [ -z "${FORCE_VUE_BUILD:-}" ]; then
 elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
     echo "Building Vue.js application with Docker..."
     docker build -f debian/Dockerfile -t hifiberry-webui-builder .
+    # vite's emptyOutDir runs against the container's own dist, so it never
+    # clears the host's dist/ here - clear the mounted directory's contents
+    # ourselves first (not the directory itself, since it's bind-mounted).
+    rm -rf dist/*
     docker run --rm --user "$(id -u):$(id -g)" -v "$(pwd)/dist:/output" hifiberry-webui-builder sh -c "cp -r /app/dist/* /output/"
 elif command -v npm >/dev/null 2>&1; then
     echo "Building Vue.js application with local npm..."
@@ -87,6 +91,10 @@ echo "Vue.js build completed successfully"
 
 # Step 2: Copy built files to debian directory so they're included in the source package
 echo "Preparing built files for sbuild..."
+# debian/webui-dist is gitignored and persists across builds, so it must be
+# cleared first - otherwise stale content-hashed chunks from previous builds
+# pile up here and end up shipped in the deb alongside the current ones.
+rm -rf debian/webui-dist
 mkdir -p debian/webui-dist
 cp -r dist/* debian/webui-dist/
 echo "Built files copied to debian/webui-dist/"

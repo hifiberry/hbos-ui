@@ -31,5 +31,15 @@ override_dh_install:
 
 override_dh_auto_clean:
 	# Clean up build artifacts
+	# NOTE: deliberately does NOT remove debian/webui-dist. dpkg-buildpackage
+	# packs the current tree (including debian/webui-dist, populated by
+	# build.sh) into the source package, then - inside the sbuild chroot -
+	# unpacks it and runs this clean target *before* override_dh_auto_build,
+	# on that same extracted copy. Nothing regenerates debian/webui-dist at
+	# that point, so removing it here made every build fail with "Vue.js
+	# build directory not found" (verified: see build log
+	# hifiberry-webui_0.19.14_arm64-2026-07-15T12:30:25Z.build). Staleness is
+	# instead prevented at the source, in build.sh, which now clears
+	# debian/webui-dist before repopulating it each run.
 	rm -rf node_modules dist
 	dh_auto_clean

@@ -5,6 +5,8 @@ hifiberry-webui (0.19.14) stable; urgency=medium
     reason (no mapped keys, filtered by device filter, or permission denied).
     Requires audiocontrol 0.8.0 or newer for the card; 0.8.1+ for unbound
     device reporting.
+  * build: fix build.sh so package builds no longer ship stale JS chunks
+    left over from previous builds in debian/webui-dist.
 
  -- HiFiBerry <info@hifiberry.com>  Wed, 15 Jul 2026 11:51:09 +0000
 

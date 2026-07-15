@@ -617,20 +617,29 @@
               <tr v-for="dev in inputsStatus.devices" :key="dev.path">
                 <td class="label">{{ dev.name }}</td>
                 <td class="value">
-                  <span class="status-badge green">matched</span>
-                  {{ dev.matched_keys.length }} keys &middot; {{ dev.path }}
+                  <div class="input-info">
+                    <div class="input-header">
+                      <span class="status-badge green">matched</span>
+                      <span class="input-keys">{{ dev.matched_keys.length }} keys</span>
+                    </div>
+                    <div class="input-path">{{ dev.path }}</div>
+                  </div>
                 </td>
               </tr>
               <tr v-for="dev in (inputsStatus.unbound_devices || [])" :key="dev.path">
                 <td class="label">{{ dev.name || dev.path }}</td>
                 <td class="value">
-                  <span :class="['status-badge', dev.reason === 'permission_denied' ? 'red' : 'orange']">
-                    {{ unboundReasonLabel(dev.reason) }}
-                  </span>
-                  <template v-if="dev.reason === 'permission_denied'">
-                    &mdash; add the audiocontrol user to the 'input' group, then restart audiocontrol
-                  </template>
-                  <template v-else>&middot; {{ dev.path }}</template>
+                  <div class="input-info">
+                    <div class="input-header">
+                      <span :class="['status-badge', dev.reason === 'permission_denied' ? 'red' : 'orange']">
+                        {{ unboundReasonLabel(dev.reason) }}
+                      </span>
+                    </div>
+                    <div class="input-path">{{ dev.path }}</div>
+                    <div v-if="dev.reason === 'permission_denied'" class="input-hint">
+                      add the audiocontrol user to the 'input' group, then restart audiocontrol
+                    </div>
+                  </div>
                 </td>
               </tr>
               <tr v-if="inputsStatus.unbound_devices === undefined">
@@ -2360,6 +2369,39 @@ onUnmounted(() => {
     .job-duration {
       color: var(--color-body-secondary);
     }
+  }
+}
+
+// Input device info styles
+.input-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .input-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+
+    .input-keys {
+      font-size: 0.75em;
+      color: var(--color-body-secondary);
+    }
+  }
+
+  .input-path {
+    color: var(--color-body);
+    font-size: 0.875em;
+    line-height: 1.3;
+  }
+
+  .input-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8em;
+    color: var(--color-body-secondary);
   }
 }
 

@@ -609,52 +609,53 @@
           <div v-else-if="inputsError" class="error-message">
             {{ inputsError }}
           </div>
+          <div v-else-if="inputsNotice" class="info-message">
+            {{ inputsNotice }}
+          </div>
           <table v-else-if="inputsStatus" class="info-table">
             <tbody>
-              <tr v-if="!inputsStatus.enabled">
-                <td class="label">Status</td>
-                <td class="value">Keyboard input disabled</td>
+              <tr v-for="dev in inputsStatus.devices" :key="dev.path">
+                <td class="label">{{ dev.name }}</td>
+                <td class="value">
+                  <span class="status-badge green">matched</span>
+                  {{ dev.matched_keys.length }} keys &middot; {{ dev.path }}
+                </td>
               </tr>
-              <template v-else>
-                <tr v-for="dev in inputsStatus.devices" :key="dev.path">
-                  <td class="label">{{ dev.name }}</td>
-                  <td class="value">
-                    <span class="status-badge green">matched</span>
-                    {{ dev.matched_keys.length }} keys &middot; {{ dev.path }}
-                  </td>
-                </tr>
-                <tr v-for="dev in (inputsStatus.unbound_devices || [])" :key="dev.path">
-                  <td class="label">{{ dev.name || dev.path }}</td>
-                  <td class="value">
-                    <span :class="['status-badge', dev.reason === 'permission_denied' ? 'red' : 'orange']">
-                      {{ unboundReasonLabel(dev.reason) }}
-                    </span>
-                    <template v-if="dev.reason === 'permission_denied'">
-                      &mdash; add the audiocontrol user to the 'input' group, then restart audiocontrol
-                    </template>
-                    <template v-else>&middot; {{ dev.path }}</template>
-                  </td>
-                </tr>
-                <tr v-if="inputsStatus.devices.length === 0 && (inputsStatus.unbound_devices || []).length === 0">
-                  <td class="label">Devices</td>
-                  <td class="value">No input devices found</td>
-                </tr>
-                <tr v-if="inputsStatus.last_key">
-                  <td class="label">Last key</td>
-                  <td class="value">
-                    {{ inputsStatus.last_key.name || inputsStatus.last_key.code }}
-                    <template v-if="inputsStatus.last_key.action"> &rarr; {{ inputsStatus.last_key.action }}</template>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="label">Settings</td>
-                  <td class="value">
-                    step {{ inputsStatus.volume_step }}% &middot;
-                    grab {{ inputsStatus.grab ? 'on' : 'off' }} &middot;
-                    filter: {{ inputsStatus.device_filter || '(none)' }}
-                  </td>
-                </tr>
-              </template>
+              <tr v-for="dev in (inputsStatus.unbound_devices || [])" :key="dev.path">
+                <td class="label">{{ dev.name || dev.path }}</td>
+                <td class="value">
+                  <span :class="['status-badge', dev.reason === 'permission_denied' ? 'red' : 'orange']">
+                    {{ unboundReasonLabel(dev.reason) }}
+                  </span>
+                  <template v-if="dev.reason === 'permission_denied'">
+                    &mdash; add the audiocontrol user to the 'input' group, then restart audiocontrol
+                  </template>
+                  <template v-else>&middot; {{ dev.path }}</template>
+                </td>
+              </tr>
+              <tr v-if="inputsStatus.unbound_devices === undefined">
+                <td class="label">Unbound devices</td>
+                <td class="value">Reporting unbound devices requires audiocontrol 0.8.1 or newer</td>
+              </tr>
+              <tr v-if="inputsStatus.devices.length === 0 && Array.isArray(inputsStatus.unbound_devices) && inputsStatus.unbound_devices.length === 0">
+                <td class="label">Devices</td>
+                <td class="value">No input devices found</td>
+              </tr>
+              <tr v-if="inputsStatus.last_key">
+                <td class="label">Last key</td>
+                <td class="value">
+                  {{ inputsStatus.last_key.name || inputsStatus.last_key.code }}
+                  <template v-if="inputsStatus.last_key.action"> &rarr; {{ inputsStatus.last_key.action }}</template>
+                </td>
+              </tr>
+              <tr>
+                <td class="label">Settings</td>
+                <td class="value">
+                  step {{ inputsStatus.volume_step }}% &middot;
+                  grab {{ inputsStatus.grab ? 'on' : 'off' }} &middot;
+                  filter: {{ inputsStatus.device_filter || '(none)' }}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -852,6 +853,9 @@ const i2cDevices = ref<I2CDeviceInfo | null>(null)
 // Input devices state
 const inputsLoading = ref(true)
 const inputsError = ref('')
+// Informational, non-error states (version skew, no keyboard source configured).
+// Kept separate from inputsError so the card does not render these as faults.
+const inputsNotice = ref('')
 const inputsStatus = ref<KeyboardInputStatus | null>(null)
 
 // File existence state
@@ -1418,21 +1422,23 @@ const fetchI2CDevices = async () => {
 const fetchInputs = async () => {
   inputsLoading.value = true
   inputsError.value = ''
+  inputsNotice.value = ''
 
   try {
     const response = await getInputs()
     if (!response) {
       // getInputs() returns null for any failure: no route (audiocontrol
       // older than 0.8.0), an HTTP error, or a network problem. We cannot tell
-      // which, so do not assert a cause.
-      inputsError.value = 'Input device status unavailable (requires audiocontrol 0.8.0 or newer)'
+      // which, so do not assert a cause. This is an informational state, not
+      // an error: it just means audiocontrol predates this feature.
+      inputsNotice.value = 'Input device status unavailable (requires audiocontrol 0.8.0 or newer)'
       inputsStatus.value = null
       return
     }
     const keyboard = response.inputs.find(i => i.name === 'keyboard')
     inputsStatus.value = keyboard ? keyboard.status : null
     if (!keyboard) {
-      inputsError.value = 'No keyboard input source configured'
+      inputsNotice.value = 'No keyboard input source configured'
     }
   } catch (error) {
     console.error('fetchInputs failed:', error)
@@ -2304,7 +2310,8 @@ onUnmounted(() => {
 }
 
 .loading-message,
-.error-message {
+.error-message,
+.info-message {
   padding: 16px;
   text-align: center;
   color: var(--color-body-secondary);

@@ -42,6 +42,7 @@ Tabler Icons is a set of 4,000+ free SVG icons designed specifically for web int
 - `server.svg` - **Tabler ID**: `server` - NAS/server icon
 - `cloud.svg` - **Tabler ID**: `cloud` - Cloud services
 - `device-desktop.svg` - **Tabler ID**: `device-desktop` - Computer/system
+- `device-remote.svg` - **Tabler ID**: `device-remote` - Remote control / USB HID input device
 - `volume.svg` - **Tabler ID**: `volume` - Audio/volume
 - `radio.svg` - **Tabler ID**: `radio` - Radio stations
 - `playlist.svg` - **Tabler ID**: `playlist` - Playlists
@@ -113,6 +114,7 @@ All icons sourced from [Tabler Icons](https://tabler-icons.io/) with direct link
 - Server: <https://tabler-icons.io/icon/server>
 - Cloud: <https://tabler-icons.io/icon/cloud>
 - Device Desktop: <https://tabler-icons.io/icon/device-desktop>
+- Device Remote: <https://tabler-icons.io/icon/device-remote>
 - Volume: <https://tabler-icons.io/icon/volume>
 - Radio: <https://tabler-icons.io/icon/radio>
 - Playlist: <https://tabler-icons.io/icon/playlist>

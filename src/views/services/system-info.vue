@@ -597,6 +597,68 @@
           </table>
         </div>
 
+        <!-- Input Devices -->
+        <div class="info-card">
+          <div class="card-header">
+            <Icon icon="tabler/device-remote" class="card-icon" />
+            <h2>Input Devices</h2>
+          </div>
+          <div v-if="inputsLoading" class="loading-message">
+            Loading input devices...
+          </div>
+          <div v-else-if="inputsError" class="error-message">
+            {{ inputsError }}
+          </div>
+          <table v-else-if="inputsStatus" class="info-table">
+            <tbody>
+              <tr v-if="!inputsStatus.enabled">
+                <td class="label">Status</td>
+                <td class="value">Keyboard input disabled</td>
+              </tr>
+              <template v-else>
+                <tr v-for="dev in inputsStatus.devices" :key="dev.path">
+                  <td class="label">{{ dev.name }}</td>
+                  <td class="value">
+                    <span class="status-badge green">matched</span>
+                    {{ dev.matched_keys.length }} keys &middot; {{ dev.path }}
+                  </td>
+                </tr>
+                <tr v-for="dev in (inputsStatus.unbound_devices || [])" :key="dev.path">
+                  <td class="label">{{ dev.name || dev.path }}</td>
+                  <td class="value">
+                    <span :class="['status-badge', dev.reason === 'permission_denied' ? 'red' : 'orange']">
+                      {{ unboundReasonLabel(dev.reason) }}
+                    </span>
+                    <template v-if="dev.reason === 'permission_denied'">
+                      &mdash; add the audiocontrol user to the 'input' group, then restart audiocontrol
+                    </template>
+                    <template v-else>&middot; {{ dev.path }}</template>
+                  </td>
+                </tr>
+                <tr v-if="inputsStatus.devices.length === 0 && (inputsStatus.unbound_devices || []).length === 0">
+                  <td class="label">Devices</td>
+                  <td class="value">No input devices found</td>
+                </tr>
+                <tr v-if="inputsStatus.last_key">
+                  <td class="label">Last key</td>
+                  <td class="value">
+                    {{ inputsStatus.last_key.name || inputsStatus.last_key.code }}
+                    <template v-if="inputsStatus.last_key.action"> &rarr; {{ inputsStatus.last_key.action }}</template>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="label">Settings</td>
+                  <td class="value">
+                    step {{ inputsStatus.volume_step }}% &middot;
+                    grab {{ inputsStatus.grab ? 'on' : 'off' }} &middot;
+                    filter: {{ inputsStatus.device_filter || '(none)' }}
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
         <!-- File Existence -->
         <div class="info-card">
           <div class="card-header">
@@ -715,6 +777,7 @@ import {
   type FileExistence
 } from '@/api/system'
 import { getNetworkConfiguration, scanI2CDevices, type NetworkConfiguration, type I2CDeviceInfo } from '@/api/config'
+import { getInputs, type KeyboardInputStatus } from '@/api/inputs'
 import { getVolumeInfo, type VolumeInfo } from '@/api/volume'
 import { getDSPProgramInfo, type DSPProgramInfo } from '@/api/dsptoolkit'
 import { useEditableText } from '@/composables/useEditableField'
@@ -785,6 +848,11 @@ const networkConfig = ref<NetworkConfiguration | null>(null)
 const i2cLoading = ref(true)
 const i2cError = ref('')
 const i2cDevices = ref<I2CDeviceInfo | null>(null)
+
+// Input devices state
+const inputsLoading = ref(true)
+const inputsError = ref('')
+const inputsStatus = ref<KeyboardInputStatus | null>(null)
 
 // File existence state
 const fileExistenceLoading = ref(true)
@@ -1347,6 +1415,42 @@ const fetchI2CDevices = async () => {
   }
 }
 
+const fetchInputs = async () => {
+  inputsLoading.value = true
+  inputsError.value = ''
+
+  try {
+    const response = await getInputs()
+    if (!response) {
+      // No route (audiocontrol < 0.8.0) or the request failed. Not an error
+      // worth alarming the user about -- say what is needed.
+      inputsError.value = 'Requires audiocontrol 0.8.1 or newer'
+      inputsStatus.value = null
+      return
+    }
+    const keyboard = response.inputs.find(i => i.name === 'keyboard')
+    inputsStatus.value = keyboard ? keyboard.status : null
+    if (!keyboard) {
+      inputsError.value = 'No keyboard input source configured'
+    }
+  } catch (error) {
+    console.error('fetchInputs failed:', error)
+    inputsError.value = 'Failed to load input devices'
+    inputsStatus.value = null
+  } finally {
+    inputsLoading.value = false
+  }
+}
+
+const unboundReasonLabel = (reason: string): string => {
+  switch (reason) {
+    case 'no_mapped_keys': return 'no mapped keys'
+    case 'filtered_out': return 'filtered out'
+    case 'permission_denied': return 'permission denied'
+    default: return reason
+  }
+}
+
 const fetchFileExistence = async () => {
   console.log('fetchFileExistence: Starting...')
   fileExistenceLoading.value = true
@@ -1617,13 +1721,14 @@ const refreshData = async () => {
     fetchBackgroundJobs(),
     fetchNetworkConfiguration(),
     fetchI2CDevices(),
+    fetchInputs(),
     fetchFileExistence(),
     fetchVolumeInfo(),
     fetchDSPProgramInfo(),
     fetchBackgroundServices(),
     fetchPipewireDevices()
   ]).then(results => {
-    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'system files', 'volume info', 'DSP program info', 'background services', 'Pipewire devices']
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'input devices', 'system files', 'volume info', 'DSP program info', 'background services', 'Pipewire devices']
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
@@ -1705,6 +1810,10 @@ onMounted(async () => {
       console.log('fetchI2CDevices result:', result)
       return result
     }),
+    fetchInputs().then(result => {
+      console.log('fetchInputs result:', result)
+      return result
+    }),
     fetchFileExistence().then(result => {
       console.log('fetchFileExistence result:', result)
       return result
@@ -1731,7 +1840,7 @@ onMounted(async () => {
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'file existence', 'volume info', 'DSP program info', 'background services', 'Pipewire devices', 'library stats']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'input devices', 'file existence', 'volume info', 'DSP program info', 'background services', 'Pipewire devices', 'library stats']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {

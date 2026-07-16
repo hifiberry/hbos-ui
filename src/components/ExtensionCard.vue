@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Extension } from '@/api/extensions'
+import Icon from '@/components/Icon.vue'
 
 const props = withDefaults(
   defineProps<{ extension: Extension; busy?: boolean }>(),
@@ -38,40 +39,48 @@ function onAction() {
 </script>
 
 <template>
-  <div class="extension-card">
-    <div class="extension-card__icon" data-test="icon" :data-category="extension.category">
-      <img v-if="extension.icon_url" :src="extension.icon_url" :alt="extension.name" />
-      <span v-else class="extension-card__icon-fallback">{{ extension.category }}</span>
-    </div>
+  <div class="card">
+    <div class="extension-item">
+      <div class="extension-main">
+        <div class="extension-info">
+          <div class="extension-icon" data-test="icon" :data-category="extension.category">
+            <img v-if="extension.icon_url" :src="extension.icon_url" :alt="extension.name" />
+            <Icon v-else icon="puzzle" />
+          </div>
 
-    <div class="extension-card__body">
-      <h3 class="extension-card__name">{{ extension.name }}</h3>
-      <p class="extension-card__summary">{{ extension.summary }}</p>
+          <div class="extension-details">
+            <h3>{{ extension.name }}</h3>
+            <p class="service-description">{{ extension.summary }}</p>
 
-      <p class="extension-card__version" data-test="version">
-        <template v-if="extension.state === 'installed'">
-          Installed: {{ extension.installed_version }}
-        </template>
-        <template v-else-if="extension.state === 'upgradable'">
-          {{ extension.installed_version }} &rarr; {{ extension.version }}
-        </template>
-        <template v-else>Version {{ extension.version }}</template>
-      </p>
+            <p class="extension-version" data-test="version">
+              <template v-if="extension.state === 'installed'">
+                Installed: {{ extension.installed_version ?? '—' }}
+              </template>
+              <template v-else-if="extension.state === 'upgradable'">
+                {{ extension.installed_version ?? '—' }} &rarr; {{ extension.version ?? '—' }}
+              </template>
+              <template v-else>Version {{ extension.version ?? '—' }}</template>
+            </p>
 
-      <p v-if="showRebootHint" class="extension-card__reboot" data-test="reboot-hint">
-        May require a reboot
-      </p>
-    </div>
+            <p v-if="showRebootHint" class="extension-reboot" data-test="reboot-hint">
+              May require a reboot
+            </p>
+          </div>
+        </div>
 
-    <div class="extension-card__actions">
-      <button
-        type="button"
-        data-test="action"
-        :disabled="busy"
-        @click="onAction"
-      >
-        {{ actionLabel }}
-      </button>
+        <div class="extension-actions">
+          <button
+            type="button"
+            data-test="action"
+            class="extension-action-btn"
+            :class="extension.state === 'installed' ? 'extension-action-btn--danger' : 'extension-action-btn--primary'"
+            :disabled="busy"
+            @click="onAction"
+          >
+            {{ actionLabel }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -79,18 +88,53 @@ function onAction() {
 <style scoped lang="scss">
 @use '@/assets/scss/service-item' as *;
 
-.extension-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+.card {
+  @include service-card-base;
 }
 
-.extension-card__body {
-  flex: 1;
-}
+.extension-item {
+  @include service-item-base;
 
-.extension-card__reboot {
-  font-size: 0.85em;
-  opacity: 0.8;
+  .extension-main {
+    @include service-main-layout;
+  }
+
+  .extension-info {
+    @include service-info-layout;
+
+    .extension-icon {
+      @include service-icon-base;
+
+      img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+    }
+
+    .extension-details {
+      @include service-details-base;
+
+      .extension-reboot {
+        margin-top: 4px;
+        font-size: 0.85em;
+        opacity: 0.8;
+      }
+    }
+  }
+
+  .extension-actions {
+    @include service-actions-base;
+
+    .extension-action-btn {
+      &--primary {
+        @include service-button-primary;
+      }
+
+      &--danger {
+        @include service-button-danger;
+      }
+    }
+  }
 }
 </style>

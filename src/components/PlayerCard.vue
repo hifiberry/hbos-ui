@@ -18,6 +18,14 @@
             <div v-if="player.error" class="player-error">
               <span class="error-message">{{ player.error }}</span>
             </div>
+            <router-link
+              v-if="!player.exists && player.extension_package"
+              data-test="install-link"
+              class="player-card__install"
+              :to="{ name: 'extensions', query: { install: player.extension_package } }"
+            >
+              Install
+            </router-link>
             <div v-if="player.maintainerName" class="player-maintainer">
               <a v-if="player.maintainerUrl" :href="player.maintainerUrl" target="_blank" rel="noopener noreferrer" class="maintainer-link">{{ player.maintainerName }}</a>
               <span v-else class="maintainer-name">{{ player.maintainerName }}</span>
@@ -177,6 +185,7 @@ interface Player {
   iconUrl?: string
   maintainerName?: string
   maintainerUrl?: string
+  extension_package?: string
   settings?: { key: string; type: 'toggle' | 'select'; label: string; description?: string; default: boolean | string; value: boolean | string; options?: { value: string; label: string }[] }[]
 }
 
@@ -278,6 +287,18 @@ const getStatusText = (player: Player) => {
           &:hover {
             text-decoration: underline;
           }
+        }
+      }
+
+      .player-card__install {
+        display: inline-block;
+        margin-top: 4px;
+        font-size: 0.75em;
+        color: var(--primary);
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
         }
       }
     }

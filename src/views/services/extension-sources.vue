@@ -4,9 +4,13 @@ import PageContent from '@/components/PageContent.vue'
 import { useToastStore } from '@/stores/toast'
 import {
   addExtensionSource,
+  addGithubSource,
   listExtensionSources,
+  listGithubSources,
   removeExtensionSource,
+  removeGithubSource,
   type ExtensionSource,
+  type GithubSource,
 } from '@/api/extensions'
 
 const toast = useToastStore()
@@ -17,6 +21,12 @@ const saving = ref(false)
 const showForm = ref(false)
 
 const form = ref({ id: '', uri: '', suite: 'trixie', components: 'main', key: '' })
+
+// GitHub sources (a separate subsystem from apt repos)
+const githubSources = ref<GithubSource[]>([])
+const ghShowForm = ref(false)
+const ghSaving = ref(false)
+const ghRepo = ref('')
 
 async function load() {
   loading.value = true
@@ -58,7 +68,47 @@ async function onRemove(id: string) {
   }
 }
 
-onMounted(load)
+async function loadGithub() {
+  try {
+    const response = await listGithubSources()
+    githubSources.value = response.data.sources
+  } catch (e) {
+    toast.showErrorToast(e instanceof Error ? e.message : String(e))
+  }
+}
+
+async function onAddGithub() {
+  ghSaving.value = true
+  try {
+    await addGithubSource(ghRepo.value.trim())
+    toast.showSuccessToast(`Added GitHub source ${ghRepo.value.trim()}`)
+    ghRepo.value = ''
+    ghShowForm.value = false
+    await loadGithub()
+  } catch (e) {
+    toast.showErrorToast(e instanceof Error ? e.message : String(e))
+  } finally {
+    ghSaving.value = false
+  }
+}
+
+async function onRemoveGithub(id: string, repo: string) {
+  if (!confirm(`Remove GitHub source "${repo}"? Its extensions will no longer be updatable.`)) {
+    return
+  }
+  try {
+    await removeGithubSource(id)
+    toast.showSuccessToast(`Removed GitHub source ${repo}`)
+    await loadGithub()
+  } catch (e) {
+    toast.showErrorToast(e instanceof Error ? e.message : String(e))
+  }
+}
+
+onMounted(() => {
+  load()
+  loadGithub()
+})
 </script>
 
 <template>
@@ -124,6 +174,52 @@ onMounted(load)
         <button type="button" :disabled="saving" @click="showForm = false">Cancel</button>
       </div>
     </form>
+
+    <hr class="sources__divider" />
+
+    <h2 class="sources__heading">GitHub sources</h2>
+    <p class="sources__hint">
+      Install extensions published as GitHub releases. Add a repository as
+      <code>owner/name</code>; its latest release provides the extension.
+    </p>
+
+    <ul class="sources__list">
+      <li v-for="source in githubSources" :key="source.id" class="sources__item">
+        <div>
+          <strong>{{ source.repo }}</strong>
+          <div class="sources__uri">github.com/{{ source.repo }}</div>
+        </div>
+        <button type="button" @click="onRemoveGithub(source.id, source.repo)">Remove</button>
+      </li>
+      <li v-if="!githubSources.length" class="sources__empty">No GitHub sources configured.</li>
+    </ul>
+
+    <button v-if="!ghShowForm" type="button" @click="ghShowForm = true">Add GitHub source</button>
+
+    <form v-else class="sources__form" @submit.prevent="onAddGithub">
+      <p class="sources__warning">
+        <strong>Only add repositories you trust.</strong> Installing an extension runs
+        its package scripts as root, and the API has no authentication &mdash; anyone on
+        your network can trigger an install from any configured source.
+      </p>
+
+      <label>
+        Repository (owner/name)
+        <input
+          v-model="ghRepo"
+          required
+          pattern="[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9._-]+"
+          placeholder="pulpier/tidal-connect-hifiberry"
+        />
+      </label>
+
+      <div class="sources__actions">
+        <button type="submit" :disabled="ghSaving">
+          {{ ghSaving ? 'Adding…' : 'Add GitHub source' }}
+        </button>
+        <button type="button" :disabled="ghSaving" @click="ghShowForm = false">Cancel</button>
+      </div>
+    </form>
   </PageContent>
 </template>
 
@@ -175,5 +271,15 @@ onMounted(load)
 .sources__actions {
   display: flex;
   gap: 12px;
+}
+
+.sources__divider {
+  margin: 28px 0 20px;
+  border: none;
+  border-top: 1px solid var(--color-border, #333);
+}
+
+.sources__heading {
+  margin: 0 0 4px;
 }
 </style>

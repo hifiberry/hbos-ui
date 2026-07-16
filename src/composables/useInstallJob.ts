@@ -23,7 +23,7 @@ export function useInstallJob(options: { intervalMs?: number } = {}) {
   const error = ref<string | null>(null)
 
   let timer: ReturnType<typeof setTimeout> | null = null
-  let currentId: string | null = null
+  const currentId = ref<string | null>(null)
 
   const phase = computed<JobPhase | null>(() => job.value?.phase ?? null)
   const percent = computed(() => job.value?.percent ?? 0)
@@ -31,7 +31,7 @@ export function useInstallJob(options: { intervalMs?: number } = {}) {
   const isDone = computed(() => phase.value === 'done')
   const isFailed = computed(() => phase.value === 'failed')
   const isRunning = computed(
-    () => currentId !== null && phase.value !== null && !isTerminal(phase.value),
+    () => currentId.value !== null && phase.value !== null && !isTerminal(phase.value),
   )
 
   function isTerminal(value: JobPhase) {
@@ -43,13 +43,14 @@ export function useInstallJob(options: { intervalMs?: number } = {}) {
       clearTimeout(timer)
       timer = null
     }
+    currentId.value = null
   }
 
   async function poll(jobId: string) {
     try {
       const response = await getExtensionJob(jobId)
-      // A newer track() may have superseded us while this was in flight.
-      if (currentId !== jobId) return
+      // A newer track() (or stop()) may have superseded us while this was in flight.
+      if (currentId.value !== jobId) return
 
       job.value = response.data.job
       rebootRequired.value = response.data.reboot_required
@@ -63,14 +64,14 @@ export function useInstallJob(options: { intervalMs?: number } = {}) {
       // A transient blip must not abandon a running install; keep polling.
     }
 
-    if (currentId === jobId) {
+    if (currentId.value === jobId) {
       timer = setTimeout(() => poll(jobId), intervalMs)
     }
   }
 
   function track(jobId: string) {
     stop()
-    currentId = jobId
+    currentId.value = jobId
     job.value = null
     rebootRequired.value = false
     error.value = null

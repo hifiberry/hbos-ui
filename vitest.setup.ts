@@ -29,6 +29,7 @@ if (nativeLocalStorage && typeof nativeLocalStorage.getItem !== 'function') {
   }
   Object.defineProperty(globalThis, 'localStorage', {
     configurable: true,
+    writable: true,
     value: stub,
   })
 }

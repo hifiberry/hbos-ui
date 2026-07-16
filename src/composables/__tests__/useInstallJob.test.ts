@@ -148,6 +148,24 @@ describe('useInstallJob', () => {
     expect(isDone.value).toBe(true)
   })
 
+  it('stop() during an in-flight fetch halts polling and does not reschedule', async () => {
+    let resolveFetch: (v: unknown) => void
+    const pending = new Promise((r) => {
+      resolveFetch = r
+    })
+    getExtensionJob.mockReturnValueOnce(pending as never)
+    const { track, stop } = useInstallJob({ intervalMs: 1000 })
+
+    track('j1') // kicks off poll -> fetch is now pending
+    stop() // stop BEFORE the fetch resolves
+    resolveFetch!(jobResponse('installing', 50)) // resolve the in-flight fetch
+    await flush()
+
+    // in-flight response must not reschedule
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(getExtensionJob).toHaveBeenCalledTimes(1)
+  })
+
   it('tracking a new job resets previous state', async () => {
     getExtensionJob.mockResolvedValue(jobResponse('failed', 100, { error: 'boom' }))
     const { track, error } = useInstallJob()

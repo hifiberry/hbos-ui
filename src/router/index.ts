@@ -149,6 +149,16 @@ const router = createRouter({
               name: 'bluetooth-settings',
               component: () => import('@/views/services/bluetooth-settings.vue'),
             },
+            {
+              path: 'extensions',
+              name: 'extensions',
+              component: () => import('@/views/services/extensions.vue'),
+            },
+            {
+              path: 'extensions/sources',
+              name: 'extension-sources',
+              component: () => import('@/views/services/extension-sources.vue'),
+            },
           ],
         },
         {

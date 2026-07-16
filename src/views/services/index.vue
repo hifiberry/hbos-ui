@@ -76,6 +76,14 @@
           <strong>⚠️ Use with caution:</strong> These tools can leave the system in an unusable state if used incorrectly.
         </p>
       </ContentBoxLink>
+
+      <ContentBoxLink :to="{ name: 'extensions' }" :height="150">
+        <div class="settingsCardHeader">
+          <Icon icon="puzzle" class="settingsCardHeaderIcon" />
+          <h2>Extensions</h2>
+        </div>
+        <p>Browse and install optional software</p>
+      </ContentBoxLink>
     </div>
   </PageContent>
 </template>

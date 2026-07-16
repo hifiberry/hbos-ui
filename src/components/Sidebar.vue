@@ -198,6 +198,11 @@ const routes = computed(() => {
           title: 'System Tools',
           icon: 'tool',
         },
+        {
+          name: 'extensions',
+          title: 'Extensions',
+          icon: 'puzzle',
+        },
       ],
     },
   ]

@@ -14,6 +14,7 @@ const extension = (overrides: Partial<Extension> = {}): Extension => ({
   state: 'available',
   needs_reboot: 'no',
   icon_url: null,
+  source: 'apt',
   ...overrides,
 })
 

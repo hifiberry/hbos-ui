@@ -25,6 +25,13 @@ export interface Extension {
   state: ExtensionState
   needs_reboot: NeedsReboot
   icon_url: string | null
+  /** "apt" for an apt-repo extension, "github:owner/name" for a GitHub one. */
+  source: string
+}
+
+export interface GithubSource {
+  id: string
+  repo: string
 }
 
 export interface ExtensionJob {
@@ -139,5 +146,22 @@ export const addExtensionSource = (input: ExtensionSourceInput) =>
 export const removeExtensionSource = (id: string) =>
   request<ExtensionsApiAck>(
     `${baseUrl()}/extensions/sources/${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+  )
+
+export const listGithubSources = () =>
+  request<ExtensionsApiResponse<{ sources: GithubSource[] }>>(
+    `${baseUrl()}/extensions/github-sources`,
+  )
+
+export const addGithubSource = (repo: string) =>
+  request<ExtensionsApiResponse<{ source: GithubSource }>>(
+    `${baseUrl()}/extensions/github-sources`,
+    postJson({ repo }),
+  )
+
+export const removeGithubSource = (id: string) =>
+  request<ExtensionsApiAck>(
+    `${baseUrl()}/extensions/github-sources/${encodeURIComponent(id)}`,
     { method: 'DELETE' },
   )

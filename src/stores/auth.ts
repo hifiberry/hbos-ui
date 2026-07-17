@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
   getAuthStatus,
+  getCsrf as apiGetCsrf,
   login as apiLogin,
   logout as apiLogout,
   setPassword as apiSetPassword,
@@ -66,6 +67,24 @@ export const useAuthStore = defineStore('auth', () => {
     await refreshStatus()
   }
 
+  /** Silently rehydrate the CSRF token from a still-valid session cookie.
+   *  The token lives only in memory, so a page reload loses it while the
+   *  HttpOnly session cookie survives (up to 12h, or 30d with "remember").
+   *  `/api/auth/csrf` returns a fresh token iff the session is still valid,
+   *  which lets a risky write recover without re-prompting for the password.
+   *  Returns true when a token was obtained (session valid); false when the
+   *  session is gone/expired (the caller should then prompt to log in). */
+  const ensureCsrf = async (): Promise<boolean> => {
+    try {
+      const result = await apiGetCsrf()
+      csrf.value = result.csrf
+      return true
+    } catch {
+      csrf.value = null
+      return false
+    }
+  }
+
   /** Opens (or joins) the auth modal for a 401 with the given hint and
    *  resolves once the user has authenticated (true) or cancelled (false).
    *  Called by apiFetch's 401 handler; SecurityPrompt.vue is the UI that
@@ -108,6 +127,7 @@ export const useAuthStore = defineStore('auth', () => {
     setPassword,
     logout,
     setPolicy,
+    ensureCsrf,
     promptForAuth,
     resolvePrompt,
   }

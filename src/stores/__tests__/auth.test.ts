@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-const { getAuthStatus, login, logout, setPassword, setPolicy } = vi.hoisted(() => ({
+const { getAuthStatus, getCsrf, login, logout, setPassword, setPolicy } = vi.hoisted(() => ({
   getAuthStatus: vi.fn(),
+  getCsrf: vi.fn(),
   login: vi.fn(),
   logout: vi.fn(),
   setPassword: vi.fn(),
@@ -11,6 +12,7 @@ const { getAuthStatus, login, logout, setPassword, setPolicy } = vi.hoisted(() =
 
 vi.mock('@/api/auth', () => ({
   getAuthStatus,
+  getCsrf,
   login,
   logout,
   setPassword,
@@ -24,6 +26,7 @@ describe('auth store', () => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
     getAuthStatus.mockReset()
+    getCsrf.mockReset()
     login.mockReset()
     logout.mockReset()
     setPassword.mockReset()
@@ -87,6 +90,30 @@ describe('auth store', () => {
 
     expect(setPolicy).toHaveBeenCalledWith('all', 'tok-4')
     expect(store.status?.protection).toBe('all')
+  })
+
+  it('ensureCsrf caches a freshly fetched token and reports success', async () => {
+    getCsrf.mockResolvedValue({ csrf: 'tok-fresh' })
+    const store = useAuthStore()
+
+    const ok = await store.ensureCsrf()
+
+    expect(ok).toBe(true)
+    expect(store.csrf).toBe('tok-fresh')
+  })
+
+  it('ensureCsrf clears the token and reports failure when the session is gone', async () => {
+    login.mockResolvedValue({ csrf: 'tok-stale' })
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
+    getCsrf.mockRejectedValue(new Error('401'))
+    const store = useAuthStore()
+    await store.login('secret')
+    expect(store.csrf).toBe('tok-stale')
+
+    const ok = await store.ensureCsrf()
+
+    expect(ok).toBe(false)
+    expect(store.csrf).toBeNull()
   })
 
   it('promptForAuth opens the modal with the given hint and resolves via resolvePrompt', async () => {

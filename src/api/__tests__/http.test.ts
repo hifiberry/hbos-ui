@@ -29,6 +29,9 @@ describe('apiFetch', () => {
       .mockResolvedValueOnce(jsonResponse(200, { ok: true }))
     vi.stubGlobal('fetch', fetchMock)
 
+    // Session is gone, so silent csrf recovery fails and we fall through to
+    // the password prompt.
+    vi.spyOn(authStore, 'ensureCsrf').mockResolvedValue(false)
     const promptSpy = vi.spyOn(authStore, 'promptForAuth').mockImplementation(async (hint) => {
       expect(hint).toBe('login')
       authStore.csrf = 'tok-2'
@@ -45,17 +48,65 @@ describe('apiFetch', () => {
     expect(fetchMock.mock.calls[1][1].headers.get('X-CSRF-Token')).toBe('tok-2')
   })
 
-  it('throws when the prompt is cancelled', async () => {
+  it('throws when the prompt is cancelled, and never tries csrf recovery on a set-password 401', async () => {
     const authStore = useAuthStore()
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(401, {}, { 'WWW-Authenticate-Hint': 'set-password' }))
     vi.stubGlobal('fetch', fetchMock)
 
+    const csrfSpy = vi.spyOn(authStore, 'ensureCsrf').mockResolvedValue(false)
     vi.spyOn(authStore, 'promptForAuth').mockResolvedValue(false)
 
     await expect(apiFetch('/api/config/v1/network', { method: 'POST' })).rejects.toThrow()
     expect(fetchMock).toHaveBeenCalledTimes(1)
+    // A missing password is not a lost-token situation — recovery must be skipped.
+    expect(csrfSpy).not.toHaveBeenCalled()
+  })
+
+  it('silently rehydrates csrf and retries without prompting when the session is still valid', async () => {
+    const authStore = useAuthStore()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(401, {}, { 'WWW-Authenticate-Hint': 'login' }))
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    // The session cookie is still valid — ensureCsrf recovers a fresh token.
+    const csrfSpy = vi.spyOn(authStore, 'ensureCsrf').mockImplementation(async () => {
+      authStore.csrf = 'tok-recovered'
+      return true
+    })
+    const promptSpy = vi.spyOn(authStore, 'promptForAuth')
+
+    const response = await apiFetch('/api/config/v1/systemd/service/mpd/restart', {
+      method: 'POST',
+    })
+
+    expect(response.status).toBe(200)
+    expect(csrfSpy).toHaveBeenCalledTimes(1)
+    expect(promptSpy).not.toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls[1][1].headers.get('X-CSRF-Token')).toBe('tok-recovered')
+  })
+
+  it('does not attempt csrf recovery for a risky GET 401 (no csrf needed), and prompts', async () => {
+    const authStore = useAuthStore()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(401, {}, { 'WWW-Authenticate-Hint': 'login' }))
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const csrfSpy = vi.spyOn(authStore, 'ensureCsrf').mockResolvedValue(true)
+    const promptSpy = vi.spyOn(authStore, 'promptForAuth').mockResolvedValue(true)
+
+    await apiFetch('/api/config/v1/hostname', { method: 'GET' })
+
+    // A GET never carries a csrf, so a 401 there means the session itself is
+    // missing — recovery is pointless; go straight to the prompt.
+    expect(csrfSpy).not.toHaveBeenCalled()
+    expect(promptSpy).toHaveBeenCalledTimes(1)
   })
 
   it('never prompts on a 200', async () => {
@@ -77,6 +128,10 @@ describe('apiFetch', () => {
       .fn()
       .mockResolvedValue(jsonResponse(401, {}, { 'WWW-Authenticate-Hint': 'login' }))
     vi.stubGlobal('fetch', fetchMock)
+
+    // Session is gone: recovery fails, both callers fall through to the shared
+    // prompt.
+    vi.spyOn(authStore, 'ensureCsrf').mockResolvedValue(false)
 
     const p1 = apiFetch('/api/config/v1/a', { method: 'POST' })
     const p2 = apiFetch('/api/config/v1/b', { method: 'POST' })

@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 export interface LibraryPlayer {
   player_name: string
@@ -61,7 +62,7 @@ export const deleteAlbum = async (playerName: string, albumId: string): Promise<
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/library/${playerName}/album/${albumId}`, {
+  const response = await apiFetch(`${baseUrl}/library/${playerName}/album/${albumId}`, {
     method: 'DELETE',
   })
 

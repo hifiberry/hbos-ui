@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 // Types for the Config API
 export interface ConfigApiResponse<T = unknown> {
@@ -167,7 +168,7 @@ export const setConfigValue = async (
     ...(secure && { secure })
   }
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -202,7 +203,7 @@ export const updateConfigValue = async (
     ...(secure && { secure })
   }
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -226,7 +227,7 @@ export const deleteConfigValue = async (key: string): Promise<ConfigApiResponse>
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/key/${encodeURIComponent(key)}`
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'DELETE'
   })
 
@@ -359,7 +360,7 @@ export const executeSystemdOperation = async (
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/systemd/service/${encodeURIComponent(service)}/${encodeURIComponent(operation)}`
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'POST'
   })
 
@@ -589,7 +590,7 @@ export const saveExternalPlayerSettings = async (
 ): Promise<void> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()
-  const response = await fetch(`${baseUrl}/players/${systemdService}/settings`, {
+  const response = await apiFetch(`${baseUrl}/players/${systemdService}/settings`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(values),

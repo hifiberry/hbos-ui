@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 
 vi.mock('@/stores/appconfig', () => ({
   useAppConfigStore: () => ({ getConfigApiBaseUrl: () => 'http://host/api/v1' }),
@@ -19,6 +20,9 @@ const ok = (data: unknown) =>
 
 describe('extensions api', () => {
   beforeEach(() => {
+    // These calls are routed through apiFetch (@/api/http), which reads
+    // the auth store's cached csrf token — it needs an active Pinia.
+    setActivePinia(createPinia())
     vi.restoreAllMocks()
   })
 
@@ -28,7 +32,8 @@ describe('extensions api', () => {
 
     const result = await listExtensions()
 
-    expect(fetchMock).toHaveBeenCalledWith('http://host/api/v1/extensions')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls[0][0]).toBe('http://host/api/v1/extensions')
     expect(result.data.extensions[0].package).toBe('a')
   })
 
@@ -40,7 +45,7 @@ describe('extensions api', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'http://host/api/v1/extensions/hifiberry-tidal-connect/install',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({ method: 'POST', credentials: 'same-origin' }),
     )
     expect(result.data.job.id).toBe('j1')
   })
@@ -78,7 +83,7 @@ describe('extensions api', () => {
 
     const result = await getExtensionJob('j1')
 
-    expect(fetchMock).toHaveBeenCalledWith('http://host/api/v1/extensions/jobs/j1')
+    expect(fetchMock.mock.calls[0][0]).toBe('http://host/api/v1/extensions/jobs/j1')
     expect(result.data.job.phase).toBe('installing')
   })
 
@@ -88,7 +93,7 @@ describe('extensions api', () => {
 
     await getExtensionJob('a b/c')
 
-    expect(fetchMock).toHaveBeenCalledWith('http://host/api/v1/extensions/jobs/a%20b%2Fc')
+    expect(fetchMock.mock.calls[0][0]).toBe('http://host/api/v1/extensions/jobs/a%20b%2Fc')
   })
 
   it('adds a source', async () => {
@@ -103,18 +108,17 @@ describe('extensions api', () => {
       key: 'KEY',
     })
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://host/api/v1/extensions/sources',
-      expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: 'acme',
-          uri: 'https://repo.acme.com',
-          suite: 'trixie',
-          components: 'main',
-          key: 'KEY',
-        }),
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('http://host/api/v1/extensions/sources')
+    expect(init.method).toBe('POST')
+    expect((init.headers as Headers).get('Content-Type')).toBe('application/json')
+    expect(init.body).toBe(
+      JSON.stringify({
+        id: 'acme',
+        uri: 'https://repo.acme.com',
+        suite: 'trixie',
+        components: 'main',
+        key: 'KEY',
       }),
     )
   })

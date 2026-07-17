@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 // Types for System Information API
 export interface SystemInfo {
@@ -223,7 +224,7 @@ export const updateHostname = async (request: HostnameUpdateRequest): Promise<Ho
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/hostname`, {
+  const response = await apiFetch(`${baseUrl}/hostname`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -266,7 +267,7 @@ export const setSoundCardDtoverlay = async (request: SetDtoverlayRequest): Promi
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/soundcard/dtoverlay`, {
+  const response = await apiFetch(`${baseUrl}/soundcard/dtoverlay`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -342,7 +343,7 @@ export const setSoundCardDetection = async (enabled: boolean): Promise<{ status:
   // Use the correct endpoint based on enabled/disabled
   const endpoint = enabled ? '/soundcard/detection/enable' : '/soundcard/detection/disable'
 
-  const response = await fetch(`${baseUrl}${endpoint}`, {
+  const response = await apiFetch(`${baseUrl}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -396,7 +397,7 @@ export const disableSoundCardDetection = async (card_name: string): Promise<SetD
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/soundcard/detection/disable`, {
+  const response = await apiFetch(`${baseUrl}/soundcard/detection/disable`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -420,7 +421,7 @@ export const rebootSystem = async (request?: RebootRequest): Promise<RebootRespo
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/system/reboot`, {
+  const response = await apiFetch(`${baseUrl}/system/reboot`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -444,7 +445,7 @@ export const executeScript = async (request: ScriptExecutionRequest): Promise<Sc
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/scripts/${request.script}/execute`, {
+  const response = await apiFetch(`${baseUrl}/scripts/${request.script}/execute`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -575,7 +576,7 @@ export const completeSetup = async (): Promise<{ status: string; message: string
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/setup/complete`, {
+  const response = await apiFetch(`${baseUrl}/setup/complete`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -596,7 +597,7 @@ export const resetSetup = async (): Promise<{ status: string; message: string }>
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/setup/reset`, {
+  const response = await apiFetch(`${baseUrl}/setup/reset`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -617,7 +618,7 @@ export const resetConfigDB = async (): Promise<{ status: string; message: string
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/config/reset`, {
+  const response = await apiFetch(`${baseUrl}/config/reset`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

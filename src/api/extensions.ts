@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 export type ExtensionState = 'available' | 'installed' | 'upgradable'
 export type ExtensionCategory = 'player' | 'dsp' | 'tool'
@@ -79,9 +80,12 @@ export interface ExtensionsApiAck {
 const baseUrl = () => useAppConfigStore().getConfigApiBaseUrl()
 
 /** Throw with the server's message when it gave us one — the marker-gate
- *  rejection is the message the user needs to see. */
+ *  rejection is the message the user needs to see.
+ *
+ *  Routed through apiFetch: install/uninstall/refresh/source management are
+ *  risky operations that may 401 and need the auth prompt + CSRF retry. */
 const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
-  const response = init ? await fetch(url, init) : await fetch(url)
+  const response = await apiFetch(url, init)
   if (!response.ok) {
     let message = `${response.status}`
     try {

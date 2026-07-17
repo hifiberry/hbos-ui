@@ -5,6 +5,8 @@ server {
     server_name _;
 
     # Include all HiFiBerry API proxy configurations
+    # Auth gateway: present only when hifiberry-auth is installed (else no gating)
+    include /etc/nginx/hifiberry-auth.d/*.conf;
     include /etc/nginx/hifiberry-api.d/*.nginx;
 
     # Include HiFiBerry Web UI configuration

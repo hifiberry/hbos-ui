@@ -1,139 +1,166 @@
 <template>
   <PageContent title="Security" :backrouterLink="{ name: 'services' }">
     <div class="security-content">
-      <div class="info-card">
-        <div class="card-header">
-          <Icon icon="lock" class="card-icon" />
-          <h2>Status</h2>
-        </div>
-        <p v-if="loading">Loading&hellip;</p>
-        <template v-else>
-          <p class="status-line">
-            Protection: <strong>{{ protectionLabel }}</strong>
-          </p>
-          <p class="status-line">
-            Password: <strong>{{ status?.has_password ? 'set' : 'not set' }}</strong>
-          </p>
-          <p class="status-line">
-            This session: <strong>{{ status?.authenticated ? 'signed in' : 'not signed in' }}</strong>
-            <button
-              v-if="status?.authenticated"
-              type="button"
-              class="link-button"
-              :disabled="busy"
-              @click="onLogout"
-            >
-              Log out
-            </button>
-          </p>
-        </template>
-        <p v-if="loadError" class="security-error">{{ loadError }}</p>
-      </div>
-
-      <div class="info-card">
-        <div class="card-header">
-          <Icon icon="lock" class="card-icon" />
-          <h2>{{ status?.has_password ? 'Change password' : 'Set a password' }}</h2>
-        </div>
+      <div class="services-header">
+        <h2>Password protection</h2>
         <p>
-          Music playback, volume and browsing your library never need a password &mdash; this
-          protects settings changes only.
+          Music playback, volume and browsing your library never need a password. A password
+          protects settings changes only &mdash; you decide how much it covers below.
         </p>
-
-        <form class="security-form" @submit.prevent="onSavePassword">
-          <template v-if="status?.has_password">
-            <label for="current-password">Current password</label>
-            <input
-              id="current-password"
-              v-model="currentPassword"
-              type="password"
-              autocomplete="current-password"
-              :disabled="busy"
-            />
-          </template>
-
-          <label for="new-password">{{ status?.has_password ? 'New password' : 'Password' }}</label>
-          <input
-            id="new-password"
-            v-model="newPassword"
-            type="password"
-            autocomplete="new-password"
-            :disabled="busy"
-          />
-
-          <label for="confirm-password">Confirm password</label>
-          <input
-            id="confirm-password"
-            v-model="confirmPassword"
-            type="password"
-            autocomplete="new-password"
-            :disabled="busy"
-          />
-
-          <label class="security-remember">
-            <input v-model="remember" type="checkbox" :disabled="busy" />
-            Remember on this device
-          </label>
-
-          <p v-if="passwordError" class="security-error">{{ passwordError }}</p>
-          <p v-if="passwordSuccess" class="security-success">{{ passwordSuccess }}</p>
-
-          <button type="submit" class="save-button" :disabled="busy || !canSavePassword">
-            {{ status?.has_password ? 'Change password' : 'Set a password' }}
-          </button>
-        </form>
       </div>
 
-      <div v-if="status?.has_password" class="info-card">
-        <div class="card-header">
+      <!-- Status -->
+      <section class="security-card status-card">
+        <div class="card-main">
           <Icon icon="lock" class="card-icon" />
-          <h2>Require password for</h2>
+          <div class="card-body">
+            <h3>Status</h3>
+            <p v-if="loading" class="card-desc">Loading&hellip;</p>
+            <dl v-else class="status-grid">
+              <div class="status-item">
+                <dt>Protection</dt>
+                <dd>{{ protectionLabel }}</dd>
+              </div>
+              <div class="status-item">
+                <dt>Password</dt>
+                <dd>{{ status?.has_password ? 'Set' : 'Not set' }}</dd>
+              </div>
+              <div class="status-item">
+                <dt>This session</dt>
+                <dd>{{ status?.authenticated ? 'Signed in' : 'Not signed in' }}</dd>
+              </div>
+            </dl>
+            <p v-if="loadError" class="security-error">{{ loadError }}</p>
+          </div>
         </div>
-
-        <div class="policy-options">
-          <label class="policy-option">
-            <input
-              type="radio"
-              name="protection-policy"
-              value="risky"
-              :checked="status?.protection === 'risky'"
-              :disabled="busy"
-              @change="onSetPolicy('risky')"
-            />
-            <span>
-              <strong>Risky operations</strong>
-              <small>Settings changes need a password. Music playback never does.</small>
-            </span>
-          </label>
-
-          <label class="policy-option">
-            <input
-              type="radio"
-              name="protection-policy"
-              value="all"
-              :checked="status?.protection === 'all'"
-              :disabled="busy"
-              @change="onSetPolicy('all')"
-            />
-            <span>
-              <strong>Everything</strong>
-              <small>All API access requires signing in first.</small>
-            </span>
-          </label>
+        <div v-if="status?.authenticated" class="card-actions">
+          <button type="button" class="btn-secondary" :disabled="busy" @click="onLogout">
+            Log out
+          </button>
         </div>
+      </section>
 
-        <p v-if="policyError" class="security-error">{{ policyError }}</p>
+      <!-- Password -->
+      <section class="security-card">
+        <div class="card-main">
+          <Icon icon="lock" class="card-icon" />
+          <div class="card-body">
+            <h3>{{ status?.has_password ? 'Change password' : 'Set a password' }}</h3>
+            <p class="card-desc">
+              {{
+                status?.has_password
+                  ? 'Update the password used to protect settings changes.'
+                  : 'Set a password to protect settings changes on this device.'
+              }}
+            </p>
 
-        <button
-          v-if="status?.protection !== 'off'"
-          type="button"
-          class="danger-link"
-          :disabled="busy"
-          @click="onTurnOff"
-        >
-          Turn off protection
-        </button>
-      </div>
+            <form class="password-form" @submit.prevent="onSavePassword">
+              <div class="field-row">
+                <div v-if="status?.has_password" class="field">
+                  <label for="current-password">Current password</label>
+                  <input
+                    id="current-password"
+                    v-model="currentPassword"
+                    type="password"
+                    autocomplete="current-password"
+                    :disabled="busy"
+                  />
+                </div>
+
+                <div class="field">
+                  <label for="new-password">{{
+                    status?.has_password ? 'New password' : 'Password'
+                  }}</label>
+                  <input
+                    id="new-password"
+                    v-model="newPassword"
+                    type="password"
+                    autocomplete="new-password"
+                    :disabled="busy"
+                  />
+                </div>
+
+                <div class="field">
+                  <label for="confirm-password">Confirm password</label>
+                  <input
+                    id="confirm-password"
+                    v-model="confirmPassword"
+                    type="password"
+                    autocomplete="new-password"
+                    :disabled="busy"
+                  />
+                </div>
+              </div>
+
+              <label class="security-remember">
+                <input v-model="remember" type="checkbox" :disabled="busy" />
+                Remember on this device
+              </label>
+
+              <p v-if="passwordError" class="security-error">{{ passwordError }}</p>
+              <p v-if="passwordSuccess" class="security-success">{{ passwordSuccess }}</p>
+
+              <button type="submit" class="btn-primary" :disabled="busy || !canSavePassword">
+                {{ status?.has_password ? 'Change password' : 'Set a password' }}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Protection scope -->
+      <section v-if="status?.has_password" class="security-card">
+        <div class="card-main">
+          <Icon icon="tabler/adjustments" class="card-icon" />
+          <div class="card-body">
+            <h3>Require password for</h3>
+
+            <div class="policy-options">
+              <label class="policy-option" :class="{ active: status?.protection === 'risky' }">
+                <input
+                  type="radio"
+                  name="protection-policy"
+                  value="risky"
+                  :checked="status?.protection === 'risky'"
+                  :disabled="busy"
+                  @change="onSetPolicy('risky')"
+                />
+                <span class="policy-text">
+                  <strong>Risky operations</strong>
+                  <small>Settings changes need a password. Music playback never does.</small>
+                </span>
+              </label>
+
+              <label class="policy-option" :class="{ active: status?.protection === 'all' }">
+                <input
+                  type="radio"
+                  name="protection-policy"
+                  value="all"
+                  :checked="status?.protection === 'all'"
+                  :disabled="busy"
+                  @change="onSetPolicy('all')"
+                />
+                <span class="policy-text">
+                  <strong>Everything</strong>
+                  <small>All API access requires signing in first.</small>
+                </span>
+              </label>
+            </div>
+
+            <p v-if="policyError" class="security-error">{{ policyError }}</p>
+
+            <button
+              v-if="status?.protection !== 'off'"
+              type="button"
+              class="danger-link"
+              :disabled="busy"
+              @click="onTurnOff"
+            >
+              Turn off protection
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   </PageContent>
 </template>
@@ -269,88 +296,150 @@ onMounted(load)
 
 <style scoped lang="scss">
 .security-content {
-  display: grid;
-  gap: 24px;
-  max-width: 560px;
-
-  .info-card {
-    background: var(--background-card);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 24px;
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-
-      .card-icon {
-        width: 20px;
-        height: 20px;
-        color: var(--color-primary);
-      }
-
-      h2 {
-        margin: 0;
-        color: var(--color-head);
-        font-size: 1.25rem;
-        font-weight: 600;
-      }
-    }
-
-    p {
-      margin: 0 0 8px 0;
-      color: var(--color-body-secondary);
-      line-height: 1.6;
-    }
-  }
-}
-
-.status-line {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  strong {
-    color: var(--color-head);
-  }
-}
-
-.security-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 16px;
+}
 
-  label {
-    font-weight: 500;
+.services-header {
+  margin-bottom: 16px;
+
+  h2 {
+    margin: 0 0 8px 0;
     color: var(--color-head);
-    margin-top: 4px;
   }
 
-  input[type='password'] {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    background: var(--background-input);
-    color: var(--color-body);
-    font-size: 1rem;
+  p {
+    margin: 0;
+    max-width: 720px;
+    color: var(--color-body-secondary);
+    line-height: 1.5;
+  }
+}
 
-    &:focus {
-      outline: none;
-      border-color: var(--color-primary);
+.security-card {
+  background: var(--background-card);
+  border: 1px solid rgba(128, 128, 128, 0.18);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+
+  .card-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .card-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    color: var(--primary);
+    margin-top: 2px;
+  }
+
+  .card-body {
+    flex: 1;
+    min-width: 0;
+
+    h3 {
+      margin: 0 0 4px 0;
+      color: var(--color-head);
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .card-desc {
+      margin: 0;
+      color: var(--color-body-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+  }
+
+  .card-actions {
+    flex-shrink: 0;
+  }
+}
+
+/* Status card: stats laid out across the full width */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px 32px;
+  margin: 12px 0 0 0;
+
+  .status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    dt {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-body-secondary);
+    }
+
+    dd {
+      margin: 0;
+      color: var(--color-head);
+      font-weight: 600;
+    }
+  }
+}
+
+/* Password form: fields spread across the width on wide screens */
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+
+  .field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--color-head);
+    }
+
+    input[type='password'] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(128, 128, 128, 0.4);
+      border-radius: 6px;
+      background: var(--background-body, #fafafa);
+      color: var(--color-body);
+      font-size: 1rem;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
     }
   }
 }
 
 .security-remember {
   display: flex;
-  flex-direction: row;
   align-items: center;
   gap: 8px;
-  font-weight: 400;
+  font-size: 0.9rem;
   color: var(--color-body-secondary);
 
   input {
@@ -359,60 +448,78 @@ onMounted(load)
 }
 
 .security-error {
+  margin: 0;
   color: var(--color-error, #dc3545);
+  font-size: 0.9rem;
 }
 
 .security-success {
+  margin: 0;
   color: var(--color-success, #22c55e);
+  font-size: 0.9rem;
 }
 
-.save-button {
+.btn-primary {
   @include button-base;
   @include button-primary;
   @include button-md;
   align-self: flex-start;
-  margin-top: 8px;
 }
 
-.link-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--color-primary);
-  cursor: pointer;
-  font-size: 0.9rem;
-  text-decoration: underline;
+.btn-secondary {
+  @include button-base;
+  @include button-secondary;
+  @include button-md;
 }
 
+/* Protection scope: full-width selectable rows */
 .policy-options {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 12px;
+  margin: 16px 0 12px 0;
 }
 
 .policy-option {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 6px;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--primary);
+  }
+
+  &.active {
+    border-color: var(--primary);
+    background: var(--background-body, #fafafa);
+  }
 
   input {
-    margin-top: 4px;
+    margin-top: 3px;
     width: auto;
+    flex-shrink: 0;
   }
 
-  span {
+  .policy-text {
     display: flex;
     flex-direction: column;
-  }
+    gap: 2px;
 
-  strong {
-    color: var(--color-head);
-  }
+    strong {
+      color: var(--color-head);
+    }
 
-  small {
-    color: var(--color-body-secondary);
+    small {
+      color: var(--color-body-secondary);
+      line-height: 1.4;
+    }
   }
 }
 
@@ -424,5 +531,16 @@ onMounted(load)
   cursor: pointer;
   text-decoration: underline;
   font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .security-card {
+    flex-direction: column;
+    align-items: stretch;
+
+    .card-actions {
+      align-self: flex-start;
+    }
+  }
 }
 </style>

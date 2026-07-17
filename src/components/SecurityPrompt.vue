@@ -164,7 +164,7 @@ function onOverlayClick() {
   max-width: 420px;
   width: 100%;
   overflow: hidden;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(128, 128, 128, 0.18);
 }
 
 .modal-header {
@@ -192,7 +192,7 @@ function onOverlayClick() {
     color: var(--color-body-secondary);
 
     &:hover {
-      background: var(--color-border);
+      background: rgba(128, 128, 128, 0.15);
       color: var(--color-head);
     }
   }
@@ -209,7 +209,7 @@ function onOverlayClick() {
   .lock-icon {
     width: 40px;
     height: 40px;
-    color: var(--color-primary);
+    color: var(--primary);
   }
 }
 
@@ -234,15 +234,15 @@ function onOverlayClick() {
 .security-input {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(128, 128, 128, 0.4);
   border-radius: 4px;
-  background: var(--background-input);
+  background: var(--background-body, #fafafa);
   color: var(--color-body);
   font-size: 1rem;
 
   &:focus {
     outline: none;
-    border-color: var(--color-primary);
+    border-color: var(--primary);
   }
 }
 

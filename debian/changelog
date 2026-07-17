@@ -1,3 +1,21 @@
+hifiberry-webui (0.20.0) stable; urgency=medium
+
+  * Add the security / password-protection UI for the system-wide auth gateway.
+    A new Security settings page sets or changes the device password and chooses
+    how much it covers (risky operations only, or everything). Risky API calls
+    now go through an apiFetch wrapper that, on a 401, prompts for the password
+    (SecurityPrompt modal) and retries; everyday music playback, volume and
+    library browsing never prompt. The nginx server block is wired for the
+    auth_request gateway.
+  * After a page reload the session cookie is still valid but the in-memory CSRF
+    token is gone; the first risky write now silently rehydrates the token from
+    the live session instead of re-prompting for the password.
+  * Security page spans the full content width (matching the other settings
+    pages) and fixes form inputs that rendered invisible because they referenced
+    theme CSS variables that do not exist.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 17 Jul 2026 12:00:00 +0000
+
 hifiberry-webui (0.19.14) stable; urgency=medium
 
   * System Info: add Input Devices card showing which USB HID remote/keyboard

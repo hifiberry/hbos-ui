@@ -134,10 +134,15 @@ export const getConfigValue = async (
   const baseUrl = configStore.getConfigApiBaseUrl()
   const params = new URLSearchParams()
 
-  if (secure) params.append('secure', 'true')
   if (defaultValue) params.append('default', defaultValue)
 
-  const url = `${baseUrl}/key/${encodeURIComponent(key)}${params.toString() ? `?${params.toString()}` : ''}`
+  // Decrypted (secure) reads go to a dedicated /secure path, which the auth
+  // gateway classifies risky (requires a session). The plain /key/<key> path
+  // is passwordless and never returns decrypted secrets.
+  const path = secure
+    ? `/key/${encodeURIComponent(key)}/secure`
+    : `/key/${encodeURIComponent(key)}`
+  const url = `${baseUrl}${path}${params.toString() ? `?${params.toString()}` : ''}`
 
   const response = await fetch(url)
 

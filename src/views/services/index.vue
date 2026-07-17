@@ -84,6 +84,14 @@
         </div>
         <p>Browse and install optional software</p>
       </ContentBoxLink>
+
+      <ContentBoxLink :to="{ name: 'security' }" :height="150">
+        <div class="settingsCardHeader">
+          <Icon icon="lock" class="settingsCardHeaderIcon" />
+          <h2>Security</h2>
+        </div>
+        <p>Protect settings changes with a password</p>
+      </ContentBoxLink>
     </div>
   </PageContent>
 </template>

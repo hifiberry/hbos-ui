@@ -159,6 +159,11 @@ const router = createRouter({
               name: 'extension-sources',
               component: () => import('@/views/services/extension-sources.vue'),
             },
+            {
+              path: 'security',
+              name: 'security',
+              component: () => import('@/views/services/Security.vue'),
+            },
           ],
         },
         {

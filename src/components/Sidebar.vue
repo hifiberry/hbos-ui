@@ -203,6 +203,11 @@ const routes = computed(() => {
           title: 'Extensions',
           icon: 'puzzle',
         },
+        {
+          name: 'security',
+          title: 'Security',
+          icon: 'lock',
+        },
       ],
     },
   ]

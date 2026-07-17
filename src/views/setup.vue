@@ -187,7 +187,75 @@
         />
       </div>
 
-      <!-- Rebooting overlay (replaces step 4 content while reboot is in progress) -->
+      <!-- Step 4: Security -->
+      <div v-if="currentStep === 4" class="setup-step">
+        <h1>Secure your device</h1>
+        <p class="setup-subtitle">
+          Set a password to protect settings changes. Everyday music playback, volume and
+          browsing your library never need it.
+        </p>
+
+        <template v-if="!passwordCommitted">
+          <div class="form-group">
+            <label for="setup-password">Password</label>
+            <input
+              id="setup-password"
+              v-model="newPassword"
+              type="password"
+              autocomplete="new-password"
+              class="form-input"
+              :disabled="securityBusy"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="setup-password-confirm">Confirm password</label>
+            <input
+              id="setup-password-confirm"
+              v-model="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              class="form-input"
+              :disabled="securityBusy"
+              @keyup.enter="nextStep"
+            />
+          </div>
+
+          <div class="source-options">
+            <label class="source-option" :class="{ selected: protectionScope === 'risky' }">
+              <input type="radio" value="risky" v-model="protectionScope" name="protection-scope" />
+              <div class="source-info">
+                <span class="source-name">
+                  Protect settings changes
+                  <span class="recommended-badge">Recommended</span>
+                </span>
+                <span class="source-desc">Changing settings needs the password. Music playback never does.</span>
+              </div>
+            </label>
+
+            <label class="source-option" :class="{ selected: protectionScope === 'all' }">
+              <input type="radio" value="all" v-model="protectionScope" name="protection-scope" />
+              <div class="source-info">
+                <span class="source-name">Require password for everything</span>
+                <span class="source-desc">Every part of the web interface asks for the password first.</span>
+              </div>
+            </label>
+          </div>
+
+          <label class="remember-row">
+            <input type="checkbox" v-model="rememberDevice" :disabled="securityBusy" />
+            Stay signed in on this device
+          </label>
+
+          <p v-if="securityError" class="security-error">{{ securityError }}</p>
+        </template>
+
+        <div v-else class="password-set-notice">
+          <p>Password set — your settings are now protected. You can change it later under <strong>Settings &rarr; Security</strong>.</p>
+        </div>
+      </div>
+
+      <!-- Rebooting overlay (replaces the summary content while reboot is in progress) -->
       <div v-if="rebooting" class="setup-step reboot-progress">
         <h1>Rebooting</h1>
         <p class="setup-subtitle">{{ rebootStatus }}</p>
@@ -197,8 +265,8 @@
         </p>
       </div>
 
-      <!-- Step 4: Summary & Reboot -->
-      <div v-else-if="currentStep === 4" class="setup-step">
+      <!-- Step 5: Summary & Reboot -->
+      <div v-else-if="currentStep === 5" class="setup-step">
         <h1>Setup Complete</h1>
 
         <div class="summary">
@@ -252,7 +320,7 @@
           @click="nextStep"
           :disabled="!canProceed"
         >
-          Next
+          {{ securityBusy ? 'Saving…' : 'Next' }}
         </button>
         <button
           v-else-if="needsReboot"
@@ -298,12 +366,15 @@ import {
   getExternalPlayers,
 } from '@/api/config'
 import AddSmbMountDialog from '@/components/AddSmbMountDialog.vue'
+import { useAuthStore } from '@/stores/auth'
+import { AuthApiError, type ProtectionLevel } from '@/api/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const logoUrl = computed(() => `${import.meta.env.BASE_URL}images/logo.svg`)
 
 const currentStep = ref(1)
-const totalSteps = 4
+const totalSteps = 5
 const saving = ref(false)
 const rebooting = ref(false)
 const rebootStatus = ref('')
@@ -328,6 +399,47 @@ const useStreaming = ref(false)
 const showNasDialog = ref(false)
 const nasMounted = ref(false)
 const nasMountInfo = ref('')
+
+// Step 4: Security (password + protection scope)
+const newPassword = ref('')
+const confirmPassword = ref('')
+const protectionScope = ref<Extract<ProtectionLevel, 'risky' | 'all'>>('risky')
+const rememberDevice = ref(true)
+const securityBusy = ref(false)
+const securityError = ref<string | null>(null)
+// Once the password is committed to the device we don't ask again if the user
+// steps back and forward; a session is now established so the later config
+// writes (hostname, sound card, setup-complete) are authenticated.
+const passwordCommitted = ref(false)
+
+const canCommitSecurity = computed(
+  () => newPassword.value.length > 0 && newPassword.value === confirmPassword.value,
+)
+
+/** Set the device password and protection scope. Establishes the session that
+ *  authenticates the risky config writes performed at the end of setup. */
+async function commitSecurity(): Promise<boolean> {
+  if (passwordCommitted.value) return true
+  if (!canCommitSecurity.value || securityBusy.value) return false
+  securityBusy.value = true
+  securityError.value = null
+  try {
+    await authStore.setPassword(newPassword.value, undefined, rememberDevice.value)
+    if (protectionScope.value === 'all') {
+      await authStore.setPolicy('all')
+    }
+    passwordCommitted.value = true
+    newPassword.value = ''
+    confirmPassword.value = ''
+    return true
+  } catch (e) {
+    securityError.value =
+      e instanceof AuthApiError ? e.message : e instanceof Error ? e.message : String(e)
+    return false
+  } finally {
+    securityBusy.value = false
+  }
+}
 
 function onNasMountCreated() {
   nasMounted.value = true
@@ -420,6 +532,7 @@ function chooseManually() {
 const canProceed = computed(() => {
   if (currentStep.value === 1) return systemName.value.trim().length > 0
   if (currentStep.value === 2) return selectedCard.value !== ''
+  if (currentStep.value === 4) return !securityBusy.value && (passwordCommitted.value || canCommitSecurity.value)
   return true
 })
 
@@ -440,6 +553,18 @@ onMounted(async () => {
     }
   } catch (e) {
     console.error('Failed to load system info:', e)
+  }
+
+  // If a password already exists (e.g. setup re-run), don't ask to set another
+  // one — a session is enough. The security step then just confirms it's set.
+  try {
+    const status = await authStore.refreshStatus()
+    if (status.has_password) {
+      passwordCommitted.value = true
+      if (status.protection === 'all') protectionScope.value = 'all'
+    }
+  } catch (e) {
+    console.error('Failed to load auth status:', e)
   }
 })
 
@@ -519,13 +644,18 @@ async function loadStreamingServices() {
   }
 }
 
-function nextStep() {
+async function nextStep() {
   if (!canProceed.value) return
   if (currentStep.value === 1) {
     loadSoundCards()
   }
   if (currentStep.value === 2) {
     loadStreamingServices()
+  }
+  // Leaving the security step: commit the password + scope before advancing so
+  // the session is established for the config writes at the end of setup.
+  if (currentStep.value === 4 && !(await commitSecurity())) {
+    return
   }
   currentStep.value++
 }
@@ -1094,6 +1224,50 @@ async function finishAndReboot() {
   p {
     margin: 0;
     color: var(--color-body-secondary);
+    font-size: 0.875rem;
+  }
+}
+
+.recommended-badge {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.remember-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--color-body-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  input {
+    width: auto;
+  }
+}
+
+.security-error {
+  margin: 12px 0 0 0;
+  color: var(--color-error, #dc3545);
+  font-size: 0.875rem;
+}
+
+.password-set-notice {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+
+  p {
+    margin: 0;
+    color: var(--color-body);
     font-size: 0.875rem;
   }
 }

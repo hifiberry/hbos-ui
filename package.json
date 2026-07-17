@@ -1,6 +1,6 @@
 {
   "name": "hbos-ui",
-  "version": "0.20.1",
+  "version": "0.20.2",
   "description": "A modern Vue 3 web interface for HiFiBerryOS",
   "license": "MIT",
   "private": true,

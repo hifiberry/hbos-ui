@@ -8,7 +8,7 @@ Homepage: https://github.com/hifiberry/hbos-ui
 
 Package: hifiberry-webui
 Architecture: all
-Depends: ${misc:Depends}, nginx, python3
+Depends: ${misc:Depends}, nginx, python3, hifiberry-auth
 Description: HiFiBerry OS Web User Interface
  Modern web-based user interface for HiFiBerry OS.
  Provides a Vue.js-based frontend for configuring and

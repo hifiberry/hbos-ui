@@ -1,3 +1,13 @@
+hifiberry-webui (0.20.2) stable; urgency=medium
+
+  * Depend on hifiberry-auth. The web UI's nginx server block enforces the
+    auth gateway (auth_request + include /etc/nginx/hifiberry-auth.d/), which
+    only does anything when hifiberry-auth is installed. Without the dependency
+    a device could get the auth-aware web UI and localhost-bound backends but
+    no gateway, leaving the APIs reachable through nginx unauthenticated.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 17 Jul 2026 15:00:00 +0000
+
 hifiberry-webui (0.20.1) stable; urgency=medium
 
   * Setup wizard: add a "Secure your device" step where the user sets the device

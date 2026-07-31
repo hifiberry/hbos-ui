@@ -152,6 +152,7 @@ import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
 import AddSmbMountDialog from '@/components/AddSmbMountDialog.vue'
 import { getSmbMounts, unmountSmbShare, type SmbMount } from '@/api/smb'
+import { apiFetch } from '@/api/http'
 import { useAppConfigStore } from '@/stores/appconfig'
 import { useToastStore } from '@/stores/toast'
 
@@ -213,7 +214,10 @@ const rescanLibrary = async () => {
     const apiBaseUrl = configStore.getApiBaseUrl()
     const url = `${apiBaseUrl}/library/mpd/update`
 
-    const response = await fetch(url, {
+    // Rescanning is an ok-tier action and normally never prompts, but a device
+    // set to protection=all gates ok endpoints too — apiFetch handles that 401
+    // with a password prompt instead of a bare HTTP error.
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 // Types for SMB/CIFS API
 export interface SmbServer {
@@ -272,7 +273,7 @@ export const getSmbServers = async (): Promise<SmbServersResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/servers`, {
+  const response = await apiFetch(`${baseUrl}/smb/servers`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -313,7 +314,7 @@ export const testSmbServer = async (
     requestBody.password = password
   }
 
-  const response = await fetch(`${baseUrl}/smb/test/${encodeURIComponent(server)}`, {
+  const response = await apiFetch(`${baseUrl}/smb/test/${encodeURIComponent(server)}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -369,7 +370,7 @@ export const getSmbShares = async (
     requestBody.detailed = detailed
   }
 
-  const response = await fetch(`${baseUrl}/smb/shares`, {
+  const response = await apiFetch(`${baseUrl}/smb/shares`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -391,7 +392,7 @@ export const getSmbMounts = async (): Promise<SmbMountsResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/mounts`, {
+  const response = await apiFetch(`${baseUrl}/smb/mounts`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -418,7 +419,7 @@ export const mountSmbShare = async (mountRequest: SmbMountRequest): Promise<SmbM
     ...mountRequest
   }
 
-  const response = await fetch(`${baseUrl}/smb/mount`, {
+  const response = await apiFetch(`${baseUrl}/smb/mount`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -458,7 +459,7 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
   }
 
   try {
-    const response = await fetch(`${baseUrl}/smb/mount`, {
+    const response = await apiFetch(`${baseUrl}/smb/mount`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -494,7 +495,7 @@ export const mountSmbShareWithRetry = async (mountRequest: SmbMountRequest): Pro
       options: minimalOptions
     }
 
-    const retryResponse = await fetch(`${baseUrl}/smb/mount`, {
+    const retryResponse = await apiFetch(`${baseUrl}/smb/mount`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -541,7 +542,7 @@ export const unmountSmbShare = async (server: string, share: string): Promise<Sm
     share: share
   }
 
-  const response = await fetch(`${baseUrl}/smb/mount`, {
+  const response = await apiFetch(`${baseUrl}/smb/mount`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -579,7 +580,7 @@ export const mountAllSmbShares = async (): Promise<SmbMountResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/mount-all`, {
+  const response = await apiFetch(`${baseUrl}/smb/mount-all`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -600,7 +601,7 @@ export const getSmbMountDiagnostics = async (id: number): Promise<SmbDiagnostics
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/mounts/${id}/diagnostics`, {
+  const response = await apiFetch(`${baseUrl}/smb/mounts/${id}/diagnostics`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -621,7 +622,7 @@ export const checkSmbCapabilities = async (): Promise<SmbCapabilitiesResponse> =
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/smb/capabilities`, {
+  const response = await apiFetch(`${baseUrl}/smb/capabilities`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

@@ -1,3 +1,15 @@
+hifiberry-webui (0.20.4) stable; urgency=medium
+
+  * Music Files: route the SMB API through apiFetch. Adding an SMB mount hits
+    risky-tier endpoints (POST /smb/test/*, /smb/shares, /smb/mount,
+    /smb/mount-all); src/api/smb.ts still used plain fetch, so the gateway's
+    401 surfaced as "failed with HTTP 401" with no password prompt, and no
+    X-CSRF-Token was sent (failing even for an authenticated user).
+  * Rescan Library now goes through apiFetch as well, so it prompts instead of
+    erroring on devices set to protection=all.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 31 Jul 2026 08:00:00 +0000
+
 hifiberry-webui (0.20.3) stable; urgency=medium
 
   * getConfigValue(secure=true) now reads from the dedicated /key/<key>/secure

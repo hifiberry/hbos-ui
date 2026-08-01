@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 import { rewriteAudiocontrolApiUrl } from './utils'
 import { useToastStore } from '@/stores/toast'
 
@@ -42,7 +43,7 @@ export const addTrackToPlayer = async (
 
     console.log('Adding track to player:', { playerName, url, payload })
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -84,7 +85,7 @@ export const sendPlayerCommand = async (playerName: string, command: string): Pr
     const url = `${apiBaseUrl}/player/${playerName}/command/${command}`
     console.log('Sending player command:', { playerName, command, url })
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ export const pauseAllPlayers = async (): Promise<boolean> => {
     const url = `${apiBaseUrl}/players/pause-all`
     console.log('Pausing all players (bulk endpoint):', url)
 
-    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    const response = await apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
 
     if (response.ok) {
       const result = await response.json().catch(() => ({}))
@@ -139,7 +140,7 @@ export const pauseAllPlayers = async (): Promise<boolean> => {
       const configStore = useAppConfigStore()
       const apiBaseUrl = configStore.getApiBaseUrl()
 
-      const listResp = await fetch(`${apiBaseUrl}/players`)
+      const listResp = await apiFetch(`${apiBaseUrl}/players`)
       if (!listResp.ok) {
         throw new Error(`Failed to list players: ${listResp.status} ${listResp.statusText}`)
       }
@@ -151,13 +152,13 @@ export const pauseAllPlayers = async (): Promise<boolean> => {
         const pauseUrl = `${apiBaseUrl}/player/${encodeURIComponent(p.name)}/command/pause`
         const stopUrl = `${apiBaseUrl}/player/${encodeURIComponent(p.name)}/command/stop`
         try {
-          const r = await fetch(pauseUrl, { method: 'POST' })
+          const r = await apiFetch(pauseUrl, { method: 'POST' })
           if (r.ok) {
             succeeded++
             continue
           }
           // Try stop if pause not supported
-          const s = await fetch(stopUrl, { method: 'POST' })
+          const s = await apiFetch(stopUrl, { method: 'POST' })
           if (s.ok) succeeded++
         } catch (e) {
           console.warn(`Failed to pause/stop player '${p.name}':`, e)
@@ -186,7 +187,7 @@ export const stopAllPlayers = async (): Promise<boolean> => {
     const url = `${apiBaseUrl}/players/stop-all`
     console.log('Stopping all players (bulk endpoint):', url)
 
-    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    const response = await apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
 
     if (response.ok) {
       const result = await response.json().catch(() => ({}))
@@ -206,7 +207,7 @@ export const stopAllPlayers = async (): Promise<boolean> => {
       const configStore = useAppConfigStore()
       const apiBaseUrl = configStore.getApiBaseUrl()
 
-      const listResp = await fetch(`${apiBaseUrl}/players`)
+      const listResp = await apiFetch(`${apiBaseUrl}/players`)
       if (!listResp.ok) {
         throw new Error(`Failed to list players: ${listResp.status} ${listResp.statusText}`)
       }
@@ -217,7 +218,7 @@ export const stopAllPlayers = async (): Promise<boolean> => {
       for (const p of players) {
         const stopUrl = `${apiBaseUrl}/player/${encodeURIComponent(p.name)}/command/stop`
         try {
-          const r = await fetch(stopUrl, { method: 'POST' })
+          const r = await apiFetch(stopUrl, { method: 'POST' })
           if (r.ok) {
             succeeded++
           }

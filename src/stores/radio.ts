@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 import { sendPlayerCommand, addTrackToPlayer } from '@/api/player'
 import { getConfigValue, setConfigValue } from '@/api/config'
 
@@ -93,7 +94,7 @@ export const useRadioStore = defineStore('radio', () => {
        * Get the M3U via the `audiocontrol` API.
        */
       console.log('Using backend M3U parsing API...')
-      const response = await fetch(`${backendUrl}/m3u/parse`, {
+      const response = await apiFetch(`${backendUrl}/m3u/parse`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -172,7 +173,7 @@ export const useRadioStore = defineStore('radio', () => {
       }
     }
     try {
-      const response: Response = await fetch('https://all.api.radio-browser.info/json/servers')
+      const response: Response = await fetch("https://all.api.radio-browser.info/json/servers")
       const servers = (await response.json()) as unknown
       if (servers && servers.length > 0) {
         const randomServer = servers[Math.floor(Math.random() * servers.length)]

@@ -202,7 +202,7 @@ export const getSystemInfo = async (): Promise<SystemInfo> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/systeminfo`, {
+  const response = await apiFetch(`${baseUrl}/systeminfo`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -246,7 +246,7 @@ export const getSoundCards = async (): Promise<SoundCardsResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/soundcards`, {
+  const response = await apiFetch(`${baseUrl}/soundcards`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -291,7 +291,7 @@ export const detectSoundCard = async (): Promise<SoundCardDetectionResponse> => 
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/soundcard/detect`, {
+  const response = await apiFetch(`${baseUrl}/soundcard/detect`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -317,7 +317,7 @@ export const detectSoundCardLive = async (): Promise<SoundCardDetectionResponse>
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/soundcard/detect-live`, {
+  const response = await apiFetch(`${baseUrl}/soundcard/detect-live`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -374,7 +374,7 @@ export const getSoundCardDetectionStatus = async (): Promise<{
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/soundcard/detection`, {
+  const response = await apiFetch(`${baseUrl}/soundcard/detection`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -468,7 +468,7 @@ export const getCacheStats = async (): Promise<CacheStatsResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/cache/stats`, {
+  const response = await apiFetch(`${baseUrl}/cache/stats`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -489,7 +489,7 @@ export const getBackgroundJobs = async (): Promise<BackgroundJobsResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/background/jobs`, {
+  const response = await apiFetch(`${baseUrl}/background/jobs`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -513,7 +513,7 @@ export const checkFileExistence = async (filePaths: string[]): Promise<FileExist
   const results: FileExistence[] = []
 
   for (const filePath of filePaths) {
-    const response = await fetch(`${baseUrl}/filesystem/file-exists`, {
+    const response = await apiFetch(`${baseUrl}/filesystem/file-exists`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -555,7 +555,7 @@ export const getSetupStatus = async (): Promise<SetupStatusResponse> => {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getConfigApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/setup/status`, {
+  const response = await apiFetch(`${baseUrl}/setup/status`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

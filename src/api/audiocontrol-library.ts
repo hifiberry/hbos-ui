@@ -29,7 +29,7 @@ export const getLibraryPlayers = async (): Promise<LibraryPlayerListResponse> =>
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/library`)
+  const response = await apiFetch(`${baseUrl}/library`)
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)
@@ -45,7 +45,7 @@ export const getLibraryStats = async (playerName: string): Promise<LibraryStatsR
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/library/${playerName}`)
+  const response = await apiFetch(`${baseUrl}/library/${playerName}`)
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)

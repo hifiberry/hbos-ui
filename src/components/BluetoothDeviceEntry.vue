@@ -16,6 +16,7 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 import { useToastStore } from '@/stores/toast'
 
 const configStore = useAppConfigStore()
@@ -32,7 +33,7 @@ const props = defineProps<{
 const handleDisconnect = async () => {
   const toastStore = useToastStore()
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `${apiBaseUrl}/bluetooth/unpair?address=${props.address}`,
       { method: "POST" }
     )

@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 import type { Song } from '@/types/player'
 
 export interface CoverArtProvider {
@@ -63,7 +64,7 @@ export class CoverArtLoader {
     try {
       console.log(`Fetching cover art from endpoint: /coverart/${endpoint}`)
       const apiBaseUrl = this.configStore.getApiBaseUrl()
-      const response = await fetch(`${apiBaseUrl}/coverart/${endpoint}`)
+      const response = await apiFetch(`${apiBaseUrl}/coverart/${endpoint}`)
 
       if (!response.ok) {
         console.warn(`Cover art API request failed: ${response.status} for ${endpoint}`)
@@ -414,7 +415,7 @@ export class CoverArtLoader {
     try {
       console.log('Checking if cover art API is available')
       const apiBaseUrl = this.configStore.getApiBaseUrl()
-      const response = await fetch(`${apiBaseUrl}/coverart/methods`)
+      const response = await apiFetch(`${apiBaseUrl}/coverart/methods`)
       const isAvailable = response.ok
       console.log('Cover art API availability:', isAvailable)
       return isAvailable

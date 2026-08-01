@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 /** A device audiocontrol bound at startup. */
 export interface BoundInputDevice {
@@ -64,7 +65,7 @@ const buildInputsApiUrl = (endpoint: string): string => {
 export const getInputs = async (): Promise<InputsResponse | null> => {
   try {
     const url = buildInputsApiUrl('')
-    const response = await fetch(url)
+    const response = await apiFetch(url)
 
     if (!response.ok) {
       console.error('Failed to get inputs:', response.status, response.statusText)

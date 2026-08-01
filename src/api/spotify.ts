@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 // Types for Spotify API
 export interface SpotifyAuthResponse {
@@ -46,7 +47,7 @@ export const getSpotifyStatus = async (): Promise<SpotifyStatusResponse> => {
   const baseUrl = appConfigStore.getApiBaseUrl()
 
   try {
-    const response = await fetch(`${baseUrl}/spotify/status`)
+    const response = await apiFetch(`${baseUrl}/spotify/status`)
 
     if (!response.ok) {
       throw new Error(`Failed to get Spotify status: ${response.status} ${response.statusText}`)
@@ -67,7 +68,7 @@ export const createSpotifySession = async (): Promise<SpotifyAuthResponse> => {
   const baseUrl = appConfigStore.getApiBaseUrl()
 
   try {
-    const response = await fetch(`${baseUrl}/spotify/create_session`)
+    const response = await apiFetch(`${baseUrl}/spotify/create_session`)
 
     if (!response.ok) {
       throw new Error(`Failed to create Spotify session: ${response.status} ${response.statusText}`)
@@ -88,7 +89,7 @@ export const getSpotifyLoginUrl = async (sessionId: string): Promise<SpotifyAuth
   const baseUrl = appConfigStore.getApiBaseUrl()
 
   try {
-    const response = await fetch(`${baseUrl}/spotify/login/${sessionId}`)
+    const response = await apiFetch(`${baseUrl}/spotify/login/${sessionId}`)
 
     if (!response.ok) {
       throw new Error(`Failed to get Spotify login URL: ${response.status} ${response.statusText}`)
@@ -109,7 +110,7 @@ export const pollSpotifyAuth = async (sessionId: string): Promise<SpotifyPollRes
   const baseUrl = appConfigStore.getApiBaseUrl()
 
   try {
-    const response = await fetch(`${baseUrl}/spotify/poll/${sessionId}`)
+    const response = await apiFetch(`${baseUrl}/spotify/poll/${sessionId}`)
 
     if (!response.ok) {
       throw new Error(`Failed to poll Spotify auth: ${response.status} ${response.statusText}`)
@@ -134,7 +135,7 @@ export const storeSpotifyTokens = async (tokenData: {
   const baseUrl = appConfigStore.getApiBaseUrl()
 
   try {
-    const response = await fetch(`${baseUrl}/spotify/tokens`, {
+    const response = await apiFetch(`${baseUrl}/spotify/tokens`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -161,7 +162,7 @@ export const disconnectSpotify = async (): Promise<SpotifyDisconnectResponse> =>
   const baseUrl = appConfigStore.getApiBaseUrl()
 
   try {
-    const response = await fetch(`${baseUrl}/spotify/logout`, {
+    const response = await apiFetch(`${baseUrl}/spotify/logout`, {
       method: 'POST'
     })
 

@@ -441,6 +441,7 @@ export interface RIAANotchSetResponse {
 // ============================================================================
 
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 /**
  * Gets the api config url from the `configStore`.
@@ -488,7 +489,7 @@ async function apiRequest<T>(
   const url = `${getApiBaseUrl()}${endpoint}`
 
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -686,7 +687,7 @@ export async function listInputPorts(): Promise<ApiResponse<PortsList>> {
  * Get audio topology in DOT format
  */
 export async function getGraphDot(): Promise<string> {
-  const response = await fetch(`${getApiBaseUrl()}/graph`)
+  const response = await apiFetch(`${getApiBaseUrl()}/graph`)
   return response.text()
 }
 
@@ -694,7 +695,7 @@ export async function getGraphDot(): Promise<string> {
  * Get audio topology as PNG image
  */
 export async function getGraphPng(): Promise<Blob> {
-  const response = await fetch(`${getApiBaseUrl()}/graph/png`)
+  const response = await apiFetch(`${getApiBaseUrl()}/graph/png`)
   return response.blob()
 }
 

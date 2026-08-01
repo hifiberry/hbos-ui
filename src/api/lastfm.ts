@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 // Types for Last.FM API
 export interface LastFMAuthResponse {
@@ -39,7 +40,7 @@ export const getLastFMStatus = async (): Promise<LastFMStatusResponse> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/lastfm/status`)
+  const response = await apiFetch(`${baseUrl}/lastfm/status`)
 
   if (!response.ok) {
     throw new Error(`Failed to get Last.FM status: ${response.status} ${response.statusText}`)
@@ -55,7 +56,7 @@ export const startLastFMAuth = async (): Promise<LastFMAuthResponse> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/lastfm/auth`)
+  const response = await apiFetch(`${baseUrl}/lastfm/auth`)
 
   if (!response.ok) {
     throw new Error(`Failed to start Last.FM auth: ${response.status} ${response.statusText}`)
@@ -71,7 +72,7 @@ export const prepareLastFMAuthCompletion = async (token: string): Promise<LastFM
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/lastfm/prepare_complete_auth`, {
+  const response = await apiFetch(`${baseUrl}/lastfm/prepare_complete_auth`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -93,7 +94,7 @@ export const completeLastFMAuth = async (): Promise<LastFMCompleteAuthResponse> 
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/lastfm/complete_auth`)
+  const response = await apiFetch(`${baseUrl}/lastfm/complete_auth`)
 
   if (!response.ok) {
     throw new Error(`Failed to complete Last.FM auth: ${response.status} ${response.statusText}`)
@@ -109,7 +110,7 @@ export const disconnectLastFM = async (): Promise<LastFMDisconnectResponse> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getApiBaseUrl()
 
-  const response = await fetch(`${baseUrl}/lastfm/disconnect`, {
+  const response = await apiFetch(`${baseUrl}/lastfm/disconnect`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

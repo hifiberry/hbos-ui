@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 export interface VolumeInfo {
   available: boolean
@@ -89,7 +90,7 @@ const buildHeadphoneVolumeApiUrl = (endpoint: string): string => {
 export const getVolumeInfo = async (): Promise<VolumeInfo | null> => {
   try {
     const url = buildVolumeApiUrl('/info')
-    const response = await fetch(url)
+    const response = await apiFetch(url)
 
     if (!response.ok) {
       console.error('Failed to get volume info:', response.status, response.statusText)
@@ -109,7 +110,7 @@ export const getVolumeInfo = async (): Promise<VolumeInfo | null> => {
 export const getVolumeState = async (): Promise<VolumeState | null> => {
   try {
     const url = buildVolumeApiUrl('/state')
-    const response = await fetch(url)
+    const response = await apiFetch(url)
 
     if (!response.ok) {
       if (response.status === 503) {
@@ -137,7 +138,7 @@ export const setVolumeLevel = async (percentage: number): Promise<VolumeResponse
     }
 
     const url = buildVolumeApiUrl('/set')
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -166,7 +167,7 @@ export const setVolumeLevel = async (percentage: number): Promise<VolumeResponse
 export const increaseVolume = async (amount: number = 5.0): Promise<VolumeResponse | null> => {
   try {
     const url = buildVolumeApiUrl(`/increase?amount=${amount}`)
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST'
     })
 
@@ -188,7 +189,7 @@ export const increaseVolume = async (amount: number = 5.0): Promise<VolumeRespon
 export const decreaseVolume = async (amount: number = 5.0): Promise<VolumeResponse | null> => {
   try {
     const url = buildVolumeApiUrl(`/decrease?amount=${amount}`)
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST'
     })
 
@@ -210,7 +211,7 @@ export const decreaseVolume = async (amount: number = 5.0): Promise<VolumeRespon
 export const toggleMute = async (): Promise<VolumeResponse | null> => {
   try {
     const url = buildVolumeApiUrl('/mute')
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST'
     })
 
@@ -234,7 +235,7 @@ export const toggleMute = async (): Promise<VolumeResponse | null> => {
 export const getHeadphoneControls = async (): Promise<HeadphoneControlsResponse> => {
   try {
     const url = buildHeadphoneVolumeApiUrl('/controls')
-    const response = await fetch(url)
+    const response = await apiFetch(url)
 
     if (!response.ok) {
       console.error('Failed to get headphone controls:', response.status, response.statusText)
@@ -260,7 +261,7 @@ export const getHeadphoneControls = async (): Promise<HeadphoneControlsResponse>
 export const getHeadphoneVolume = async (): Promise<HeadphoneVolumeResponse> => {
   try {
     const url = buildHeadphoneVolumeApiUrl('')
-    const response = await fetch(url)
+    const response = await apiFetch(url)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
@@ -294,7 +295,7 @@ export const setHeadphoneVolume = async (volume: number): Promise<HeadphoneVolum
     }
 
     const url = buildHeadphoneVolumeApiUrl('')
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -329,7 +330,7 @@ export const setHeadphoneVolume = async (volume: number): Promise<HeadphoneVolum
 export const storeHeadphoneVolume = async (): Promise<HeadphoneVolumeSetResponse> => {
   try {
     const url = buildHeadphoneVolumeApiUrl('/store')
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST'
     })
 
@@ -358,7 +359,7 @@ export const storeHeadphoneVolume = async (): Promise<HeadphoneVolumeSetResponse
 export const restoreHeadphoneVolume = async (): Promise<HeadphoneVolumeSetResponse> => {
   try {
     const url = buildHeadphoneVolumeApiUrl('/restore')
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST'
     })
 

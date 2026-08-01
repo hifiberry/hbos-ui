@@ -1,3 +1,34 @@
+hifiberry-webui (0.20.5) stable; urgency=medium
+
+  * Web Services: route the Spotify and Last.fm APIs through apiFetch. Both
+    connection flows are risky-tier apart from their /status reads
+    (/spotify/create_session, /login/*, /poll/*, /tokens, /logout and
+    /lastfm/auth, /prepare_complete_auth, /complete_auth, /disconnect), but
+    src/api/spotify.ts and src/api/lastfm.ts still used plain fetch. Clicking
+    Connect therefore failed on the gateway's 401 with no password prompt at
+    all, and sent no X-CSRF-Token, so it failed even for a signed-in user.
+    Reported at support.hifiberry.com/forum/c/software/10860 and /10861.
+  * Room EQ: startRoomEQRecording and startRoomMeasure now prompt as well.
+    Microphone recording and room measurement are deliberately risky, so
+    measuring a room was impossible without a password prompt appearing.
+  * The filter-chain view (/api/config/v1/pipewire/filtergraph), the bare
+    config collection read and getConfigValue(secure=true) now prompt instead
+    of throwing a raw 401.
+  * Bluetooth pairing, unpair, the settings toggles and passkey confirmation
+    go through apiFetch; /bluetooth/* is only ok-tier for GET, so every
+    Bluetooth write hit the same dead end.
+  * The remaining device API calls (player, volume, library, inputs, coverart,
+    pipewire, dsptoolkit, system) are routed through apiFetch too, so they keep
+    working if a manifest reclassifies them or protection is set to "all".
+    Third-party endpoints (MusicBrainz, radio-browser.info) stay on plain
+    fetch, since they are not behind the gateway.
+  * Adds src/api/__tests__/noRawFetch.test.ts, which fails the build if any new
+    call to a device API base URL uses plain fetch, plus spotify, lastfm,
+    bluetooth and riskyEndpoints suites covering the challenge, retry, csrf and
+    cancel paths.
+
+ -- HiFiBerry <support@hifiberry.com>  Sat, 01 Aug 2026 08:00:00 +0000
+
 hifiberry-webui (0.20.4) stable; urgency=medium
 
   * Music Files: route the SMB API through apiFetch. Adding an SMB mount hits

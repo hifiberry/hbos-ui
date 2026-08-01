@@ -92,7 +92,7 @@ export const getAllConfig = async (prefix?: string): Promise<ConfigApiResponse<R
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = prefix ? `${baseUrl}?prefix=${encodeURIComponent(prefix)}` : baseUrl
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to get config: ${response.status} ${response.statusText}`)
@@ -110,7 +110,7 @@ export const getConfigKeys = async (prefix?: string): Promise<ConfigApiResponse<
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = prefix ? `${baseUrl}/keys?prefix=${encodeURIComponent(prefix)}` : `${baseUrl}/keys`
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to get config keys: ${response.status} ${response.statusText}`)
@@ -144,7 +144,7 @@ export const getConfigValue = async (
     : `/key/${encodeURIComponent(key)}`
   const url = `${baseUrl}${path}${params.toString() ? `?${params.toString()}` : ''}`
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to get config value: ${response.status} ${response.statusText}`)
@@ -307,7 +307,7 @@ export const getSystemdServices = async (): Promise<ConfigApiResponse<SystemdSer
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/systemd/services`
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to get systemd services: ${response.status} ${response.statusText}`)
@@ -325,7 +325,7 @@ export const getSystemdServiceStatus = async (service: string): Promise<ConfigAp
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/systemd/service/${encodeURIComponent(service)}`
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to get service status: ${response.status} ${response.statusText}`)
@@ -343,7 +343,7 @@ export const checkSystemdServiceExists = async (service: string): Promise<Config
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/systemd/service/${encodeURIComponent(service)}/exists`
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to check service existence: ${response.status} ${response.statusText}`)
@@ -508,7 +508,7 @@ export const getNetworkConfiguration = async (): Promise<ConfigApiResponse<Netwo
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/network`
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to get network configuration: ${response.status} ${response.statusText}`)
@@ -529,7 +529,7 @@ export const scanI2CDevices = async (busNumber?: number): Promise<ConfigApiRespo
   const params = busNumber !== undefined ? `?bus=${busNumber}` : ''
   const url = `${baseUrl}/i2c/devices${params}`
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to scan I2C devices: ${response.status} ${response.statusText}`)
@@ -570,7 +570,7 @@ export const getExternalPlayers = async (): Promise<ExternalPlayer[]> => {
   const url = `${baseUrl}/players`
 
   try {
-    const response = await fetch(url)
+    const response = await apiFetch(url)
     if (!response.ok) return []
     const data = await response.json()
     const players: ExternalPlayer[] = data.data?.players || []

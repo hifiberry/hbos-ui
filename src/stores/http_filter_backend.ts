@@ -11,6 +11,7 @@
  * const backend = new HttpFilterBackend('http://your-api-url')
  */
 
+import { apiFetch } from '@/api/http'
 import { FilterBackend, type Filter, type FilterBanks, type BackendCapabilities } from './filter_backend_interface'
 
 export class HttpFilterBackend extends FilterBackend {
@@ -58,7 +59,7 @@ export class HttpFilterBackend extends FilterBackend {
       options.body = JSON.stringify(data)
     }
 
-    const response = await fetch(url, options)
+    const response = await apiFetch(url, options)
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)

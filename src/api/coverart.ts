@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 export interface CoverArtUpdateRequest {
   url: string
@@ -54,7 +55,7 @@ export async function updateArtistImage(artistName: string, imageUrl: string): P
   })
 
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -101,7 +102,7 @@ export async function getCoverArtMethods(): Promise<CoverArtMethodsResponse> {
   console.log('Fetching cover art methods:', { url })
 
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'

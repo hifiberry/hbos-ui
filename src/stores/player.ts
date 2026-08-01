@@ -28,6 +28,7 @@ import type { Track } from '@/types/library'
 import type { Player, CurrentPlayer, Song, Capabilities } from '@/types/player'
 
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 // Configuration
 export const PLAYER_CONFIG = {
@@ -134,7 +135,7 @@ export const usePlayerStore = defineStore('player', () => {
     console.log('fetchPlayers')
     try {
       const apiBase = configStore.getApiBaseUrl()
-      const response = await fetch(`${apiBase}/players`)
+      const response = await apiFetch(`${apiBase}/players`)
       const data = await response.json()
       console.log('fetchPlayers data', data)
       if (data.players && Array.isArray(data.players)) {
@@ -230,7 +231,7 @@ export const usePlayerStore = defineStore('player', () => {
     console.log('*** fetchCurrentPlayer')
     try {
       const apiBase = configStore.getApiBaseUrl()
-      const response = await fetch(`${apiBase}/now-playing`)
+      const response = await apiFetch(`${apiBase}/now-playing`)
       const data = await response.json()
       console.log('fetchCurrentPlayer data', data)
       if (!data) {
@@ -268,7 +269,7 @@ export const usePlayerStore = defineStore('player', () => {
     console.log('retrieveActivePlayer')
     try {
       const apiBase = configStore.getApiBaseUrl()
-      const response = await fetch(`${apiBase}/now-playing`)
+      const response = await apiFetch(`${apiBase}/now-playing`)
       const data = await response.json()
       if (data && data.player && data.player.name) {
         console.log(`Retrieved active player name: ${data.player.name}`)
@@ -331,7 +332,7 @@ export const usePlayerStore = defineStore('player', () => {
         url = `${apiBase}/player/active/command/${command}`
       }
       console.log(`Sending command to: ${url}`)
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: 'POST',
       })
       console.log('sendCommand', response)

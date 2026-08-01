@@ -28,6 +28,7 @@
 /* IMPORTS */
 import { ref } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 import ContentBox from '@/components/ContentBox.vue'
 
 
@@ -61,7 +62,7 @@ function close() {
   */
 async function sendPasskey() {
   try {
-    const response = await fetch(`${apiBaseUrl}/bluetooth/passkey`, {
+    const response = await apiFetch(`${apiBaseUrl}/bluetooth/passkey`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ passkey: passkey.value })

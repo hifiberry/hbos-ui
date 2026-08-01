@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 // RoomEQ API version requirements
 export const ROOMEQ_MINIMUM_VERSION = '0.6.0'
@@ -400,7 +401,7 @@ export const detectUsableFrequencyRange = async (
     const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
     const url = `${apiBaseUrl}/eq/usable-range`
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -445,7 +446,7 @@ export const startNewRoomEQOptimizationStream = async (
 
     console.log('Starting new streaming EQ optimization:', url, payload)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -684,7 +685,7 @@ export const startRoomEQOptimizationStream = async (
 
     console.log('Starting streaming RoomEQ optimization:', url, payload)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -798,7 +799,7 @@ export const getRoomEQOptimizerPresets = async (): Promise<RoomEQApiEnvelope<Roo
     const apiBaseUrl = configStore.getRoomEQApiBaseUrl()
     const url = `${apiBaseUrl}/eq/presets/optimizers`
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     })
@@ -887,7 +888,7 @@ export const startRoomEQOptimization = async (
 
     console.log('Starting RoomEQ optimization:', url, payload)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -919,7 +920,7 @@ export const getRoomEQOptimizationStatus = async (
 
     console.log('Getting RoomEQ optimization status:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -950,7 +951,7 @@ export const cancelRoomEQOptimization = async (
 
     console.log('Cancelling RoomEQ optimization:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -981,7 +982,7 @@ export const getRoomEQOptimizationResult = async (
 
     console.log('Getting RoomEQ optimization result:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -1012,7 +1013,7 @@ export const getRoomEQOptimizationTargetCurves = async (): Promise<RoomEQApiEnve
     for (const path of candidates) {
       const url = `${apiBaseUrl}${path}`
       try {
-        const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
+        const response = await apiFetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
         if (!response.ok) {
           lastDetail = `HTTP ${response.status}`
           continue
@@ -1062,7 +1063,7 @@ export const getRoomEQTargetPresets = async (): Promise<RoomEQApiEnvelope<RoomEQ
 
     console.log('Getting RoomEQ target presets:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -1140,7 +1141,7 @@ export const getRoomEQInfo = async (): Promise<RoomEQApiEnvelope<RoomEQApiInfo>>
 
     console.log('Getting RoomEQ API info:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1179,7 +1180,7 @@ export const getRoomEQVersion = async (): Promise<RoomEQApiEnvelope<RoomEQVersio
 
     console.log('Getting RoomEQ version info:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1292,7 +1293,7 @@ export const getRoomEQMicrophones = async (): Promise<RoomEQApiEnvelope<RoomEQMi
 
     console.log('Getting RoomEQ microphones:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1337,7 +1338,7 @@ export const getRoomEQMicrophonesRaw = async (): Promise<RoomEQApiEnvelope<RoomE
 
     console.log('Getting RoomEQ raw microphones:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1376,7 +1377,7 @@ export const getRoomEQAudioInputs = async (): Promise<RoomEQApiEnvelope<RoomEQAu
 
     console.log('Getting RoomEQ audio inputs:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1415,7 +1416,7 @@ export const getRoomEQAudioCards = async (): Promise<RoomEQApiEnvelope<RoomEQAud
 
     console.log('Getting RoomEQ audio cards:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1454,7 +1455,7 @@ export const startRoomEQNoise = async (amplitude: number = 0.5, duration: number
 
     console.log('Starting RoomEQ white noise:', url, 'amplitude:', amplitude, 'duration:', duration)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1493,7 +1494,7 @@ export const stopRoomEQNoise = async (): Promise<RoomEQApiEnvelope<RoomEQSignalR
 
     console.log('Stopping RoomEQ white noise:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1532,7 +1533,7 @@ export const keepRoomEQNoisePlaying = async (duration: number = 3.0): Promise<Ro
 
     console.log('Extending RoomEQ white noise playback:', url, 'duration:', duration)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1571,7 +1572,7 @@ export const getRoomEQNoiseStatus = async (): Promise<RoomEQApiEnvelope<RoomEQNo
 
     console.log('Getting RoomEQ noise status:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1626,7 +1627,7 @@ export const startRoomEQSweep = async (
 
     console.log('Starting RoomEQ sine sweep(s):', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -1676,7 +1677,7 @@ export const startRoomEQSweepSox = async (
 
     console.log('Starting RoomEQ SoX sine sweep(s):', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -1721,7 +1722,7 @@ export const startRoomEQRecording = async (
 
     console.log('Starting RoomEQ recording:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -1756,7 +1757,7 @@ export const getRoomEQRecordingStatus = async (
 
     console.log('Getting RoomEQ recording status:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -1789,7 +1790,7 @@ export const setRoomEQNoiseVolume = async (volume: number): Promise<RoomEQApiEnv
 
     console.log('Setting RoomEQ noise volume:', url, 'volume:', volume)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1829,7 +1830,7 @@ export const measureRoomEQSPL = async (): Promise<RoomEQApiEnvelope<RoomEQSPLMea
 
     console.log('Measuring RoomEQ SPL:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1878,7 +1879,7 @@ export const analyzeRoomEQFFTRecording = async (
 
     console.log('Performing RoomEQ FFT analysis on recording:', url)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -1956,7 +1957,7 @@ export const analyzeRoomEQFFTDifference = async (
 
     console.log('Performing RoomEQ FFT difference analysis:', url)
 
-    const response = await fetch(url, { method: 'POST' })
+    const response = await apiFetch(url, { method: 'POST' })
 
     if (!response.ok) {
       throw new Error(`Failed to perform FFT difference analysis: ${response.status} ${response.statusText}`)
@@ -2216,7 +2217,7 @@ export const startRoomEQPrerecordedSignal = async (filename: string, amplitude: 
 
     console.log('Starting RoomEQ pre-recorded signal:', filename, 'amplitude:', amplitude, 'repeat:', repeat, 'duration:', duration)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2301,7 +2302,7 @@ export const startRoomMeasure = async (
     const url = `${apiBaseUrl}/audio/room-measure${params.toString() ? '?' + params.toString() : ''}`
     console.log('Starting room measurement:', url, request)
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

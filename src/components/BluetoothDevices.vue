@@ -26,6 +26,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 import BluetoothDeviceEntry from '@/components/BluetoothDeviceEntry.vue'
 import ContentBox from '@/components/ContentBox.vue'
 
@@ -49,7 +50,7 @@ const fetchDevices = async () => {
   error.value = null
 
   try {
-    const response = await fetch(`${apiBaseUrl}/bluetooth/paired-devices`)
+    const response = await apiFetch(`${apiBaseUrl}/bluetooth/paired-devices`)
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
     const result = await response.json()
     console.log(result);

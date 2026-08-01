@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 const API_TIMEOUT = 10000
 const DSP_PROFILE_DEPLOYMENT_TIMEOUT = 90000 // 90 seconds for DSP profile deployment
@@ -281,7 +282,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT)
 
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -334,7 +335,7 @@ async function longApiRequest<T>(endpoint: string, options: RequestInit = {}, ti
   const timeoutId = setTimeout(() => controller.abort(), timeout)
 
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -481,7 +482,7 @@ export async function clearCache(): Promise<{ status: string }> {
 export async function getDSPProfile(): Promise<string> {
   const appConfigStore = useAppConfigStore()
   const baseUrl = appConfigStore.getDSPToolkitApiBaseUrl()
-  const response = await fetch(`${baseUrl}/dspprofile`)
+  const response = await apiFetch(`${baseUrl}/dspprofile`)
   return response.text()
 }
 

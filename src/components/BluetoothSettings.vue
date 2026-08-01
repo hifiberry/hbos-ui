@@ -26,6 +26,7 @@
 /* IMPORTS */
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 import { useToastStore } from '@/stores/toast'
 import ContentBox from '@/components/ContentBox.vue'
 import BluetoothSettingsModal from '@/components/BluetoothSettings/BluetoothSettingsModal.vue'
@@ -56,7 +57,7 @@ const capability = ref("KeyboardOnly")
   */
 onMounted(async () => {
   try {
-    const response = await fetch(`${apiBaseUrl}/bluetooth/settings`)
+    const response = await apiFetch(`${apiBaseUrl}/bluetooth/settings`)
     const data = await response.json()
 
     capability.value = data.data.capability
@@ -94,7 +95,7 @@ async function updateSetting(key: string, newValue: boolean | number | string) {
   const url = `${apiBaseUrl}/bluetooth/settings?${key}=${valueString}`
 
   try {
-    const response = await fetch(url, { method: "POST" })
+    const response = await apiFetch(url, { method: "POST" })
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
     const data = await response.json()
     console.log("Update successful:", data)
@@ -145,7 +146,7 @@ function startCountdown() {
   */
 async function showModalIfTrue() {
   try {
-    const response = await fetch(`${apiBaseUrl}/bluetooth/modal`);
+    const response = await apiFetch(`${apiBaseUrl}/bluetooth/modal`);
     const data = await response.json();
 
     console.log(data.modal);

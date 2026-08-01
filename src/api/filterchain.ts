@@ -1,4 +1,5 @@
 import { useAppConfigStore } from '@/stores/appconfig'
+import { apiFetch } from '@/api/http'
 
 export interface FilterChainResponse {
   status: 'success' | 'error'
@@ -14,7 +15,7 @@ export const getFilterChain = async (): Promise<FilterChainResponse> => {
   const baseUrl = configStore.getConfigApiBaseUrl()
   const url = `${baseUrl}/pipewire/filtergraph`
 
-  const response = await fetch(url)
+  const response = await apiFetch(url)
 
   if (!response.ok) {
     throw new Error(`Failed to get filtergraph: ${response.status} ${response.statusText}`)

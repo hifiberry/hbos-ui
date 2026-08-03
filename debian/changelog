@@ -1,3 +1,16 @@
+hifiberry-webui (0.20.6) stable; urgency=medium
+
+  * Cover art: stop retrying an image the browser has already rejected. A cover
+    art URL that 404s made onImageError run the fallback chain, but the metadata
+    fallback was routed through loadCoverArt(), whose cache is keyed on
+    title/artist/album - so it returned the cached broken result and the
+    fallback URL was discarded. Toggling the loading state then recreated the
+    <img> with the same dead src, firing the error handler again, forever. The
+    component now tracks failed URLs, advances through the remaining candidates,
+    and falls back to the placeholder once they are exhausted.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 03 Aug 2026 10:00:00 +0000
+
 hifiberry-webui (0.20.5) stable; urgency=medium
 
   * Web Services: route the Spotify and Last.fm APIs through apiFetch. Both

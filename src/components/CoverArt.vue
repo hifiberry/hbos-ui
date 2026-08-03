@@ -4,7 +4,7 @@
 -->
 <template>
   <div class="cover-art" :class="[
-    { loading: isLoading, 'has-cover': hasCoverArt },
+    { loading: isLoading, 'has-cover': !!displayUrl },
     size,
     { 'container-sized': adaptToContainer }
   ]">
@@ -13,8 +13,9 @@
     </div>
 
     <img
-      v-else-if="hasCoverArt && bestCoverArt"
-      :src="bestCoverArt"
+      v-else-if="displayUrl"
+      :key="displayUrl"
+      :src="displayUrl"
       :alt="imageAlt"
       :class="['cover-image', `source-${coverArtSource}`]"
       @error="onImageError"
@@ -34,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useCoverArt } from '@/composables/useCoverArt'
 import type { Song } from '@/types/player'
 
@@ -61,14 +62,38 @@ const emit = defineEmits<{
 // Use the cover art composable
 const {
   loading: isLoading,
-  hasCoverArt,
-  bestCoverArt,
+  coverArtUrls,
   coverArtSource,
   loadCoverArt,
   loadCoverArtFromAPI,
   clearCoverArt,
   clearCache
 } = useCoverArt()
+
+// URLs that the browser could not load, plus URLs discovered while falling back.
+// Both are reset whenever the song changes.
+const failedUrls = ref<string[]>([])
+const fallbackUrls = ref<string[]>([])
+const fallbackRunning = ref(false)
+const fallbackExhausted = ref(false)
+const apiFallbackTried = ref(false)
+
+// Candidates in preference order, minus everything already known to be broken.
+const candidateUrls = computed(() =>
+  [...coverArtUrls.value, ...fallbackUrls.value].filter(url => url && !failedUrls.value.includes(url))
+)
+
+// The URL currently shown. Advancing through the candidates is what makes a
+// failed image move on instead of being requested over and over again.
+const displayUrl = computed(() => candidateUrls.value[0] || null)
+
+const resetFallbackState = () => {
+  failedUrls.value = []
+  fallbackUrls.value = []
+  fallbackRunning.value = false
+  fallbackExhausted.value = false
+  apiFallbackTried.value = false
+}
 
 // Computed properties
 const imageAlt = computed(() => {
@@ -84,6 +109,8 @@ const imageAlt = computed(() => {
 
 // Methods
 const loadCoverArtForSong = async () => {
+  resetFallbackState()
+
   if (!props.song) {
     clearCoverArt()
     return
@@ -108,29 +135,47 @@ const loadCoverArtForSong = async () => {
 
 const onImageError = async (event: Event) => {
   const img = event.target as HTMLImageElement
-  console.warn('🚨 Cover art image failed to load:', img.src)
-  console.log('🔍 Current song:', props.song?.title, 'by', props.song?.artist)
-  console.log('🔍 Cover art source:', coverArtSource.value)
+  // Use the src attribute, not img.src: the attribute holds the candidate URL
+  // as we know it, while img.src has been resolved to an absolute URL.
+  const brokenUrl = img.getAttribute('src')
 
-  // If we failed to load an existing cover art URL, try to find alternatives via API
-  if (props.song && coverArtSource.value === 'song') {
-    console.log('📡 Existing cover art failed to load, trying API fallback...')
+  // A URL we have already given up on - nothing left to do for this event.
+  if (!brokenUrl || failedUrls.value.includes(brokenUrl)) return
 
-    try {
-      const result = await loadCoverArtFromAPI(props.song)
-      if (result.success && result.urls.length > 0) {
-        console.log('✅ Found fallback cover art via API:', result)
-        emit('loaded', result)
-        return
-      } else {
+  console.warn('🚨 Cover art image failed to load:', brokenUrl)
+  failedUrls.value = [...failedUrls.value, brokenUrl]
+
+  // Another candidate is available - it renders instead, no retry of the broken one.
+  if (displayUrl.value) return
+
+  // Every known candidate failed. Look for alternatives exactly once per song.
+  if (!props.song || fallbackRunning.value || fallbackExhausted.value) {
+    emit('error', `Failed to load image: ${brokenUrl}`)
+    return
+  }
+
+  fallbackRunning.value = true
+  try {
+    // The provider lookup depends only on the song, so it is worth doing once.
+    if (!apiFallbackTried.value) {
+      apiFallbackTried.value = true
+      console.log('📡 Existing cover art failed to load, trying API fallback...')
+      try {
+        const result = await loadCoverArtFromAPI(props.song)
+        if (displayUrl.value) {
+          console.log('✅ Found fallback cover art via API:', result)
+          emit('loaded', result)
+          return
+        }
         console.log('❌ No results from API fallback')
+      } catch (err) {
+        console.warn('❌ Fallback cover art loading failed:', err)
       }
-    } catch (err) {
-      console.warn('❌ Fallback cover art loading failed:', err)
     }
 
-    // Last resort: check for coverart_url or logo_url in the metadata field
-    console.log('🔍 Checking metadata for coverart_url or logo_url fallback...')
+    // Last resort: check for coverart_url or logo_url in the metadata field.
+    // These are added as candidates directly - routing them back through
+    // loadCoverArt() would only hit the song cache and return the broken URL.
     if (props.song.metadata && typeof props.song.metadata === 'object') {
       const metadata = props.song.metadata as Record<string, unknown>
 
@@ -138,43 +183,28 @@ const onImageError = async (event: Event) => {
       const metadataCoverUrl = metadata.coverart_url || metadata.logo_url
       const sourceType = metadata.coverart_url ? 'coverart_url' : 'logo_url'
 
-      console.log('🔍 Found metadata.' + sourceType + ':', metadataCoverUrl)
-      if (metadataCoverUrl && typeof metadataCoverUrl === 'string') {
+      if (typeof metadataCoverUrl === 'string' && metadataCoverUrl &&
+          !failedUrls.value.includes(metadataCoverUrl)) {
         console.log('🎯 Using metadata.' + sourceType + ' as last resort:', metadataCoverUrl)
-
-        // Create a Song object for the metadata cover art and load it through the composable
-        // This ensures the composable state is properly updated
-        const metadataSong: Song = {
-          ...props.song,
-          cover_art_url: metadataCoverUrl, // Override the cover art URL with metadata URL
-          artwork_url: undefined // Clear any existing artwork URL to force use of cover_art_url
+        fallbackUrls.value = [...fallbackUrls.value, metadataCoverUrl]
+        const fallbackResult = {
+          success: true,
+          urls: [metadataCoverUrl],
+          source: 'song',
+          providers: [{ name: 'metadata_fallback', display_name: 'Metadata Fallback (' + sourceType + ')' }]
         }
-
-        try {
-          const result = await loadCoverArt(metadataSong)
-          console.log('✅ Loaded metadata fallback cover art through composable:', result)
-          emit('loaded', result)
-          return
-        } catch (err) {
-          console.warn('Failed to load metadata fallback through composable:', err)
-          // Fall back to manual result
-          const fallbackResult = {
-            success: true,
-            urls: [metadataCoverUrl],
-            source: 'song' as const,
-            providers: [{ name: 'metadata_fallback', display_name: 'Metadata Fallback (' + sourceType + ')' }]
-          }
-          emit('loaded', fallbackResult)
-          return
-        }
+        emit('loaded', fallbackResult)
+        return
       }
-    } else {
-      console.log('❌ No metadata.coverart_url or metadata.logo_url found in song metadata')
     }
-  }
 
-  console.log('💀 All fallback options exhausted for:', img.src)
-  emit('error', `Failed to load image: ${img.src}`)
+    // Nothing left to try - show the placeholder instead of requesting again.
+    fallbackExhausted.value = true
+    console.log('💀 All fallback options exhausted for:', brokenUrl)
+    emit('error', `Failed to load image: ${brokenUrl}`)
+  } finally {
+    fallbackRunning.value = false
+  }
 }
 
 const onImageLoad = () => {

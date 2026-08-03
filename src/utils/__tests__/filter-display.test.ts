@@ -45,12 +45,19 @@ describe('formatFilterTypeName', () => {
     expect(formatFilterTypeName('highshelf')).toBe('High\nShelf')
   })
 
+  it('formats highpass', () => {
+    expect(formatFilterTypeName('highpass')).toBe('High\nPass')
+  })
+
+  it('formats lowpass', () => {
+    expect(formatFilterTypeName('lowpass')).toBe('Low\nPass')
+  })
+
   it('formats generic_normalized', () => {
     expect(formatFilterTypeName('generic_normalized')).toBe('Generic\nBiquad')
   })
 
   it('returns raw type name for unmapped types', () => {
-    expect(formatFilterTypeName('highpass')).toBe('highpass')
-    expect(formatFilterTypeName('lowpass')).toBe('lowpass')
+    expect(formatFilterTypeName('unknown' as BiquadFilterType)).toBe('unknown')
   })
 })

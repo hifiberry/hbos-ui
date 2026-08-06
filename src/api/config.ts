@@ -542,12 +542,17 @@ export const scanI2CDevices = async (busNumber?: number): Promise<ConfigApiRespo
 
 export interface PlayerSetting {
   key: string
-  type: 'toggle' | 'select'
+  type: 'toggle' | 'select' | 'number'
   label: string
   description?: string
-  default: boolean | string
-  value: boolean | string
+  default: boolean | string | number
+  value: boolean | string | number
+  /** Present for select; may be resolved by config-server from options_url. */
   options?: { value: string; label: string }[]
+  /** Bounds for type === 'number'; config-server guarantees all three. */
+  min?: number
+  max?: number
+  step?: number
 }
 
 export interface ExternalPlayer {
@@ -591,7 +596,7 @@ export const getExternalPlayers = async (): Promise<ExternalPlayer[]> => {
  */
 export const saveExternalPlayerSettings = async (
   systemdService: string,
-  values: Record<string, boolean | string>,
+  values: Record<string, boolean | string | number>,
 ): Promise<void> => {
   const configStore = useAppConfigStore()
   const baseUrl = configStore.getConfigApiBaseUrl()

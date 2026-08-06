@@ -27,12 +27,6 @@ export interface AppConfig {
     apiPrefix: string
     useProxy: boolean
   }
-  aes67_api: {
-    deviceIP: string
-    devicePort: number
-    apiPrefix: string
-    useProxy: boolean
-  }
 }
 
 export const useAppConfigStore = defineStore('appconfig', () => {
@@ -61,12 +55,6 @@ export const useAppConfigStore = defineStore('appconfig', () => {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
       devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
       apiPrefix: import.meta.env.VITE_APP_ROOMEQ_API_PREFIX || '/api/roomeq',
-      useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
-    },
-    aes67_api: {
-      deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
-      devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
-      apiPrefix: import.meta.env.VITE_APP_AES67_API_PREFIX || '/api/aes67/v1',
       useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
     }
   })
@@ -170,21 +158,6 @@ export const useAppConfigStore = defineStore('appconfig', () => {
     return dspToolkitApiUrl
   }
 
-  const getAes67ApiBaseUrl = (): string => {
-    const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.aes67_api
-
-    let aes67ApiUrl: string
-    if (useProxy) {
-      const currentUrl = window.location.origin
-      aes67ApiUrl = `${currentUrl}${apiPrefix}`
-    } else {
-      const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
-      aes67ApiUrl = `http://${deviceIP}${portSuffix}${apiPrefix}`
-    }
-
-    return aes67ApiUrl
-  }
-
   const getRoomEQApiBaseUrl = (): string => {
     const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.roomeq_api
 
@@ -219,7 +192,6 @@ export const useAppConfigStore = defineStore('appconfig', () => {
     getConfigApiBaseUrl,
     getDSPToolkitApiBaseUrl,
     getRoomEQApiBaseUrl,
-    getAes67ApiBaseUrl,
 
     // Getters
     radioPlayer: () => config.value.radioPlayer,

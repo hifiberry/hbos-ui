@@ -467,7 +467,7 @@ const updateAirplayVersion = (playerName: string, version: number) => {
   }
 }
 
-const updateExternalSetting = (playerName: string, key: string, value: boolean | string) => {
+const updateExternalSetting = (playerName: string, key: string, value: boolean | string | number) => {
   const player = players.value[findPlayerIndex(playerName)]
   if (!player?.settings) return
   const setting = player.settings.find(s => s.key === key)
@@ -519,7 +519,7 @@ const saveConfig = async (playerName: string) => {
 
   const player = players.value[playerIndex]
   if (player?.isExternal && player.settings?.length) {
-    const values: Record<string, boolean | string> = {}
+    const values: Record<string, boolean | string | number> = {}
     for (const s of player.settings) values[s.key] = s.value
     try {
       await saveExternalPlayerSettings(player.systemdService, values)

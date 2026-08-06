@@ -141,6 +141,16 @@
                 :model-value="setting.value === true"
                 @update:model-value="(v) => $emit('update-external-setting', setting.key, v)"
               />
+              <input
+                v-else-if="setting.type === 'number'"
+                type="number"
+                :value="setting.value"
+                :min="setting.min"
+                :max="setting.max"
+                :step="setting.step"
+                @change="$emit('update-external-setting', setting.key, Number(($event.target as HTMLInputElement).value))"
+                class="number-input"
+              />
               <select
                 v-else-if="setting.type === 'select'"
                 :value="setting.value"
@@ -186,7 +196,7 @@ interface Player {
   maintainerName?: string
   maintainerUrl?: string
   extension_package?: string
-  settings?: { key: string; type: 'toggle' | 'select'; label: string; description?: string; default: boolean | string; value: boolean | string; options?: { value: string; label: string }[] }[]
+  settings?: { key: string; type: 'toggle' | 'select' | 'number'; label: string; description?: string; default: boolean | string | number; value: boolean | string | number; options?: { value: string; label: string }[]; min?: number; max?: number; step?: number }[]
 }
 
 const props = defineProps<{
@@ -200,7 +210,7 @@ defineEmits<{
   'navigate-bluetooth': []
   'update-airplay-version': [version: number]
   'update-toslink-sensitivity': [sensitivity: string]
-  'update-external-setting': [key: string, value: boolean | string]
+  'update-external-setting': [key: string, value: boolean | string | number]
   'cancel-config': []
   'save-config': []
 }>()
@@ -365,7 +375,11 @@ const getStatusText = (player: Player) => {
         font-size: 0.875rem;
         color: var(--color-body-secondary);
 
-        .version-select {
+        .number-input {
+  width: 6em;
+}
+
+.version-select {
           padding: 12px 16px;
           border: 1px solid var(--color-sidebar-border);
           border-radius: 6px;

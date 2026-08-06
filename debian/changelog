@@ -1,3 +1,11 @@
+hifiberry-webui (0.20.10) stable; urgency=medium
+
+  * Fix plugin settings styling: the new rules were nested under
+    .config-option and never matched, which also unstyled the select
+    once controls moved out of the label.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 06 Aug 2026 17:30:00 +0200
+
 hifiberry-webui (0.20.9) stable; urgency=medium
 
   * Plugin settings: align labels and controls in a two-column grid,

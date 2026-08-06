@@ -399,171 +399,167 @@ const getStatusText = (player: Player) => {
     .config-content {
       @include service-content-box;
 
-      .config-option {
-        display: flex;
+      /* Label and control are siblings in a two-column grid, so every control
+         shares a left edge whatever its type, and the description spans the
+         control column beneath it. Controls used to be nested inside the
+         label, which is why these rules sit flat here rather than under
+         .config-option. */
+      .config-form {
+        display: grid;
+        grid-template-columns: minmax(6rem, max-content) minmax(0, 1fr);
         align-items: center;
-        gap: 12px;
+        gap: 12px 20px;
+        margin-bottom: 16px;
+      }
+
+      .config-option {
         font-size: 0.875rem;
         color: var(--color-body-secondary);
+        cursor: pointer;
+      }
 
-        /* Two columns so every control lines up, whatever its type:
-           label | control, with the description spanning the control column. */
-        .config-form {
-          display: grid;
-          grid-template-columns: minmax(6rem, max-content) minmax(0, 1fr);
-          align-items: center;
-          gap: 10px 20px;
-          margin-bottom: 16px;
+      .config-control {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .config-description {
+        grid-column: 2;
+        margin: -6px 0 4px 0;
+        max-width: 52ch;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        color: var(--color-body-secondary);
+        opacity: 0.7;
+      }
+
+      .number-input {
+        width: 6em;
+        height: 44px;
+        padding: 12px 16px;
+        border: 1px solid var(--color-sidebar-border);
+        border-radius: 6px;
+        background: var(--background-card);
+        color: var(--color-body-secondary);
+        font-family: inherit;
+        font-size: 1rem;
+      }
+
+      /* Range inputs have no usable default styling and render bright blue on
+         every platform, so track and thumb are drawn from scratch in the
+         HiFiBerry accent. --fill is set inline from sliderFill(). */
+      .slider-input {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: 1 1 auto;
+        max-width: 16rem;
+        height: 22px;
+        margin: 0;
+        background: transparent;
+        cursor: pointer;
+
+        &::-webkit-slider-runnable-track {
+          height: 6px;
+          border-radius: 999px;
+          background: linear-gradient(
+            to right,
+            var(--primary) 0 var(--fill, 0%),
+            var(--color-sidebar-border) var(--fill, 0%) 100%
+          );
         }
 
-        .config-option {
-          font-size: 0.875rem;
-          color: var(--color-body-secondary);
-          cursor: pointer;
+        &::-moz-range-track {
+          height: 6px;
+          border-radius: 999px;
+          background: var(--color-sidebar-border);
         }
 
-        .config-control {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          min-width: 0;
+        &::-moz-range-progress {
+          height: 6px;
+          border-radius: 999px;
+          background: var(--primary);
         }
 
-        .config-description {
-          grid-column: 2;
-          margin: -4px 0 6px 0;
-          max-width: 46ch;
-          font-size: 0.8rem;
-          line-height: 1.45;
-          color: var(--color-body-secondary);
-          opacity: 0.75;
-        }
-
-        .number-input {
-          width: 6em;
-          height: 44px;
-          padding: 12px 16px;
-          border: 1px solid var(--color-sidebar-border);
-          border-radius: 6px;
-          background: var(--background-card);
-          color: var(--color-body-secondary);
-          font-family: inherit;
-          font-size: 1rem;
-        }
-
-        /* Range inputs have no usable default styling and land bright blue on
-           every platform, so the track and thumb are drawn from scratch in the
-           HiFiBerry accent. --fill comes from sliderFill(). */
-        .slider-input {
+        &::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          flex: 1 1 auto;
-          max-width: 18rem;
-          height: 22px;
-          margin: 0;
-          background: transparent;
-          cursor: pointer;
+          width: 18px;
+          height: 18px;
+          margin-top: -6px;
+          border: none;
+          border-radius: 50%;
+          background: var(--primary);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+          transition: transform 0.12s ease;
+        }
 
-          &::-webkit-slider-runnable-track {
-            height: 6px;
-            border-radius: 999px;
-            background: linear-gradient(
-              to right,
-              var(--primary) 0 var(--fill, 0%),
-              var(--color-sidebar-border) var(--fill, 0%) 100%
-            );
-          }
+        &::-moz-range-thumb {
+          width: 18px;
+          height: 18px;
+          border: none;
+          border-radius: 50%;
+          background: var(--primary);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        }
 
-          &::-moz-range-track {
-            height: 6px;
-            border-radius: 999px;
-            background: var(--color-sidebar-border);
-          }
+        &:hover::-webkit-slider-thumb,
+        &:active::-webkit-slider-thumb {
+          transform: scale(1.12);
+        }
 
-          &::-moz-range-progress {
-            height: 6px;
-            border-radius: 999px;
-            background: var(--primary);
-          }
+        &:focus-visible {
+          outline: none;
 
           &::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            margin-top: -6px;
-            border: none;
-            border-radius: 50%;
-            background: var(--primary);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-            transition: transform 0.12s ease;
+            box-shadow: 0 0 0 4px rgba(225, 30, 74, 0.25);
           }
 
           &::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border: none;
-            border-radius: 50%;
-            background: var(--primary);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-          }
-
-          &:hover::-webkit-slider-thumb,
-          &:active::-webkit-slider-thumb {
-            transform: scale(1.12);
-          }
-
-          &:focus-visible {
-            outline: none;
-
-            &::-webkit-slider-thumb {
-              box-shadow: 0 0 0 4px rgba(225, 30, 74, 0.25);
-            }
-
-            &::-moz-range-thumb {
-              box-shadow: 0 0 0 4px rgba(225, 30, 74, 0.25);
-            }
-          }
-
-          @media (prefers-reduced-motion: reduce) {
-            &::-webkit-slider-thumb {
-              transition: none;
-            }
+            box-shadow: 0 0 0 4px rgba(225, 30, 74, 0.25);
           }
         }
 
-        /* Sits right beside the slider rather than drifting to the far edge,
-           so the number reads as the slider's value. */
-        .slider-value {
-          min-width: 3.5ch;
-          font-size: 0.95rem;
-          font-variant-numeric: tabular-nums;
+        @media (prefers-reduced-motion: reduce) {
+          &::-webkit-slider-thumb {
+            transition: none;
+          }
+        }
+      }
+
+      /* Beside the slider, not drifting to the far edge, so the number reads
+         as the slider's value. */
+      .slider-value {
+        min-width: 3.5ch;
+        font-size: 0.95rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--color-head);
+      }
+
+      .version-select {
+        padding: 12px 16px;
+        border: 1px solid var(--color-sidebar-border);
+        border-radius: 6px;
+        background: var(--background-card);
+        color: var(--color-body-secondary);
+        font-size: 1rem;
+        font-family: inherit;
+        cursor: pointer;
+        min-width: 80px;
+        max-width: 22rem;
+        height: 44px;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
           color: var(--color-head);
+          box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
         }
 
-.version-select {
-          padding: 12px 16px;
-          border: 1px solid var(--color-sidebar-border);
-          border-radius: 6px;
-          background: var(--background-card);
-          color: var(--color-body-secondary);
-          font-size: 1rem;
-          font-family: inherit;
-          cursor: pointer;
-          min-width: 80px;
-          height: 44px;
-
-          &:focus {
-            outline: none;
-            border-color: var(--primary);
-            color: var(--color-head);
-            box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
-          }
-
-          &:hover {
-            border-color: var(--color-head);
-            color: var(--color-head);
-          }
+        &:hover {
+          border-color: var(--color-head);
+          color: var(--color-head);
         }
       }
 

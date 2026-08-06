@@ -150,6 +150,11 @@ const router = createRouter({
               component: () => import('@/views/services/bluetooth-settings.vue'),
             },
             {
+              path: 'aes67',
+              name: 'aes67',
+              component: () => import('@/views/services/aes67.vue'),
+            },
+            {
               path: 'extensions',
               name: 'extensions',
               component: () => import('@/views/services/extensions.vue'),

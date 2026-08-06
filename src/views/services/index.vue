@@ -67,6 +67,14 @@
         <p>Manage Bluetooth settings</p>
       </ContentBoxLink>
 
+      <ContentBoxLink :to="{ name: 'aes67' }" :height="150">
+        <div class="settingsCardHeader">
+          <Icon icon="tabler/broadcast" class="settingsCardHeaderIcon" />
+          <h2>AES67</h2>
+        </div>
+        <p>Receive audio from a Dante network</p>
+      </ContentBoxLink>
+
       <ContentBoxLink :to="{ name: 'system-tools'}" height=150>
         <div class="settingsCardHeader">
           <Icon icon="tool" class="settingsCardHeaderIcon" />

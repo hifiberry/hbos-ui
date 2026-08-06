@@ -32,10 +32,11 @@ describe('PlayerCard generic settings', () => {
       props: { player: externalPlayer, isExpanded: true },
       global: { stubs: { Icon: true, InlineSvg: true, RouterLink: true } },
     })
-    // Scope to the settings row: PlayerCard also renders a top-level
+    // Scope to the settings control: PlayerCard also renders a top-level
     // enable/disable ToggleSwitch, so an unscoped findComponent would match
-    // that one instead of the per-setting toggle.
-    const toggle = wrapper.find('.config-option').findComponent({ name: 'ToggleSwitch' })
+    // that one instead of the per-setting toggle. The control lives in
+    // .config-control; .config-option is now just the label beside it.
+    const toggle = wrapper.find('.config-control').findComponent({ name: 'ToggleSwitch' })
     toggle.vm.$emit('update:modelValue', false)
     await wrapper.vm.$nextTick()
     expect(wrapper.emitted('update-external-setting')?.[0]).toEqual(['songrec_enabled', false])

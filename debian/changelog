@@ -1,3 +1,11 @@
+hifiberry-webui (0.20.9) stable; urgency=medium
+
+  * Plugin settings: align labels and controls in a two-column grid,
+    show the descriptions the descriptors already carried, and draw
+    sliders in the HiFiBerry accent instead of the browser default.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 06 Aug 2026 17:00:00 +0200
+
 hifiberry-webui (0.20.8) stable; urgency=medium
 
   * Render number plugin settings as a slider when the descriptor

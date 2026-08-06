@@ -134,51 +134,58 @@
       <div v-if="player.isExternal && (player.settings?.length ?? 0) > 0" class="config-section">
         <div v-if="isExpanded" class="config-content">
           <div class="config-form">
-            <label v-for="setting in player.settings" :key="setting.key" class="config-option">
-              {{ setting.label }}
-              <ToggleSwitch
-                v-if="setting.type === 'toggle'"
-                :model-value="setting.value === true"
-                @update:model-value="(v) => $emit('update-external-setting', setting.key, v)"
-              />
-              <span
-                v-else-if="setting.type === 'number' && setting.widget === 'slider'"
-                class="slider-row"
-              >
+            <template v-for="setting in player.settings" :key="setting.key">
+              <label class="config-option" :for="`set-${player.systemdService}-${setting.key}`">
+                {{ setting.label }}
+              </label>
+              <div class="config-control">
+                <ToggleSwitch
+                  v-if="setting.type === 'toggle'"
+                  :id="`set-${player.systemdService}-${setting.key}`"
+                  :model-value="setting.value === true"
+                  @update:model-value="(v) => $emit('update-external-setting', setting.key, v)"
+                />
+                <template v-else-if="setting.type === 'number' && setting.widget === 'slider'">
+                  <input
+                    :id="`set-${player.systemdService}-${setting.key}`"
+                    type="range"
+                    :value="setting.value"
+                    :min="setting.min"
+                    :max="setting.max"
+                    :step="setting.step"
+                    :style="{ '--fill': sliderFill(setting) }"
+                    @input="$emit('update-external-setting', setting.key, Number(($event.target as HTMLInputElement).value))"
+                    class="slider-input"
+                  />
+                  <!-- A bare slider hides the number, which matters when the
+                       value is meaningful (milliseconds of latency). -->
+                  <output class="slider-value">{{ setting.value }}</output>
+                </template>
                 <input
-                  type="range"
+                  v-else-if="setting.type === 'number'"
+                  :id="`set-${player.systemdService}-${setting.key}`"
+                  type="number"
                   :value="setting.value"
                   :min="setting.min"
                   :max="setting.max"
                   :step="setting.step"
-                  @input="$emit('update-external-setting', setting.key, Number(($event.target as HTMLInputElement).value))"
-                  class="slider-input"
+                  @change="$emit('update-external-setting', setting.key, Number(($event.target as HTMLInputElement).value))"
+                  class="number-input"
                 />
-                <!-- A bare slider hides the actual value, which matters when the
-                     number is meaningful (e.g. milliseconds of latency). -->
-                <output class="slider-value">{{ setting.value }}</output>
-              </span>
-              <input
-                v-else-if="setting.type === 'number'"
-                type="number"
-                :value="setting.value"
-                :min="setting.min"
-                :max="setting.max"
-                :step="setting.step"
-                @change="$emit('update-external-setting', setting.key, Number(($event.target as HTMLInputElement).value))"
-                class="number-input"
-              />
-              <select
-                v-else-if="setting.type === 'select'"
-                :value="setting.value"
-                @change="$emit('update-external-setting', setting.key, ($event.target as HTMLSelectElement).value)"
-                class="version-select"
-              >
-                <option v-for="opt in setting.options" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
-            </label>
+                <select
+                  v-else-if="setting.type === 'select'"
+                  :id="`set-${player.systemdService}-${setting.key}`"
+                  :value="setting.value"
+                  @change="$emit('update-external-setting', setting.key, ($event.target as HTMLSelectElement).value)"
+                  class="version-select"
+                >
+                  <option v-for="opt in setting.options" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+              <p v-if="setting.description" class="config-description">{{ setting.description }}</p>
+            </template>
           </div>
           <div class="config-actions">
             <button class="config-btn config-btn--cancel" @click="$emit('cancel-config')" type="button">Cancel</button>
@@ -195,6 +202,17 @@ import { computed } from 'vue'
 import Icon from '@/components/Icon.vue'
 import InlineSvg from 'vue-inline-svg'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
+
+/** Fraction of the range already covered, as a CSS percentage.
+ *  WebKit cannot paint a filled portion on its own, so the track uses this to
+ *  draw one with a gradient. */
+const sliderFill = (setting: { value: boolean | string | number; min?: number; max?: number }): string => {
+  const min = setting.min ?? 0
+  const max = setting.max ?? 100
+  const value = typeof setting.value === 'number' ? setting.value : Number(setting.value)
+  if (!Number.isFinite(value) || max === min) return '0%'
+  return `${Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100))}%`
+}
 
 interface Player {
   name: string
@@ -381,10 +399,6 @@ const getStatusText = (player: Player) => {
     .config-content {
       @include service-content-box;
 
-      .config-form {
-        margin-bottom: 16px;
-      }
-
       .config-option {
         display: flex;
         align-items: center;
@@ -392,26 +406,140 @@ const getStatusText = (player: Player) => {
         font-size: 0.875rem;
         color: var(--color-body-secondary);
 
+        /* Two columns so every control lines up, whatever its type:
+           label | control, with the description spanning the control column. */
+        .config-form {
+          display: grid;
+          grid-template-columns: minmax(6rem, max-content) minmax(0, 1fr);
+          align-items: center;
+          gap: 10px 20px;
+          margin-bottom: 16px;
+        }
+
+        .config-option {
+          font-size: 0.875rem;
+          color: var(--color-body-secondary);
+          cursor: pointer;
+        }
+
+        .config-control {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          min-width: 0;
+        }
+
+        .config-description {
+          grid-column: 2;
+          margin: -4px 0 6px 0;
+          max-width: 46ch;
+          font-size: 0.8rem;
+          line-height: 1.45;
+          color: var(--color-body-secondary);
+          opacity: 0.75;
+        }
+
         .number-input {
-  width: 6em;
-}
+          width: 6em;
+          height: 44px;
+          padding: 12px 16px;
+          border: 1px solid var(--color-sidebar-border);
+          border-radius: 6px;
+          background: var(--background-card);
+          color: var(--color-body-secondary);
+          font-family: inherit;
+          font-size: 1rem;
+        }
 
-.slider-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
+        /* Range inputs have no usable default styling and land bright blue on
+           every platform, so the track and thumb are drawn from scratch in the
+           HiFiBerry accent. --fill comes from sliderFill(). */
+        .slider-input {
+          -webkit-appearance: none;
+          appearance: none;
+          flex: 1 1 auto;
+          max-width: 18rem;
+          height: 22px;
+          margin: 0;
+          background: transparent;
+          cursor: pointer;
 
-.slider-input {
-  width: 12em;
-}
+          &::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(
+              to right,
+              var(--primary) 0 var(--fill, 0%),
+              var(--color-sidebar-border) var(--fill, 0%) 100%
+            );
+          }
 
-.slider-value {
-  min-width: 3em;
-  text-align: right;
-  color: var(--color-body-secondary);
-  font-variant-numeric: tabular-nums;
-}
+          &::-moz-range-track {
+            height: 6px;
+            border-radius: 999px;
+            background: var(--color-sidebar-border);
+          }
+
+          &::-moz-range-progress {
+            height: 6px;
+            border-radius: 999px;
+            background: var(--primary);
+          }
+
+          &::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            margin-top: -6px;
+            border: none;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+            transition: transform 0.12s ease;
+          }
+
+          &::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border: none;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+          }
+
+          &:hover::-webkit-slider-thumb,
+          &:active::-webkit-slider-thumb {
+            transform: scale(1.12);
+          }
+
+          &:focus-visible {
+            outline: none;
+
+            &::-webkit-slider-thumb {
+              box-shadow: 0 0 0 4px rgba(225, 30, 74, 0.25);
+            }
+
+            &::-moz-range-thumb {
+              box-shadow: 0 0 0 4px rgba(225, 30, 74, 0.25);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            &::-webkit-slider-thumb {
+              transition: none;
+            }
+          }
+        }
+
+        /* Sits right beside the slider rather than drifting to the far edge,
+           so the number reads as the slider's value. */
+        .slider-value {
+          min-width: 3.5ch;
+          font-size: 0.95rem;
+          font-variant-numeric: tabular-nums;
+          color: var(--color-head);
+        }
 
 .version-select {
           padding: 12px 16px;

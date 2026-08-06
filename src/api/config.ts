@@ -553,6 +553,8 @@ export interface PlayerSetting {
   min?: number
   max?: number
   step?: number
+  /** Presentation hint, e.g. 'slider' to render a number as a range control. */
+  widget?: string
 }
 
 export interface ExternalPlayer {

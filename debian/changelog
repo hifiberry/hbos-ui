@@ -1,3 +1,10 @@
+hifiberry-webui (0.20.8) stable; urgency=medium
+
+  * Render number plugin settings as a slider when the descriptor
+    asks for one, with the current value shown alongside.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 06 Aug 2026 16:00:00 +0200
+
 hifiberry-webui (0.20.7) stable; urgency=medium
 
   * Support the 'number' plugin setting type in the players page, so

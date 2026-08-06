@@ -141,6 +141,23 @@
                 :model-value="setting.value === true"
                 @update:model-value="(v) => $emit('update-external-setting', setting.key, v)"
               />
+              <span
+                v-else-if="setting.type === 'number' && setting.widget === 'slider'"
+                class="slider-row"
+              >
+                <input
+                  type="range"
+                  :value="setting.value"
+                  :min="setting.min"
+                  :max="setting.max"
+                  :step="setting.step"
+                  @input="$emit('update-external-setting', setting.key, Number(($event.target as HTMLInputElement).value))"
+                  class="slider-input"
+                />
+                <!-- A bare slider hides the actual value, which matters when the
+                     number is meaningful (e.g. milliseconds of latency). -->
+                <output class="slider-value">{{ setting.value }}</output>
+              </span>
               <input
                 v-else-if="setting.type === 'number'"
                 type="number"
@@ -196,7 +213,7 @@ interface Player {
   maintainerName?: string
   maintainerUrl?: string
   extension_package?: string
-  settings?: { key: string; type: 'toggle' | 'select' | 'number'; label: string; description?: string; default: boolean | string | number; value: boolean | string | number; options?: { value: string; label: string }[]; min?: number; max?: number; step?: number }[]
+  settings?: { key: string; type: 'toggle' | 'select' | 'number'; label: string; description?: string; default: boolean | string | number; value: boolean | string | number; options?: { value: string; label: string }[]; min?: number; max?: number; step?: number; widget?: string }[]
 }
 
 const props = defineProps<{
@@ -377,6 +394,23 @@ const getStatusText = (player: Player) => {
 
         .number-input {
   width: 6em;
+}
+
+.slider-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-input {
+  width: 12em;
+}
+
+.slider-value {
+  min-width: 3em;
+  text-align: right;
+  color: var(--color-body-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .version-select {

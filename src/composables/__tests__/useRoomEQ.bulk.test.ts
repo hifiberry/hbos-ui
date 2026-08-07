@@ -45,8 +45,9 @@ describe('loadSelectedRoomEQConfig', () => {
       data: {
         name: 'test',
         created_at: '2026-08-01T00:00:00Z',
+        // Field names must match RoomEQConfig.filters in useRoomEQ.ts.
         filters: Array.from({ length: 16 }, (_, i) => ({
-          type: 'eq', f: 100 * (i + 1), db: -3, q: 1,
+          filter_type: 'eq', frequency: 100 * (i + 1), gain_db: -3, q: 1,
         })),
       },
     }

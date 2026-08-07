@@ -704,9 +704,17 @@ export class DSPToolkitFilterBackend extends FilterBackend {
         console.warn(
           `DSP Toolkit: device has no /filters/bank endpoint, falling back to per-slot writes for ${bankName}`
         )
-        bank.filters = withIds
+        // updateDSPHardware() persists the filters itself, so do not call
+        // storeFiltersInDSP() again here -- that would repeat a live
+        // getDSPProgramChecksum() + storeFilters() round-trip on exactly the
+        // path (older firmware) where round-trips are most expensive.
+        //
+        // Assign bank.filters only after the write completes. Claiming it up
+        // front would leave the in-memory bank asserting a full write that a
+        // failing per-slot sequence never delivered -- the same lie about
+        // hardware state this whole task exists to eliminate.
         await this.updateDSPHardware(bankName, withIds)
-        await this.storeFiltersInDSP(bankName, withIds)
+        bank.filters = withIds
         return
       }
       throw error

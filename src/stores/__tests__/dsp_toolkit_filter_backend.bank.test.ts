@@ -19,12 +19,17 @@ const { setFilterBank, setBiquadFilter, BankEndpointUnavailableError } = vi.hois
   }
 })
 
+// Every dsptoolkit export this code path reaches must be stubbed, including the
+// ones storeFiltersInDSP() calls -- an omission there does not fail the test, it
+// just prints warnings, and test output has to stay pristine.
 vi.mock('@/api/dsptoolkit', () => ({
   setFilterBank: (...args: unknown[]) => setFilterBank(...args),
   setBiquadFilter: (...args: unknown[]) => setBiquadFilter(...args),
   BankEndpointUnavailableError,
   getMetadata: vi.fn(),
   getStoredFilters: vi.fn(),
+  getDSPProgramChecksum: vi.fn(async () => ({ checksum: 'TESTCHECKSUM' })),
+  storeFilters: vi.fn(async () => ({ status: 'success' })),
 }))
 
 import { DSPToolkitFilterBackend } from '@/stores/dsp_toolkit_filter_backend'
@@ -111,5 +116,29 @@ describe('DSPToolkitFilterBackend.setBankFilters', () => {
     setFilterBank.mockRejectedValue(new Error('Filter bank only partially written (15/16)'))
 
     await expect(backend.setBankFilters(BANK, [peaking(100)])).rejects.toThrow(/partially written/)
+  })
+
+  it('leaves the in-memory bank untouched when the bulk write fails', async () => {
+    const backend = seedBackend()
+    setFilterBank.mockRejectedValue(new Error('Filter bank only partially written (15/16)'))
+
+    await expect(backend.setBankFilters(BANK, [peaking(100)])).rejects.toThrow()
+
+    const config = await backend.exportFilterConfig()
+    expect(config[BANK].filters).toHaveLength(0)
+  })
+
+  it('does not claim filters the fallback failed to write', async () => {
+    // The fallback exists for older devices; if its per-slot writes fail
+    // partway, the in-memory bank must not report a complete write. That lie
+    // about hardware state is the bug this whole task removes.
+    const backend = seedBackend()
+    setFilterBank.mockRejectedValue(new BankEndpointUnavailableError())
+    setBiquadFilter.mockRejectedValue(new Error('SPI write failed'))
+
+    await expect(backend.setBankFilters(BANK, [peaking(100), peaking(200)])).rejects.toThrow()
+
+    const config = await backend.exportFilterConfig()
+    expect(config[BANK].filters).toHaveLength(0)
   })
 })

@@ -38,7 +38,7 @@ const BANK = 'left'
 const METADATA_KEY = 'customFilterRegisterBankLeft'
 const MAX_FILTERS = 16
 
-const peaking = (f: number) => ({ type: 'PeakingEq' as const, frequency: f, gain: -3, q: 1 })
+const peaking = (f: number) => ({ type: 'peak' as const, frequency: f, gain: -3, q: 1 })
 
 /**
  * The backend caches its bank layout in `filterBanks` after initialize().
@@ -85,6 +85,7 @@ describe('DSPToolkitFilterBackend.setBankFilters', () => {
     expect(request.address).toBe(METADATA_KEY)
     expect(request.filters).toHaveLength(MAX_FILTERS)
     expect(request.filters[0].offset).toBe(0)
+    expect(request.filters[0].filter).toEqual({ type: 'PeakingEq', f: 100, db: -3, q: 1 })
     expect(request.filters[15]).toEqual({
       offset: 15,
       filter: { a0: 1, a1: 0, a2: 0, b0: 1, b1: 0, b2: 0 },

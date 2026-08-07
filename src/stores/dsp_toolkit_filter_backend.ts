@@ -837,6 +837,10 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       return
     }
 
+    // Convert everything up front: a filter the DSP cannot render must fail
+    // before the first register is touched, not halfway down the bank.
+    const convertedFilters = filters.map(filter => this.convertFilterToDSPFormat(filter))
+
     try {
       // Clear all existing filters in the bank by writing empty filters
       const maxFilters = bank.maxFilters
@@ -844,7 +848,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
         if (i < filters.length) {
           // Write the actual filter
           const filter = filters[i]
-          const dspFilter = this.convertFilterToDSPFormat(filter)
+          const dspFilter = convertedFilters[i]
 
           const biquadRequest: BiquadRequest = {
             address: metadataKey,
@@ -933,19 +937,18 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       case 'bandpass':
       case 'bandstop':
       case 'allpass':
-        // For unsupported filter types, create a transparent volume filter
-        console.warn(`Filter type '${filter.type}' not directly supported by DSP API, using transparent filter`)
-        return {
-          type: 'Volume',
-          db: 0
-        }
+        // Previously returned a transparent Volume filter with a console
+        // warning: the filter appeared on the EQ curve, the write returned
+        // success, and nothing was audible. Fail instead of lying.
+        throw new Error(
+          `Filter type '${filter.type}' is not supported by the DSP profile and cannot be ` +
+          `applied. Remove the filter at ${filter.frequency} Hz or change its type.`
+        )
       default:
-        // Fallback to a transparent filter for unknown types
-        console.warn(`Unknown filter type: ${filter.type}, using transparent filter`)
-        return {
-          type: 'Volume',
-          db: 0
-        }
+        throw new Error(
+          `Unknown filter type '${filter.type}' at ${filter.frequency} Hz — refusing to ` +
+          `write a transparent filter in its place.`
+        )
     }
   }
 

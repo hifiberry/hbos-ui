@@ -1,3 +1,35 @@
+hifiberry-webui (0.20.14) stable; urgency=medium
+
+  * Support Report: fix an invisible hover on the report/download buttons -
+    --primary-dark is undefined, so hovering fell back to a transparent
+    background (white text on a white card). Use the var(--primary-dark,
+    var(--primary)) fallback form already established elsewhere in this
+    codebase. Incidental: the pre-existing Fixed Sound Card "Save" button
+    had the identical bug and is corrected here too, since it is the same
+    one-line defect in the same file.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 21:00:00 +0200
+
+hifiberry-webui (0.20.13) stable; urgency=medium
+
+  * Support Report: scope the card's flex-wrap to itself instead of every
+    tool card, make the report block's width explicit for the mobile
+    column layout, and drop the invented, hardcoded-fallback --color-info
+    token in favour of --color-icon (icon) and --primary (buttons) -
+    the only tokens this codebase actually defines and themes.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 20:00:00 +0200
+
+hifiberry-webui (0.20.12) stable; urgency=medium
+
+  * Support Report: fix the unstyled download button (it now lives inside
+    the tool card so it picks up the normal button styling), give the
+    card's icon and buttons their own non-destructive color instead of
+    the reset/detect red, and stop toasting an error when the user simply
+    cancels the sign-in prompt instead of collecting the report.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 19:00:00 +0200
+
 hifiberry-webui (0.20.11) stable; urgency=medium
 
   * System Tools can now create the diagnostic support report, show it

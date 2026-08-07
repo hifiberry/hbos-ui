@@ -107,7 +107,7 @@
 
       <!-- Support Report Tool -->
       <div class="tool-section">
-        <div class="tool-card">
+        <div class="tool-card report-tool">
           <div class="tool-info">
             <Icon icon="tabler/file-text" class="tool-icon" />
             <div class="tool-details">
@@ -120,17 +120,17 @@
             </div>
           </div>
           <div class="tool-actions">
-            <button @click="fetchReport" :disabled="loading" class="detect-button">
+            <button @click="fetchReport" :disabled="loading" class="report-button">
               {{ loading ? 'Collecting...' : 'Create Report' }}
             </button>
           </div>
-        </div>
 
-        <div v-if="report" class="support-report">
-          <div class="tool-actions">
-            <button @click="downloadReport" class="detect-button">Download as file</button>
+          <div v-if="report" class="support-report">
+            <div class="tool-actions">
+              <button @click="downloadReport" class="report-button">Download as file</button>
+            </div>
+            <pre class="support-report-text">{{ report }}</pre>
           </div>
-          <pre class="support-report-text">{{ report }}</pre>
         </div>
       </div>
 
@@ -574,6 +574,26 @@ const stopAllMusicPlayers = async () => {
       color: var(--color-warning);
     }
 
+    // Collecting/downloading a report is read-only, not destructive, so it
+    // should not sit under the same (nominally --color-error/--color-primary)
+    // rules as the other cards above. Those tokens are actually undefined in
+    // this codebase though (only --color-icon really resolves, which is why
+    // .expert-tool is the only one of the five that renders a color at all) -
+    // rather than invent another undefined token, or a hardcoded fallback
+    // that would ignore the light/dark theme, this reuses the one real,
+    // themed token already established by .expert-tool.
+    &.report-tool .tool-info .tool-icon {
+      color: var(--color-icon);
+    }
+
+    // .report-tool needs its own row for the fetched report below the
+    // icon/description/button row; scoped to this card only so the other
+    // five (icon + button, always a single row) keep their layout unchanged
+    // at intermediate widths.
+    &.report-tool {
+      flex-wrap: wrap;
+    }
+
     .tool-actions {
       flex-shrink: 0;
 
@@ -614,6 +634,18 @@ const stopAllMusicPlayers = async () => {
 
         &:hover:not(:disabled) {
           background: var(--color-error-dark, #dc2626);
+        }
+      }
+
+      // No non-destructive-but-actually-defined token exists for a button
+      // background either, so this reuses --primary - the same real, themed
+      // token .save-button already relies on for its (also non-destructive)
+      // action - rather than inventing another undefined one.
+      .report-button {
+        background: var(--primary);
+
+        &:hover:not(:disabled) {
+          background: var(--primary-dark, var(--primary));
         }
       }
 
@@ -663,7 +695,7 @@ const stopAllMusicPlayers = async () => {
           transition: background-color 0.2s ease;
 
           &:hover:not(:disabled) {
-            background: var(--primary-dark);
+            background: var(--primary-dark, var(--primary));
           }
 
           &:disabled {
@@ -676,11 +708,22 @@ const stopAllMusicPlayers = async () => {
 
     .expert-toggle {
     }
-  }
-}
 
-.support-report {
-  margin-top: 1rem;
+    // Rendered report lives inside .tool-card (see template) so its
+    // "Download as file" button falls under the .tool-actions button rules
+    // above instead of picking up the unstyled global button reset. Forced
+    // onto its own row below the icon/description/button row via flex-basis
+    // on the wrapping (&.report-tool: flex-wrap: wrap above) .tool-card.
+    // width: 100% is explicit too: under the <=768px media query below,
+    // .tool-card switches to flex-direction: column, at which point
+    // flex-basis sets a height, not a width, and this would otherwise be
+    // shrink-to-fit.
+    .support-report {
+      flex-basis: 100%;
+      width: 100%;
+      margin-top: 1rem;
+    }
+  }
 }
 
 .support-report-text {

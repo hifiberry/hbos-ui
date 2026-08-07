@@ -5,6 +5,7 @@
 $colors: (
   general: (
     primary: $primary,
+    primary-dark: $primary-hover,
   ),
   header: (
     background-header: $background-header,
@@ -65,6 +66,7 @@ $colors: (
 $colors--dark: (
   general: (
     primary: $primary--dark,
+    primary-dark: $primary-hover--dark,
   ),
   header: (
     background-header: $background-header--dark,

@@ -554,10 +554,10 @@ const stopAllMusicPlayers = async () => {
       }
     }
 
-    &.reset-tool .tool-info .tool-icon {
-      color: var(--color-error);
-    }
-
+    // Reset System and Stop All Players both use .reset-tool. --color-error
+    // is undefined in this codebase (see the button rules below), so this
+    // rule was already a no-op; removed rather than left dangling now that
+    // every button on the page - destructive or not - shares one color.
     &.detect-tool .tool-info .tool-icon {
       color: var(--color-primary);
     }
@@ -621,26 +621,18 @@ const stopAllMusicPlayers = async () => {
         }
       }
 
-      .reset-button {
-        background: var(--color-error, #ef4444);
-
-        &:hover:not(:disabled) {
-          background: var(--color-error-dark, #dc2626);
-        }
-      }
-
-      .detect-button {
-        background: var(--color-error, #ef4444);
-
-        &:hover:not(:disabled) {
-          background: var(--color-error-dark, #dc2626);
-        }
-      }
-
-      // No non-destructive-but-actually-defined token exists for a button
-      // background either, so this reuses --primary - the same real, themed
-      // token .save-button already relies on for its (also non-destructive)
-      // action - rather than inventing another undefined one.
+      // Every button on this page - Reset, Detect, Stop Players, Save,
+      // Create Report, Download - shares one style: the brand --primary,
+      // with a real --primary-dark (defined in colors.module.scss) for
+      // hover. Reset System and Stop All Players used to be --color-error
+      // red, but that token was never actually defined (it rendered via a
+      // hardcoded #ef4444 fallback that only coincidentally looked distinct
+      // from --primary's #E11E4A), so the two reds were never a real signal,
+      // just an inconsistency. Both of those actions already gate on a
+      // ConfirmationDialog, so the safety signal lives in that interaction,
+      // not in button color - dropping the red here loses no protection.
+      .reset-button,
+      .detect-button,
       .report-button {
         background: var(--primary);
 
@@ -683,24 +675,15 @@ const stopAllMusicPlayers = async () => {
           }
         }
 
+        // Padding, border-radius, color, cursor, weight, size, transition
+        // and :disabled all now come from the shared `.tool-actions button`
+        // rule above - Save no longer carries its own (larger, more
+        // rounded) geometry, so all six buttons on the page match exactly.
         .save-button {
           background: var(--primary);
-          padding: 10px 24px;
-          border: none;
-          border-radius: 6px;
-          color: white;
-          cursor: pointer;
-          font-weight: 500;
-          font-size: 0.9rem;
-          transition: background-color 0.2s ease;
 
           &:hover:not(:disabled) {
             background: var(--primary-dark, var(--primary));
-          }
-
-          &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
           }
         }
       }

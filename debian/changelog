@@ -1,3 +1,23 @@
+hifiberry-webui (0.20.15) stable; urgency=medium
+
+  * System Tools: make all six action buttons (Reset, Detect, Stop
+    Players, Save, Create Report, Download) one consistent brand-colour
+    style with one geometry - the old --color-error red was never
+    actually a defined token (it rendered off a hardcoded fallback that
+    only happened to look close to, but not quite, the brand colour), so
+    the two "reds" were indistinguishable noise rather than a real
+    signal. Reset System and Stop All Players both confirm via a dialog
+    before acting, so the safety signal lives in that interaction, not
+    in button colour.
+  * Define --primary-dark as a real, themed token (colors.module.scss)
+    instead of leaving every var(--primary-dark, var(--primary))
+    fallback permanently unused. This also gives a real darker hover to
+    the other existing call sites that already wrote that fallback
+    (WizardModal, RoomMeasurementWizard, room-acoustics,
+    _button-mixins.scss) - they previously had no hover feedback at all.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 22:00:00 +0200
+
 hifiberry-webui (0.20.14) stable; urgency=medium
 
   * Support Report: fix an invisible hover on the report/download buttons -

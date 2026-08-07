@@ -26,7 +26,9 @@ import {
   type FilterCoefficients,
   type BiquadRequest,
   getDSPProgramChecksum,
-  type StoredFilter
+  type StoredFilter,
+  setFilterBank,
+  BankEndpointUnavailableError
 } from '@/api/dsptoolkit'
 import { useDSPToolkitStore } from './dsp-toolkit'
 
@@ -647,6 +649,72 @@ export class DSPToolkitFilterBackend extends FilterBackend {
 
     // Update DSP hardware with empty filter configuration
     await this.updateDSPHardware(bankName, [])
+  }
+
+  /**
+   * Replace a bank's contents with a single request.
+   *
+   * Sends every slot of the bank -- real filters first, transparent
+   * pass-throughs for the rest -- so the hardware is updated in one
+   * server-side pass instead of one round-trip per slot per added filter.
+   */
+  async setBankFilters(bankName: string, filters: Omit<Filter, 'id'>[]): Promise<void> {
+    await this.initialize()
+
+    const bank = this.filterBanks[bankName]
+    if (!bank) {
+      throw new Error(`Filter bank '${bankName}' not found`)
+    }
+
+    if (filters.length > bank.maxFilters) {
+      throw new Error(
+        `Cannot write ${filters.length} filters to ${bankName}: bank holds at most ${bank.maxFilters}`
+      )
+    }
+
+    const metadataKey = bank.metadataKey || this.getMetadataKeyForBank(bankName)
+    if (!metadataKey) {
+      console.warn(`No metadata key found for bank '${bankName}', skipping hardware update`)
+      return
+    }
+
+    const withIds: Filter[] = filters.map((filter, index) => ({
+      ...filter,
+      id: `${bankName}_${Date.now()}_${index}`
+    }))
+
+    const transparentFilter: FilterCoefficients = {
+      a0: 1.0, a1: 0.0, a2: 0.0,
+      b0: 1.0, b1: 0.0, b2: 0.0
+    }
+
+    const slots = Array.from({ length: bank.maxFilters }, (_, i) => ({
+      offset: i,
+      filter: i < withIds.length ? this.convertFilterToDSPFormat(withIds[i]) : transparentFilter
+    }))
+
+    try {
+      await setFilterBank({
+        address: metadataKey,
+        sampleRate: this.metadata?._system?.sampleRate || 48000,
+        filters: slots
+      })
+    } catch (error) {
+      if (error instanceof BankEndpointUnavailableError) {
+        console.warn(
+          `DSP Toolkit: device has no /filters/bank endpoint, falling back to per-slot writes for ${bankName}`
+        )
+        bank.filters = withIds
+        await this.updateDSPHardware(bankName, withIds)
+        await this.storeFiltersInDSP(bankName, withIds)
+        return
+      }
+      throw error
+    }
+
+    bank.filters = withIds
+
+    console.log(`DSP Hardware: Wrote ${withIds.length} filters to ${bankName} in one request`)
   }
 
   async createFilterBank(bankName: string): Promise<void> {

@@ -236,6 +236,16 @@ export const useFilterStore = defineStore('filter', () => {
   }
 
   /**
+   * Replace a bank's entire contents in one operation.
+   * Prefer this over clear + repeated addFilter when loading a whole
+   * correction: backends that support it write the bank atomically.
+   */
+  const setBankFilters = async (bankName: string, filters: Omit<Filter, 'id'>[]): Promise<void> => {
+    await getCurrentBackend().setBankFilters(bankName, filters)
+    await syncFromBackend()
+  }
+
+  /**
    * Remove an entire filter bank
    */
   const removeFilterBank = async (bankName: string): Promise<boolean> => {
@@ -406,6 +416,7 @@ export const useFilterStore = defineStore('filter', () => {
     removeFilter,
     updateFilter,
     clearFiltersFromBank,
+    setBankFilters,
     removeFilterBank,
     moveFilter,
     copyFilter,

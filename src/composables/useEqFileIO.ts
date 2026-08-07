@@ -71,10 +71,8 @@ export function useEqFileIO(
                     id: Date.now() + index + channelNames.value.indexOf(ch) * 1000
                   }));
 
-                  await filterStore.clearFiltersFromBank(ch);
-                  for (const [index, filter] of channelFilters.value[ch].entries()) {
-                    await filterStore.addFilter(ch, index, convertUIFilterToStore(filter));
-                  }
+                  await filterStore.setBankFilters(
+                    ch, channelFilters.value[ch].map(convertUIFilterToStore));
                 }
               }
             }
@@ -93,10 +91,8 @@ export function useEqFileIO(
                     id: Date.now() + index + channelNames.value.indexOf(ch) * 1000
                   }));
 
-                  await filterStore.clearFiltersFromBank(ch);
-                  for (const [index, filter] of channelFilters.value[ch].entries()) {
-                    await filterStore.addFilter(ch, index, convertUIFilterToStore(filter));
-                  }
+                  await filterStore.setBankFilters(
+                    ch, channelFilters.value[ch].map(convertUIFilterToStore));
                 }
               }
             }

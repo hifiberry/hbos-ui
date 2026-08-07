@@ -121,11 +121,8 @@ export function useRoomEQ(
       }
 
       for (const ch of channelsToApply) {
-        await filterStore.clearFiltersFromBank(ch);
         channelFilters.value[ch] = [...convertedFilters];
-        for (const [index, filter] of convertedFilters.entries()) {
-          await filterStore.addFilter(ch, index, convertUIFilterToStore(filter));
-        }
+        await filterStore.setBankFilters(ch, convertedFilters.map(convertUIFilterToStore));
       }
 
       if (convertedFilters.length > 0) {

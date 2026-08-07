@@ -53,6 +53,17 @@ describe('useSupportInfo', () => {
     expect(showErrorToast).toHaveBeenCalled()
   })
 
+  it('stays quiet when the user cancels the sign-in prompt', async () => {
+    getSupportInfo.mockRejectedValue(new Error('Authentication required'))
+    const { report, loading, fetchReport } = useSupportInfo()
+
+    await fetchReport()
+
+    expect(report.value).toBeNull()
+    expect(loading.value).toBe(false)
+    expect(showErrorToast).not.toHaveBeenCalled()
+  })
+
   it('reports a distinct, actionable message on a typed 404', async () => {
     getSupportInfo.mockRejectedValue(
       new SupportInfoApiError(404, 'Failed to get support report: 404 Not Found'),

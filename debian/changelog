@@ -1,3 +1,13 @@
+hifiberry-webui (0.20.12) stable; urgency=medium
+
+  * Support Report: fix the unstyled download button (it now lives inside
+    the tool card so it picks up the normal button styling), give the
+    card's icon and buttons their own non-destructive color instead of
+    the reset/detect red, and stop toasting an error when the user simply
+    cancels the sign-in prompt instead of collecting the report.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 19:00:00 +0200
+
 hifiberry-webui (0.20.11) stable; urgency=medium
 
   * System Tools can now create the diagnostic support report, show it

@@ -107,7 +107,7 @@
 
       <!-- Support Report Tool -->
       <div class="tool-section">
-        <div class="tool-card">
+        <div class="tool-card report-tool">
           <div class="tool-info">
             <Icon icon="tabler/file-text" class="tool-icon" />
             <div class="tool-details">
@@ -120,17 +120,17 @@
             </div>
           </div>
           <div class="tool-actions">
-            <button @click="fetchReport" :disabled="loading" class="detect-button">
+            <button @click="fetchReport" :disabled="loading" class="report-button">
               {{ loading ? 'Collecting...' : 'Create Report' }}
             </button>
           </div>
-        </div>
 
-        <div v-if="report" class="support-report">
-          <div class="tool-actions">
-            <button @click="downloadReport" class="detect-button">Download as file</button>
+          <div v-if="report" class="support-report">
+            <div class="tool-actions">
+              <button @click="downloadReport" class="report-button">Download as file</button>
+            </div>
+            <pre class="support-report-text">{{ report }}</pre>
           </div>
-          <pre class="support-report-text">{{ report }}</pre>
         </div>
       </div>
 
@@ -519,6 +519,7 @@ const stopAllMusicPlayers = async () => {
     border-radius: 8px;
     padding: 24px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
@@ -574,6 +575,14 @@ const stopAllMusicPlayers = async () => {
       color: var(--color-warning);
     }
 
+    // Collecting/downloading a report is read-only, so it gets its own
+    // informational color instead of inheriting the --color-error red that
+    // .detect-button (and its sibling tool-icon rules above) use for
+    // actually risky actions.
+    &.report-tool .tool-info .tool-icon {
+      color: var(--color-info, #0ea5e9);
+    }
+
     .tool-actions {
       flex-shrink: 0;
 
@@ -614,6 +623,14 @@ const stopAllMusicPlayers = async () => {
 
         &:hover:not(:disabled) {
           background: var(--color-error-dark, #dc2626);
+        }
+      }
+
+      .report-button {
+        background: var(--color-info, #0ea5e9);
+
+        &:hover:not(:disabled) {
+          background: var(--color-info-dark, #0284c7);
         }
       }
 
@@ -676,11 +693,17 @@ const stopAllMusicPlayers = async () => {
 
     .expert-toggle {
     }
-  }
-}
 
-.support-report {
-  margin-top: 1rem;
+    // Rendered report lives inside .tool-card (see template) so its
+    // "Download as file" button falls under the .tool-actions button rules
+    // above instead of picking up the unstyled global button reset. Forced
+    // onto its own row below the icon/description/button row via flex-basis
+    // on the wrapping (now flex-wrap: wrap) .tool-card.
+    .support-report {
+      flex-basis: 100%;
+      margin-top: 1rem;
+    }
+  }
 }
 
 .support-report-text {

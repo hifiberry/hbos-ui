@@ -11,6 +11,11 @@ import { useToastStore } from '@/stores/toast'
 
 const FILE_PREFIX = 'hifiberry-supportinfo'
 
+// Thrown by apiFetch (src/api/http.ts) when the sign-in prompt it opens for
+// this authenticated endpoint is cancelled by the user. That's a deliberate
+// "never mind", not a failure, so it must not be toasted like one.
+const AUTH_CANCELLED_MESSAGE = 'Authentication required'
+
 const GENERIC_ERROR_MESSAGE = 'Could not collect the support report'
 // configurator upgrades deliberately don't restart config-server (playback must
 // not be interrupted), so a freshly updated system can still be running an older
@@ -30,6 +35,13 @@ export function useSupportInfo() {
       report.value = await getSupportInfo()
     } catch (error) {
       report.value = null
+
+      if (error instanceof Error && error.message === AUTH_CANCELLED_MESSAGE) {
+        // The user dismissed the sign-in prompt instead of collecting a
+        // report. Nothing broke, so stay quiet.
+        return
+      }
+
       const isNotFound = error instanceof SupportInfoApiError && error.status === 404
       toastStore.showErrorToast(isNotFound ? STALE_SERVICE_ERROR_MESSAGE : GENERIC_ERROR_MESSAGE)
       console.error('Failed to fetch support report:', error)

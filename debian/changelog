@@ -1,3 +1,15 @@
+hifiberry-webui (0.20.14) stable; urgency=medium
+
+  * Support Report: fix an invisible hover on the report/download buttons -
+    --primary-dark is undefined, so hovering fell back to a transparent
+    background (white text on a white card). Use the var(--primary-dark,
+    var(--primary)) fallback form already established elsewhere in this
+    codebase. Incidental: the pre-existing Fixed Sound Card "Save" button
+    had the identical bug and is corrected here too, since it is the same
+    one-line defect in the same file.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 21:00:00 +0200
+
 hifiberry-webui (0.20.13) stable; urgency=medium
 
   * Support Report: scope the card's flex-wrap to itself instead of every

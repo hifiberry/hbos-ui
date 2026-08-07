@@ -645,7 +645,7 @@ const stopAllMusicPlayers = async () => {
         background: var(--primary);
 
         &:hover:not(:disabled) {
-          background: var(--primary-dark);
+          background: var(--primary-dark, var(--primary));
         }
       }
 
@@ -695,7 +695,7 @@ const stopAllMusicPlayers = async () => {
           transition: background-color 0.2s ease;
 
           &:hover:not(:disabled) {
-            background: var(--primary-dark);
+            background: var(--primary-dark, var(--primary));
           }
 
           &:disabled {

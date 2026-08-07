@@ -105,6 +105,35 @@
         </div>
       </div>
 
+      <!-- Support Report Tool -->
+      <div class="tool-section">
+        <div class="tool-card">
+          <div class="tool-info">
+            <Icon icon="tabler/file-text" class="tool-icon" />
+            <div class="tool-details">
+              <h3>Support Report</h3>
+              <p class="tool-description">
+                Collect hardware, package versions, service state and recent
+                errors for a bug report. Passwords, keys and tokens are removed,
+                but please read the report before posting it publicly.
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions">
+            <button @click="fetchReport" :disabled="loading" class="detect-button">
+              {{ loading ? 'Collecting...' : 'Create Report' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="report" class="support-report">
+          <div class="tool-actions">
+            <button @click="downloadReport" class="detect-button">Download as file</button>
+          </div>
+          <pre class="support-report-text">{{ report }}</pre>
+        </div>
+      </div>
+
       <!-- Expert Mode Toggle Tool -->
       <div class="tool-section">
         <div class="tool-card expert-tool">
@@ -191,6 +220,7 @@ import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
+import { useSupportInfo } from '@/composables/useSupportInfo'
 import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection, disableSoundCardDetection, getSoundCardDetectionStatus, resetConfigDB } from '@/api/system'
 import { stopAllPlayers } from '@/api/player'
 import type { SoundCard } from '@/api/system'
@@ -214,6 +244,7 @@ const loadingSoundCards = ref(false)
 const toastStore = useToastStore()
 const settingsStore = useSettingsStore()
 const { getExpertMode } = storeToRefs(settingsStore)
+const { report, loading, fetchReport, downloadReport } = useSupportInfo()
 
 // Helper function to transform sound card names
 const transformSoundCardName = (name: string): string => {
@@ -646,6 +677,22 @@ const stopAllMusicPlayers = async () => {
     .expert-toggle {
     }
   }
+}
+
+.support-report {
+  margin-top: 1rem;
+}
+
+.support-report-text {
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  font-family: monospace;
+  font-size: 0.8rem;
+  white-space: pre;
+  user-select: text;
 }
 
 @media (max-width: 768px) {

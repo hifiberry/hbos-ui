@@ -80,15 +80,32 @@ describe('unwritable filter types are refused, not silently neutered', () => {
     expect(setBiquadFilter).not.toHaveBeenCalled()
   })
 
-  it('writes nothing on the fallback path either when a filter is unwritable', async () => {
-    // The per-slot fallback writes to live registers one at a time. Converting
-    // every filter before the first write is what stops a bad filter halfway
-    // down the bank from leaving the first half applied.
+  it('writes nothing when an unwritable filter is present, before the endpoint is even tried', async () => {
+    // setBankFilters converts the whole bank while building its slots array,
+    // before setFilterBank is ever called -- so a bad filter never reaches
+    // the bulk endpoint or the per-slot fallback either.
     const backend = seedBackend()
-    setFilterBank.mockRejectedValue(new BankEndpointUnavailableError())
     const filters = [peak(100), peak(200), { type: 'allpass', frequency: 500, gain: -3, q: 1 }]
 
     await expect(backend.setBankFilters(BANK, filters as never)).rejects.toThrow()
+
+    expect(setBiquadFilter).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing when a stale unconvertible filter is already in the bank', async () => {
+    // updateFilter re-converts the WHOLE bank, so a legacy bandpass sitting in
+    // slot 2 must abort the write before slot 0 reaches the hardware. With the
+    // conversion back inside the write loop, slots 0 and 1 would already be
+    // written when slot 2 threw -- a half-applied bank.
+    const backend = seedBackend()
+    // @ts-expect-error -- seeding a bank that already holds an unwritable filter
+    backend.filterBanks[BANK].filters = [
+      { ...peak(100), id: 'a' },
+      { ...peak(200), id: 'b' },
+      { type: 'bandpass', frequency: 500, gain: -3, q: 1, id: 'c' },
+    ]
+
+    await expect(backend.updateFilter(BANK, 0, { frequency: 150 })).rejects.toThrow(/bandpass/)
 
     expect(setBiquadFilter).not.toHaveBeenCalled()
   })

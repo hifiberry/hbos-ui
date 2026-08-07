@@ -7,8 +7,18 @@ vi.mock('@/stores/toast', () => ({
 }))
 
 const getSupportInfo = vi.fn()
-vi.mock('@/api/config', () => ({ getSupportInfo: () => getSupportInfo() }))
+vi.mock('@/api/config', async () => {
+  // Keep the real SupportInfoApiError class so the composable's
+  // `instanceof SupportInfoApiError` check exercises the actual typed path,
+  // while still stubbing the network call itself.
+  const actual = await vi.importActual<typeof import('@/api/config')>('@/api/config')
+  return {
+    getSupportInfo: () => getSupportInfo(),
+    SupportInfoApiError: actual.SupportInfoApiError,
+  }
+})
 
+import { SupportInfoApiError } from '@/api/config'
 import { useSupportInfo } from '@/composables/useSupportInfo'
 
 describe('useSupportInfo', () => {
@@ -43,8 +53,10 @@ describe('useSupportInfo', () => {
     expect(showErrorToast).toHaveBeenCalled()
   })
 
-  it('reports a distinct message on 404, pointing at the pending restart/reboot', async () => {
-    getSupportInfo.mockRejectedValue(new Error('Failed to get support report: 404 Not Found'))
+  it('reports a distinct, actionable message on a typed 404', async () => {
+    getSupportInfo.mockRejectedValue(
+      new SupportInfoApiError(404, 'Failed to get support report: 404 Not Found'),
+    )
     const { report, loading, fetchReport } = useSupportInfo()
 
     await fetchReport()
@@ -53,8 +65,27 @@ describe('useSupportInfo', () => {
     expect(loading.value).toBe(false)
     expect(showErrorToast).toHaveBeenCalledOnce()
     const message = showErrorToast.mock.calls[0][0]
-    expect(message).toMatch(/restart|reboot/i)
+    expect(message).toMatch(/restart/i)
     expect(message).not.toBe('Could not collect the support report')
+  })
+
+  it('does not use the restart message when a non-404 error merely mentions "404" in its text', async () => {
+    // Regression pin: branching must key off the typed `.status`, not a
+    // substring match on the message — a 500 whose text happens to contain
+    // "404" (e.g. in statusText) must not be mistaken for the stale-service case.
+    getSupportInfo.mockRejectedValue(
+      new SupportInfoApiError(500, 'Failed to get support report: 500 Bad Gateway (was 404 earlier)'),
+    )
+    const { report, loading, fetchReport } = useSupportInfo()
+
+    await fetchReport()
+
+    expect(report.value).toBeNull()
+    expect(loading.value).toBe(false)
+    expect(showErrorToast).toHaveBeenCalledOnce()
+    const message = showErrorToast.mock.calls[0][0]
+    expect(message).not.toMatch(/restart|reboot/i)
+    expect(message).toBe('Could not collect the support report')
   })
 
   it('downloads the already fetched text without fetching again', async () => {

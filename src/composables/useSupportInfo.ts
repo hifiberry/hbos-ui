@@ -6,7 +6,7 @@
  */
 
 import { ref } from 'vue'
-import { getSupportInfo } from '@/api/config'
+import { getSupportInfo, SupportInfoApiError } from '@/api/config'
 import { useToastStore } from '@/stores/toast'
 
 const FILE_PREFIX = 'hifiberry-supportinfo'
@@ -16,7 +16,7 @@ const GENERIC_ERROR_MESSAGE = 'Could not collect the support report'
 // not be interrupted), so a freshly updated system can still be running an older
 // config-server that doesn't know the /supportinfo route yet, and answers 404.
 const STALE_SERVICE_ERROR_MESSAGE =
-  'Could not collect the support report: an update is waiting for a service restart or reboot to take effect'
+  'Could not collect the support report. If you just installed an update, restart the device and try again.'
 
 export function useSupportInfo() {
   const toastStore = useToastStore()
@@ -30,7 +30,7 @@ export function useSupportInfo() {
       report.value = await getSupportInfo()
     } catch (error) {
       report.value = null
-      const isNotFound = error instanceof Error && error.message.includes('404')
+      const isNotFound = error instanceof SupportInfoApiError && error.status === 404
       toastStore.showErrorToast(isNotFound ? STALE_SERVICE_ERROR_MESSAGE : GENERIC_ERROR_MESSAGE)
       console.error('Failed to fetch support report:', error)
     } finally {

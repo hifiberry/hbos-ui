@@ -612,6 +612,20 @@ export const saveExternalPlayerSettings = async (
   }
 }
 
+/** Thrown when the support report request fails. Carries the HTTP status (as
+ *  `AuthApiError` does in `api/auth.ts`) so callers can distinguish, e.g., "the
+ *  route doesn't exist yet" (404 — config-server hasn't been restarted since an
+ *  update) from any other failure, without parsing the message string. */
+export class SupportInfoApiError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'SupportInfoApiError'
+    this.status = status
+  }
+}
+
 /**
  * Fetch the diagnostic support report as plain text.
  *
@@ -626,7 +640,10 @@ export const getSupportInfo = async (): Promise<string> => {
   const response = await apiFetch(url)
 
   if (!response.ok) {
-    throw new Error(`Failed to get support report: ${response.status} ${response.statusText}`)
+    throw new SupportInfoApiError(
+      response.status,
+      `Failed to get support report: ${response.status} ${response.statusText}`,
+    )
   }
 
   return response.text()

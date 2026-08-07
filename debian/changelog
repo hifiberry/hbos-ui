@@ -1,3 +1,11 @@
+hifiberry-webui (0.20.11) stable; urgency=medium
+
+  * System Tools can now create the diagnostic support report, show it
+    on the page for copying, and save it as a file, so filing a bug
+    report no longer requires the command line.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 18:00:00 +0200
+
 hifiberry-webui (0.20.10) stable; urgency=medium
 
   * Fix plugin settings styling: the new rules were nested under

@@ -611,3 +611,23 @@ export const saveExternalPlayerSettings = async (
     throw new Error(`Failed to save player settings: ${response.status}`)
   }
 }
+
+/**
+ * Fetch the diagnostic support report as plain text.
+ *
+ * The endpoint is on the risky auth tier, so apiFetch's 401 handling opens the
+ * sign-in prompt when needed. The report is already redacted server-side by the
+ * same code that guards `config-supportinfo`.
+ */
+export const getSupportInfo = async (): Promise<string> => {
+  const configStore = useAppConfigStore()
+  const url = `${configStore.getConfigApiBaseUrl()}/supportinfo`
+
+  const response = await apiFetch(url)
+
+  if (!response.ok) {
+    throw new Error(`Failed to get support report: ${response.status} ${response.statusText}`)
+  }
+
+  return response.text()
+}

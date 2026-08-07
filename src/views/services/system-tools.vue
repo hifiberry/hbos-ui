@@ -519,7 +519,6 @@ const stopAllMusicPlayers = async () => {
     border-radius: 8px;
     padding: 24px;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
@@ -575,12 +574,24 @@ const stopAllMusicPlayers = async () => {
       color: var(--color-warning);
     }
 
-    // Collecting/downloading a report is read-only, so it gets its own
-    // informational color instead of inheriting the --color-error red that
-    // .detect-button (and its sibling tool-icon rules above) use for
-    // actually risky actions.
+    // Collecting/downloading a report is read-only, not destructive, so it
+    // should not sit under the same (nominally --color-error/--color-primary)
+    // rules as the other cards above. Those tokens are actually undefined in
+    // this codebase though (only --color-icon really resolves, which is why
+    // .expert-tool is the only one of the five that renders a color at all) -
+    // rather than invent another undefined token, or a hardcoded fallback
+    // that would ignore the light/dark theme, this reuses the one real,
+    // themed token already established by .expert-tool.
     &.report-tool .tool-info .tool-icon {
-      color: var(--color-info, #0ea5e9);
+      color: var(--color-icon);
+    }
+
+    // .report-tool needs its own row for the fetched report below the
+    // icon/description/button row; scoped to this card only so the other
+    // five (icon + button, always a single row) keep their layout unchanged
+    // at intermediate widths.
+    &.report-tool {
+      flex-wrap: wrap;
     }
 
     .tool-actions {
@@ -626,11 +637,15 @@ const stopAllMusicPlayers = async () => {
         }
       }
 
+      // No non-destructive-but-actually-defined token exists for a button
+      // background either, so this reuses --primary - the same real, themed
+      // token .save-button already relies on for its (also non-destructive)
+      // action - rather than inventing another undefined one.
       .report-button {
-        background: var(--color-info, #0ea5e9);
+        background: var(--primary);
 
         &:hover:not(:disabled) {
-          background: var(--color-info-dark, #0284c7);
+          background: var(--primary-dark);
         }
       }
 
@@ -698,9 +713,14 @@ const stopAllMusicPlayers = async () => {
     // "Download as file" button falls under the .tool-actions button rules
     // above instead of picking up the unstyled global button reset. Forced
     // onto its own row below the icon/description/button row via flex-basis
-    // on the wrapping (now flex-wrap: wrap) .tool-card.
+    // on the wrapping (&.report-tool: flex-wrap: wrap above) .tool-card.
+    // width: 100% is explicit too: under the <=768px media query below,
+    // .tool-card switches to flex-direction: column, at which point
+    // flex-basis sets a height, not a width, and this would otherwise be
+    // shrink-to-fit.
     .support-report {
       flex-basis: 100%;
+      width: 100%;
       margin-top: 1rem;
     }
   }

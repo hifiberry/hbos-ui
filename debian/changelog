@@ -1,3 +1,13 @@
+hifiberry-webui (0.20.13) stable; urgency=medium
+
+  * Support Report: scope the card's flex-wrap to itself instead of every
+    tool card, make the report block's width explicit for the mobile
+    column layout, and drop the invented, hardcoded-fallback --color-info
+    token in favour of --color-icon (icon) and --primary (buttons) -
+    the only tokens this codebase actually defines and themes.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 20:00:00 +0200
+
 hifiberry-webui (0.20.12) stable; urgency=medium
 
   * Support Report: fix the unstyled download button (it now lives inside

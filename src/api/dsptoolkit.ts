@@ -135,6 +135,40 @@ export interface BiquadResponse {
   coefficients: FilterCoefficients
 }
 
+export interface BankFilterEntry {
+  offset: number
+  filter: DSPFilter | FilterCoefficients
+}
+
+export interface BankWriteRequest {
+  address: string
+  filters: BankFilterEntry[]
+  sampleRate?: number
+  checksum?: string
+}
+
+export interface BankWriteResponse {
+  status: 'success' | 'partial'
+  address: string
+  checksum: string
+  sampleRate: number
+  written: number
+  total: number
+  results: Array<{ offset: number; address: string }>
+  errors?: string[]
+}
+
+/**
+ * Thrown when the device's sigmatcpserver predates POST /filters/bank.
+ * Callers fall back to writing the bank one slot at a time.
+ */
+export class BankEndpointUnavailableError extends Error {
+  constructor() {
+    super('This device does not support bulk filter bank writes')
+    this.name = 'BankEndpointUnavailableError'
+  }
+}
+
 // Register Types
 export interface RegisterReadResponse {
   address: string
@@ -438,6 +472,38 @@ export async function setBiquadFilter(request: BiquadRequest): Promise<BiquadRes
     method: 'POST',
     body: JSON.stringify(request)
   })
+}
+
+/**
+ * Write a complete filter bank in one request.
+ *
+ * `filters` must cover every slot of the bank -- send a transparent biquad
+ * ({a0:1,a1:0,a2:0,b0:1,b1:0,b2:0}) for slots that should be empty. Writing a
+ * bank one setBiquadFilter() call at a time is what left banks half applied
+ * when a request was dropped mid-sequence (hifiberry-os#626).
+ */
+export async function setFilterBank(request: BankWriteRequest): Promise<BankWriteResponse> {
+  let response: BankWriteResponse
+  try {
+    response = await apiRequest<BankWriteResponse>('/filters/bank', {
+      method: 'POST',
+      body: JSON.stringify(request)
+    })
+  } catch (error) {
+    if (error instanceof Error && /HTTP 404/.test(error.message)) {
+      throw new BankEndpointUnavailableError()
+    }
+    throw error
+  }
+
+  if (response.status === 'partial') {
+    throw new Error(
+      `Filter bank only partially written (${response.written}/${response.total}): ` +
+      `${(response.errors ?? []).join('; ')}`
+    )
+  }
+
+  return response
 }
 
 // Register Access API

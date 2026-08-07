@@ -121,8 +121,8 @@ export function useRoomEQ(
       }
 
       for (const ch of channelsToApply) {
-        channelFilters.value[ch] = [...convertedFilters];
         await filterStore.setBankFilters(ch, convertedFilters.map(convertUIFilterToStore));
+        channelFilters.value[ch] = [...convertedFilters];
       }
 
       if (convertedFilters.length > 0) {
@@ -133,7 +133,8 @@ export function useRoomEQ(
       console.log(`speaker-equalizer: Loaded Room EQ configuration "${config.data.name}" to ${targetMode} channel(s)`);
     } catch (error) {
       console.error('speaker-equalizer: Failed to load Room EQ configuration:', error);
-      toastStore.showErrorToast('Error loading Room EQ configuration. Please try again.');
+      const message = error instanceof Error ? error.message : String(error);
+      toastStore.showErrorToast(`Error loading Room EQ configuration: ${message}`);
     }
   }
 

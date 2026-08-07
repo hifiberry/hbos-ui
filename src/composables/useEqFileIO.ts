@@ -58,21 +58,31 @@ export function useEqFileIO(
       if (file) {
         const reader = new FileReader();
         reader.onload = async (e) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let data: any;
           try {
-            const data = JSON.parse(e.target?.result as string);
+            data = JSON.parse(e.target?.result as string);
+          } catch (parseError) {
+            console.error('speaker-equalizer: Error parsing Speaker EQ file:', parseError);
+            toastStore.showErrorToast('Error loading Speaker EQ settings. Please check the file format.');
+            return;
+          }
 
+          try {
             // Support new format (channelFilters Record)
             if (data.channelFilters) {
               for (const ch of channelNames.value) {
                 if (data.channelFilters[ch]) {
-                  channelFilters.value[ch] = data.channelFilters[ch].map((filter: Filter, index: number) => ({
+                  const newFilters = data.channelFilters[ch].map((filter: Filter, index: number) => ({
                     ...filter,
                     frequency: Math.round(filter.frequency),
                     id: Date.now() + index + channelNames.value.indexOf(ch) * 1000
                   }));
 
                   await filterStore.setBankFilters(
-                    ch, channelFilters.value[ch].map(convertUIFilterToStore));
+                    ch, newFilters.map(convertUIFilterToStore));
+
+                  channelFilters.value[ch] = newFilters;
                 }
               }
             }
@@ -85,14 +95,16 @@ export function useEqFileIO(
               for (const ch of channelNames.value) {
                 const legacyFilters = legacyMap[ch];
                 if (legacyFilters) {
-                  channelFilters.value[ch] = legacyFilters.map((filter: Filter, index: number) => ({
+                  const newFilters = legacyFilters.map((filter: Filter, index: number) => ({
                     ...filter,
                     frequency: Math.round(filter.frequency),
                     id: Date.now() + index + channelNames.value.indexOf(ch) * 1000
                   }));
 
                   await filterStore.setBankFilters(
-                    ch, channelFilters.value[ch].map(convertUIFilterToStore));
+                    ch, newFilters.map(convertUIFilterToStore));
+
+                  channelFilters.value[ch] = newFilters;
                 }
               }
             }
@@ -107,7 +119,8 @@ export function useEqFileIO(
             }
           } catch (error) {
             console.error('speaker-equalizer: Error loading Speaker EQ settings:', error);
-            toastStore.showErrorToast('Error loading Speaker EQ settings. Please check the file format.');
+            const message = error instanceof Error ? error.message : String(error);
+            toastStore.showErrorToast(`Error loading Speaker EQ settings: ${message}`);
           }
         };
         reader.readAsText(file);

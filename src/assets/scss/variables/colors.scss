@@ -1,4 +1,10 @@
 $primary: #E11E4A;                                                $primary--dark: #FF2E63;
+// A genuinely darker shade of $primary/$primary--dark (each channel x0.8),
+// for hover states. Backs the --primary-dark custom property - named
+// $primary-hover rather than $primary-dark to avoid reading as "the dark
+// theme's primary" next to the --dark suffix convention used everywhere
+// else in this file.
+$primary-hover: #B4183B;                                          $primary-hover--dark: #CC254F;
 
 $background-body: #fafafa;                                        $background-body--dark: #000;
 $color-body: #707070;                                             $color-body--dark: #fff;

@@ -604,10 +604,15 @@ const stopAllMusicPlayers = async () => {
       gap: 16px;
       flex: 1;
 
+      // One accent for all seven cards. Icon.vue's own scoped rule defaults
+      // every icon to --color-icon (grey), which left the cards without a
+      // per-card override grey and the rest accented - so the page read as
+      // if the colour meant something. It did not.
       .tool-icon {
         width: 32px;
         height: 32px;
         flex-shrink: 0;
+        color: var(--primary);
       }
 
       .tool-details {
@@ -629,36 +634,11 @@ const stopAllMusicPlayers = async () => {
       }
     }
 
-    // Reset System and Stop All Players both use .reset-tool. --color-error
-    // is undefined in this codebase (see the button rules below), so this
-    // rule was already a no-op; removed rather than left dangling now that
-    // every button on the page - destructive or not - shares one color.
-    &.detect-tool .tool-info .tool-icon {
-      color: var(--primary);
-    }
-
-    &.soundcard-tool .tool-info .tool-icon {
-      color: var(--primary);
-    }
-
-    &.expert-tool .tool-info .tool-icon {
-      color: var(--color-icon);
-    }
-
-    &.stop-players-tool .tool-info .tool-icon {
-      color: var(--color-warning);
-    }
-
-    // Collecting/downloading a report is read-only, not destructive, so it
-    // should not sit under the same accent-colored rules as detect-tool /
-    // soundcard-tool above, nor under the warning color used by
-    // stop-players-tool. Rather than invent another undefined token, or a
-    // hardcoded fallback that would ignore the light/dark theme, this reuses
-    // the one neutral, themed icon token already established by
-    // .expert-tool.
-    &.report-tool .tool-info .tool-icon {
-      color: var(--color-icon);
-    }
+    // Per-card icon colours removed: .detect-tool and .soundcard-tool were
+    // accented, .expert-tool and .report-tool were explicitly grey, and
+    // .stop-players-tool matched no element at all (Stop All Players uses
+    // .reset-tool), so its warning colour never rendered. The shared
+    // .tool-icon rule above now accents all seven alike.
 
     // .report-tool needs its own row for the fetched report below the
     // icon/description/button row; scoped to this card only so the other

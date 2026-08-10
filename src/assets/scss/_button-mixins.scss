@@ -97,8 +97,13 @@
   border: 1px solid var(--color-button-border);
   color: var(--color-body, #707070);
 
+  // See the identical copy in mixins.scss: the #f9fafb fallback of the
+  // undefined --color-background-secondary rendered in dark too and collided
+  // with the #fff label at 1.05:1. --color-background-hover is defined in both
+  // themes and composites to #ffffff over the light card (no change) and
+  // #3d3d3d over the dark one.
   &:hover:not(:disabled) {
-    background-color: var(--color-background-secondary, #f9fafb);
+    background-color: var(--color-background-hover);
     border-color: var(--primary);
     color: var(--color-body, #374151);
     transform: translateY(-1px);

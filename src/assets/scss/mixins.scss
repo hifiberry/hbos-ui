@@ -302,8 +302,16 @@
   border: 1px solid var(--color-button-border);
   color: var(--color-body, #707070);
 
+  // Same two-whites bug as the resting fill, one line down:
+  // --color-background-secondary is a different undefined token whose #f9fafb
+  // fallback also rendered in dark, against the #fff label - 1.05:1, so the
+  // label vanished the moment you pointed at the button. --color-background-hover
+  // is defined in both themes as rgba(255,255,255,.05); being an overlay it
+  // composites against the card behind the button (--background-card), giving
+  // #ffffff in light - no fill change, so light does not move at all - and
+  // #3d3d3d in dark, a subtle legible lift.
   &:hover:not(:disabled) {
-    background-color: var(--color-background-secondary, #f9fafb);
+    background-color: var(--color-background-hover);
     border-color: var(--primary);
     color: var(--color-body, #374151);
     transform: translateY(-1px);

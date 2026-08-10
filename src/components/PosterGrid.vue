@@ -252,7 +252,7 @@ watch(
         gap: 16px;
         padding: 24px;
         border-radius: 8px;
-        background-color: var(--color-background-secondary);
+        background-color: var(--background-secondary);
         border: 1px solid var(--color-border);
 
         .loading-icon {

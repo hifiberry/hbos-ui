@@ -1177,7 +1177,7 @@ watch(smoothingType, () => {
     height: 200px;
     border-radius: 12px;
     overflow: hidden;
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
     border: 2px solid var(--color-border);
     display: flex;
     align-items: center;
@@ -1209,7 +1209,7 @@ watch(smoothingType, () => {
 
       .segmented {
         display: inline-flex;
-        background: var(--color-bg-secondary);
+        background: var(--background-secondary);
         border: 1px solid var(--color-border);
         border-radius: 6px;
         overflow: hidden;
@@ -1253,7 +1253,7 @@ watch(smoothingType, () => {
     .progress-bar {
       width: 100%;
       height: 8px;
-      background: var(--color-bg-secondary);
+      background: var(--background-secondary);
       border: 1px solid var(--color-border);
       border-radius: 999px;
       overflow: hidden;
@@ -1420,7 +1420,7 @@ watch(smoothingType, () => {
 
         &:hover {
           border-color: var(--primary);
-          background: var(--color-bg-secondary);
+          background: var(--background-secondary);
         }
 
         &.selected {
@@ -1535,7 +1535,7 @@ watch(smoothingType, () => {
     line-height: 1.6;
     text-align: center;
     padding: 24px 32px;
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
     border: 1px solid var(--color-border);
     border-radius: 8px;
   }
@@ -1609,7 +1609,7 @@ watch(smoothingType, () => {
             color: var(--color-body);
             font-weight: 600;
             font-size: 0.9rem;
-            background: var(--color-bg-secondary);
+            background: var(--background-secondary);
             padding: 4px 8px;
             border-radius: 4px;
             border: 1px solid var(--color-border);
@@ -1632,7 +1632,7 @@ watch(smoothingType, () => {
               .spl-meter-track {
                 width: 100%;
                 height: 20px;
-                background: var(--color-bg-secondary);
+                background: var(--background-secondary);
                 border: 1px solid var(--color-border);
                 border-radius: 6px;
                 position: relative;

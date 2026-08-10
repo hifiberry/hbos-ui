@@ -1394,7 +1394,7 @@ const formatFrequency = (freq: number): string => {
   display: grid; gap: 14px;
   .option-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .option-label { color: var(--color-head); font-weight: 500; white-space: nowrap; }
-  .segmented { display: inline-flex; background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 6px; overflow: hidden; }
+  .segmented { display: inline-flex; background: var(--background-secondary); border: 1px solid var(--color-border); border-radius: 6px; overflow: hidden; }
   .segmented-btn { padding: 6px 10px; background: transparent; border: none; color: var(--color-body); cursor: pointer; font-weight: 500; }
   .segmented-btn.active { background: var(--primary); color: white; }
   .control-inline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -1416,7 +1416,7 @@ const formatFrequency = (freq: number): string => {
   .progress-bar {
     width: 200px;
     height: 8px;
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
     border-radius: 4px;
     overflow: hidden;
   }
@@ -1455,7 +1455,7 @@ const formatFrequency = (freq: number): string => {
   .optimization-results {
     margin-top: 8px;
     padding: 8px;
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
     border-radius: 4px;
     .result-item {
       color: var(--color-head);
@@ -1496,7 +1496,7 @@ const formatFrequency = (freq: number): string => {
 .usable-range-controls {
   margin: 20px 0;
   padding: 16px;
-  background: var(--color-bg-secondary);
+  background: var(--background-secondary);
   border-radius: 8px;
   border: 1px solid var(--color-border);
 
@@ -1584,7 +1584,7 @@ const formatFrequency = (freq: number): string => {
         cursor: pointer;
         transition: all 0.15s ease;
       }
-      .step-btn:hover { background: var(--color-bg-secondary); }
+      .step-btn:hover { background: var(--background-secondary); }
       .step-btn:active { transform: translateY(1px); }
 
       .suffix { color: var(--color-body-secondary); }
@@ -1618,7 +1618,7 @@ const formatFrequency = (freq: number): string => {
     align-items: center;
     padding: 40px 20px;
     text-align: center;
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
     border: 1px solid var(--color-border);
     border-radius: 8px;
 
@@ -1640,7 +1640,7 @@ const formatFrequency = (freq: number): string => {
     .filters-summary {
       margin-bottom: 24px;
       padding: 20px;
-      background: var(--color-bg-secondary);
+      background: var(--background-secondary);
       border: 1px solid var(--color-border);
       border-radius: 8px;
 
@@ -1696,7 +1696,7 @@ const formatFrequency = (freq: number): string => {
           background: var(--color-bg-primary);
 
           th {
-            background: var(--color-bg-secondary);
+            background: var(--background-secondary);
             padding: 12px 16px;
             text-align: left;
             font-weight: 600;
@@ -1768,7 +1768,7 @@ const formatFrequency = (freq: number): string => {
           }
 
           tr.filter-row:nth-child(even) {
-            background: var(--color-bg-secondary);
+            background: var(--background-secondary);
           }
         }
       }

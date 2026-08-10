@@ -51,6 +51,14 @@ $cover-placeholder-bg: rgba(225, 30, 74, 0.05);                   $cover-placeho
 $cover-placeholder-icon-color: #E11E4A;                           $cover-placeholder-icon-color--dark: #FFFFFF;
 
 $background-card: #fff;                                           $background-card--dark: #333;
+// A recessed panel nearer the background than the card that hosts it: light
+// matches the page (--background-body is also #fafafa), dark goes darker
+// than the card's #333 toward the black body. Backs --background-secondary,
+// which folds three prior synonyms - --color-bg-secondary,
+// --color-background-secondary and --color-bg - none of which were ever
+// defined as a custom property (see token-part2-stage3 report for the site
+// list).
+$background-secondary: #fafafa;                                   $background-secondary--dark: #2a2a2a;
 
 $background-start-skeleton: #ddd;                                 $background-start-skeleton--dark: #444;
 $background-end-skeleton: #eee;                                   $background-end-skeleton--dark: #555;

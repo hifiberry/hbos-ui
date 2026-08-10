@@ -966,7 +966,7 @@ async function finishAndReboot() {
   gap: 6px;
 
   &:hover {
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
   }
 
   &.active {
@@ -983,7 +983,7 @@ async function finishAndReboot() {
 
 .category-count {
   font-size: 0.75rem;
-  background: var(--color-bg-secondary);
+  background: var(--background-secondary);
   border-radius: 10px;
   padding: 1px 7px;
   color: var(--color-body-secondary);
@@ -1009,11 +1009,11 @@ async function finishAndReboot() {
   transition: background 0.15s;
 
   &:hover {
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
   }
 
   &.selected {
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
   }
 
   input[type="radio"] {
@@ -1057,7 +1057,7 @@ async function finishAndReboot() {
   transition: all 0.15s;
 
   &:hover {
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
   }
 
   &.selected {
@@ -1108,11 +1108,11 @@ async function finishAndReboot() {
   transition: background 0.15s;
 
   &:hover {
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
   }
 
   &.selected {
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
   }
 
   &.unavailable {
@@ -1139,7 +1139,7 @@ async function finishAndReboot() {
 
 .service-badge {
   font-size: 0.7rem;
-  background: var(--color-bg-secondary);
+  background: var(--background-secondary);
   color: var(--color-body-secondary);
   border-radius: 4px;
   padding: 1px 6px;
@@ -1148,7 +1148,7 @@ async function finishAndReboot() {
 .local-music-section {
   margin-top: 12px;
   padding: 12px 14px;
-  background: var(--color-bg-secondary);
+  background: var(--background-secondary);
   border-radius: 8px;
 }
 
@@ -1328,7 +1328,7 @@ async function finishAndReboot() {
 }
 
 .btn-secondary {
-  background: var(--color-bg-secondary);
+  background: var(--background-secondary);
   color: var(--color-body);
   // Scoped, so this beats the global .btn-secondary in main.scss and owns the
   // resting border outright - the token has to be repeated here or the wizard's

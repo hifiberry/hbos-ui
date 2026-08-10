@@ -126,7 +126,7 @@ defineEmits<{
     transition: all 0.2s ease;
 
     &:hover {
-      background: var(--color-bg-secondary);
+      background: var(--background-secondary);
       color: var(--color-head);
     }
 
@@ -178,7 +178,7 @@ defineEmits<{
   }
 
   &.secondary {
-    background: var(--color-bg-secondary);
+    background: var(--background-secondary);
     color: var(--color-body);
     border: 1px solid var(--color-border);
 

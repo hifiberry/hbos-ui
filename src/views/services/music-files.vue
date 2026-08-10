@@ -360,7 +360,7 @@ onMounted(() => {
           }
 
           code {
-            background: var(--color-bg-secondary);
+            background: var(--background-secondary);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: 'Metropolis', monospace;
@@ -372,6 +372,11 @@ onMounted(() => {
         .service-url {
           margin: 12px 0;
           padding: 12px;
+          // Left as --color-bg-secondary (still undefined => transparent,
+          // matching today's look): the nested code's --primary text would
+          // drop under the 4.5:1 floor on the new --background-secondary fill
+          // (4.68:1 -> 4.49:1 light, 3.50:1 -> 3.98:1 dark, the latter already
+          // failing today). See token-part2-stage3 report.
           background: var(--color-bg-secondary);
           border-radius: 6px;
           border-left: 3px solid var(--primary);
@@ -575,7 +580,7 @@ onMounted(() => {
                   color: var(--color-body-secondary);
                   font-weight: 400;
                   font-family: 'Metropolis', monospace;
-                  background: var(--color-bg-secondary);
+                  background: var(--background-secondary);
                   padding: 2px 6px;
                   border-radius: 4px;
                   font-size: 0.9em;

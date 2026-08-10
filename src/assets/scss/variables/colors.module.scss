@@ -54,6 +54,7 @@ $colors: (
   ),
   card: (
     background-card: $background-card,
+    background-secondary: $background-secondary,
   ),
   skeleton: (
     background-start-skeleton: $background-start-skeleton,
@@ -145,6 +146,7 @@ $colors--dark: (
   ),
   card: (
     background-card: $background-card--dark,
+    background-secondary: $background-secondary--dark,
   ),
   skeleton: (
     background-start-skeleton: $background-start-skeleton--dark,

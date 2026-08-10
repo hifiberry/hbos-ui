@@ -378,12 +378,12 @@
   color: var(--color-body, #707070);
 
   &:hover:not(:disabled) {
-    background-color: var(--color-background-secondary, #f3f4f6);
+    background-color: var(--background-secondary);
     color: var(--color-body, #374151);
   }
 
   &:active:not(:disabled) {
-    background-color: var(--color-background-secondary, #e5e7eb);
+    background-color: var(--background-secondary);
   }
 
   &:focus {
@@ -422,11 +422,11 @@
   transition: all 0.15s ease-in-out;
 
   &:hover:not(:disabled) {
-    background-color: var(--color-background-secondary, #f3f4f6);
+    background-color: var(--background-secondary);
   }
 
   &:active:not(:disabled) {
-    background-color: var(--color-background-secondary, #e5e7eb);
+    background-color: var(--background-secondary);
   }
 
   &:focus {
@@ -557,7 +557,7 @@
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    background: var(--color-background-secondary);
+    background: var(--background-secondary);
     border-color: var(--color-body-secondary);
     box-shadow: none;
   }

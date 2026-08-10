@@ -871,7 +871,7 @@ onMounted(() => {
       transition: all 0.2s ease;
 
       &:hover {
-        background: var(--color-bg-secondary);
+        background: var(--background-secondary);
         color: var(--color-head);
       }
 
@@ -909,6 +909,14 @@ onMounted(() => {
           border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s ease;
+          // Left as --color-bg / --color-bg-secondary (still undefined =>
+          // transparent, matching today's look): when checked, .radio-label
+          // switches to --primary text, which would drop under 4.5:1 on the
+          // new --background-secondary fill (4.68:1 -> 4.49:1 light, 3.50:1
+          // -> 3.98:1 dark, the latter already failing today). Left both the
+          // resting and hover fills unfolded together so they don't render
+          // two different shades of an otherwise-identical box. See
+          // token-part2-stage3 report.
           background: var(--color-bg);
 
           &:hover {
@@ -964,7 +972,7 @@ onMounted(() => {
       }
 
       &.secondary {
-        background: var(--color-bg-secondary);
+        background: var(--background-secondary);
         color: var(--color-body);
         border: 1px solid var(--color-border);
 

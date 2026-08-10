@@ -744,7 +744,7 @@ watch(() => props.isOpen, (isOpen) => {
         padding: 10px 12px;
         border: 1px solid var(--color-border);
         border-radius: 6px;
-        background: var(--color-bg);
+        background: var(--background-secondary);
         color: var(--color-body);
         font-size: 0.9rem;
 
@@ -909,7 +909,7 @@ watch(() => props.isOpen, (isOpen) => {
   justify-content: space-between;
   padding: 20px 24px;
   border-top: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
+  background: var(--background-secondary);
 
   .step-indicator {
     display: flex;

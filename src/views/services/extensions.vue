@@ -256,7 +256,7 @@ onMounted(async () => {
   overflow: auto;
   font-family: monospace;
   font-size: 0.8em;
-  background-color: var(--color-background-secondary);
+  background-color: var(--background-secondary);
   padding: 12px;
   border-radius: 6px;
 }

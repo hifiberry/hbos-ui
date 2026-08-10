@@ -1,3 +1,63 @@
+hifiberry-webui (0.20.18) stable; urgency=medium
+
+  * CSS custom properties, part 1 follow-up: drop --color-border-light too.
+    Same pattern as --color-border-hover: in RoomEqualisationWizard.vue the
+    <td> row divider at line 1710 uses --color-border-light while the <th>
+    divider six lines above (1704) uses the still-undefined --color-border -
+    defining one and not the other gives the same table two different
+    border treatments. Not invisible, so not part 1; moves to part 2 next
+    to --color-border and --color-border-hover, which now form one paired
+    decision rather than three separate ones. 17 tokens remain defined;
+    the promoted-fallbacks group and its :export block are updated to
+    match. Re-verified byte-identical built CSS for all 17 before/after.
+    (--border-color's one bare site was also reviewed and kept: it sits in
+    a "Save Configuration" block already broken by four other undefined,
+    unrelated tokens, so promoting this one changes nothing perceptible -
+    but that block needs a unit-level look in part 2, not a var-by-var one.)
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 17:00:00 +0200
+
+hifiberry-webui (0.20.17) stable; urgency=medium
+
+  * CSS custom properties, part 1 follow-up: drop --color-surface-rgb and
+    --color-border-hover from the 0.20.16 promotion after review found
+    each has bare (fallback-less) call sites part 1's "zero visual
+    change" promise cannot cover. --color-surface-rgb turns
+    .artist-info into a solid grey block and drops .id-value's contrast
+    to ~1.6:1 in light theme; --color-border-hover would make a
+    dsp-backends.vue card border fade rather than emphasise on hover,
+    since its base --color-border is still undefined. Both move to
+    part 2, where they belong alongside a real --color-border decision.
+    18 tokens remain defined; the promoted-fallbacks group in
+    colors.module.scss/colors.scss and its :export block are updated
+    to match. Re-verified byte-identical built CSS for all 18 before
+    and after this change.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 15:00:00 +0200
+
+hifiberry-webui (0.20.16) stable; urgency=medium
+
+  * CSS custom properties, part 1 of the undefined-token cleanup: define
+    the ~20 tokens that were already used with exactly one, consistent
+    hardcoded fallback everywhere in the codebase (--color-border-light,
+    --card-background, --font-mono, etc.) as that literal value in
+    colors.module.scss/colors.scss, so the value lives in one place
+    instead of being repeated at every call site. Deliberately given the
+    same light and dark value - a hardcoded fallback is theme-blind by
+    definition, so it already rendered identically in both themes; a
+    real dark value is a separate design decision for a follow-up.
+  * Remove the 15 dead --tblr-* custom properties (Tabler UI Kit
+    tokens) from dsp-programs.vue - this project has never depended on
+    Tabler, so these always resolved to their hardcoded fallback and
+    never will resolve to anything else. Replaced with that literal
+    value directly; no behaviour change.
+  * No visual change: verified by diffing the built CSS before/after -
+    every pre-existing custom property is byte-identical, the only
+    additions are the 20 new tokens (matching their prior fallback
+    exactly) and the dsp-programs.vue literal substitutions.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 12:00:00 +0200
+
 hifiberry-webui (0.20.15) stable; urgency=medium
 
   * System Tools: make all six action buttons (Reset, Detect, Stop

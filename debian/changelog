@@ -1,4 +1,4 @@
-hifiberry-webui (0.20.23) stable; urgency=medium
+hifiberry-webui (0.20.25) stable; urgency=medium
 
   * Error and success messages are readable again. They used to be written
     in a red or green that was hard to tell apart from the brand colour
@@ -15,6 +15,26 @@ hifiberry-webui (0.20.23) stable; urgency=medium
     wizard had been showing nothing at all.
 
  -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 15:04:23 +0200
+
+hifiberry-webui (0.20.24) stable; urgency=medium
+
+  * System Tools: give every tool icon the same accent colour. Icon.vue
+    defaults to --color-icon, so the cards without a per-card override
+    rendered grey while two were accented, suggesting a distinction that did
+    not exist. The .stop-players-tool rule matched no element at all - Stop
+    All Players carries .reset-tool - and referenced --color-warning, which
+    is not a defined token, so its colour never rendered either.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 14:00:49 +0200
+
+hifiberry-webui (0.20.23) stable; urgency=medium
+
+  * System Tools: add a Power card to reboot or shut the device down. The
+    endpoints existed in config-server all along, but the only way to reach
+    them from the UI was the reboot prompt after sound card detection.
+    (hifiberry/hifiberry-os#632)
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 13:45:04 +0200
 
 hifiberry-webui (0.20.22) stable; urgency=medium
 

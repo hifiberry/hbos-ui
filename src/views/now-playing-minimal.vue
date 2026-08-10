@@ -179,7 +179,7 @@ const tooltipStyles = computed(() => {
       left: 50%;
       transform: translateX(-50%);
       background: var(--background-secondary);
-      color: var(--color-body-secondary);
+      color: var(--color-body);
       padding: 6px 12px;
       border-radius: 6px;
       font-size: 0.75rem;
@@ -335,7 +335,7 @@ const tooltipStyles = computed(() => {
   bottom: 15px;
   right: 15px;
   font-size: 0.75rem;
-  color: var(--color-body-secondary);
+  color: var(--color-body);
   opacity: 0.5;
   transition: opacity 0.3s ease;
 

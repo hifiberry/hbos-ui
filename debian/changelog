@@ -1,3 +1,15 @@
+hifiberry-webui (0.20.22) stable; urgency=medium
+
+  * The extension installer is readable again in the dark theme. Its dialog
+    and the job log inside it had been white on white.
+  * Recessed panels throughout the setup wizard, the measurement wizards and
+    the settings pages have a fill again instead of none, so they read as
+    panels sitting inside their card.
+  * The sort, shuffle and genre buttons in the library use the same outline as
+    every other button.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 12:51:44 +0200
+
 hifiberry-webui (0.20.21) stable; urgency=medium
 
   * Containers, inputs and dialogs have their separating lines back. In the
@@ -304,14 +316,14 @@ hifiberry-webui (0.19.14) stable; urgency=medium
   * build: fix build.sh so package builds no longer ship stale JS chunks
     left over from previous builds in debian/webui-dist.
 
- -- HiFiBerry <info@hifiberry.com>  Wed, 15 Jul 2026 11:51:09 +0000
+ -- HiFiBerry <support@hifiberry.com>  Wed, 15 Jul 2026 11:51:09 +0000
 
 hifiberry-webui (0.19.13) stable; urgency=medium
 
   * Track Metadata tooltip: show the audio stream format (codec, sample rate,
     bit depth, channels) from the audiocontrol now-playing stream_details.
 
- -- HiFiBerry <info@hifiberry.com>  Wed, 08 Jul 2026 17:30:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Wed, 08 Jul 2026 17:30:00 +0000
 
 hifiberry-webui (0.19.12) stable; urgency=medium
 
@@ -320,7 +332,7 @@ hifiberry-webui (0.19.12) stable; urgency=medium
     (toggle/select) and saves them via the config API. First consumer is the
     analog-recognition "Recognize tracks" toggle.
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 06 Jul 2026 12:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 06 Jul 2026 12:00:00 +0000
 
 hifiberry-webui (0.19.11) stable; urgency=medium
 
@@ -329,7 +341,7 @@ hifiberry-webui (0.19.11) stable; urgency=medium
     Previously it just said "Autodetect" which was misleading since
     0.19.10 pins the detected card on confirm.
 
- -- HiFiBerry <info@hifiberry.com>  Tue, 12 May 2026 15:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Tue, 12 May 2026 15:00:00 +0000
 
 hifiberry-webui (0.19.10) stable; urgency=medium
 
@@ -342,7 +354,7 @@ hifiberry-webui (0.19.10) stable; urgency=medium
     load the audio driver at next boot and config-detect couldn't
     recover.
 
- -- HiFiBerry <info@hifiberry.com>  Tue, 12 May 2026 14:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Tue, 12 May 2026 14:00:00 +0000
 
 hifiberry-webui (0.19.9) stable; urgency=medium
 
@@ -354,7 +366,7 @@ hifiberry-webui (0.19.9) stable; urgency=medium
     the previously-pinned card name even after the actual hardware
     changed.
 
- -- HiFiBerry <info@hifiberry.com>  Tue, 12 May 2026 13:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Tue, 12 May 2026 13:00:00 +0000
 
 hifiberry-webui (0.19.8) stable; urgency=medium
 
@@ -401,14 +413,14 @@ hifiberry-webui (0.19.4) stable; urgency=medium
   * Add delete album button to album detail view and context menu (only shown when library supports deletion)
   * Move delete album to trash icon button in top-right corner of album detail card
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 02 Mar 2026 23:30:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 02 Mar 2026 23:30:00 +0000
 
 hifiberry-webui (0.18.2) stable; urgency=medium
 
   * Fix TOSLink toggle: show enabled state instead of signal detection state
   * Fix DSP availability check to correctly distinguish detected vs not detected
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 02 Mar 2026 22:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 02 Mar 2026 22:00:00 +0000
 
 hifiberry-webui (0.18.1) stable; urgency=medium
 
@@ -416,7 +428,7 @@ hifiberry-webui (0.18.1) stable; urgency=medium
   * Toggling VU meter in settings now also starts/stops the backend vu-meter service
   * Fix DSP profile filtering for "DAC+ DSP" sound card name with space
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 02 Mar 2026 20:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 02 Mar 2026 20:00:00 +0000
 
 hifiberry-webui (0.18.0) stable; urgency=medium
 
@@ -427,13 +439,13 @@ hifiberry-webui (0.18.0) stable; urgency=medium
   * Remove Pro badge from sound card selection
   * System reset now also resets setup wizard and sound card configuration
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 02 Mar 2026 18:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 02 Mar 2026 18:00:00 +0000
 
 hifiberry-webui (0.17.35) stable; urgency=medium
 
   * Library index: remove Genres section (page kept but unlinked for now)
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 02 Mar 2026 10:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 02 Mar 2026 10:00:00 +0000
 
 hifiberry-webui (0.17.34) stable; urgency=medium
 
@@ -446,7 +458,7 @@ hifiberry-webui (0.17.34) stable; urgency=medium
   * Hide full top bar on Now Playing page
   * Move API nginx includes to their respective packages
 
- -- HiFiBerry <info@hifiberry.com>  Sat, 01 Mar 2026 11:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Sat, 01 Mar 2026 11:00:00 +0000
 
 hifiberry-webui (0.17.22) stable; urgency=medium
 
@@ -534,7 +546,7 @@ hifiberry-webui (0.17.13) stable; urgency=medium
   * DSP program checksums hidden when program length is 0 bytes
   * System-info config.txt link now navigates to system-tools page
 
- -- HiFiBerry <info@hifiberry.com>  Fri, 06 Feb 2026 15:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Fri, 06 Feb 2026 15:00:00 +0000
 
 hifiberry-webui (0.17.4) stable; urgency=medium
 
@@ -542,7 +554,7 @@ hifiberry-webui (0.17.4) stable; urgency=medium
   * Removed edit functionality for sound card name field in system info
   * Added fixedInConfigTxt attribute support in sound card display logic
 
- -- HiFiBerry <info@hifiberry.com>  Wed, 04 Feb 2026 10:00:47 +0000
+ -- HiFiBerry <support@hifiberry.com>  Wed, 04 Feb 2026 10:00:47 +0000
 
 hifiberry-webui (0.17.3) stable; urgency=medium
 
@@ -550,7 +562,7 @@ hifiberry-webui (0.17.3) stable; urgency=medium
   * Added linear -60dB to 0dB mapping for volume limit slider
   * Integrated master gain API calls for loading and saving volume settings
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 03 Feb 2026 16:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 03 Feb 2026 16:00:00 +0000
 
 hifiberry-webui (0.17.2) stable; urgency=medium
 
@@ -559,7 +571,7 @@ hifiberry-webui (0.17.2) stable; urgency=medium
   * Fixed Vite proxy configuration for PipeWire API endpoints
   * Added proper styling for "Unknown" service status with warning appearance
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 03 Feb 2026 14:30:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 03 Feb 2026 14:30:00 +0000
 
 hifiberry-webui (0.17.1) stable; urgency=medium
 
@@ -568,7 +580,7 @@ hifiberry-webui (0.17.1) stable; urgency=medium
   * Changed nginx config files to non-conffiles for automatic updates
   * Fixed nginx configuration to always update on package upgrade
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 03 Feb 2026 09:26:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 03 Feb 2026 09:26:00 +0000
 
 hifiberry-webui (0.17.0) stable; urgency=medium
 
@@ -579,33 +591,33 @@ hifiberry-webui (0.17.0) stable; urgency=medium
   * Removed deprecated PipeWire API calls from sound settings
   * Added PipeWire API version check to system-info page
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 02 Feb 2026 17:08:40 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 02 Feb 2026 17:08:40 +0000
 
 hifiberry-webui (0.16.0) stable; urgency=medium
 
   * Updated many icons for consistency
 
- -- HiFiBerry <info@hifiberry.com>  Thu, 19 Dec 2024 12:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Thu, 19 Dec 2024 12:00:00 +0000
 
 hifiberry-webui (0.15.3) stable; urgency=medium
 
   * Removed nginx-webui systemd unit
 
- -- HiFiBerry <info@hifiberry.com>  Thu, 19 Dec 2024 00:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Thu, 19 Dec 2024 00:00:00 +0000
 
 hifiberry-webui (0.15.2) stable; urgency=medium
 
   * Added Pipewire monostereo mode and balance display to system-info page
   * Display devices, mode, and balance with graceful fallback to "Not available"
 
- -- HiFiBerry <info@hifiberry.com>  Tue, 18 Dec 2024 18:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Tue, 18 Dec 2024 18:00:00 +0000
 
 hifiberry-webui (0.15.1) stable; urgency=medium
 
   * Added Pipewire devices display to system-info page
   * Logging cleanup
 
- -- HiFiBerry <info@hifiberry.com>  Wed, 18 Dec 2024 12:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Wed, 18 Dec 2024 12:00:00 +0000
 
 hifiberry-webui (0.15) stable; urgency=medium
 
@@ -614,7 +626,7 @@ hifiberry-webui (0.15) stable; urgency=medium
   * Re-enabled console.log removal in production builds
   * Simplified image URL rewriting debug logs
 
- -- HiFiBerry <info@hifiberry.com>  Wed, 18 Dec 2024 00:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Wed, 18 Dec 2024 00:00:00 +0000
 
 hifiberry-webui (0.14) stable; urgency=medium
 
@@ -625,7 +637,7 @@ hifiberry-webui (0.14) stable; urgency=medium
   * Add fixed sound card configuration tool in system-tools
   * Auto-disable sound card detection when fixed configuration is set
 
- -- HiFiBerry <info@hifiberry.com>  Tue, 17 Dec 2024 00:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Tue, 17 Dec 2024 00:00:00 +0000
 
 hifiberry-webui (0.13) stable; urgency=medium
 
@@ -634,7 +646,7 @@ hifiberry-webui (0.13) stable; urgency=medium
   * Auto-disable sound card detection when fixed configuration is set
   * Fix PageContent component TypeScript prop types
 
- -- HiFiBerry <info@hifiberry.com>  Tue, 16 Dec 2024 00:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Tue, 16 Dec 2024 00:00:00 +0000
 
 hifiberry-webui (0.12) stable; urgency=medium
 
@@ -648,7 +660,7 @@ hifiberry-webui (0.12) stable; urgency=medium
   * Enhanced service monitoring for Audio Control, Configuration, and DSP backend APIs
   * Improved version information display without prefix formatting
 
- -- HiFiBerry <info@hifiberry.com>  Wed, 02 Oct 2025 12:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Wed, 02 Oct 2025 12:00:00 +0000
 
 hifiberry-webui (0.11) stable; urgency=medium
 
@@ -663,7 +675,7 @@ hifiberry-webui (0.11) stable; urgency=medium
   * Enhanced debugging and error handling for PipeWire mixer operations
   * Added proper tooltips for inactive controls explaining hardware limitations
 
- -- HiFiBerry <info@hifiberry.com>  Wed, 14 Aug 2025 16:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Wed, 14 Aug 2025 16:00:00 +0000
 
 hifiberry-webui (0.10) stable; urgency=medium
 
@@ -676,7 +688,7 @@ hifiberry-webui (0.10) stable; urgency=medium
   * Improved labeling consistency for I2C status information (Kernel/Other)
   * Updated system information API integration with network and I2C endpoints
 
- -- HiFiBerry <info@hifiberry.com>  Thu, 08 Aug 2025 14:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Thu, 08 Aug 2025 14:00:00 +0000
 
 hifiberry-webui (0.9) stable; urgency=medium
 
@@ -691,7 +703,7 @@ hifiberry-webui (0.9) stable; urgency=medium
   * Added comprehensive error handling and status feedback for TOSLink operations
   * Enhanced players interface with expandable configuration sections
 
- -- HiFiBerry <info@hifiberry.com>  Thu, 08 Aug 2025 12:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Thu, 08 Aug 2025 12:00:00 +0000
 
 hifiberry-webui (0.8) stable; urgency=medium
 
@@ -706,7 +718,7 @@ hifiberry-webui (0.8) stable; urgency=medium
   * Enhanced UI consistency with service-item mixins and responsive layouts
   * Added missing icons documentation for future service branding
 
- -- HiFiBerry <info@hifiberry.com>  Mon, 28 Jul 2025 12:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Mon, 28 Jul 2025 12:00:00 +0000
 
 hifiberry-webui (0.7) stable; urgency=medium
 
@@ -720,7 +732,7 @@ hifiberry-webui (0.7) stable; urgency=medium
   * Prevented highlighting of empty lyrics lines
   * Removed debug output for cleaner console logs
 
- -- HiFiBerry <info@hifiberry.com>  Thu, 24 Jul 2025 12:00:00 +0000
+ -- HiFiBerry <support@hifiberry.com>  Thu, 24 Jul 2025 12:00:00 +0000
 
 hifiberry-webui (0.6) stable; urgency=medium
 

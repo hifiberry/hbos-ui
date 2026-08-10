@@ -65,12 +65,10 @@ $colors: (
   // in colors.scss. Deliberately the same value in $colors and $colors--dark;
   // do not give these a themed dark value without a real design decision.
   promoted-fallbacks: (
-    color-surface-rgb: $color-surface-rgb,
     color-background-hover: $color-background-hover,
     color-error-dark: $color-error-dark,
     background-error: $background-error,
     border-color: $border-color,
-    color-border-hover: $color-border-hover,
     color-border-light: $color-border-light,
     background-warning: $background-warning,
     card-background: $card-background,
@@ -148,12 +146,10 @@ $colors--dark: (
     scroll-thumb-background: $scroll-thumb-background--dark,
   ),
   promoted-fallbacks: (
-    color-surface-rgb: $color-surface-rgb--dark,
     color-background-hover: $color-background-hover--dark,
     color-error-dark: $color-error-dark--dark,
     background-error: $background-error--dark,
     border-color: $border-color--dark,
-    color-border-hover: $color-border-hover--dark,
     color-border-light: $color-border-light--dark,
     background-warning: $background-warning--dark,
     card-background: $card-background--dark,

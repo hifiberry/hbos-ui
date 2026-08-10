@@ -1,8 +1,26 @@
+hifiberry-webui (0.20.17) stable; urgency=medium
+
+  * CSS custom properties, part 1 follow-up: drop --color-surface-rgb and
+    --color-border-hover from the 0.20.16 promotion after review found
+    each has bare (fallback-less) call sites part 1's "zero visual
+    change" promise cannot cover. --color-surface-rgb turns
+    .artist-info into a solid grey block and drops .id-value's contrast
+    to ~1.6:1 in light theme; --color-border-hover would make a
+    dsp-backends.vue card border fade rather than emphasise on hover,
+    since its base --color-border is still undefined. Both move to
+    part 2, where they belong alongside a real --color-border decision.
+    18 tokens remain defined; the promoted-fallbacks group in
+    colors.module.scss/colors.scss and its :export block are updated
+    to match. Re-verified byte-identical built CSS for all 18 before
+    and after this change.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 15:00:00 +0200
+
 hifiberry-webui (0.20.16) stable; urgency=medium
 
   * CSS custom properties, part 1 of the undefined-token cleanup: define
     the ~20 tokens that were already used with exactly one, consistent
-    hardcoded fallback everywhere in the codebase (--color-border-hover,
+    hardcoded fallback everywhere in the codebase (--color-border-light,
     --card-background, --font-mono, etc.) as that literal value in
     colors.module.scss/colors.scss, so the value lives in one place
     instead of being repeated at every call site. Deliberately given the

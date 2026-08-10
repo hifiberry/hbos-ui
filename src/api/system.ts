@@ -438,6 +438,33 @@ export const rebootSystem = async (request?: RebootRequest): Promise<RebootRespo
   return data
 }
 
+export type ShutdownRequest = RebootRequest
+export type ShutdownResponse = RebootResponse
+
+/**
+ * Shut the system down after an optional delay
+ */
+export const shutdownSystem = async (request?: ShutdownRequest): Promise<ShutdownResponse> => {
+  const appConfigStore = useAppConfigStore()
+  const baseUrl = appConfigStore.getConfigApiBaseUrl()
+
+  const response = await apiFetch(`${baseUrl}/system/shutdown`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request || {}),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`)
+  }
+
+  return data
+}
+
 /**
  * Execute a system script
  */

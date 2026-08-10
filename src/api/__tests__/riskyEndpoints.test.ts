@@ -13,6 +13,7 @@ vi.mock('@/stores/appconfig', () => ({
 import { getAllConfig, getConfigValue } from '@/api/config'
 import { getFilterChain } from '@/api/filterchain'
 import { startRoomEQRecording, startRoomMeasure } from '@/api/roomeq'
+import { rebootSystem, shutdownSystem } from '@/api/system'
 
 const jsonResponse = (status: number, body: unknown, headers: Record<string, string> = {}) => ({
   ok: status >= 200 && status < 300,
@@ -133,5 +134,48 @@ describe('risky endpoints outside the spotify/lastfm flows', () => {
 
     expect(promptSpy).toHaveBeenCalledWith('login')
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  /** /system/reboot and /system/shutdown are not in config.json's ok list:
+   *  powering the device down must never be possible unauthenticated. */
+  const powerCalls: Array<[string, () => Promise<unknown>]> = [
+    ['rebootSystem', () => rebootSystem()],
+    ['shutdownSystem', () => shutdownSystem()],
+  ]
+
+  it.each(powerCalls)('%s prompts for the password on a 401 and retries', async (_name, call) => {
+    const authStore = useAuthStore()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(challenge())
+      .mockResolvedValue(jsonResponse(200, { status: 'success', message: 'scheduled' }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(authStore, 'ensureCsrf').mockResolvedValue(false)
+    const promptSpy = vi.spyOn(authStore, 'promptForAuth').mockResolvedValue(true)
+
+    await call()
+
+    expect(promptSpy).toHaveBeenCalledWith('login')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it.each(powerCalls)('%s rejects when the password prompt is cancelled', async (_name, call) => {
+    const authStore = useAuthStore()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(challenge()))
+    vi.spyOn(authStore, 'ensureCsrf').mockResolvedValue(false)
+    vi.spyOn(authStore, 'promptForAuth').mockResolvedValue(false)
+
+    await expect(call()).rejects.toThrow()
+  })
+
+  it('shutdownSystem posts to /system/shutdown', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { status: 'success', message: 'scheduled' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await shutdownSystem()
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('http://host/api/config/v1/system/shutdown')
+    expect(init.method).toBe('POST')
   })
 })

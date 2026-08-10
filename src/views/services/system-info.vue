@@ -2203,7 +2203,7 @@ onUnmounted(() => {
 
   .soundcard-select {
     padding: 8px 12px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-button-border);
     border-radius: 4px;
     background: var(--background-card);
     color: var(--color-body);

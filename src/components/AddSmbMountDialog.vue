@@ -742,7 +742,7 @@ watch(() => props.isOpen, (isOpen) => {
       .server-input {
         flex: 1;
         padding: 10px 12px;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-button-border);
         border-radius: 6px;
         background: var(--background-secondary);
         color: var(--color-body);

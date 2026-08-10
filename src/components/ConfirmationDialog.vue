@@ -230,7 +230,7 @@ watch(() => props.isOpen, (newValue) => {
     .confirmation-input {
       width: 100%;
       padding: 12px;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--color-button-border);
       border-radius: 4px;
       background: var(--background-input);
       color: var(--color-body);

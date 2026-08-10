@@ -1398,7 +1398,7 @@ const formatFrequency = (freq: number): string => {
   .segmented-btn { padding: 6px 10px; background: transparent; border: none; color: var(--color-body); cursor: pointer; font-weight: 500; }
   .segmented-btn.active { background: var(--primary); color: white; }
   .control-inline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .number-input, .select-input { background: var(--background-card); border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-head); padding: 6px 8px; min-width: 90px; }
+  .number-input, .select-input { background: var(--background-card); border: 1px solid var(--color-button-border); border-radius: 6px; color: var(--color-head); padding: 6px 8px; min-width: 90px; }
   .suffix, .prefix, .sep { color: var(--color-body-secondary); font-size: 0.9rem; }
   .spacer { width: 16px; display: inline-block; }
 }
@@ -1544,7 +1544,7 @@ const formatFrequency = (freq: number): string => {
 
       .number-input {
         background: var(--background-card);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-button-border);
         border-radius: 6px;
         color: var(--color-head);
         padding: 8px 10px;

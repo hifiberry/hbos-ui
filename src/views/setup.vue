@@ -846,7 +846,7 @@ async function finishAndReboot() {
 .form-input {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-button-border);
   border-radius: 8px;
   background: var(--background-body);
   color: var(--color-body);

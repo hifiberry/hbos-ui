@@ -295,7 +295,7 @@ onMounted(() => {
         .graph-svg-container {
           width: 100%;
           min-height: 400px;
-          border: 1px solid var(--color-border-light, #e9ecef);
+          border: 1px solid var(--color-border);
           border-radius: 6px;
           background: white;
           overflow: hidden;
@@ -351,7 +351,7 @@ onMounted(() => {
 
       .filter-chain-text {
         background: var(--background-code, #f8f9fa);
-        border: 1px solid var(--color-border-light, #e9ecef);
+        border: 1px solid var(--color-border);
         border-radius: 6px;
         padding: 16px;
         overflow-x: auto;

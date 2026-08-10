@@ -292,13 +292,27 @@
 }
 
 @mixin button-secondary {
-  background-color: var(--color-background, #ffffff);
-  border: 1px solid var(--color-border, #e5e7eb);
+  // --color-background is undefined, so this used to render its #ffffff
+  // fallback in BOTH themes while the label followed --color-body, which is
+  // #fff in dark: two whites, 1.00:1, an unreadable button. --background-card
+  // is defined and theme-aware (#fff / #333) and is the same colour the
+  // fallback was in light, so light is unchanged and dark becomes a #333 fill
+  // flush with the card, outlined by --color-button-border.
+  background-color: var(--background-card);
+  border: 1px solid var(--color-button-border);
   color: var(--color-body, #707070);
 
+  // Same two-whites bug as the resting fill, one line down:
+  // --color-background-secondary is a different undefined token whose #f9fafb
+  // fallback also rendered in dark, against the #fff label - 1.05:1, so the
+  // label vanished the moment you pointed at the button. --color-background-hover
+  // is defined in both themes as rgba(255,255,255,.05); being an overlay it
+  // composites against the card behind the button (--background-card), giving
+  // #ffffff in light - no fill change, so light does not move at all - and
+  // #3d3d3d in dark, a subtle legible lift.
   &:hover:not(:disabled) {
-    background-color: var(--color-background-secondary, #f9fafb);
-    border-color: var(--color-border-hover, #d1d5db);
+    background-color: var(--color-background-hover);
+    border-color: var(--primary);
     color: var(--color-body, #374151);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

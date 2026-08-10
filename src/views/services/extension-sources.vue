@@ -276,7 +276,7 @@ onMounted(() => {
 .sources__divider {
   margin: 28px 0 20px;
   border: none;
-  border-top: 1px solid var(--color-border, #333);
+  border-top: 1px solid var(--border-color);
 }
 
 .sources__heading {

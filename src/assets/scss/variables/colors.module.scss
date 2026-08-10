@@ -16,6 +16,7 @@ $colors: (
   header: (
     background-header: $background-header,
     color-header-border: $color-header-border,
+    color-border: $color-border,
   ),
   body: (
     background-body: $background-body,
@@ -26,6 +27,9 @@ $colors: (
     background-sidebar: $background-sidebar,
     color-sidebar-border: $color-sidebar-border,
     color-sidebar: $color-sidebar,
+  ),
+  controls: (
+    color-button-border: $color-button-border,
   ),
   main: (
     background-main-content: $background-main-content,
@@ -103,6 +107,7 @@ $colors--dark: (
   header: (
     background-header: $background-header--dark,
     color-header-border: $color-header-border--dark,
+    color-border: $color-border--dark,
   ),
   body: (
     background-body: $background-body--dark,
@@ -113,6 +118,9 @@ $colors--dark: (
     background-sidebar: $background-sidebar--dark,
     color-sidebar-border: $color-sidebar-border--dark,
     color-sidebar: $color-sidebar--dark,
+  ),
+  controls: (
+    color-button-border: $color-button-border--dark,
   ),
   main: (
     background-main-content: $background-main-content--dark,

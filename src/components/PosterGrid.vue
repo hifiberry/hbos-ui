@@ -260,7 +260,7 @@ watch(
           svg {
             width: 24px;
             height: 24px;
-            color: var(--color-accent);
+            color: var(--primary);
             animation: spin 1s linear infinite;
           }
         }

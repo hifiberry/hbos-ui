@@ -593,8 +593,8 @@ watch(
   }
 
   .genre-tag {
-    background: var(--color-accent);
-    color: var(--color-accent-text);
+    background: var(--primary);
+    color: white;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.875rem;

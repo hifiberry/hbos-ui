@@ -163,7 +163,7 @@ const tooltipStyles = computed(() => {
       transition: color 0.3s ease;
 
       &:hover {
-        color: var(--color-accent);
+        color: var(--primary);
         cursor: pointer;
 
         .minimal-hint {

@@ -1,11 +1,17 @@
 @use 'colors' as *;
 @use './../variables' as *;
 @use 'sass:string';
+@use 'sass:color';
 
 $colors: (
   general: (
     primary: $primary,
     primary-dark: $primary-hover,
+    primary-rgb: (
+      color.channel($primary, "red", $space: rgb),
+      color.channel($primary, "green", $space: rgb),
+      color.channel($primary, "blue", $space: rgb)
+    ),
   ),
   header: (
     background-header: $background-header,
@@ -89,6 +95,11 @@ $colors--dark: (
   general: (
     primary: $primary--dark,
     primary-dark: $primary-hover--dark,
+    primary-rgb: (
+      color.channel($primary--dark, "red", $space: rgb),
+      color.channel($primary--dark, "green", $space: rgb),
+      color.channel($primary--dark, "blue", $space: rgb)
+    ),
   ),
   header: (
     background-header: $background-header--dark,

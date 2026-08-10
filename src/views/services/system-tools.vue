@@ -10,7 +10,7 @@
       <div class="tool-section">
         <div class="tool-card power-tool">
           <div class="tool-info">
-            <Icon icon="tabler/power" class="tool-icon" />
+            <Icon icon="power" class="tool-icon" />
             <div class="tool-details">
               <h3>Power</h3>
               <p class="tool-description">
@@ -250,7 +250,7 @@ Would you like to reboot now?"
       :confirm-button-text="pendingPowerAction === 'shutdown' ? 'Shut down' : 'Reboot'"
       cancel-button-text="Cancel"
       :is-dangerous="true"
-      icon="tabler/power"
+      icon="power"
       @close="pendingPowerAction = null"
       @confirm="executePowerAction"
     />

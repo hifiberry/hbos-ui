@@ -80,7 +80,9 @@ const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => 
     padding: 6px 12px;
     border: 1px solid var(--color-border);
     border-radius: 4px;
-    background: var(--color-background);
+    // --color-background is undefined; --background-card is the defined,
+    // theme-aware surface this pill sits on (#fff light / #333 dark).
+    background: var(--background-card);
     color: var(--color-text);
     font-size: 14px;
     cursor: pointer;

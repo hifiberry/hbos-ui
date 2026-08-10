@@ -539,7 +539,9 @@
   padding: 8px 12px;
   border: 2px solid var(--primary);
   border-radius: 6px;
-  background: var(--color-background);
+  // --color-background is undefined; --background-card is the defined,
+  // theme-aware card surface this input sits on (#fff light / #333 dark).
+  background: var(--background-card);
   color: var(--color-body);
   font-size: inherit;
   font-weight: inherit;

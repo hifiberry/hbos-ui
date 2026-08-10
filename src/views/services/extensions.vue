@@ -234,7 +234,13 @@ onMounted(async () => {
 }
 
 .extensions-dialog {
-  background-color: var(--color-background, #fff);
+  // --color-background is undefined, so the #fff fallback rendered in BOTH
+  // themes while the dialog's text follows body's --color-body, which is
+  // #fff in dark: white on white, 1.00:1 - the whole install/progress
+  // dialog and its job log were unreadable. --background-card is defined,
+  // theme-aware (#fff / #333) and equal to the old fallback in light, so
+  // light is unchanged and dark becomes a legible #333 dialog.
+  background-color: var(--background-card);
   border-radius: 8px;
   padding: 24px;
   min-width: 320px;

@@ -65,7 +65,7 @@ const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => 
 
   .sort-label {
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: var(--color-body-secondary);
   }
 
   .sort-buttons {

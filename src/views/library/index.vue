@@ -127,7 +127,7 @@ onMounted(async () => {
 .empty-state {
   padding: 40px 20px;
   text-align: center;
-  color: var(--color-text-secondary);
+  color: var(--color-body-secondary);
 
   .empty-icon {
     margin-bottom: 16px;

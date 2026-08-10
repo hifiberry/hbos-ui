@@ -257,7 +257,7 @@ const onImageError = (event: Event) => {
 
   h4 {
     margin: 0 0 8px 0;
-    color: var(--color-body-primary);
+    color: var(--color-body);
   }
 
   p {

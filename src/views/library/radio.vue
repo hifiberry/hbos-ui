@@ -416,7 +416,7 @@ onMounted(async () => {
     h3 {
       margin: 0 0 8px 0;
       font-size: 1.25rem;
-      color: var(--color-body-primary);
+      color: var(--color-body);
     }
 
     p {
@@ -444,7 +444,7 @@ onMounted(async () => {
 
     h2 {
       margin-bottom: 12px;
-      color: var(--color-body-primary);
+      color: var(--color-body);
     }
 
     p {

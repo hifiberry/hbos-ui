@@ -2421,13 +2421,13 @@ onUnmounted(() => {
 
     .interface-type {
       font-size: 0.85em;
-      color: var(--color-text-muted);
+      color: var(--color-body-secondary);
     }
   }
 
   .interface-details {
     font-size: 0.9em;
-    color: var(--color-text-muted);
+    color: var(--color-body-secondary);
     margin-bottom: 2px;
 
     &:last-child {

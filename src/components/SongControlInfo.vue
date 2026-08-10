@@ -173,7 +173,7 @@ const tooltipStyles = computed(() => {
       }
 
       p {
-        color: var(--color-body-primary);
+        color: var(--color-body);
       }
     }
 

@@ -185,7 +185,7 @@ onMounted(async () => {
 
       h2 {
         margin-bottom: 12px;
-        color: var(--color-body-primary);
+        color: var(--color-body);
       }
 
       p {
@@ -215,7 +215,7 @@ onMounted(async () => {
       margin-bottom: 24px;
 
       h2 {
-        color: var(--color-body-primary);
+        color: var(--color-body);
         font-size: 1.25rem;
         margin: 0;
       }
@@ -307,7 +307,7 @@ onMounted(async () => {
 
       &__title {
         font-weight: 500;
-        color: var(--color-body-primary);
+        color: var(--color-body);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

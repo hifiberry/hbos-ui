@@ -537,7 +537,7 @@ onUnmounted(() => {
     .settings-caret {
       width: 16px;
       height: 16px;
-      color: var(--color-text-secondary);
+      color: var(--color-body-secondary);
       transition: transform 0.2s ease;
 
       &.expanded {

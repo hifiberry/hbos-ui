@@ -1517,7 +1517,7 @@ const formatFrequency = (freq: number): string => {
       gap: 6px;
       font-size: 0.9rem;
 
-      .status-loading { color: var(--color-text-secondary); }
+      .status-loading { color: var(--color-body-secondary); }
       .status-error { color: #ff6b6b; }
       .status-success { color: var(--primary); }
       .spinning { animation: spin 1s linear infinite; }
@@ -1601,7 +1601,7 @@ const formatFrequency = (freq: number): string => {
 
     &:last-child { border-bottom: none; }
 
-    .label { color: var(--color-text-secondary); font-size: 0.9rem; }
+    .label { color: var(--color-body-secondary); font-size: 0.9rem; }
     .value { color: var(--color-head); font-weight: 500; font-family: 'Courier New', monospace; }
   }
 }

@@ -676,7 +676,7 @@ watch(
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--color-text);
-  border-bottom: 2px solid var(--primary);
+  border-bottom: 2px solid var(--color-primary);
   padding-bottom: 8px;
 }
 

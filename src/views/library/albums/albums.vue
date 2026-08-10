@@ -254,7 +254,7 @@ onUnmounted(() => {
 
   &.active {
     background: var(--primary);
-    color: var(--color-primary-text);
+    color: white;
     border-color: var(--primary);
   }
 }
@@ -284,7 +284,7 @@ onUnmounted(() => {
 
   &.active {
     background: var(--primary);
-    color: var(--color-primary-text);
+    color: white;
     border-color: var(--primary);
   }
 

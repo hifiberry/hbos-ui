@@ -2457,7 +2457,7 @@ onUnmounted(() => {
   font-weight: 500;
 
   &:hover {
-    color: var(--color-primary-dark, #1e40af);
+    color: var(--primary-dark);
     text-decoration: underline;
   }
 }
@@ -2471,7 +2471,7 @@ onUnmounted(() => {
   text-decoration: none;
 
   &:hover {
-    color: var(--color-primary-dark, #1e40af);
+    color: var(--primary-dark);
     text-decoration: underline;
   }
 }

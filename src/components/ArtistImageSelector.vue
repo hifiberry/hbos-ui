@@ -279,7 +279,7 @@ const onImageError = (event: Event) => {
   transition: all 0.2s ease;
 
   &:hover {
-    background: var(--color-primary-hover);
+    background: var(--primary-dark);
   }
 
   svg {

@@ -98,7 +98,7 @@ const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => 
 
     &.active {
       background: var(--primary);
-      color: var(--color-primary-text);
+      color: white;
       border-color: var(--primary);
     }
 

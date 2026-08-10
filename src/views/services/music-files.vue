@@ -509,7 +509,7 @@ onMounted(() => {
         transition: background-color 0.2s ease;
 
         &:hover {
-          background: var(--color-primary-dark);
+          background: var(--primary-dark);
         }
 
         svg {

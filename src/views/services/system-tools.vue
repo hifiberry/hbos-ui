@@ -576,8 +576,8 @@ const stopAllMusicPlayers = async () => {
 
     // Collecting/downloading a report is read-only, not destructive, so it
     // should not sit under the same accent-colored rules as detect-tool /
-    // soundcard-tool above, nor under the still-undefined --color-error used
-    // by stop-players-tool. Rather than invent another undefined token, or a
+    // soundcard-tool above, nor under the warning color used by
+    // stop-players-tool. Rather than invent another undefined token, or a
     // hardcoded fallback that would ignore the light/dark theme, this reuses
     // the one neutral, themed icon token already established by
     // .expert-tool.

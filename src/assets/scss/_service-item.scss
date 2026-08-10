@@ -175,11 +175,10 @@
 // >= 0.199 - no colour satisfies both. Outline instead of fill: 4.83:1 light
 // / 4.57:1 dark for the label, and the border clears 3:1 against the card in
 // both themes.
-// The dark-theme label (4.57:1) has almost no headroom above the 4.5:1
-// floor, so hover/active/focus deliberately do not touch background or
-// text colour - even a 5% tint toward --color-error measured below floor
-// (down to ~3.9:1 dark). Affordance comes from lift + shadow only, so every
-// interactive state holds the same 4.83:1 / 4.57:1 as rest.
+// A 5-10% tint toward --color-error on hover measured below floor (down to
+// ~3.9:1 dark - the dark label's 4.57:1 rest ratio has almost no headroom).
+// --background-secondary is a real colour change that stays clear:
+// 4.63:1 light / 5.19:1 dark for the label. Kept the lift + shadow too.
 @mixin service-button-danger {
   @include service-button-base;
   background: var(--background-card);
@@ -187,6 +186,7 @@
   color: var(--color-error, #dc2626);
 
   &:hover:not(:disabled) {
+    background: var(--background-secondary);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(var(--color-danger-rgb, 239, 68, 68), 0.2);
   }
@@ -196,8 +196,11 @@
     box-shadow: 0 2px 4px rgba(var(--color-danger-rgb, 239, 68, 68), 0.15);
   }
 
+  // The 30%-opacity ring measured 1.49:1 light / 1.35:1 dark against the
+  // card - nowhere near the 3:1 floor. A solid ring in the same token used
+  // for the label/border clears it outright (4.83/4.57).
   &:focus {
-    box-shadow: 0 0 0 2px rgba(var(--color-danger-rgb, 239, 68, 68), 0.3);
+    box-shadow: 0 0 0 2px var(--color-error, #dc2626);
   }
 }
 

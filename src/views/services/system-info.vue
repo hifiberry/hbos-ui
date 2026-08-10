@@ -2008,6 +2008,18 @@ onUnmounted(() => {
     // White text on --color-error is 3.76:1, under the 4.5:1 floor for a
     // label, and there is no fix in dark theme (see _service-item.scss for
     // the luminance arithmetic). This is a house secondary button instead.
+    // This button sits directly on <main>, not on a card - .error-section
+    // has no background of its own - so it is read against
+    // --background-body (#fafafa / #000), not --background-card as the
+    // mixin's own comments assume. Rest: label #707070/#fff on body =
+    // 4.74:1 / 21.0:1, border #919191/#7c7c7c on body = 3.02:1 / 5.03:1.
+    // All four clear their floors, but on hover the mixin's white overlay
+    // (--color-background-hover) composites against that same black body
+    // instead of a #333 card, landing near-black (#0d0d0d) - the button
+    // would darken into the page instead of lifting off it. Hold the fill
+    // at rest's --background-card and let border-color/transform/
+    // box-shadow carry the hover feedback instead: hover label stays
+    // 4.74:1 / 21.0:1, hover border (--primary on body) 4.49:1 / 5.39:1.
     .retry-button {
       @include button-secondary;
       padding: 8px 16px;
@@ -2015,6 +2027,19 @@ onUnmounted(() => {
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background-color: var(--background-card);
+      }
+
+      // The mixin's own ring (rgba(59,130,246,.3), an off-token blue)
+      // measured 1.41:1 against the body in both themes - nowhere near
+      // 3:1. A solid ring in the existing border token clears it: the
+      // ring colour is the same as the rest-state border, so it inherits
+      // that 3.02:1 / 5.03:1 against the body.
+      &:focus {
+        box-shadow: 0 0 0 3px var(--color-button-border);
+      }
     }
   }
 
@@ -2294,6 +2319,28 @@ onUnmounted(() => {
         // button in the dialog, now with a label that holds up.
         &--confirm {
           @include button-primary;
+
+          // button-primary's own hover swaps fill+border to --primary-dark,
+          // which in the dark theme (#CC254F) clears only 2.37:1 against
+          // this dialog's #333 card - under the 3:1 boundary floor, and a
+          // regression against the amber fill it replaced (its hover,
+          // #d97706, cleared 3.97:1 here). Hold hover at the rest --primary
+          // token instead: dark #FF2E63 vs #333 = 3.50:1, light #E11E4A vs
+          // #fff = 4.68:1 - both already verified at rest above - and let
+          // the mixin's lift + shadow carry the rest of the hover feedback.
+          &:hover:not(:disabled) {
+            background-color: var(--primary);
+            border-color: var(--primary);
+          }
+
+          // The mixin's own ring (rgba(225,30,74,.3), a hardcoded light-theme
+          // literal, not even theme-aware) measured 1.63:1 light / 1.21:1
+          // dark against the card - nowhere near 3:1. A solid ring in the
+          // same --primary token used for the fill clears it: 4.68:1 light /
+          // 3.50:1 dark against the card.
+          &:focus {
+            box-shadow: 0 0 0 3px var(--primary);
+          }
 
           &:disabled {
             opacity: 0.6;

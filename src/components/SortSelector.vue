@@ -78,7 +78,12 @@ const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => 
     align-items: center;
     gap: 4px;
     padding: 6px 12px;
-    border: 1px solid var(--color-border);
+    // --color-border is deliberately transparent in dark (it's meant for
+    // surface separators, not controls); with a real fill now behind this
+    // button, that made it outline-less in dark. --color-button-border is
+    // the control-boundary token (#919191 light / #7c7c7c dark), same
+    // pairing button-secondary uses with --background-card.
+    border: 1px solid var(--color-button-border);
     border-radius: 4px;
     // --color-background is undefined; --background-card is the defined,
     // theme-aware surface this pill sits on (#fff light / #333 dark).

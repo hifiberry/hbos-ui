@@ -164,6 +164,24 @@ onMounted(() => {
     color: var(--color-body-secondary);
   }
 
+  // Shared by the .error-content and .graph-error retry buttons below.
+  // Previously duplicated per container and nested inside .graph-container,
+  // which meant it never reached the .error-content button at all.
+  .retry-button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background: var(--primary-dark);
+    }
+  }
+
   .error-section {
     .error-content {
       background: var(--background-error);
@@ -175,21 +193,6 @@ onMounted(() => {
       .error-message {
         color: var(--color-error);
         margin-bottom: 16px;
-      }
-
-      .retry-button {
-        background: var(--color-error);
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
-
-        &:hover {
-          background: var(--color-error-dark);
-        }
       }
     }
   }
@@ -281,34 +284,11 @@ onMounted(() => {
             color: var(--color-body-secondary);
             margin-bottom: 16px;
           }
-
-          .retry-button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s ease;
-
-            &:hover {
-              background: var(--primary-dark);
-            }
-          }
         }
 
         .graph-error {
           p {
             color: var(--color-error);
-          }
-
-          .retry-button {
-            background: var(--color-error);
-
-            &:hover {
-              background: var(--color-error-dark);
-            }
           }
         }
 

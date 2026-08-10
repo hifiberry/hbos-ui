@@ -1,3 +1,13 @@
+hifiberry-webui (0.20.26) stable; urgency=medium
+
+  * The lyrics panel on the Now Playing page works again. It used to fail
+    with "Failed to load lyrics" for every track: the audiocontrol segment
+    was added to the request URL twice, and the resulting address is not a
+    route the system knows, so the request was rejected. Cover art was not
+    affected, which is why this only showed up on lyrics.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 15:40:00 +0200
+
 hifiberry-webui (0.20.25) stable; urgency=medium
 
   * Error and success messages are readable again. They used to be written

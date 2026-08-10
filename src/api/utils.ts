@@ -91,7 +91,7 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
   }
 
   const configStore = useAppConfigStore()
-  const { useProxy } = configStore.apiConfig()
+  const { useProxy, apiPrefix } = configStore.apiConfig()
 
   // Fix URLs that start with /api/library/ to /api/audiocontrol/library/
   // and /api/lyrics/ to /api/audiocontrol/lyrics/
@@ -121,8 +121,13 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
   const apiBaseUrl = configStore.getApiBaseUrl()
 
   // For already encoded URLs, don't double-encode
-  // Just replace /api/ with the full API base URL
-  const rewrittenUrl = correctedUrl.replace('/api/', `${apiBaseUrl}/`)
+  // apiBaseUrl already ends in the API prefix (/api/audiocontrol), so strip that
+  // same prefix off the corrected path. Replacing only /api/ left the
+  // audiocontrol segment in twice - /api/audiocontrol/audiocontrol/lyrics/... -
+  // which is not a route the gateway knows, so it answered 401.
+  const rewrittenUrl = correctedUrl.startsWith(`${apiPrefix}/`)
+    ? `${apiBaseUrl}${correctedUrl.slice(apiPrefix.length)}`
+    : correctedUrl.replace('/api/', `${apiBaseUrl}/`)
 
   // Enhanced debug logging to understand what's happening
   console.log('API URL rewriting:', {

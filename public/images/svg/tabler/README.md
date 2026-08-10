@@ -38,6 +38,17 @@ Tabler Icons is a set of 4,000+ free SVG icons designed specifically for web int
 - `moon.svg` - **Tabler ID**: `moon` - Dark mode toggle
 - `lyrics.svg` - **Custom** - Lyrics availability indicator (not from Tabler)
 
+### Status Icons
+
+Used by `StatusBlock.vue`, one per variant. `alert-circle` predates the
+component: `RoomMeasurementWizard.vue` already referenced it, and the file was
+missing, so the microphone-error icon rendered nothing and logged a 404.
+
+- `alert-circle.svg` - **Tabler ID**: `alert-circle` - Error state
+- `alert-triangle.svg` - **Tabler ID**: `alert-triangle` - Warning state
+- `circle-check.svg` - **Tabler ID**: `circle-check` - Success state
+- `info-circle.svg` - **Tabler ID**: `info-circle` - Informational note
+
 ### Service & System Icons
 - `server.svg` - **Tabler ID**: `server` - NAS/server icon
 - `cloud.svg` - **Tabler ID**: `cloud` - Cloud services
@@ -108,6 +119,10 @@ All icons sourced from [Tabler Icons](https://tabler-icons.io/) with direct link
 - Plus: <https://tabler-icons.io/icon/plus>
 - Refresh: <https://tabler-icons.io/icon/refresh>
 - Check: <https://tabler-icons.io/icon/check>
+- Alert Circle: <https://tabler-icons.io/icon/alert-circle>
+- Alert Triangle: <https://tabler-icons.io/icon/alert-triangle>
+- Circle Check: <https://tabler-icons.io/icon/circle-check>
+- Info Circle: <https://tabler-icons.io/icon/info-circle>
 - Edit: <https://tabler-icons.io/icon/edit>
 - Search: <https://tabler-icons.io/icon/search>
 - Moon: <https://tabler-icons.io/icon/moon>

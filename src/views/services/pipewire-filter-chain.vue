@@ -7,12 +7,10 @@
     </div>
 
     <div v-else-if="error" class="error-section">
-      <div class="error-content">
-        <p class="error-message">{{ error }}</p>
-        <button @click="fetchFilterChain" class="retry-button">
-          Retry
-        </button>
-      </div>
+      <StatusBlock variant="error">{{ error }}</StatusBlock>
+      <button @click="fetchFilterChain" class="retry-button">
+        Retry
+      </button>
     </div>
 
     <div v-else-if="filterChain" class="filter-chain-content">
@@ -68,6 +66,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { getFilterChain } from '@/api/filterchain'
+import StatusBlock from '@/components/StatusBlock.vue'
 import { graphviz } from 'd3-graphviz'
 
 // State
@@ -164,9 +163,9 @@ onMounted(() => {
     color: var(--color-body-secondary);
   }
 
-  // Shared by the .error-content and .graph-error retry buttons below.
+  // Shared by the .error-section and .graph-error retry buttons below.
   // Previously duplicated per container and nested inside .graph-container,
-  // which meant it never reached the .error-content button at all.
+  // which meant it never reached the .error-section button at all.
   .retry-button {
     background: var(--primary);
     color: white;
@@ -182,19 +181,13 @@ onMounted(() => {
     }
   }
 
+  // Layout only: the tint, the border and the icon now live in StatusBlock,
+  // and the retry button is a sibling of the block rather than its child.
   .error-section {
-    .error-content {
-      background: var(--background-error);
-      border: 1px solid var(--color-error);
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-
-      .error-message {
-        color: var(--color-error);
-        margin-bottom: 16px;
-      }
-    }
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
   }
 
   .empty-section {

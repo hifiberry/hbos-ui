@@ -247,7 +247,7 @@
             Stay signed in on this device
           </label>
 
-          <p v-if="securityError" class="security-error">{{ securityError }}</p>
+          <StatusBlock v-if="securityError" variant="error" class="security-error">{{ securityError }}</StatusBlock>
         </template>
 
         <div v-else class="password-set-notice">
@@ -366,6 +366,7 @@ import {
   getExternalPlayers,
 } from '@/api/config'
 import AddSmbMountDialog from '@/components/AddSmbMountDialog.vue'
+import StatusBlock from '@/components/StatusBlock.vue'
 import { useAuthStore } from '@/stores/auth'
 import { AuthApiError, type ProtectionLevel } from '@/api/auth'
 
@@ -1253,9 +1254,10 @@ async function finishAndReboot() {
   }
 }
 
+// Spacing and type scale only - StatusBlock carries the tint, the border and
+// the icon.
 .security-error {
-  margin: 12px 0 0 0;
-  color: var(--color-error, #dc3545);
+  margin-top: 12px;
   font-size: 0.875rem;
 }
 

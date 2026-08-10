@@ -524,8 +524,13 @@ watch(
   margin-bottom: 8px;
 }
 
+// A one-line footnote inside the artist panel, not a block: a boxed error for
+// "MusicBrainz lookup failed" would outweigh the metadata it sits next to.
+// --color-head instead of --color-error keeps it readable and keeps it from
+// competing with the brand red, and still separates it from the
+// --color-body-secondary .mb-loading line it replaces.
 .mb-error {
-  color: var(--color-error, #e74c3c);
+  color: var(--color-head);
 }
 
 .mb-info {

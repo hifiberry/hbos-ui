@@ -1302,16 +1302,24 @@ watch(smoothingType, () => {
     padding: 40px;
     text-align: center;
 
+    // The graphic keeps the colour - this is where the state now lives. The
+    // icon file it names did not exist until this task added it, so the
+    // element rendered nothing and the state had no carrier at all.
     .error-icon {
       width: 48px;
       height: 48px;
-      color: var(--color-error, #dc3545);
+      color: var(--color-error);
       margin-bottom: 16px;
     }
 
+    // No box here: the 48px .error-icon above already carries the state in
+    // colour, so the message only has to be readable. --color-error measured
+    // 4.83:1 light and 4.57:1 dark on the wizard's --background-card, so this
+    // is a consistency change rather than a fix - one red message next to the
+    // red action buttons is what the surface-and-icon rule exists to avoid.
     .error-message {
       margin: 0 0 24px 0;
-      color: var(--color-error, #dc3545);
+      color: var(--color-head);
       font-weight: 500;
     }
 

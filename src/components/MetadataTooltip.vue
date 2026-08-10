@@ -181,8 +181,11 @@ const hasAnyMetadata = computed(() => {
       text-transform: capitalize;
     }
 
+    // "Available" / "Not Available" already says which state it is, so the
+    // value only has to be readable: green on the light tooltip card measured
+    // 2.28:1. The weight, not the hue, keeps it apart from the plain values.
     &.status-available {
-      color: var(--color-success, #22c55e);
+      color: var(--color-head);
       font-weight: 500;
     }
 
@@ -207,11 +210,10 @@ const hasAnyMetadata = computed(() => {
       word-break: break-all;
     }
 
-    &.status-available {
-      color: #22c55e;
-      font-weight: 500;
-    }
-
+    // Duplicate of .status-available above; it was the later of the two and
+    // therefore the one that actually rendered. Removed so there is a single
+    // rule to read. .status-unavailable keeps its own duplicate: its #6b7280
+    // measures 2.61:1 on the dark tooltip and is outside this task's list.
     &.status-unavailable {
       color: #6b7280;
       font-weight: 500;

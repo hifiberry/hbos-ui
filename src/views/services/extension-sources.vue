@@ -257,8 +257,14 @@ onMounted(() => {
   font-family: monospace;
 }
 
+// The rule already follows the surface-and-graphic principle: the colour is on
+// the border, which is graphic and only owes 3:1 (--color-error measures
+// 4.63:1 on the light page and 7.59:1 on the dark one), and the prose itself
+// inherits --color-body (4.74:1 light, 21:1 dark). Nothing to move, so nothing
+// moved; only the dead #dc3545 fallback went, --color-error being a real token
+// since stage 4 task 1.
 .sources__warning {
-  border-left: 3px solid var(--color-error, #dc3545);
+  border-left: 3px solid var(--color-error);
   padding-left: 0.75rem;
   margin-bottom: 1rem;
 }

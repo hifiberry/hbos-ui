@@ -30,7 +30,7 @@
                 <dd>{{ status?.authenticated ? 'Signed in' : 'Not signed in' }}</dd>
               </div>
             </dl>
-            <p v-if="loadError" class="security-error">{{ loadError }}</p>
+            <StatusBlock v-if="loadError" variant="error" class="security-error">{{ loadError }}</StatusBlock>
           </div>
         </div>
         <div v-if="status?.authenticated" class="card-actions">
@@ -97,8 +97,8 @@
                 Remember on this device
               </label>
 
-              <p v-if="passwordError" class="security-error">{{ passwordError }}</p>
-              <p v-if="passwordSuccess" class="security-success">{{ passwordSuccess }}</p>
+              <StatusBlock v-if="passwordError" variant="error" class="security-error">{{ passwordError }}</StatusBlock>
+              <StatusBlock v-if="passwordSuccess" variant="success" class="security-success">{{ passwordSuccess }}</StatusBlock>
 
               <button type="submit" class="btn-primary" :disabled="busy || !canSavePassword">
                 {{ status?.has_password ? 'Change password' : 'Set a password' }}
@@ -147,7 +147,7 @@
               </label>
             </div>
 
-            <p v-if="policyError" class="security-error">{{ policyError }}</p>
+            <StatusBlock v-if="policyError" variant="error" class="security-error">{{ policyError }}</StatusBlock>
 
             <button
               v-if="status?.protection !== 'off'"
@@ -170,6 +170,7 @@ import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import PageContent from '@/components/PageContent.vue'
 import Icon from '@/components/Icon.vue'
+import StatusBlock from '@/components/StatusBlock.vue'
 import { useAuthStore, type AuthHint } from '@/stores/auth'
 import { AuthApiError, type ProtectionLevel } from '@/api/auth'
 
@@ -447,16 +448,18 @@ onMounted(load)
   }
 }
 
-.security-error {
-  margin: 0;
-  color: var(--color-error, #dc3545);
+// Type scale only - StatusBlock carries the tint, the border and the icon.
+.security-error,
+.security-success {
   font-size: 0.9rem;
 }
 
-.security-success {
-  margin: 0;
-  color: var(--color-success, #22c55e);
-  font-size: 0.9rem;
+// .password-form spaces its children with `gap`; .card-body does not, so the
+// two blocks that sit directly in it need their own margins. As a one-line
+// paragraph they needed none.
+.card-body > .security-error,
+.card-body > .security-success {
+  margin: 12px 0;
 }
 
 .btn-primary {
@@ -523,11 +526,15 @@ onMounted(load)
   }
 }
 
+// The one place in this stage that keeps a state colour on text: a control may
+// wear it as its label. --color-error measures 4.83:1 on the light card and
+// 4.57:1 on the dark one, and the underline means the colour is not the only
+// cue. Deliberately not a StatusBlock - it is a button, not a message.
 .danger-link {
   background: none;
   border: none;
   padding: 0;
-  color: var(--color-error, #dc3545);
+  color: var(--color-error);
   cursor: pointer;
   text-decoration: underline;
   font-size: 0.9rem;

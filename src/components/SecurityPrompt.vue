@@ -39,7 +39,7 @@
             Remember on this device
           </label>
 
-          <p v-if="error" class="security-error">{{ error }}</p>
+          <StatusBlock v-if="error" variant="error" class="security-error">{{ error }}</StatusBlock>
         </form>
       </div>
 
@@ -66,6 +66,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import Icon from '@/components/Icon.vue'
+import StatusBlock from '@/components/StatusBlock.vue'
 import { useAuthStore } from '@/stores/auth'
 import { AuthApiError } from '@/api/auth'
 
@@ -259,9 +260,9 @@ function onOverlayClick() {
   }
 }
 
+// Spacing only - StatusBlock carries the tint, the border and the icon.
 .security-error {
-  color: var(--color-error, #dc3545);
-  margin: 4px 0 0 0;
+  margin-top: 4px;
 }
 
 .modal-footer {

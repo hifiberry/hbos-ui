@@ -28,12 +28,10 @@
       </div>
 
       <div v-else-if="error" class="error-section">
-        <div class="error-content">
-          <p class="error-message">{{ error }}</p>
-          <button @click="fetchSystemInfo" class="retry-button">
-            Retry
-          </button>
-        </div>
+        <StatusBlock variant="error">{{ error }}</StatusBlock>
+        <button @click="fetchSystemInfo" class="retry-button">
+          Retry
+        </button>
       </div>
 
       <div v-else-if="systemInfo" class="info-tables">
@@ -770,6 +768,7 @@ import BackRouter from '@/components/BackRouter.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
+import StatusBlock from '@/components/StatusBlock.vue'
 import {
   getSystemInfo,
   updateHostname,
@@ -1997,32 +1996,27 @@ onUnmounted(() => {
     color: var(--color-body-secondary);
   }
 
+  // The tint, the border and the icon now live in StatusBlock; what is left
+  // here is layout plus the retry button, which moved out of the deleted
+  // .error-content and became a sibling of the block.
   .error-section {
-    .error-content {
-      background: var(--background-error);
-      border: 1px solid var(--color-error);
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
 
-      .error-message {
-        color: var(--color-error);
-        margin-bottom: 16px;
-      }
+    .retry-button {
+      background: var(--color-error);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
 
-      .retry-button {
-        background: var(--color-error);
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
-
-        &:hover {
-          background: var(--color-error-dark);
-        }
+      &:hover {
+        background: var(--color-error-dark);
       }
     }
   }
@@ -2493,30 +2487,31 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
 
+  // A badge, not a block: the tint it already carries is the state signal, so
+  // the label only has to be readable on it. --color-head is the one text
+  // colour that clears 4.5:1 on all three tints in both themes; the state
+  // colours themselves sat between 2.95:1 and 4.91:1 there.
   .service-status {
     font-weight: 500;
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 0.875em;
+    color: var(--color-head);
 
     &.status-available {
-      background: var(--background-success, rgba(34, 197, 94, 0.1));
-      color: var(--color-success, #16a34a);
+      background: var(--background-success);
     }
 
     &.status-unavailable {
-      background: var(--background-error, rgba(239, 68, 68, 0.1));
-      color: var(--color-error, #dc2626);
+      background: var(--background-error);
     }
 
     &.status-unknown {
-      background: var(--background-warning, rgba(245, 158, 11, 0.1));
-      color: var(--color-warning, #d97706);
+      background: var(--background-warning);
     }
 
     &.status-checking {
-      background: var(--background-warning, rgba(245, 158, 11, 0.1));
-      color: var(--color-warning, #d97706);
+      background: var(--background-warning);
     }
   }
 

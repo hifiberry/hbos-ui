@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PageContent from '@/components/PageContent.vue'
 import ExtensionCard from '@/components/ExtensionCard.vue'
+import StatusBlock from '@/components/StatusBlock.vue'
 import { useInstallJob } from '@/composables/useInstallJob'
 import { useToastStore } from '@/stores/toast'
 import {
@@ -144,7 +145,7 @@ onMounted(async () => {
     </div>
 
     <p v-if="loading">Loading extensions&hellip;</p>
-    <p v-else-if="loadError" class="extensions-error">{{ loadError }}</p>
+    <StatusBlock v-else-if="loadError" variant="error" class="extensions-error">{{ loadError }}</StatusBlock>
     <p v-else-if="!extensions.length">
       No extensions found. Add a source to see extensions here.
     </p>
@@ -168,9 +169,9 @@ onMounted(async () => {
         <p class="extensions-phase">{{ job.phase.value ?? 'starting' }}</p>
         <progress :value="job.percent.value" max="100" class="extensions-progress" />
 
-        <p v-if="job.isFailed.value" class="extensions-error">
+        <StatusBlock v-if="job.isFailed.value" variant="error" class="extensions-error">
           Failed: {{ job.error.value }}
-        </p>
+        </StatusBlock>
 
         <p v-if="job.isDone.value && job.rebootRequired.value">
           This change needs a reboot to take effect.
@@ -219,8 +220,11 @@ onMounted(async () => {
   gap: 16px;
 }
 
+// Spacing only - StatusBlock carries the tint, the border and the icon. Two
+// consumers: the page-level load error, which sits on --background-body, and
+// the install dialog's failure line, which sits on --background-card.
 .extensions-error {
-  color: var(--color-error, #dc3545);
+  margin: 12px 0;
 }
 
 .extensions-dialog-overlay {

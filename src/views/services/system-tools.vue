@@ -3,7 +3,38 @@
     <div class="system-tools-content">
       <div class="services-header">
         <h2>System Tools</h2>
-        <p>Advanced system management tools - use with caution as they can leave the system in an unusable state</p>
+        <p>Advanced system management tools. Some of these can leave the system in an unusable state.</p>
+      </div>
+
+      <!-- Power Tool -->
+      <div class="tool-section">
+        <div class="tool-card power-tool">
+          <div class="tool-info">
+            <Icon icon="power" class="tool-icon" />
+            <div class="tool-details">
+              <h3>Power</h3>
+              <p class="tool-description">
+                Restart the device, or shut it down before unplugging it.
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions power-actions">
+            <button
+              @click="pendingPowerAction = 'reboot'"
+              :disabled="powerActionRunning"
+              class="reset-button"
+            >
+              Reboot
+            </button>
+            <button
+              @click="pendingPowerAction = 'shutdown'"
+              :disabled="powerActionRunning"
+              class="reset-button"
+            >
+              Shut down
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Reset System Tool -->
@@ -208,6 +239,21 @@ Would you like to reboot now?"
       @close="handleRebootLater"
       @confirm="executeReboot"
     />
+
+    <!-- Power Confirmation Dialog -->
+    <ConfirmationDialog
+      :is-open="pendingPowerAction !== null"
+      :title="pendingPowerAction === 'shutdown' ? 'Shut down the system?' : 'Reboot the system?'"
+      :message="pendingPowerAction === 'shutdown'
+        ? 'The device powers off. You need physical access to switch it back on.'
+        : 'The device restarts. Playback stops and the web interface is unavailable for about a minute.'"
+      :confirm-button-text="pendingPowerAction === 'shutdown' ? 'Shut down' : 'Reboot'"
+      cancel-button-text="Cancel"
+      :is-dangerous="true"
+      icon="power"
+      @close="pendingPowerAction = null"
+      @confirm="executePowerAction"
+    />
   </PageContent>
 </template>
 
@@ -221,7 +267,7 @@ import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
 import { useSupportInfo } from '@/composables/useSupportInfo'
-import { rebootSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection, disableSoundCardDetection, getSoundCardDetectionStatus, resetConfigDB } from '@/api/system'
+import { rebootSystem, shutdownSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection, disableSoundCardDetection, getSoundCardDetectionStatus, resetConfigDB } from '@/api/system'
 import { stopAllPlayers } from '@/api/player'
 import type { SoundCard } from '@/api/system'
 
@@ -233,6 +279,8 @@ const stoppingPlayers = ref(false)
 const showResetConfirmation = ref(false)
 const showDetectConfirmation = ref(false)
 const showRebootConfirmation = ref(false)
+const pendingPowerAction = ref<'reboot' | 'shutdown' | null>(null)
+const powerActionRunning = ref(false)
 const detectedCardName = ref<string | null>(null)
 const detectedDtoverlay = ref<string | null>(null)
 const availableSoundCards = ref<SoundCard[]>([])
@@ -454,6 +502,33 @@ const handleRebootLater = () => {
   toastStore.showInfoToast('Please reboot the system manually for changes to take effect.')
 }
 
+const executePowerAction = async () => {
+  const action = pendingPowerAction.value
+  if (!action) return
+
+  pendingPowerAction.value = null
+  powerActionRunning.value = true
+
+  const isShutdown = action === 'shutdown'
+
+  try {
+    toastStore.showInfoToast(isShutdown ? 'Shutting down...' : 'Rebooting...')
+    await (isShutdown ? shutdownSystem() : rebootSystem())
+    toastStore.showSuccessToast(
+      isShutdown
+        ? 'Shutdown initiated. The device powers off shortly.'
+        : 'Reboot initiated. The device restarts shortly.'
+    )
+  } catch (err) {
+    console.error(`Error during ${action}:`, err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+    toastStore.showErrorToast(
+      `Failed to ${isShutdown ? 'shut down' : 'reboot'} the system: ${errorMessage}`
+    )
+    powerActionRunning.value = false
+  }
+}
+
 const toggleExpertMode = async () => {
   updatingExpertMode.value = true
 
@@ -638,6 +713,12 @@ const stopAllMusicPlayers = async () => {
         &:hover:not(:disabled) {
           background: var(--primary-dark, var(--primary));
         }
+      }
+
+      &.power-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
       }
 
       &.soundcard-actions {

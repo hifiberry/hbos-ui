@@ -1,3 +1,12 @@
+hifiberry-webui (0.20.23) stable; urgency=medium
+
+  * System Tools: add a Power card to reboot or shut the device down. The
+    endpoints existed in config-server all along, but the only way to reach
+    them from the UI was the reboot prompt after sound card detection.
+    (hifiberry/hifiberry-os#632)
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 13:45:04 +0200
+
 hifiberry-webui (0.20.22) stable; urgency=medium
 
   * The extension installer is readable again in the dark theme. Its dialog

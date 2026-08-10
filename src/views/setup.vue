@@ -1330,7 +1330,10 @@ async function finishAndReboot() {
 .btn-secondary {
   background: var(--color-bg-secondary);
   color: var(--color-body);
-  border: 1px solid var(--color-border);
+  // Scoped, so this beats the global .btn-secondary in main.scss and owns the
+  // resting border outright - the token has to be repeated here or the wizard's
+  // Back and Add-Network-Share buttons keep the separator colour.
+  border: 1px solid var(--color-button-border);
 
   &:hover:not(:disabled) {
     background: var(--color-border);

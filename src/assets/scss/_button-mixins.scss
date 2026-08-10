@@ -90,7 +90,7 @@
 
 @mixin button-secondary {
   background-color: var(--color-background, #ffffff);
-  border: 1px solid var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-button-border);
   color: var(--color-body, #707070);
 
   &:hover:not(:disabled) {

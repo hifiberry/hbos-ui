@@ -28,6 +28,9 @@ $colors: (
     color-sidebar-border: $color-sidebar-border,
     color-sidebar: $color-sidebar,
   ),
+  controls: (
+    color-button-border: $color-button-border,
+  ),
   main: (
     background-main-content: $background-main-content,
     color-link: $color-link,
@@ -115,6 +118,9 @@ $colors--dark: (
     background-sidebar: $background-sidebar--dark,
     color-sidebar-border: $color-sidebar-border--dark,
     color-sidebar: $color-sidebar--dark,
+  ),
+  controls: (
+    color-button-border: $color-button-border--dark,
   ),
   main: (
     background-main-content: $background-main-content--dark,

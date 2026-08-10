@@ -445,19 +445,16 @@ onMounted(() => {
       align-items: flex-start;
       gap: 16px;
 
+      // White text on --color-error is 3.76:1, under the 4.5:1 floor for a
+      // label, and there is no fix in dark theme (see _service-item.scss for
+      // the luminance arithmetic). This is a house secondary button instead.
       .retry-button {
-        background: var(--color-error);
-        color: white;
-        border: none;
+        @include button-secondary;
         padding: 8px 16px;
         border-radius: 4px;
-        cursor: pointer;
         font-weight: 500;
-        transition: background-color 0.2s ease;
-
-        &:hover {
-          background: var(--color-error-dark);
-        }
+        cursor: pointer;
+        transition: all 0.2s ease;
       }
     }
 

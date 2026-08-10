@@ -169,18 +169,35 @@
   }
 }
 
+// White on --color-error is 3.76:1, under the 4.5:1 floor for a label, and
+// there is no fix in dark theme: a fill carrying white text at 4.5:1 needs a
+// relative luminance <= 0.183, but standing 3:1 clear of the #333 card needs
+// >= 0.199 - no colour satisfies both. Outline instead of fill: 4.83:1 light
+// / 4.57:1 dark for the label, and the border clears 3:1 against the card in
+// both themes.
+// The dark-theme label (4.57:1) has almost no headroom above the 4.5:1
+// floor, so hover/active/focus deliberately do not touch background or
+// text colour - even a 5% tint toward --color-error measured below floor
+// (down to ~3.9:1 dark). Affordance comes from lift + shadow only, so every
+// interactive state holds the same 4.83:1 / 4.57:1 as rest.
 @mixin service-button-danger {
   @include service-button-base;
-  background: var(--color-error, #dc3545);
-  color: white;
+  background: var(--background-card);
+  border: 1px solid var(--color-error, #dc2626);
+  color: var(--color-error, #dc2626);
 
   &:hover:not(:disabled) {
-    background: var(--color-error-dark, #c82333);
-    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(var(--color-danger-rgb, 239, 68, 68), 0.2);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(var(--color-danger-rgb, 239, 68, 68), 0.15);
   }
 
   &:focus {
-    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3);
+    box-shadow: 0 0 0 2px rgba(var(--color-danger-rgb, 239, 68, 68), 0.3);
   }
 }
 

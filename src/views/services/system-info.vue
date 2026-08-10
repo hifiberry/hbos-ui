@@ -2005,19 +2005,16 @@ onUnmounted(() => {
     align-items: flex-start;
     gap: 16px;
 
+    // White text on --color-error is 3.76:1, under the 4.5:1 floor for a
+    // label, and there is no fix in dark theme (see _service-item.scss for
+    // the luminance arithmetic). This is a house secondary button instead.
     .retry-button {
-      background: var(--color-error);
-      color: white;
-      border: none;
+      @include button-secondary;
       padding: 8px 16px;
       border-radius: 4px;
-      cursor: pointer;
       font-weight: 500;
-      transition: background-color 0.2s ease;
-
-      &:hover {
-        background: var(--color-error-dark);
-      }
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
   }
 
@@ -2283,13 +2280,20 @@ onUnmounted(() => {
           }
         }
 
+        // White on --color-warning is 2.15:1 - the worst of the three
+        // failing fills - with the same dark-theme impossibility as the
+        // retry buttons above. button-secondary was the like-for-like swap,
+        // but this dialog's card and the button-secondary fill are both
+        // --background-card: the confirm button would go the same colour as
+        // the dialog behind it, leaving only a thin --color-button-border
+        // outline to find. --cancel keeps its solid fill next to that, so
+        // the pair would read backwards - the button that does nothing looks
+        // pressable, the one that acts nearly disappears. That is worse than
+        // the contrast failure this task set out to fix, so the confirming
+        // button gets --primary fill instead: still the one solid, findable
+        // button in the dialog, now with a label that holds up.
         &--confirm {
-          background: var(--color-warning, #f59e0b);
-          color: white;
-
-          &:hover:not(:disabled) {
-            background: var(--color-warning-dark, #d97706);
-          }
+          @include button-primary;
 
           &:disabled {
             opacity: 0.6;

@@ -77,7 +77,7 @@ const settingsStore = useSettingsStore()
       .card-icon {
         width: 20px;
         height: 20px;
-        color: var(--color-primary);
+        color: var(--primary);
       }
 
       h2 {

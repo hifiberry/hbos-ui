@@ -500,7 +500,7 @@ onMounted(() => {
         align-items: center;
         gap: 8px;
         padding: 10px 20px;
-        background: var(--color-primary);
+        background: var(--primary);
         color: white;
         border: none;
         border-radius: 4px;

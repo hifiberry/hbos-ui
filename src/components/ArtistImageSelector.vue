@@ -268,7 +268,7 @@ const onImageError = (event: Event) => {
 .retry-btn {
   margin-top: 16px;
   padding: 8px 16px;
-  background: var(--color-primary);
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 6px;

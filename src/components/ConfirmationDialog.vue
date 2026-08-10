@@ -238,7 +238,7 @@ watch(() => props.isOpen, (newValue) => {
 
       &:focus {
         outline: none;
-        border-color: var(--color-primary);
+        border-color: var(--primary);
       }
     }
   }

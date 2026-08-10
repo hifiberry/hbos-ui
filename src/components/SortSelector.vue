@@ -88,18 +88,18 @@ const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => 
 
     &:hover {
       background: var(--color-background-hover);
-      border-color: var(--color-primary);
+      border-color: var(--primary);
     }
 
     &:focus {
       outline: none;
-      border-color: var(--color-primary);
+      border-color: var(--primary);
     }
 
     &.active {
-      background: var(--color-primary);
+      background: var(--primary);
       color: var(--color-primary-text);
-      border-color: var(--color-primary);
+      border-color: var(--primary);
     }
 
     .sort-icon {

@@ -154,7 +154,7 @@ onUnmounted(() => {
   &.available {
     &:hover {
       background: rgba(255, 255, 255, 0.2);
-      color: var(--color-primary);
+      color: var(--primary);
       transform: scale(1.1);
     }
 

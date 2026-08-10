@@ -248,9 +248,9 @@ onMounted(() => {
             }
 
             &.active {
-              background: var(--color-primary, #007bff);
+              background: var(--primary);
               color: white;
-              border-color: var(--color-primary, #007bff);
+              border-color: var(--primary);
             }
           }
         }
@@ -283,7 +283,7 @@ onMounted(() => {
           }
 
           .retry-button {
-            background: var(--color-primary, #007bff);
+            background: var(--primary);
             color: white;
             border: none;
             padding: 8px 16px;

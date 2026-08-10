@@ -262,11 +262,11 @@ onMounted(async () => {
     position: relative;
 
     &:hover {
-      color: var(--color-primary);
+      color: var(--primary);
 
       .station-title,
       .station-subtitle {
-        color: var(--color-primary);
+        color: var(--primary);
       }
 
       .station-poster-img img {
@@ -276,7 +276,7 @@ onMounted(async () => {
 
     &.favorite {
       .station-actions .favorite-btn {
-        color: var(--color-primary);
+        color: var(--primary);
       }
     }
 
@@ -416,7 +416,7 @@ onMounted(async () => {
     h3 {
       margin: 0 0 8px 0;
       font-size: 1.25rem;
-      color: var(--color-body-primary);
+      color: var(--color-body);
     }
 
     p {
@@ -444,7 +444,7 @@ onMounted(async () => {
 
     h2 {
       margin-bottom: 12px;
-      color: var(--color-body-primary);
+      color: var(--color-body);
     }
 
     p {

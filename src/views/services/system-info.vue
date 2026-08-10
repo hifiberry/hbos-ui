@@ -2044,7 +2044,7 @@ onUnmounted(() => {
 
           &:hover {
             background: var(--background-card-hover);
-            border-color: var(--color-primary);
+            border-color: var(--primary);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
           }
@@ -2059,7 +2059,7 @@ onUnmounted(() => {
           .card-icon {
             width: 20px;
             height: 20px;
-            color: var(--color-primary);
+            color: var(--primary);
           }
 
           h2 {
@@ -2080,7 +2080,7 @@ onUnmounted(() => {
 
         &.clickable:hover .chevron-icon {
           transform: translateX(2px);
-          color: var(--color-primary);
+          color: var(--primary);
         }
 
         .card-description {
@@ -2151,7 +2151,7 @@ onUnmounted(() => {
     flex-shrink: 0;
 
     &:hover:not(:disabled) {
-      color: var(--color-primary);
+      color: var(--primary);
     }
   }
 }
@@ -2177,7 +2177,7 @@ onUnmounted(() => {
     flex-shrink: 0;
 
     &:hover:not(:disabled) {
-      color: var(--color-primary);
+      color: var(--primary);
     }
   }
 }
@@ -2198,7 +2198,7 @@ onUnmounted(() => {
 
     &:focus {
       outline: none;
-      border-color: var(--color-primary);
+      border-color: var(--primary);
     }
 
     &:disabled {
@@ -2363,7 +2363,7 @@ onUnmounted(() => {
 
     .progress-percentage {
       font-weight: 600;
-      color: var(--color-primary);
+      color: var(--primary);
     }
 
     .job-duration {
@@ -2421,13 +2421,13 @@ onUnmounted(() => {
 
     .interface-type {
       font-size: 0.85em;
-      color: var(--color-text-muted);
+      color: var(--color-body-secondary);
     }
   }
 
   .interface-details {
     font-size: 0.9em;
-    color: var(--color-text-muted);
+    color: var(--color-body-secondary);
     margin-bottom: 2px;
 
     &:last-child {
@@ -2451,27 +2451,27 @@ onUnmounted(() => {
 }
 
 .pipewire-link {
-  color: var(--color-primary);
+  color: var(--primary);
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
 
   &:hover {
-    color: var(--color-primary-dark, #1e40af);
+    color: var(--primary-dark);
     text-decoration: underline;
   }
 }
 
 // Config.txt link style
 .config-link {
-  color: var(--color-primary);
+  color: var(--primary);
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
   text-decoration: none;
 
   &:hover {
-    color: var(--color-primary-dark, #1e40af);
+    color: var(--primary-dark);
     text-decoration: underline;
   }
 }

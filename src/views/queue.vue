@@ -209,7 +209,7 @@ onMounted(async () => {
 
       h2 {
         margin-bottom: 12px;
-        color: var(--color-body-primary);
+        color: var(--color-body);
       }
 
       p {

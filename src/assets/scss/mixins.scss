@@ -523,19 +523,19 @@
   flex: 1;
   max-width: 250px;
   padding: 8px 12px;
-  border: 2px solid var(--color-accent);
+  border: 2px solid var(--primary);
   border-radius: 6px;
   background: var(--color-background);
   color: var(--color-body);
   font-size: inherit;
   font-weight: inherit;
   font-family: inherit;
-  box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb, 59, 130, 246), 0.1);
+  box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.1);
 
   &:focus {
     outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb, 59, 130, 246), 0.15);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
   }
 
   &:disabled {

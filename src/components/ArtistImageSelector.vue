@@ -257,7 +257,7 @@ const onImageError = (event: Event) => {
 
   h4 {
     margin: 0 0 8px 0;
-    color: var(--color-body-primary);
+    color: var(--color-body);
   }
 
   p {
@@ -268,7 +268,7 @@ const onImageError = (event: Event) => {
 .retry-btn {
   margin-top: 16px;
   padding: 8px 16px;
-  background: var(--color-primary);
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -279,7 +279,7 @@ const onImageError = (event: Event) => {
   transition: all 0.2s ease;
 
   &:hover {
-    background: var(--color-primary-hover);
+    background: var(--primary-dark);
   }
 
   svg {

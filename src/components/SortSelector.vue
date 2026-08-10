@@ -65,7 +65,7 @@ const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => 
 
   .sort-label {
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: var(--color-body-secondary);
   }
 
   .sort-buttons {
@@ -88,18 +88,18 @@ const handleSortByChange = (newSortBy: 'release_date' | 'artist' | 'random') => 
 
     &:hover {
       background: var(--color-background-hover);
-      border-color: var(--color-primary);
+      border-color: var(--primary);
     }
 
     &:focus {
       outline: none;
-      border-color: var(--color-primary);
+      border-color: var(--primary);
     }
 
     &.active {
-      background: var(--color-primary);
-      color: var(--color-primary-text);
-      border-color: var(--color-primary);
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
     }
 
     .sort-icon {

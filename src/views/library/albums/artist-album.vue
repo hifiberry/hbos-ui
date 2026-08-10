@@ -486,7 +486,7 @@ watch(
   display: none;
   background: none;
   border: none;
-  color: var(--color-text-secondary);
+  color: var(--color-body-secondary);
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
@@ -520,7 +520,7 @@ watch(
 .mb-loading,
 .mb-error {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: var(--color-body-secondary);
   margin-bottom: 8px;
 }
 
@@ -545,7 +545,7 @@ watch(
 
 .mb-label {
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--color-body-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.8rem;
@@ -593,8 +593,8 @@ watch(
   }
 
   .genre-tag {
-    background: var(--color-accent);
-    color: var(--color-accent-text);
+    background: var(--primary);
+    color: white;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.875rem;
@@ -615,7 +615,7 @@ watch(
   .biography-toggle {
     background: none;
     border: none;
-    color: var(--color-text-secondary);
+    color: var(--color-body-secondary);
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
@@ -652,7 +652,7 @@ watch(
 .id-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--color-body-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

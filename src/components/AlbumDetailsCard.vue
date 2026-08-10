@@ -160,7 +160,7 @@ const onListenNow = async () => {
         margin: 4px 0 0 0;
         font-size: 1.1rem;
         font-weight: 500;
-        color: var(--color-text-secondary);
+        color: var(--color-body-secondary);
         @include media-down(xl) {
           font-size: 1rem;
           margin: 2px 0 0 0;
@@ -170,7 +170,7 @@ const onListenNow = async () => {
         margin: 4px 0 0 0;
         font-size: 0.95rem;
         font-weight: 400;
-        color: var(--color-text-secondary);
+        color: var(--color-body-secondary);
         opacity: 0.8;
         @include media-down(xl) {
           font-size: 0.9rem;

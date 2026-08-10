@@ -163,7 +163,7 @@ const tooltipStyles = computed(() => {
       transition: color 0.3s ease;
 
       &:hover {
-        color: var(--color-accent);
+        color: var(--primary);
         cursor: pointer;
 
         .minimal-hint {
@@ -179,7 +179,7 @@ const tooltipStyles = computed(() => {
       left: 50%;
       transform: translateX(-50%);
       background: var(--background-secondary);
-      color: var(--color-text-secondary);
+      color: var(--color-body-secondary);
       padding: 6px 12px;
       border-radius: 6px;
       font-size: 0.75rem;
@@ -335,7 +335,7 @@ const tooltipStyles = computed(() => {
   bottom: 15px;
   right: 15px;
   font-size: 0.75rem;
-  color: var(--color-text-tertiary);
+  color: var(--color-body-secondary);
   opacity: 0.5;
   transition: opacity 0.3s ease;
 

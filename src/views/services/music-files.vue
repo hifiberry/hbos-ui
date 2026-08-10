@@ -500,7 +500,7 @@ onMounted(() => {
         align-items: center;
         gap: 8px;
         padding: 10px 20px;
-        background: var(--color-primary);
+        background: var(--primary);
         color: white;
         border: none;
         border-radius: 4px;
@@ -509,7 +509,7 @@ onMounted(() => {
         transition: background-color 0.2s ease;
 
         &:hover {
-          background: var(--color-primary-dark);
+          background: var(--primary-dark);
         }
 
         svg {

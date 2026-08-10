@@ -235,7 +235,7 @@ const handleImageUpload = (event: Event) => {
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: var(--color-primary);
+          border-color: var(--primary);
           transform: scale(1.02);
 
           .image-overlay {

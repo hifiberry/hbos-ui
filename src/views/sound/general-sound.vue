@@ -497,7 +497,7 @@ h1 { margin-bottom: 32px; color: var(--color-head); }
   .service-card {
     display: block; background: var(--background-card); border-radius: 8px; padding: 24px; border: 1px solid var(--color-border);
     .service-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .service-icon { width: 24px; height: 24px; color: var(--color-primary); }
+    .service-icon { width: 24px; height: 24px; color: var(--primary); }
     h2 { margin: 0; color: var(--color-head); font-size: 1.25rem; }
     .service-description { color: var(--color-body-secondary); line-height: 1.5; }
 
@@ -527,7 +527,7 @@ h1 { margin-bottom: 32px; color: var(--color-head); }
         .setting-icon {
           width: 40px;
           height: 40px;
-          color: var(--color-primary);
+          color: var(--primary);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -594,13 +594,13 @@ h1 { margin-bottom: 32px; color: var(--color-head); }
             }
 
             &.active {
-              background: var(--color-primary, #e11e4a);
+              background: var(--primary);
               color: white;
             }
 
             &:hover:not(:disabled):not(.active) {
               background: var(--background-button-secondary-hover, rgba(225, 30, 74, 0.1));
-              color: var(--color-primary, #e11e4a);
+              color: var(--primary);
             }
 
             &:disabled {

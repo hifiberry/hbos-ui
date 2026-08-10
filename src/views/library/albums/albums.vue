@@ -249,13 +249,13 @@ onUnmounted(() => {
 
   &:hover {
     background: var(--color-background-hover);
-    border-color: var(--color-primary);
+    border-color: var(--primary);
   }
 
   &.active {
-    background: var(--color-primary);
-    color: var(--color-primary-text);
-    border-color: var(--color-primary);
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
   }
 }
 
@@ -279,13 +279,13 @@ onUnmounted(() => {
 
   &:hover {
     background: var(--color-background-hover);
-    border-color: var(--color-primary);
+    border-color: var(--primary);
   }
 
   &.active {
-    background: var(--color-primary);
-    color: var(--color-primary-text);
-    border-color: var(--color-primary);
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
   }
 
   .genre-count {
@@ -372,7 +372,7 @@ onUnmounted(() => {
 
   input[type='checkbox'] {
     cursor: pointer;
-    accent-color: var(--color-primary);
+    accent-color: var(--primary);
     width: 15px;
     height: 15px;
     flex-shrink: 0;

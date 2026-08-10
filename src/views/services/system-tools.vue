@@ -559,11 +559,11 @@ const stopAllMusicPlayers = async () => {
     // rule was already a no-op; removed rather than left dangling now that
     // every button on the page - destructive or not - shares one color.
     &.detect-tool .tool-info .tool-icon {
-      color: var(--color-primary);
+      color: var(--primary);
     }
 
     &.soundcard-tool .tool-info .tool-icon {
-      color: var(--color-primary);
+      color: var(--primary);
     }
 
     &.expert-tool .tool-info .tool-icon {
@@ -575,13 +575,12 @@ const stopAllMusicPlayers = async () => {
     }
 
     // Collecting/downloading a report is read-only, not destructive, so it
-    // should not sit under the same (nominally --color-error/--color-primary)
-    // rules as the other cards above. Those tokens are actually undefined in
-    // this codebase though (only --color-icon really resolves, which is why
-    // .expert-tool is the only one of the five that renders a color at all) -
-    // rather than invent another undefined token, or a hardcoded fallback
-    // that would ignore the light/dark theme, this reuses the one real,
-    // themed token already established by .expert-tool.
+    // should not sit under the same accent-colored rules as detect-tool /
+    // soundcard-tool above, nor under the warning color used by
+    // stop-players-tool. Rather than invent another undefined token, or a
+    // hardcoded fallback that would ignore the light/dark theme, this reuses
+    // the one neutral, themed icon token already established by
+    // .expert-tool.
     &.report-tool .tool-info .tool-icon {
       color: var(--color-icon);
     }

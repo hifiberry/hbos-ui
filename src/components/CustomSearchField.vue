@@ -71,7 +71,7 @@ const onClear = () => {
 
   input{
     width: 100%;
-    color: var(--body-color);
+    color: var(--color-body);
   }
 }
 </style>

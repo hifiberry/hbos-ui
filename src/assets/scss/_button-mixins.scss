@@ -89,7 +89,11 @@
 }
 
 @mixin button-secondary {
-  background-color: var(--color-background, #ffffff);
+  // See the identical copy in mixins.scss: --color-background is undefined, so
+  // the #ffffff fallback rendered in dark too and collided with the #fff label
+  // at 1.00:1. --background-card is defined, theme-aware, and identical to the
+  // old fallback in light.
+  background-color: var(--background-card);
   border: 1px solid var(--color-button-border);
   color: var(--color-body, #707070);
 

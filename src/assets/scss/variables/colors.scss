@@ -95,8 +95,10 @@ $scroll-thumb-background: #707070;                                $scroll-thumb-
 $color-background-hover: rgba(255, 255, 255, 0.05);               $color-background-hover--dark: rgba(255, 255, 255, 0.05);
 $color-error-dark: #c82333;                                       $color-error-dark--dark: #c82333;
 $background-error: rgba(239, 68, 68, 0.1);                        $background-error--dark: rgba(239, 68, 68, 0.1);
+$color-error: #dc2626;                                            $color-error--dark: #f87171;
 $border-color: #e5e5e5;                                           $border-color--dark: #e5e5e5;
 $background-warning: rgba(245, 158, 11, 0.1);                     $background-warning--dark: rgba(245, 158, 11, 0.1);
+$color-warning: #d97706;                                          $color-warning--dark: #f59e0b;
 $card-background: #fff;                                           $card-background--dark: #fff;
 $color-danger-rgb: 239, 68, 68;                                   $color-danger-rgb--dark: 239, 68, 68;
 $color-success-rgb: 34, 197, 94;                                  $color-success-rgb--dark: 34, 197, 94;
@@ -105,6 +107,7 @@ $font-family-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;   $font-family-m
 $background-button-secondary: #f8f9fa;                            $background-button-secondary--dark: #f8f9fa;
 $background-code: #f8f9fa;                                        $background-code--dark: #f8f9fa;
 $background-success: rgba(34, 197, 94, 0.1);                      $background-success--dark: rgba(34, 197, 94, 0.1);
+$color-success: #16a34a;                                          $color-success--dark: #22c55e;
 $color-code: #212529;                                             $color-code--dark: #212529;
 $color-warning-dark: #d97706;                                     $color-warning-dark--dark: #d97706;
 $font-mono: 'Monaco', 'Consolas', 'Courier New', monospace;       $font-mono--dark: 'Monaco', 'Consolas', 'Courier New', monospace;

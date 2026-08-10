@@ -446,7 +446,7 @@
   }
 
   &:hover:not(:disabled) {
-    color: var(--color-danger);
+    color: var(--color-error);
     background: rgba(var(--color-danger-rgb, 239, 68, 68), 0.1);
   }
 }
@@ -584,7 +584,7 @@
   color: var(--color-body-secondary);
 
   &:hover:not(:disabled) {
-    color: var(--color-danger);
+    color: var(--color-error);
     background: rgba(var(--color-danger-rgb, 239, 68, 68), 0.1);
   }
 

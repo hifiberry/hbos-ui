@@ -2320,26 +2320,39 @@ onUnmounted(() => {
         &--confirm {
           @include button-primary;
 
-          // button-primary's own hover swaps fill+border to --primary-dark,
-          // which in the dark theme (#CC254F) clears only 2.37:1 against
-          // this dialog's #333 card - under the 3:1 boundary floor, and a
-          // regression against the amber fill it replaced (its hover,
-          // #d97706, cleared 3.97:1 here). Hold hover at the rest --primary
-          // token instead: dark #FF2E63 vs #333 = 3.50:1, light #E11E4A vs
-          // #fff = 4.68:1 - both already verified at rest above - and let
-          // the mixin's lift + shadow carry the rest of the hover feedback.
+          // button-primary's own hover swaps fill+border to --primary-dark.
+          // Light: #B4183B clears 6.70:1 against the #fff card - fine, left
+          // as the mixin ships it, no override needed.
+          // Dark: #CC254F clears only 2.37:1 against the #333 card - under
+          // the 3:1 boundary floor, and a regression against the amber fill
+          // it replaced (its hover, #d97706, cleared 3.97:1 here). Freezing
+          // the fill at rest's --primary (as the previous round did)
+          // traded that failure for a different one: it drops the dark
+          // hover label from 5.32:1 (white on --primary-dark) to 3.61:1
+          // (white on --primary, the rest value) - under the 4.5:1 text
+          // floor, and makes hover a colourless lift-only twitch, the exact
+          // defect already fixed on the danger button. Dark instead keeps
+          // the fill (and its label) at rest and changes only the border to
+          // --color-button-border - the token this project already uses
+          // whenever a control needs a stroke to separate it from its card.
+          // That stroke clears 3.03:1 against the card, is visibly distinct
+          // from the pink fill, and never touches the label, so the label
+          // stays exactly at rest's 3.61:1 (the pre-existing button-primary
+          // defect, not made worse).
           &:hover:not(:disabled) {
-            background-color: var(--primary);
-            border-color: var(--primary);
+            @include dark {
+              background-color: var(--primary);
+              border-color: var(--color-button-border);
+            }
           }
 
-          // The mixin's own ring (rgba(225,30,74,.3), a hardcoded light-theme
-          // literal, not even theme-aware) measured 1.63:1 light / 1.21:1
-          // dark against the card - nowhere near 3:1. A solid ring in the
-          // same --primary token used for the fill clears it: 4.68:1 light /
-          // 3.50:1 dark against the card.
+          // --primary as the ring measured 1.00:1 against the button's own
+          // fill (same token, same colour - not a ring, just a bigger
+          // silhouette) despite clearing the card at 4.68:1 / 3.50:1.
+          // --color-head clears 3:1 on both sides in both themes: vs the
+          // fill 3.76:1 light / 3.61:1 dark, vs the card 17.60:1 / 12.63:1.
           &:focus {
-            box-shadow: 0 0 0 3px var(--primary);
+            box-shadow: 0 0 0 3px var(--color-head, #111827);
           }
 
           &:disabled {

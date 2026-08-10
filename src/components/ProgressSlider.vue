@@ -290,7 +290,7 @@ onBeforeUnmount(() => {
     transform: translate(-50%, -50%);
     width: 2px;
     height: 120%;
-    background-color: var(--color-border, #d1d5db);
+    background-color: var(--color-body);
     z-index: 1;
     pointer-events: none;
 

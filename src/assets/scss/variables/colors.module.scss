@@ -60,6 +60,31 @@ $colors: (
   scroll: (
     scroll-track-background: $scroll-track-background,
     scroll-thumb-background: $scroll-thumb-background
+  ),
+  // Promoted-from-fallback tokens - see the comment above their definitions
+  // in colors.scss. Deliberately the same value in $colors and $colors--dark;
+  // do not give these a themed dark value without a real design decision.
+  promoted-fallbacks: (
+    color-surface-rgb: $color-surface-rgb,
+    color-background-hover: $color-background-hover,
+    color-error-dark: $color-error-dark,
+    background-error: $background-error,
+    border-color: $border-color,
+    color-border-hover: $color-border-hover,
+    color-border-light: $color-border-light,
+    background-warning: $background-warning,
+    card-background: $card-background,
+    color-accent-rgb: $color-accent-rgb,
+    color-danger-rgb: $color-danger-rgb,
+    color-success-rgb: $color-success-rgb,
+    fill: $fill,
+    font-family-mono: $font-family-mono,
+    background-button-secondary: $background-button-secondary,
+    background-code: $background-code,
+    background-success: $background-success,
+    color-code: $color-code,
+    color-warning-dark: $color-warning-dark,
+    font-mono: $font-mono,
   )
 );
 
@@ -121,6 +146,28 @@ $colors--dark: (
   scroll: (
     scroll-track-background: $scroll-track-background--dark,
     scroll-thumb-background: $scroll-thumb-background--dark,
+  ),
+  promoted-fallbacks: (
+    color-surface-rgb: $color-surface-rgb--dark,
+    color-background-hover: $color-background-hover--dark,
+    color-error-dark: $color-error-dark--dark,
+    background-error: $background-error--dark,
+    border-color: $border-color--dark,
+    color-border-hover: $color-border-hover--dark,
+    color-border-light: $color-border-light--dark,
+    background-warning: $background-warning--dark,
+    card-background: $card-background--dark,
+    color-accent-rgb: $color-accent-rgb--dark,
+    color-danger-rgb: $color-danger-rgb--dark,
+    color-success-rgb: $color-success-rgb--dark,
+    fill: $fill--dark,
+    font-family-mono: $font-family-mono--dark,
+    background-button-secondary: $background-button-secondary--dark,
+    background-code: $background-code--dark,
+    background-success: $background-success--dark,
+    color-code: $color-code--dark,
+    color-warning-dark: $color-warning-dark--dark,
+    font-mono: $font-mono--dark,
   )
 );
 

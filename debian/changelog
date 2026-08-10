@@ -1,3 +1,26 @@
+hifiberry-webui (0.20.16) stable; urgency=medium
+
+  * CSS custom properties, part 1 of the undefined-token cleanup: define
+    the ~20 tokens that were already used with exactly one, consistent
+    hardcoded fallback everywhere in the codebase (--color-border-hover,
+    --card-background, --font-mono, etc.) as that literal value in
+    colors.module.scss/colors.scss, so the value lives in one place
+    instead of being repeated at every call site. Deliberately given the
+    same light and dark value - a hardcoded fallback is theme-blind by
+    definition, so it already rendered identically in both themes; a
+    real dark value is a separate design decision for a follow-up.
+  * Remove the 15 dead --tblr-* custom properties (Tabler UI Kit
+    tokens) from dsp-programs.vue - this project has never depended on
+    Tabler, so these always resolved to their hardcoded fallback and
+    never will resolve to anything else. Replaced with that literal
+    value directly; no behaviour change.
+  * No visual change: verified by diffing the built CSS before/after -
+    every pre-existing custom property is byte-identical, the only
+    additions are the 20 new tokens (matching their prior fallback
+    exactly) and the dsp-programs.vue literal substitutions.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 12:00:00 +0200
+
 hifiberry-webui (0.20.15) stable; urgency=medium
 
   * System Tools: make all six action buttons (Reset, Detect, Stop

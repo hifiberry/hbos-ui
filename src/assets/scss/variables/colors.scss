@@ -51,3 +51,35 @@ $search-color-placeholder: #ababab;
 
 $scroll-track-background: #fff;                                   $scroll-track-background--dark: #000;
 $scroll-thumb-background: #707070;                                $scroll-thumb-background--dark: #333;
+
+// --- Promoted-from-fallback tokens -----------------------------------------
+// These custom properties were previously undefined: every var(--x, FALLBACK)
+// call site across the codebase agreed on the same FALLBACK value, so the
+// property always rendered as that literal - it just wasn't a token you could
+// find or reuse. The values below are that same literal, copied verbatim, and
+// deliberately identical for light/dark: a hardcoded fallback is theme-blind
+// by definition (it rendered the same thing in both themes before today), so
+// giving it a real dark value now would be a visual change, not a cleanup.
+// None of these have been reviewed for whether they *should* differ in dark
+// mode - see the token-cleanup-part1 report for the shortlist that most
+// obviously wants a real dark value.
+$color-surface-rgb: 128, 128, 128;                                $color-surface-rgb--dark: 128, 128, 128;
+$color-background-hover: rgba(255, 255, 255, 0.05);               $color-background-hover--dark: rgba(255, 255, 255, 0.05);
+$color-error-dark: #c82333;                                       $color-error-dark--dark: #c82333;
+$background-error: rgba(239, 68, 68, 0.1);                        $background-error--dark: rgba(239, 68, 68, 0.1);
+$border-color: #e5e5e5;                                           $border-color--dark: #e5e5e5;
+$color-border-hover: #d1d5db;                                     $color-border-hover--dark: #d1d5db;
+$color-border-light: #e9ecef;                                     $color-border-light--dark: #e9ecef;
+$background-warning: rgba(245, 158, 11, 0.1);                     $background-warning--dark: rgba(245, 158, 11, 0.1);
+$card-background: #fff;                                           $card-background--dark: #fff;
+$color-accent-rgb: 59, 130, 246;                                  $color-accent-rgb--dark: 59, 130, 246;
+$color-danger-rgb: 239, 68, 68;                                   $color-danger-rgb--dark: 239, 68, 68;
+$color-success-rgb: 34, 197, 94;                                  $color-success-rgb--dark: 34, 197, 94;
+$fill: 0%;                                                        $fill--dark: 0%;
+$font-family-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;   $font-family-mono--dark: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+$background-button-secondary: #f8f9fa;                            $background-button-secondary--dark: #f8f9fa;
+$background-code: #f8f9fa;                                        $background-code--dark: #f8f9fa;
+$background-success: rgba(34, 197, 94, 0.1);                      $background-success--dark: rgba(34, 197, 94, 0.1);
+$color-code: #212529;                                             $color-code--dark: #212529;
+$color-warning-dark: #d97706;                                     $color-warning-dark--dark: #d97706;
+$font-mono: 'Monaco', 'Consolas', 'Courier New', monospace;       $font-mono--dark: 'Monaco', 'Consolas', 'Courier New', monospace;

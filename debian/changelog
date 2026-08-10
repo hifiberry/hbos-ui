@@ -1,3 +1,17 @@
+hifiberry-webui (0.20.20) stable; urgency=medium
+
+  * Token cleanup part 2 stage 1 follow-up: fix the three call sites that
+    rendered something wrong rather than merely different once the stage's
+    tokens resolved, and drop the orphaned --color-accent-rgb it left
+    behind. The genre-count badge on the albums view now has real contrast
+    against its own background instead of white text on a light overlay
+    over the brand colour. The disabled state of editable inputs no longer
+    grows a louder border than the enabled state in dark theme. The
+    now-playing minimal view's exit hint and tooltip text are legible
+    again in dark theme.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 10:50:32 +0200
+
 hifiberry-webui (0.20.19) stable; urgency=medium
 
   * Fix colours that previously failed to render at all: active states,

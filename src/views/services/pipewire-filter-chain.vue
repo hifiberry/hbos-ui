@@ -163,10 +163,10 @@ onMounted(() => {
     color: var(--color-body-secondary);
   }
 
-  // Shared by the .error-section and .graph-error retry buttons below.
-  // Previously duplicated per container and nested inside .graph-container,
-  // which meant it never reached the .error-section button at all.
-  .retry-button {
+  // Retry Render button inside the graph view's inline error state. This is
+  // not backed by StatusBlock and out of scope for the error-section fix
+  // below; left as the pre-existing filled style.
+  .graph-error .retry-button {
     background: var(--primary);
     color: white;
     border: none;
@@ -183,11 +183,50 @@ onMounted(() => {
 
   // Layout only: the tint, the border and the icon now live in StatusBlock,
   // and the retry button is a sibling of the block rather than its child.
+  // align-items is left at the flex default (stretch) so the panel stays
+  // full width; only the button opts out via align-self below.
   .error-section {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
     gap: 16px;
+
+    // White text on --color-error is 3.76:1, under the 4.5:1 floor for a
+    // label, and there is no fix in dark theme (see _service-item.scss for
+    // the luminance arithmetic). This is a house secondary button instead.
+    // This button sits directly on <main>, not on a card - .error-section
+    // has no background of its own - so it is read against
+    // --background-body (#fafafa / #000), not --background-card as the
+    // mixin's own comments assume. Rest: label #707070/#fff on body =
+    // 4.74:1 / 21.0:1, border #919191/#7c7c7c on body = 3.02:1 / 5.03:1.
+    // All four clear their floors, but on hover the mixin's white overlay
+    // (--color-background-hover) composites against that same black body
+    // instead of a #333 card, landing near-black (#0d0d0d) - the button
+    // would darken into the page instead of lifting off it. Hold the fill
+    // at rest's --background-card and let border-color/transform/
+    // box-shadow carry the hover feedback instead: hover label stays
+    // 4.74:1 / 21.0:1, hover border (--primary on body) 4.49:1 / 5.39:1.
+    .retry-button {
+      @include button-secondary;
+      align-self: flex-start;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background-color: var(--background-card);
+      }
+
+      // The mixin's own ring (rgba(59,130,246,.3), an off-token blue)
+      // measured 1.41:1 against the body in both themes - nowhere near
+      // 3:1. A solid ring in the existing border token clears it: the
+      // ring colour is the same as the rest-state border, so it inherits
+      // that 3.02:1 / 5.03:1 against the body.
+      &:focus {
+        box-shadow: 0 0 0 3px var(--color-button-border);
+      }
+    }
   }
 
   .empty-section {

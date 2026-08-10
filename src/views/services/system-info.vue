@@ -1998,11 +1998,12 @@ onUnmounted(() => {
 
   // The tint, the border and the icon now live in StatusBlock; what is left
   // here is layout plus the retry button, which moved out of the deleted
-  // .error-content and became a sibling of the block.
+  // .error-content and became a sibling of the block. align-items is left
+  // at the flex default (stretch) so the panel stays full width; only the
+  // button opts out via align-self below.
   .error-section {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
     gap: 16px;
 
     // White text on --color-error is 3.76:1, under the 4.5:1 floor for a
@@ -2022,6 +2023,7 @@ onUnmounted(() => {
     // 4.74:1 / 21.0:1, hover border (--primary on body) 4.49:1 / 5.39:1.
     .retry-button {
       @include button-secondary;
+      align-self: flex-start;
       padding: 8px 16px;
       border-radius: 4px;
       font-weight: 500;

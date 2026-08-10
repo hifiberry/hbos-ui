@@ -1,3 +1,19 @@
+hifiberry-webui (0.20.23) stable; urgency=medium
+
+  * Error, warning and success messages are readable again. They used to be
+    written in a red that was hard to tell apart from the brand colour every
+    button carries; they now sit on a tinted panel with an icon, and the text
+    itself is in the normal reading colour.
+  * Buttons no longer carry white text on a red or amber fill, where it was
+    too faint to read. Destructive actions such as disconnecting an account
+    or uninstalling an extension are outlined instead of filled.
+  * Input fields inside dialogs and the setup wizard have a visible border
+    again, in both the light and the dark theme.
+  * Three missing icons were added; the microphone error in the measurement
+    wizard had been showing nothing at all.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 15:04:23 +0200
+
 hifiberry-webui (0.20.22) stable; urgency=medium
 
   * The extension installer is readable again in the dark theme. Its dialog

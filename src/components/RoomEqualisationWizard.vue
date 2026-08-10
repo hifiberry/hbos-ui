@@ -1707,7 +1707,7 @@ const formatFrequency = (freq: number): string => {
 
           td {
             padding: 12px 16px;
-            border-bottom: 1px solid var(--color-border-light);
+            border-bottom: 1px solid var(--color-border);
             font-size: 0.875rem;
 
             &.filter-type {

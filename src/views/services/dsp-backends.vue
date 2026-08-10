@@ -345,7 +345,7 @@ onMounted(async () => {
       transition: all 0.2s ease;
 
       &:hover {
-        border-color: var(--color-border-hover);
+        border-color: var(--primary);
       }
 
       &.active-card {
@@ -360,7 +360,7 @@ onMounted(async () => {
 
         &:hover:not(.active):not(.loading):not(.unavailable) {
           background: rgba(var(--color-surface-rgb), 0.3);
-          border-color: var(--color-border-hover);
+          border-color: var(--primary);
         }
 
         &.loading {

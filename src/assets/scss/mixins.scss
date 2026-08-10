@@ -298,7 +298,7 @@
 
   &:hover:not(:disabled) {
     background-color: var(--color-background-secondary, #f9fafb);
-    border-color: var(--color-border-hover, #d1d5db);
+    border-color: var(--primary);
     color: var(--color-body, #374151);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

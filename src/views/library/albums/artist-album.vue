@@ -51,7 +51,10 @@
           <div v-if="fullArtistData?.metadata?.mbid?.[0]" class="artist-info-extended" :class="{ 'mobile-visible': showMobileInfo }">
             <!-- MusicBrainz Information -->
             <div v-if="mbLoading" class="mb-loading">Loading MusicBrainz data...</div>
-            <div v-else-if="mbError" class="mb-error">{{ mbError }}</div>
+            <div v-else-if="mbError" class="mb-error" role="alert">
+              <Icon icon="tabler/alert-circle" class="mb-error__icon" />
+              <span>{{ mbError }}</span>
+            </div>
             <div v-else-if="mbArtistData" class="mb-info">
               <table class="mb-table">
                 <tr v-if="formattedLifeSpan">
@@ -524,13 +527,27 @@ watch(
   margin-bottom: 8px;
 }
 
-// A one-line footnote inside the artist panel, not a block: a boxed error for
-// "MusicBrainz lookup failed" would outweigh the metadata it sits next to.
-// --color-head instead of --color-error keeps it readable and keeps it from
-// competing with the brand red, and still separates it from the
-// --color-body-secondary .mb-loading line it replaces.
+// A one-line footnote inside the artist panel, not a block: a bordered,
+// tinted StatusBlock at 0.875rem would outweigh the compact .mb-table it sits
+// next to. So it takes the other half of the same principle - the icon carries
+// the state, the text does not. Without the icon this line would be plain
+// near-black text among plain near-black metadata, told apart from the
+// "Loading MusicBrainz data..." line above it only by a shade of grey: the
+// message would stop looking like a message. Same glyph as StatusBlock's error
+// variant, so the vocabulary is one vocabulary.
 .mb-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   color: var(--color-head);
+
+  .mb-error__icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: var(--color-error);
+    margin-top: 1px;
+  }
 }
 
 .mb-info {

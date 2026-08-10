@@ -1,3 +1,16 @@
+hifiberry-webui (0.20.19) stable; urgency=medium
+
+  * Fix colours that previously failed to render at all: active states,
+    focus rings and hover states throughout the app, and several text
+    colours across the library, settings and dialogs. These are repairs
+    of things that rendered nothing before, not a redesign - anything
+    that looks different after this update is now visible for the first
+    time, not restyled. Also fixes the retry button on the PipeWire
+    filter chain's error screen, previously white text on white and
+    therefore unusable.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 10:24:26 +0200
+
 hifiberry-webui (0.20.18) stable; urgency=medium
 
   * CSS custom properties, part 1 follow-up: drop --color-border-light too.

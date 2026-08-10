@@ -64,16 +64,18 @@ $scroll-thumb-background: #707070;                                $scroll-thumb-
 // mode - see the token-cleanup-part1 report for the shortlist that most
 // obviously wants a real dark value.
 //
-// --color-surface-rgb and --color-border-hover were dropped from this list
-// after review (see token-cleanup-part1 report, part-2 handover): both have
-// bare call sites elsewhere that a naive definition would visibly break
-// (a solid-grey overlay + an illegible badge for the former, an inverted
-// hover affordance for the latter) - not invisible, so not part 1.
+// --color-surface-rgb, --color-border-hover and --color-border-light were
+// dropped from this list after review (see token-cleanup-part1 report,
+// part-2 handover): each has a bare call site elsewhere that a naive
+// definition would visibly break (a solid-grey overlay + an illegible badge
+// for --color-surface-rgb; an inverted hover affordance for
+// --color-border-hover; a table whose two dividers would stop matching for
+// --color-border-light, since its sibling divider uses the still-undefined
+// --color-border) - not invisible, so not part 1.
 $color-background-hover: rgba(255, 255, 255, 0.05);               $color-background-hover--dark: rgba(255, 255, 255, 0.05);
 $color-error-dark: #c82333;                                       $color-error-dark--dark: #c82333;
 $background-error: rgba(239, 68, 68, 0.1);                        $background-error--dark: rgba(239, 68, 68, 0.1);
 $border-color: #e5e5e5;                                           $border-color--dark: #e5e5e5;
-$color-border-light: #e9ecef;                                     $color-border-light--dark: #e9ecef;
 $background-warning: rgba(245, 158, 11, 0.1);                     $background-warning--dark: rgba(245, 158, 11, 0.1);
 $card-background: #fff;                                           $card-background--dark: #fff;
 $color-accent-rgb: 59, 130, 246;                                  $color-accent-rgb--dark: 59, 130, 246;

@@ -1,3 +1,22 @@
+hifiberry-webui (0.20.18) stable; urgency=medium
+
+  * CSS custom properties, part 1 follow-up: drop --color-border-light too.
+    Same pattern as --color-border-hover: in RoomEqualisationWizard.vue the
+    <td> row divider at line 1710 uses --color-border-light while the <th>
+    divider six lines above (1704) uses the still-undefined --color-border -
+    defining one and not the other gives the same table two different
+    border treatments. Not invisible, so not part 1; moves to part 2 next
+    to --color-border and --color-border-hover, which now form one paired
+    decision rather than three separate ones. 17 tokens remain defined;
+    the promoted-fallbacks group and its :export block are updated to
+    match. Re-verified byte-identical built CSS for all 17 before/after.
+    (--border-color's one bare site was also reviewed and kept: it sits in
+    a "Save Configuration" block already broken by four other undefined,
+    unrelated tokens, so promoting this one changes nothing perceptible -
+    but that block needs a unit-level look in part 2, not a var-by-var one.)
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 10 Aug 2026 17:00:00 +0200
+
 hifiberry-webui (0.20.17) stable; urgency=medium
 
   * CSS custom properties, part 1 follow-up: drop --color-surface-rgb and

@@ -1,3 +1,22 @@
+hifiberry-webui (0.21.0) stable; urgency=medium
+
+  * Player settings: add support for credential fields (type 'secret'). Plugins
+    can now request a credential via a player setting. The credential is
+    rendered as a write-only masked input and never stored in or returned from
+    the setting value. A Set / Not set indicator shows whether a credential
+    is stored, and a Clear button allows removal. Typed values are held
+    transiently and dropped if the panel closes by any route (Cancel, Save,
+    collapse, or panel unmount), so an abandoned credential is never silently
+    written later.
+  * Player settings: fix cross-player settings clobbering. Saving one player's
+    settings no longer overwrites another player's unsaved edits (including
+    in-flight credentials) if both panels are open at the same time.
+  * Player settings: fix credential leaks through panel close paths. Collapsing
+    the panel via the expand caret or closing after a failed save no longer
+    leaves a typed credential in memory.
+
+ -- HiFiBerry <support@hifiberry.com>  Wed, 19 Aug 2026 16:48:23 +0200
+
 hifiberry-webui (0.20.26) stable; urgency=medium
 
   * The lyrics panel on the Now Playing page works again. It used to fail
@@ -210,7 +229,6 @@ hifiberry-webui (0.20.12) stable; urgency=medium
     cancels the sign-in prompt instead of collecting the report.
 
  -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 19:00:00 +0200
-
 hifiberry-webui (0.20.11) stable; urgency=medium
 
   * System Tools can now create the diagnostic support report, show it

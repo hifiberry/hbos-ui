@@ -182,9 +182,18 @@ onMounted(async () => {
 // updated in place (settings in particular, so a refresh after save picks
 // up the server's current is_set) rather than skipped, since re-pushing
 // a duplicate player would break findPlayerIndex's by-name lookup.
-const refreshExternalPlayers = async () => {
+//
+// `onlyServiceName`, when given, restricts the *merge* to that one service:
+// the API has no per-player fetch, so the full list is still requested, but
+// every other already-known player's `.settings` is left untouched. Without
+// this, a post-save refresh would clobber any other external player's open,
+// unsaved config panel (including a secret's in-flight `pendingSecret`).
+const refreshExternalPlayers = async (onlyServiceName?: string) => {
   const externalPlayers = await getExternalPlayers()
-  for (const ext of externalPlayers) {
+  const toMerge = onlyServiceName
+    ? externalPlayers.filter(ext => ext.systemd_service === onlyServiceName)
+    : externalPlayers
+  for (const ext of toMerge) {
     const existing = players.value.find(p => p.systemdService === ext.systemd_service)
     if (existing) {
       existing.settings = ext.settings
@@ -476,6 +485,15 @@ const updateAirplayVersion = (playerName: string, version: number) => {
   }
 }
 
+// Drop any typed-but-unsaved credential text held on a player's settings.
+// Shared by the save-success path and Cancel, so a plaintext secret never
+// outlives the action that was supposed to consume it.
+const clearPendingSecrets = (player: Player) => {
+  for (const s of player.settings ?? []) {
+    delete (s as PlayerSetting & { pendingSecret?: string }).pendingSecret
+  }
+}
+
 const updateExternalSetting = (playerName: string, key: string, value: boolean | string | number) => {
   const player = players.value[findPlayerIndex(playerName)]
   if (!player?.settings) return
@@ -526,6 +544,9 @@ const cancelConfig = (playerName: string) => {
   // Close the configuration section without saving changes
   expandedConfigs.value.delete(playerIndex)
   const player = players.value[playerIndex]
+  // A typed-but-uncommitted credential must not survive Cancel -- otherwise
+  // it sits in memory on the settings object indefinitely.
+  clearPendingSecrets(player)
   console.log(`Configuration cancelled for ${player.name}`)
 }
 
@@ -549,11 +570,11 @@ const saveConfig = async (playerName: string) => {
     try {
       await saveExternalPlayerSettings(player.systemdService, values)
       // Refetch so is_set reflects what the server now holds, and drop the
-      // plaintext we were holding.
-      for (const s of player.settings) {
-        delete (s as PlayerSetting & { pendingSecret?: string }).pendingSecret
-      }
-      await refreshExternalPlayers()
+      // plaintext we were holding. Scoped to this player only: another
+      // external player may have its own config panel open with unsaved
+      // edits, and a full-list merge would silently overwrite those.
+      clearPendingSecrets(player)
+      await refreshExternalPlayers(player.systemdService)
     } catch (e) {
       player.error = e instanceof Error ? e.message : 'Failed to save settings'
     }

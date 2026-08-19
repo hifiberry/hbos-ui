@@ -542,11 +542,14 @@ export const scanI2CDevices = async (busNumber?: number): Promise<ConfigApiRespo
 
 export interface PlayerSetting {
   key: string
-  type: 'toggle' | 'select' | 'number'
+  type: 'toggle' | 'select' | 'number' | 'secret'
   label: string
   description?: string
   default: boolean | string | number
-  value: boolean | string | number
+  /** Absent for type === 'secret': the API never returns a credential. */
+  value?: boolean | string | number
+  /** Present only for type === 'secret'. Whether a credential is stored. */
+  is_set?: boolean
   /** Present for select; may be resolved by config-server from options_url. */
   options?: { value: string; label: string }[]
   /** Bounds for type === 'number'; config-server guarantees all three. */

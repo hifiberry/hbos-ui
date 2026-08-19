@@ -183,6 +183,30 @@
                     {{ opt.label }}
                   </option>
                 </select>
+                <div
+                  v-else-if="setting.type === 'secret'"
+                  class="secret-field"
+                >
+                  <input
+                    :id="`set-${player.systemdService}-${setting.key}`"
+                    type="password"
+                    autocomplete="off"
+                    spellcheck="false"
+                    :placeholder="setting.is_set ? '••••••••  (stored)' : 'Paste your key'"
+                    @input="$emit('update-external-setting', setting.key,
+                                  ($event.target as HTMLInputElement).value)"
+                  />
+                  <span class="secret-state">{{ setting.is_set ? 'Set' : 'Not set' }}</span>
+                  <button
+                    v-if="setting.is_set"
+                    type="button"
+                    class="secret-clear"
+                    :data-test="`clear-secret-${setting.key}`"
+                    @click="$emit('update-external-setting', setting.key, '')"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
               <p v-if="setting.description" class="config-description">{{ setting.description }}</p>
             </template>
@@ -202,11 +226,14 @@ import { computed } from 'vue'
 import Icon from '@/components/Icon.vue'
 import InlineSvg from 'vue-inline-svg'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
+import type { PlayerSetting } from '@/api/config'
 
 /** Fraction of the range already covered, as a CSS percentage.
  *  WebKit cannot paint a filled portion on its own, so the track uses this to
- *  draw one with a gradient. */
-const sliderFill = (setting: { value: boolean | string | number; min?: number; max?: number }): string => {
+ *  draw one with a gradient. Only called for type === 'number', which always
+ *  carries a value; `value` is typed optional here only because it is shared
+ *  with the `secret` variant, which never reaches this helper. */
+const sliderFill = (setting: { value?: boolean | string | number; min?: number; max?: number }): string => {
   const min = setting.min ?? 0
   const max = setting.max ?? 100
   const value = typeof setting.value === 'number' ? setting.value : Number(setting.value)
@@ -231,7 +258,7 @@ interface Player {
   maintainerName?: string
   maintainerUrl?: string
   extension_package?: string
-  settings?: { key: string; type: 'toggle' | 'select' | 'number'; label: string; description?: string; default: boolean | string | number; value: boolean | string | number; options?: { value: string; label: string }[]; min?: number; max?: number; step?: number; widget?: string }[]
+  settings?: PlayerSetting[]
 }
 
 const props = defineProps<{
@@ -561,6 +588,27 @@ const getStatusText = (player: Player) => {
           border-color: var(--color-head);
           color: var(--color-head);
         }
+      }
+
+      .secret-field {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        input {
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+      }
+
+      .secret-state {
+        flex: 0 0 auto;
+        font-size: 0.85em;
+        opacity: 0.7;
+      }
+
+      .secret-clear {
+        flex: 0 0 auto;
       }
 
       .config-actions {

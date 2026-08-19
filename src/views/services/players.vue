@@ -70,6 +70,7 @@ import {
   getExternalPlayers,
   saveExternalPlayerSettings
 } from '@/api/config'
+import type { PlayerSetting } from '@/api/config'
 import {
   getTOSLinkStatus,
   enableTOSLink,
@@ -177,34 +178,42 @@ onMounted(async () => {
   await loadServiceStatus()
 })
 
+// Fetch external players and merge into the list. Known services are
+// updated in place (settings in particular, so a refresh after save picks
+// up the server's current is_set) rather than skipped, since re-pushing
+// a duplicate player would break findPlayerIndex's by-name lookup.
+const refreshExternalPlayers = async () => {
+  const externalPlayers = await getExternalPlayers()
+  for (const ext of externalPlayers) {
+    const existing = players.value.find(p => p.systemdService === ext.systemd_service)
+    if (existing) {
+      existing.settings = ext.settings
+      continue
+    }
+    players.value.push({
+      name: ext.name,
+      providedBy: ext.provided_by,
+      systemdService: ext.systemd_service,
+      config: 'none',
+      status: 'inactive',
+      icon: ext.icon_url,
+      enabled: false,
+      loading: false,
+      error: undefined,
+      allow_change: ext.allow_change,
+      exists: true,
+      isExternal: true,
+      iconUrl: ext.icon_url,
+      maintainerName: ext.maintainer_name || undefined,
+      maintainerUrl: ext.maintainer_url || undefined,
+      settings: ext.settings
+    })
+  }
+}
+
 const loadServiceStatus = async () => {
   try {
-    // Fetch external players and merge into the list
-    const externalPlayers = await getExternalPlayers()
-    const knownServices = new Set(players.value.map(p => p.systemdService))
-    for (const ext of externalPlayers) {
-      if (!knownServices.has(ext.systemd_service)) {
-        players.value.push({
-          name: ext.name,
-          providedBy: ext.provided_by,
-          systemdService: ext.systemd_service,
-          config: 'none',
-          status: 'inactive',
-          icon: ext.icon_url,
-          enabled: false,
-          loading: false,
-          error: undefined,
-          allow_change: ext.allow_change,
-          exists: true,
-          isExternal: true,
-          iconUrl: ext.icon_url,
-          maintainerName: ext.maintainer_name || undefined,
-          maintainerUrl: ext.maintainer_url || undefined,
-          settings: ext.settings
-        })
-        knownServices.add(ext.systemd_service)
-      }
-    }
+    await refreshExternalPlayers()
 
     // Handle TOSLink separately
     const toslinkPlayer = players.value.find(p => p.name === 'TOSLink');
@@ -471,7 +480,14 @@ const updateExternalSetting = (playerName: string, key: string, value: boolean |
   const player = players.value[findPlayerIndex(playerName)]
   if (!player?.settings) return
   const setting = player.settings.find(s => s.key === key)
-  if (setting) setting.value = value
+  if (!setting) return
+  if (setting.type === 'secret') {
+    // Held only until save, and never written into `value` -- a credential
+    // must not end up somewhere the rest of the card reads back.
+    (setting as PlayerSetting & { pendingSecret?: string }).pendingSecret = String(value)
+    return
+  }
+  setting.value = value
 }
 
 const updateTOSLinkSensitivity = (playerName: string, sensitivity: string) => {
@@ -520,9 +536,24 @@ const saveConfig = async (playerName: string) => {
   const player = players.value[playerIndex]
   if (player?.isExternal && player.settings?.length) {
     const values: Record<string, boolean | string | number> = {}
-    for (const s of player.settings) values[s.key] = s.value
+    for (const s of player.settings) {
+      if (s.type === 'secret') {
+        // Only send a secret the user actually touched. An empty string is a
+        // deliberate clear and must be sent; undefined means "leave alone".
+        const pending = (s as PlayerSetting & { pendingSecret?: string }).pendingSecret
+        if (pending !== undefined) values[s.key] = pending
+        continue
+      }
+      if (s.value !== undefined) values[s.key] = s.value
+    }
     try {
       await saveExternalPlayerSettings(player.systemdService, values)
+      // Refetch so is_set reflects what the server now holds, and drop the
+      // plaintext we were holding.
+      for (const s of player.settings) {
+        delete (s as PlayerSetting & { pendingSecret?: string }).pendingSecret
+      }
+      await refreshExternalPlayers()
     } catch (e) {
       player.error = e instanceof Error ? e.message : 'Failed to save settings'
     }

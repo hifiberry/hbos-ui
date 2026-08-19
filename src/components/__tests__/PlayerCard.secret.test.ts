@@ -65,30 +65,37 @@ describe('PlayerCard secret settings', () => {
     expect(emitted![emitted!.length - 1]).toEqual(['api_key', ''])
   })
 
-  it('does not interpolate the typed value into text content', async () => {
-    // NOTE on what this does and doesn't prove: `wrapper.html()` serializes
-    // outerHTML, and for an <input> the live DOM `.value` *property* set by
-    // `setValue()` is never reflected into the `value` *attribute* -- that's
-    // ordinary HTML value-vs-defaultValue semantics, true whether or not the
-    // field is bound. So this assertion would pass just as happily against a
-    // broken implementation that captured the text into a ref and bound it
-    // with `:value`. It only catches the typed secret leaking out through
-    // text interpolation elsewhere in the template (e.g. `{{ someState }}`).
-    // The test below is the one that would actually catch a state leak.
+  it('never renders a value carried on the setting object, even if one is present', () => {
+    // Unlike the other fixtures, this one carries a `value` field on the
+    // secret setting -- something the real API never sends, but nothing in
+    // the type system rules out. Every other test's fixtures omit `value`
+    // entirely, so `:value="setting.value"` (or `:value="setting.pendingSecret"`)
+    // would pass all of them. This is the one test that would actually fail
+    // if such a binding were reintroduced.
+    const player = {
+      ...playerWithSecret(true),
+      settings: [
+        { key: 'api_key', type: 'secret' as const, label: 'Soloist API key',
+          default: '', is_set: true, value: 'LEAKED-should-never-render' },
+      ],
+    }
     const wrapper = mount(PlayerCard, {
-      props: { player: playerWithSecret(true), isExpanded: true },
+      props: { player, isExpanded: true },
       global: { stubs: { Icon: true, ToggleSwitch: true } },
     })
-    await wrapper.find('input[type="password"]').setValue('SECRET-abc123')
-    expect(wrapper.html()).not.toContain('SECRET-abc123')
+    const input = wrapper.find('input[type="password"]')
+    expect((input.element as HTMLInputElement).value).toBe('')
+    expect(wrapper.html()).not.toContain('LEAKED-should-never-render')
   })
 
-  it('does not resurface a typed secret on remount, proving nothing cached it', async () => {
+  it('does not resurface a typed secret on remount, given the input is unbound', async () => {
     // Mount, type, and unmount, then remount against the *same* player
-    // object. A implementation that wrote the typed text into `setting.value`
-    // (mutating the shared prop object), a module-level ref, or a Pinia
-    // store would all resurface it here, even though none of those would be
-    // caught by an HTML-serialization check like the test above.
+    // object. This demonstrates that PlayerCard itself holds no local state
+    // (ref, computed, etc.) that survives a remount -- an input bound via
+    // `v-model` or a local ref would resurface the typed text here.
+    // It does NOT by itself prove nothing was mutated onto `setting.value`:
+    // that would only resurface in the rendered input if a `:value` binding
+    // also existed, and the previous test is what rules that out.
     const player = playerWithSecret(true)
     const first = mount(PlayerCard, {
       props: { player, isExpanded: true },

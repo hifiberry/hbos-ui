@@ -125,7 +125,66 @@ describe('players.vue secret setting lifecycle', () => {
     const [, values] = saveExternalPlayerSettings.mock.calls[0]
     // Cancel must have cleared the pending value: "leave alone" (no key
     // sent), not "clear" (empty string sent) and not the typed text.
-    expect(values).not.toHaveProperty('api_key')
+    expect(values).toEqual({})
+  })
+
+  it('drops a typed-but-collapsed secret so a later save does not resend it', async () => {
+    const wrapper = await mountPlayersView()
+    let card = findCard(wrapper, 'soloist')
+    expect(card.exists()).toBe(true)
+
+    // Open the config panel, type a credential, then collapse via the caret
+    // instead of Cancel. The caret sits outside the expanded block and is
+    // clickable the whole time the panel is open, so this is at least as
+    // natural a "never mind" gesture as pressing Cancel.
+    await card.find('.expand-caret').trigger('click')
+    card = findCard(wrapper, 'soloist')
+    await card.find('input[type="password"]').setValue('SECRET-abc123')
+    await card.find('.expand-caret').trigger('click')
+
+    // Reopen and save without retyping anything.
+    card = findCard(wrapper, 'soloist')
+    await card.find('.expand-caret').trigger('click')
+    card = findCard(wrapper, 'soloist')
+    await card.find('.config-btn--save').trigger('click')
+    await flushPromises()
+
+    expect(saveExternalPlayerSettings).toHaveBeenCalledTimes(1)
+    const [, values] = saveExternalPlayerSettings.mock.calls[0]
+    // Collapsing via the caret must have cleared the pending value, the same
+    // as Cancel does.
+    expect(values).toEqual({})
+  })
+
+  it('drops a pending secret when the save request fails, so a later save does not resend it', async () => {
+    const wrapper = await mountPlayersView()
+    let card = findCard(wrapper, 'soloist')
+    expect(card.exists()).toBe(true)
+
+    await card.find('.expand-caret').trigger('click')
+    card = findCard(wrapper, 'soloist')
+    await card.find('input[type="password"]').setValue('SECRET-abc123')
+
+    // First save attempt fails (e.g. device offline, auth prompt dismissed).
+    saveExternalPlayerSettings.mockImplementationOnce(async () => {
+      throw new Error('Authentication required')
+    })
+    card = findCard(wrapper, 'soloist')
+    await card.find('.config-btn--save').trigger('click')
+    await flushPromises()
+
+    // Reopen and save again without retyping anything.
+    card = findCard(wrapper, 'soloist')
+    await card.find('.expand-caret').trigger('click')
+    card = findCard(wrapper, 'soloist')
+    await card.find('.config-btn--save').trigger('click')
+    await flushPromises()
+
+    expect(saveExternalPlayerSettings).toHaveBeenCalledTimes(2)
+    const [, values] = saveExternalPlayerSettings.mock.calls[1]
+    // The failed save must still have cleared the pending value: nothing
+    // sent on this second attempt means the abandoned credential was dropped.
+    expect(values).toEqual({})
   })
 
   it('does not let saving one external player discard another player\'s unsaved secret', async () => {

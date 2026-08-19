@@ -188,15 +188,32 @@ onMounted(async () => {
 // every other already-known player's `.settings` is left untouched. Without
 // this, a post-save refresh would clobber any other external player's open,
 // unsaved config panel (including a secret's in-flight `pendingSecret`).
+//
+// Even the unscoped call (no `onlyServiceName`) must not clobber a player
+// whose config panel is currently expanded: it is safe today only because
+// its sole caller, `loadServiceStatus`, runs from `onMounted` before any
+// panel can be open. Skipping expanded players here makes that safe by
+// construction rather than by luck about call sites, so a future poll or
+// pull-to-refresh through this same function can't reintroduce the
+// cross-player clobbering bug this branch already fixed once.
+//
+// This guard only applies to the unscoped call. A scoped call (e.g. from
+// saveConfig, `refreshExternalPlayers(player.systemdService)`) is an
+// explicit request to refresh exactly that one player, and is made while
+// that player's own panel is still expanded (it collapses only afterward)
+// -- skipping it there would break the "is_set reflects the server" refresh
+// the save path depends on. `toMerge` already scopes a named call to just
+// that one service, so there is no cross-player risk to guard against here.
 const refreshExternalPlayers = async (onlyServiceName?: string) => {
   const externalPlayers = await getExternalPlayers()
   const toMerge = onlyServiceName
     ? externalPlayers.filter(ext => ext.systemd_service === onlyServiceName)
     : externalPlayers
   for (const ext of toMerge) {
-    const existing = players.value.find(p => p.systemdService === ext.systemd_service)
-    if (existing) {
-      existing.settings = ext.settings
+    const existingIndex = players.value.findIndex(p => p.systemdService === ext.systemd_service)
+    if (existingIndex !== -1) {
+      if (!onlyServiceName && expandedConfigs.value.has(existingIndex)) continue
+      players.value[existingIndex].settings = ext.settings
       continue
     }
     players.value.push({
@@ -486,8 +503,10 @@ const updateAirplayVersion = (playerName: string, version: number) => {
 }
 
 // Drop any typed-but-unsaved credential text held on a player's settings.
-// Shared by the save-success path and Cancel, so a plaintext secret never
-// outlives the action that was supposed to consume it.
+// Called from every path that ends a save attempt (success or failure) and
+// from `closeConfig` (Cancel, Save, and caret-collapse all route through
+// it), so a plaintext secret never outlives the action that was supposed to
+// consume it.
 const clearPendingSecrets = (player: Player) => {
   for (const s of player.settings ?? []) {
     delete (s as PlayerSetting & { pendingSecret?: string }).pendingSecret
@@ -519,12 +538,28 @@ const updateTOSLinkSensitivity = (playerName: string, sensitivity: string) => {
   }
 }
 
+// Close a player's config panel and drop any pending secret. This is the
+// ONLY place that should remove a player from `expandedConfigs`: routing
+// Cancel, Save, and the caret-collapse path all through here keeps the
+// invariant on `clearPendingSecrets` below true regardless of which gesture
+// the user used to close the panel.
+const closeConfig = (playerName: string) => {
+  const playerIndex = findPlayerIndex(playerName)
+  if (playerIndex === -1) return
+
+  expandedConfigs.value.delete(playerIndex)
+  clearPendingSecrets(players.value[playerIndex])
+}
+
 const toggleConfigExpanded = (playerName: string) => {
   const playerIndex = findPlayerIndex(playerName)
   if (playerIndex === -1) return
 
   if (expandedConfigs.value.has(playerIndex)) {
-    expandedConfigs.value.delete(playerIndex)
+    // The caret is a "never mind" gesture just as much as Cancel: it sits
+    // outside the expanded block and is clickable the whole time the panel
+    // is open, so collapsing this way must clear any pending secret too.
+    closeConfig(playerName)
   } else {
     expandedConfigs.value.add(playerIndex)
   }
@@ -542,11 +577,8 @@ const cancelConfig = (playerName: string) => {
   if (playerIndex === -1) return
 
   // Close the configuration section without saving changes
-  expandedConfigs.value.delete(playerIndex)
   const player = players.value[playerIndex]
-  // A typed-but-uncommitted credential must not survive Cancel -- otherwise
-  // it sits in memory on the settings object indefinitely.
-  clearPendingSecrets(player)
+  closeConfig(playerName)
   console.log(`Configuration cancelled for ${player.name}`)
 }
 
@@ -569,21 +601,27 @@ const saveConfig = async (playerName: string) => {
     }
     try {
       await saveExternalPlayerSettings(player.systemdService, values)
-      // Refetch so is_set reflects what the server now holds, and drop the
-      // plaintext we were holding. Scoped to this player only: another
-      // external player may have its own config panel open with unsaved
-      // edits, and a full-list merge would silently overwrite those.
-      clearPendingSecrets(player)
+      // Refetch so is_set reflects what the server now holds. Scoped to this
+      // player only: another external player may have its own config panel
+      // open with unsaved edits, and a full-list merge would silently
+      // overwrite those.
       await refreshExternalPlayers(player.systemdService)
     } catch (e) {
       player.error = e instanceof Error ? e.message : 'Failed to save settings'
+    } finally {
+      // Drop the plaintext we were holding whether the save succeeded or
+      // failed. `values` above was snapshotted before the request, so
+      // clearing here loses nothing that was actually sent -- and if the
+      // request failed, the credential must not silently resurface on a
+      // later, unrelated save.
+      clearPendingSecrets(player)
     }
-    toggleConfigExpanded(playerName)
+    closeConfig(playerName)
     return
   }
 
   // Save the configuration and close the section
-  expandedConfigs.value.delete(playerIndex)
+  closeConfig(playerName)
   console.log(`Configuration saved for ${player.name}`)
 
   try {

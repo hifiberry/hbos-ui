@@ -12,21 +12,30 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
-const { externalPlayer, saveExternalPlayerSettings } = vi.hoisted(() => ({
-  externalPlayer: {
-    name: 'Spotify (Soloist)',
-    provided_by: 'soloist',
-    systemd_service: 'soloist',
+// Two external players, so a save on one can be observed to (not) disturb
+// the other's still-open, unsaved config panel. `externalPlayers` is the
+// mutable "server state" the mocked API reads from and writes back to.
+const { externalPlayers, saveExternalPlayerSettings } = vi.hoisted(() => {
+  const makePlayer = (systemdService: string, name: string, key: string) => ({
+    name,
+    provided_by: systemdService,
+    systemd_service: systemdService,
     icon_url: '',
     allow_change: true,
     maintainer_name: '',
     maintainer_url: '',
     settings: [
-      { key: 'api_key', type: 'secret' as const, label: 'Soloist API key', default: '', is_set: false },
+      { key, type: 'secret' as const, label: `${name} API key`, default: '', is_set: false },
     ],
-  },
-  saveExternalPlayerSettings: vi.fn().mockResolvedValue({}),
-}))
+  })
+  return {
+    externalPlayers: [
+      makePlayer('soloist', 'Spotify (Soloist)', 'api_key'),
+      makePlayer('other-service', 'Other Service', 'token'),
+    ],
+    saveExternalPlayerSettings: vi.fn().mockResolvedValue({}),
+  }
+})
 
 vi.mock('@/api/config', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/api/config')>()
@@ -35,11 +44,15 @@ vi.mock('@/api/config', async (importOriginal) => {
     getMultipleServiceStatus: vi.fn().mockResolvedValue(new Map()),
     enableNowService: vi.fn(),
     disableNowService: vi.fn(),
-    // `true` here so builtin players (and the mocked external one, which
-    // shares this same existence check) stay visible under the view's
+    // `true` here so builtin players (and the mocked external ones, which
+    // share this same existence check) stay visible under the view's
     // default non-expert-mode filter, which hides anything with exists === false.
     checkSystemdServiceExists: vi.fn().mockResolvedValue({ data: { exists: true } }),
-    getExternalPlayers: vi.fn().mockResolvedValue([externalPlayer]),
+    // Deep-cloned per call so the view's own copies never alias the "server
+    // state" array directly -- only explicit test mutations (below) change it.
+    getExternalPlayers: vi.fn(async () =>
+      externalPlayers.map(p => ({ ...p, settings: p.settings.map(s => ({ ...s })) }))
+    ),
     saveExternalPlayerSettings,
   }
 })
@@ -77,31 +90,34 @@ const mountPlayersView = async () => {
   return wrapper
 }
 
-const soloistCard = (wrapper: ReturnType<typeof mount>) =>
+const findCard = (wrapper: ReturnType<typeof mount>, systemdService: string) =>
   wrapper.findAllComponents(PlayerCard)
-    .find(c => (c.props('player') as { systemdService?: string }).systemdService === 'soloist')!
+    .find(c => (c.props('player') as { systemdService?: string }).systemdService === systemdService)!
 
 describe('players.vue secret setting lifecycle', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     saveExternalPlayerSettings.mockClear()
+    // Reset "server state" between tests.
+    externalPlayers[0].settings[0].is_set = false
+    externalPlayers[1].settings[0].is_set = false
   })
 
-  it('drops a typed-but-uncancelled secret so a later save does not resend it', async () => {
+  it('drops a typed-but-cancelled secret so a later save does not resend it', async () => {
     const wrapper = await mountPlayersView()
-    let card = soloistCard(wrapper)
+    let card = findCard(wrapper, 'soloist')
     expect(card.exists()).toBe(true)
 
     // Open the config panel, type a credential, then Cancel instead of Save.
     await card.find('.expand-caret').trigger('click')
-    card = soloistCard(wrapper)
+    card = findCard(wrapper, 'soloist')
     await card.find('input[type="password"]').setValue('SECRET-abc123')
     await card.find('.config-btn--cancel').trigger('click')
 
     // Reopen and save without retyping anything.
-    card = soloistCard(wrapper)
+    card = findCard(wrapper, 'soloist')
     await card.find('.expand-caret').trigger('click')
-    card = soloistCard(wrapper)
+    card = findCard(wrapper, 'soloist')
     await card.find('.config-btn--save').trigger('click')
     await flushPromises()
 
@@ -110,5 +126,38 @@ describe('players.vue secret setting lifecycle', () => {
     // Cancel must have cleared the pending value: "leave alone" (no key
     // sent), not "clear" (empty string sent) and not the typed text.
     expect(values).not.toHaveProperty('api_key')
+  })
+
+  it('does not let saving one external player discard another player\'s unsaved secret', async () => {
+    const wrapper = await mountPlayersView()
+
+    // Open BOTH external players' config panels at once -- toggleConfigExpanded
+    // is additive over a Set, so this is a reachable, legitimate UI state.
+    await findCard(wrapper, 'soloist').find('.expand-caret').trigger('click')
+    await findCard(wrapper, 'other-service').find('.expand-caret').trigger('click')
+
+    // Type into player B's secret field. Never saved, never cancelled --
+    // it should still be sitting there as a pending edit.
+    await findCard(wrapper, 'other-service').find('input[type="password"]').setValue('B-SECRET-xyz')
+
+    // Player A's save resolves and the server reports A's credential is now
+    // stored (is_set flips), exercising the same refresh path that must not
+    // touch player B.
+    saveExternalPlayerSettings.mockImplementationOnce(async () => {
+      externalPlayers[0].settings[0].is_set = true
+      return {}
+    })
+    await findCard(wrapper, 'soloist').find('.config-btn--save').trigger('click')
+    await flushPromises()
+
+    // Now save B, without retyping anything into it.
+    await findCard(wrapper, 'other-service').find('.config-btn--save').trigger('click')
+    await flushPromises()
+
+    expect(saveExternalPlayerSettings).toHaveBeenCalledTimes(2)
+    const [serviceB, valuesB] = saveExternalPlayerSettings.mock.calls[1]
+    expect(serviceB).toBe('other-service')
+    // B's typed-but-unsaved secret must have survived A's save and refresh.
+    expect(valuesB).toHaveProperty('token', 'B-SECRET-xyz')
   })
 })

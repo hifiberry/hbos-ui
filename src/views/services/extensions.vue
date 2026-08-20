@@ -138,10 +138,20 @@ onMounted(async () => {
           {{ entry.label }}
         </option>
       </select>
-      <button type="button" class="extensions-refresh-btn" :disabled="job.isRunning.value" @click="onRefresh">
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm extensions-refresh-btn"
+        :disabled="job.isRunning.value"
+        @click="onRefresh"
+      >
         Refresh
       </button>
-      <router-link :to="{ name: 'extension-sources' }" class="extensions-sources-link">Sources</router-link>
+      <router-link
+        :to="{ name: 'extension-sources' }"
+        class="btn btn-ghost btn-sm extensions-sources-link"
+      >
+        Sources
+      </router-link>
     </div>
 
     <p v-if="loading">Loading extensions&hellip;</p>
@@ -209,9 +219,57 @@ onMounted(async () => {
   margin-bottom: 24px;
 }
 
+// input[type="search"] and select are stripped bare by _reset.scss
+// (background: transparent, border: none), so without an explicit
+// appearance here the search box renders as loose text rather than a
+// field. Matches setup.vue's .form-input, the established input look.
+.extensions-search,
+.extensions-category {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--background-body);
+  color: var(--color-body);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: var(--primary);
+  }
+}
+
 .extensions-search {
-  flex: 1;
-  min-width: 200px;
+  // Grow into free space, but stop well short of the full row: at flex: 1
+  // with no cap the field swallowed the whole toolbar and stranded the
+  // other three controls against the right edge.
+  flex: 1 1 220px;
+  max-width: 360px;
+  min-width: 180px;
+}
+
+.extensions-category {
+  // Native selects ignore the shared padding unless the arrow is re-added,
+  // so keep the platform control and just size it consistently.
+  min-width: 132px;
+  cursor: pointer;
+}
+
+.extensions-sources-link {
+  // Sources leaves this page; the filters act on it. Push it to the far
+  // edge so the grouping reflects that rather than reading as a fourth
+  // filter control.
+  margin-left: auto;
+  text-decoration: none;
+  // btn-ghost's neutral body colour makes a right-aligned label read as
+  // static text; keep the button metrics but the link's affordance.
+  color: var(--primary);
+
+  &:hover {
+    color: var(--primary);
+  }
 }
 
 .extensions-list {

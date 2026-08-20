@@ -320,7 +320,19 @@ const routes = computed(() => {
         }
 
         &+.nav-item__dropdown {
-          max-height: 400px;
+          // Must exceed the tallest submenu's content height, because the
+          // sibling rule pairs this with overflow: hidden to animate the
+          // expand. It is a magic number only because max-height cannot
+          // transition to auto -- but an outgrown one silently TRUNCATES the
+          // menu rather than scrolling it, with no visual hint that entries
+          // exist below. That is exactly what happened at 400px: Settings
+          // reached 11 children (~39px each + 12px padding = ~441px) and its
+          // last two, Extensions and Security, simply vanished from the UI
+          // while still being present in the DOM and routable by URL.
+          // 1200px is ~30 entries; .nav above scrolls if a menu ever passes
+          // the viewport, so overshooting costs nothing but a slightly
+          // faster-than-0.2s perceived open.
+          max-height: 1200px;
           padding-top: 12px;
           opacity: 1;
 

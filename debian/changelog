@@ -1,3 +1,18 @@
+hifiberry-webui (0.21.1) stable; urgency=medium
+
+  * Sidebar: stop truncating the Settings submenu. The expanded dropdown
+    animates via max-height with overflow: hidden, and the hard-coded
+    400px was outgrown once Settings reached 11 entries -- Extensions and
+    Security rendered into the DOM and were reachable by URL, but were
+    clipped out of view with no scrollbar or other hint. Raised to 1200px.
+  * Extensions: style the toolbar. The search field and category select
+    inherited _reset.scss's transparent/borderless treatment and so read
+    as loose text rather than controls, the Refresh button got the global
+    button reset without any .btn class, and search's uncapped flex: 1
+    stranded the remaining controls against the right edge.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 08:00:00 +0000
+
 hifiberry-webui (0.21.0) stable; urgency=medium
 
   * Player settings: add support for credential fields (type 'secret'). Plugins

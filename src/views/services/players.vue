@@ -418,8 +418,14 @@ const refreshSingleServiceStatus = async (serviceName: string, playerIndex: numb
  *  calls it simply "Spotify", so "Disabled Spotify" reads as though Spotify
  *  itself had been turned off, rather than one of two Spotify players.
  */
-const playerLabel = (player: Player): string =>
-  player.providedBy ? `${player.name} (${player.providedBy})` : player.name
+const playerLabel = (player: Player): string => {
+  if (!player.providedBy) return player.name
+  // A name that already carries its own qualifier -- "Spotify (Soloist)" --
+  // needs no second one; appending the package turned the notice into
+  // "Spotify (Soloist) (soloist-wrapper)".
+  if (player.name.includes('(')) return player.name
+  return `${player.name} (${player.providedBy})`
+}
 
 /** Every player that cannot coexist with `player`.
  *

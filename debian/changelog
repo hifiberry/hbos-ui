@@ -1,3 +1,11 @@
+hifiberry-webui (0.21.6) stable; urgency=medium
+
+  * Players: drop the redundant package name from the conflict notice when
+    a player's name already carries its own qualifier, so it reads
+    "Spotify (Soloist)" rather than "Spotify (Soloist) (soloist-wrapper)".
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 10:15:00 +0000
+
 hifiberry-webui (0.21.5) stable; urgency=medium
 
   * Players: say which player was switched off. librespot's descriptor

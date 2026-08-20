@@ -1,3 +1,12 @@
+hifiberry-webui (0.21.8) stable; urgency=medium
+
+  * Players: point at the extension catalog. Several players (Music
+    Assistant, LMS, Analog Input, AES67) are no longer bundled with a full
+    install and are installed on demand instead, so the page now says so
+    and links to Extensions.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 11:00:00 +0000
+
 hifiberry-webui (0.21.7) stable; urgency=medium
 
   * Players: render the "Wanted" maintainer sentinel as "Looking for

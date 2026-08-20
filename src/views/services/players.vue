@@ -46,6 +46,13 @@
           />
         </div>
       </template>
+
+      <!-- Placed after the list, where someone who did not find the player
+           they were looking for will be. -->
+      <p class="players-more">
+        More players are available as extensions.
+        <router-link :to="{ name: 'extensions' }">Browse extensions</router-link>
+      </p>
     </div>
   </PageContent>
 </template>
@@ -727,6 +734,21 @@ const saveConfig = async (playerName: string) => {
 </script>
 
 <style scoped lang="scss">
+.players-more {
+  margin: 28px 0 0;
+  color: var(--color-body-secondary);
+  font-size: 14px;
+
+  a {
+    color: var(--primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
 .players-header {
   margin-bottom: 32px;
 

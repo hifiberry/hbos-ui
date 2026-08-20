@@ -253,13 +253,27 @@ onMounted(async () => {
 // input[type="search"] and select are stripped bare by _reset.scss
 // (background: transparent, border: none), so without an explicit
 // appearance here the search box renders as loose text rather than a
-// field. Matches setup.vue's .form-input, the established input look.
+// field.
+//
+// --color-button-border, NOT --color-border: the two are different jobs and
+// colors.scss says so -- one is the outline of a control, the other the
+// separator between two surfaces. --color-border is #f5f5f5, which on this
+// page's #fafafa body is about 1.02:1, and it is defined as `transparent` in
+// dark, so the field had no visible outline in either theme.
+// --color-button-border is the control outline, picked by measurement at
+// 3.02:1 on #fafafa and 3.15:1 on #fff for WCAG 1.4.11, and it keeps a stroke
+// in both themes precisely because a control has no other affordance.
+//
+// The fill is --background-card, not --background-body: the latter IS the
+// page, so the field was the same colour as what it sat on. Card gives it the
+// same figure/ground relation the cards have, and #333-on-#000 in dark rather
+// than black on black. (.btn-secondary next to it already does both.)
 .extensions-search,
 .extensions-category {
   padding: 8px 12px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-button-border);
   border-radius: 8px;
-  background: var(--background-body);
+  background: var(--background-card);
   color: var(--color-body);
   font: inherit;
   font-size: 14px;

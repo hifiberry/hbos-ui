@@ -1,3 +1,16 @@
+hifiberry-webui (0.21.10) stable; urgency=medium
+
+  * Extensions: make the search field and category select visible. Both
+    were outlined with --color-border, the separator between two surfaces,
+    where a control outline belongs: at #f5f5f5 on the page's #fafafa body
+    that is about 1.02:1, and the token is `transparent` in dark, so the
+    fields had no usable outline in either theme. Their fill was
+    --background-body, which is the page itself. Now outlined with
+    --color-button-border (3.02:1 on #fafafa, measured for WCAG 1.4.11 and
+    a real stroke in both themes) and filled with --background-card.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 12:45:00 +0000
+
 hifiberry-webui (0.21.9) stable; urgency=medium
 
   * Ship sendspin.svg, so the Music Assistant extension has an icon drawn

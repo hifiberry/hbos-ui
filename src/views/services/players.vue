@@ -749,6 +749,16 @@ const saveConfig = async (playerName: string) => {
   }
 }
 
+// Spacing only - StatusBlock carries the tint, the border and the icon. The
+// class existed on the element from the start but had no rule, so the notice
+// sat flush against the first player card: .players-header supplies the gap
+// above it and .players-list only spaces cards from each other, leaving
+// nothing in between. 24px sits between the two rhythms already in use here,
+// the header's 32px and the list's 16px gap.
+.players-conflict-notice {
+  margin: 0 0 24px;
+}
+
 .players-header {
   margin-bottom: 32px;
 

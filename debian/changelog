@@ -1,3 +1,13 @@
+hifiberry-webui (0.21.11) stable; urgency=medium
+
+  * Players: separate the conflict notice from the first player card. The
+    notice carried a class but no style rule, and nothing else supplied the
+    gap -- .players-header spaces the intro text above it and .players-list
+    only spaces cards from each other -- so the alert sat flush against the
+    card below it.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 13:00:00 +0000
+
 hifiberry-webui (0.21.10) stable; urgency=medium
 
   * Extensions: make the search field and category select visible. Both

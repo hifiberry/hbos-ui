@@ -1,3 +1,14 @@
+hifiberry-webui (0.21.5) stable; urgency=medium
+
+  * Players: say which player was switched off. librespot's descriptor
+    names it simply "Spotify", so "Disabled Spotify: only one of these
+    players can run at a time" read as though Spotify itself had been
+    turned off, rather than one of two Spotify players. The notice now
+    uses the same label the cards do -- "Spotify (librespot)" -- and names
+    the player that replaced it.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 10:00:00 +0000
+
 hifiberry-webui (0.21.4) stable; urgency=medium
 
   * Players: stop two conflicting players being enabled at once. Players

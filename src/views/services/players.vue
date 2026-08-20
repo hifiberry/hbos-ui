@@ -412,6 +412,15 @@ const refreshSingleServiceStatus = async (serviceName: string, playerIndex: numb
   }
 }
 
+/** The name as the card shows it, e.g. "Spotify (librespot)".
+ *
+ *  The bare display name is not enough on its own: librespot's descriptor
+ *  calls it simply "Spotify", so "Disabled Spotify" reads as though Spotify
+ *  itself had been turned off, rather than one of two Spotify players.
+ */
+const playerLabel = (player: Player): string =>
+  player.providedBy ? `${player.name} (${player.providedBy})` : player.name
+
 /** Every player that cannot coexist with `player`.
  *
  *  The relation is treated as symmetric on purpose. Only one side of a pair
@@ -440,7 +449,7 @@ const disableConflictingPlayers = async (player: Player): Promise<boolean> => {
   for (const peer of peers) {
     try {
       await disableNowService(peer.systemdService)
-      disabled.push(peer.name)
+      disabled.push(playerLabel(peer))
       const peerIndex = findPlayerIndex(peer.name)
       if (peerIndex !== -1) await refreshSingleServiceStatus(peer.systemdService, peerIndex)
     } catch (error) {
@@ -449,14 +458,17 @@ const disableConflictingPlayers = async (player: Player): Promise<boolean> => {
       // name. Set it on the player instead of throwing: handleToggleClick's
       // catch flattens every exception to "Failed to change service state".
       console.error(`Failed to disable conflicting player ${peer.name}:`, error)
-      player.error = `Could not disable ${peer.name}, which cannot run at the same time`
+      player.error =
+        `Could not switch off ${playerLabel(peer)}, which cannot run at the same time as this player`
       return false
     }
   }
 
   if (disabled.length > 0) {
     conflictNotice.value =
-      `Disabled ${disabled.join(', ')}: only one of these players can run at a time.`
+      `Switched off ${disabled.join(', ')} \u2014 ` +
+      `${disabled.length === 1 ? 'it cannot' : 'they cannot'} run at the same time as ` +
+      `${playerLabel(player)}.`
   }
   return true
 }

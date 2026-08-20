@@ -1,3 +1,18 @@
+hifiberry-webui (0.22.0) stable; urgency=medium
+
+  * Players: add the Soloist setup panel. Spotify's Soloist binary may not
+    be redistributed, so the package never ships it and the device has to
+    fetch it on request -- but nothing in the web interface ever offered
+    to. Installing the extension and switching the player on did nothing
+    visible: start-soloist exits 0 with "not installed yet", so systemd
+    reported inactive rather than failed and no error reached the user.
+    The panel now reports whether the binary is present, offers "Download
+    Soloist from Spotify", follows the job and shows its log, says when an
+    API key is still needed, and shows the build's expiry date once
+    installed (builds stop working about 90 days after they are cut).
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 15:45:00 +0000
+
 hifiberry-webui (0.21.13) stable; urgency=medium
 
   * Extensions: move the upgrade ordering into a tested helper

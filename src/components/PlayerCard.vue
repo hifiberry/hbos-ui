@@ -133,6 +133,15 @@
       <!-- Generic external-plugin settings -->
       <div v-if="player.isExternal && (player.settings?.length ?? 0) > 0" class="config-section">
         <div v-if="isExpanded" class="config-content">
+          <!-- Soloist needs a one-time step no other player does: Spotify's
+               binary may not be redistributed, so the device fetches it on
+               request. Without this the extension installs, the toggle turns
+               on, start-soloist exits 0 saying "not installed yet", and
+               nothing in the UI ever says so. -->
+          <SoloistSetup
+            v-if="player.systemdService === 'soloist'"
+            :api-key-set="soloistApiKeySet"
+          />
           <div class="config-form">
             <template v-for="setting in player.settings" :key="setting.key">
               <label class="config-option" :for="`set-${player.systemdService}-${setting.key}`">
@@ -223,6 +232,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import SoloistSetup from '@/components/SoloistSetup.vue'
 import Icon from '@/components/Icon.vue'
 import InlineSvg from 'vue-inline-svg'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
@@ -291,6 +301,13 @@ const maintainerLabel = (name: string): string =>
   name.trim().toLowerCase() === MAINTAINER_WANTED.toLowerCase()
     ? MAINTAINER_WANTED_LABEL
     : name
+
+// Drives the setup panel's "enter your key" prompt. Read from the settings
+// the registry already reports, so there is one source of truth for whether a
+// key is stored -- the secret's value is never sent to the browser.
+const soloistApiKeySet = computed(
+  () => props.player.settings?.some((s) => s.key === 'api_key' && s.is_set) ?? false,
+)
 
 const hasConfig = computed(() => {
   if (props.player.isExternal) {

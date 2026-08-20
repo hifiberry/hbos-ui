@@ -545,6 +545,9 @@ export interface PlayerSetting {
   type: 'toggle' | 'select' | 'number' | 'secret'
   label: string
   description?: string
+  /** Vendor documentation for obtaining this value, e.g. where to generate an
+   *  API key. config-server drops anything that is not an http(s) URL. */
+  help_url?: string
   default: boolean | string | number
   /** Absent for type === 'secret': the API never returns a credential. */
   value?: boolean | string | number

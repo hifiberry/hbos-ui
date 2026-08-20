@@ -113,3 +113,51 @@ describe('PlayerCard secret settings', () => {
     expect(second.html()).not.toContain('SECRET-abc123')
   })
 })
+
+describe('PlayerCard setting help link', () => {
+  const mountWithSetting = (setting: Record<string, unknown>) =>
+    mount(PlayerCard, {
+      props: {
+        player: {
+          name: 'Spotify (Soloist)',
+          providedBy: 'soloist-wrapper',
+          systemdService: 'soloist',
+          isExternal: true,
+          exists: true,
+          config: 'none',
+          status: 'inactive',
+          settings: [setting],
+        },
+        isExpanded: true,
+      },
+      global: {
+        stubs: {
+          Icon: true,
+          InlineSvg: true,
+          ToggleSwitch: true,
+          PlayerSetupPanel: true,
+          RouterLink: { template: '<a><slot /></a>' },
+        },
+      },
+    })
+
+  it('links to the vendor docs when the setting declares one', () => {
+    const w = mountWithSetting({
+      key: 'api_key', type: 'secret', label: 'Soloist API key', default: '',
+      is_set: false, help_url: 'https://developer.spotify.com/documentation/soloist',
+    })
+    const link = w.find('[data-test="help-api_key"]')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('https://developer.spotify.com/documentation/soloist')
+    // Opening a vendor page must not hand it a window handle back.
+    expect(link.attributes('rel')).toContain('noopener')
+    expect(link.attributes('target')).toBe('_blank')
+  })
+
+  it('shows no link when the setting declares none', () => {
+    const w = mountWithSetting({
+      key: 'api_key', type: 'secret', label: 'Soloist API key', default: '', is_set: false,
+    })
+    expect(w.find('[data-test="help-api_key"]').exists()).toBe(false)
+  })
+})

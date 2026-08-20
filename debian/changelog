@@ -1,3 +1,18 @@
+hifiberry-webui (0.23.2) stable; urgency=medium
+
+  * Players: make credential fields visible. A setting's text input had no
+    appearance of its own, and _reset.scss strips inputs to transparent and
+    borderless, so against the config box's --background-secondary the
+    field was indistinguishable from the panel behind it. Outlined with
+    --color-button-border and filled with --background-card, matching the
+    Extensions toolbar.
+  * Players: show a setting's description, and link to the vendor's
+    documentation when the descriptor declares help_url -- so a field
+    asking for an API key can say where to get one. Needs
+    hifiberry-configurator 2.17.4.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 17:30:00 +0000
+
 hifiberry-webui (0.23.1) stable; urgency=medium
 
   * Players: say on the card itself when a player still needs setting up,

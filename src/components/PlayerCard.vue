@@ -202,7 +202,19 @@
                   </button>
                 </div>
               </div>
-              <p v-if="setting.description" class="config-description">{{ setting.description }}</p>
+              <p v-if="setting.description || setting.help_url" class="config-description">
+                {{ setting.description }}
+                <a
+                  v-if="setting.help_url"
+                  :href="setting.help_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="config-help-link"
+                  :data-test="`help-${setting.key}`"
+                >
+                  How do I get this?
+                </a>
+              </p>
             </template>
           </div>
           <div class="config-actions">
@@ -648,6 +660,38 @@ const getStatusText = (player: Player) => {
         input {
           flex: 1 1 auto;
           min-width: 0;
+          // _reset.scss strips text inputs to transparent/borderless, and this
+          // box is --background-secondary, so with no appearance of its own
+          // the field was invisible against what it sits on.
+          //
+          // --color-button-border, not --color-border: colours.scss keeps the
+          // two apart -- one outlines a control, the other separates surfaces
+          // -- and --color-border is `transparent` in dark, which would leave
+          // the field with no edge at all there. --background-card gives the
+          // fill something to be distinct from.
+          padding: 6px 10px;
+          border: 1px solid var(--color-button-border);
+          border-radius: 6px;
+          background: var(--background-card);
+          color: var(--color-body);
+          font: inherit;
+          font-size: 0.9em;
+          outline: none;
+          transition: border-color 0.2s;
+
+          &:focus {
+            border-color: var(--primary);
+          }
+        }
+      }
+
+      .config-help-link {
+        color: var(--primary);
+        text-decoration: none;
+        white-space: nowrap;
+
+        &:hover {
+          text-decoration: underline;
         }
       }
 

@@ -1,3 +1,12 @@
+hifiberry-webui (0.21.7) stable; urgency=medium
+
+  * Players: render the "Wanted" maintainer sentinel as "Looking for
+    maintainer". Shown raw under a player's name, a bare "Wanted" read as
+    a status of the player itself rather than a call for someone to take
+    it on. The link to maintainers-wanted.md is unchanged.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 10:30:00 +0000
+
 hifiberry-webui (0.21.6) stable; urgency=medium
 
   * Players: drop the redundant package name from the conflict notice when

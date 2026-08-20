@@ -27,8 +27,8 @@
               Install
             </router-link>
             <div v-if="player.maintainerName" class="player-maintainer">
-              <a v-if="player.maintainerUrl" :href="player.maintainerUrl" target="_blank" rel="noopener noreferrer" class="maintainer-link">{{ player.maintainerName }}</a>
-              <span v-else class="maintainer-name">{{ player.maintainerName }}</span>
+              <a v-if="player.maintainerUrl" :href="player.maintainerUrl" target="_blank" rel="noopener noreferrer" class="maintainer-link">{{ maintainerLabel(player.maintainerName) }}</a>
+              <span v-else class="maintainer-name">{{ maintainerLabel(player.maintainerName) }}</span>
             </div>
           </div>
         </div>
@@ -276,6 +276,21 @@ defineEmits<{
   'cancel-config': []
   'save-config': []
 }>()
+
+// Descriptors mark an unmaintained player with the sentinel "Wanted", paired
+// with a maintainer_url pointing at maintainers-wanted.md. Rendered raw it
+// showed as a bare "Wanted" under the player's name, which reads as a status
+// of the player rather than a call for a maintainer. Translated here rather
+// than in the descriptors because the ones carrying it -- librespot,
+// shairport, squeezelite -- are not shipped by any package (they are
+// unowned files in /etc/hifiberry/players.d), so there is nothing to edit.
+const MAINTAINER_WANTED = 'Wanted'
+const MAINTAINER_WANTED_LABEL = 'Looking for maintainer'
+
+const maintainerLabel = (name: string): string =>
+  name.trim().toLowerCase() === MAINTAINER_WANTED.toLowerCase()
+    ? MAINTAINER_WANTED_LABEL
+    : name
 
 const hasConfig = computed(() => {
   if (props.player.isExternal) {

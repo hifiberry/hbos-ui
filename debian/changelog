@@ -1,3 +1,19 @@
+hifiberry-webui (0.21.3) stable; urgency=medium
+
+  * Extensions: stop the install dialog hanging for ever when its job
+    disappears. Jobs live only in config-server's memory, so a restart
+    while one is running makes its id 404 permanently -- but the poll
+    caught every error alike and re-armed its timer unconditionally, so a
+    job that could never return looked identical to one still in progress.
+    The dialog sat on the last phase it saw, typically "Configuring", with
+    Close disabled, while the operation had in fact already completed.
+    A 404 now ends tracking with a clear message, and a run of other
+    failures gives up after 15s rather than never.
+  * Extensions: refresh the list on any terminal outcome, not just success,
+    so an abandoned job still shows the package's real installed state.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 09:00:00 +0000
+
 hifiberry-webui (0.21.2) stable; urgency=medium
 
   * Extensions install dialog: give it a layout. Its children were stacked

@@ -126,11 +126,14 @@ function closeDialog() {
   dialogExtension.value = null
 }
 
-// Refresh the catalog whenever a job finishes, so state flips to installed.
+// Refresh the catalog whenever a job reaches a terminal state, so the card
+// reflects reality. Failure matters as much as success here: when a job is
+// abandoned because config-server restarted mid-install, the package has
+// usually installed fine, and only a reload will show that.
 watch(
-  () => job.isDone.value,
-  (done) => {
-    if (done) void load()
+  () => job.isDone.value || job.isFailed.value,
+  (finished) => {
+    if (finished) void load()
   },
 )
 

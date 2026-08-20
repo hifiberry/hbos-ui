@@ -7,6 +7,7 @@ vi.mock('@/api/extensions', async (importOriginal) => {
 })
 
 import { useInstallJob } from '@/composables/useInstallJob'
+import { ExtensionsApiError } from '@/api/extensions'
 
 const jobResponse = (phase: string, percent = 0, extra: Record<string, unknown> = {}) => ({
   status: 'success',
@@ -164,6 +165,80 @@ describe('useInstallJob', () => {
     // in-flight response must not reschedule
     await vi.advanceTimersByTimeAsync(5000)
     expect(getExtensionJob).toHaveBeenCalledTimes(1)
+  })
+
+  // config-server holds jobs in memory, so a restart mid-install (an
+  // extension's own postinst used to cause exactly that) makes the job id
+  // 404 for ever. Retrying cannot bring it back, and the dialog was left
+  // reporting the last phase it saw -- "Configuring" -- indefinitely.
+  it('gives up when the job 404s, instead of polling for ever', async () => {
+    getExtensionJob
+      .mockResolvedValueOnce(jobResponse('configuring', 75))
+      .mockRejectedValue(new ExtensionsApiError(404, 'job not found'))
+    const { track, phase, isFailed, isRunning, error } = useInstallJob({ intervalMs: 1000 })
+
+    track('j1')
+    await flush()
+    expect(phase.value).toBe('configuring')
+    expect(isRunning.value).toBe(true)
+
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(isFailed.value).toBe(true)
+    expect(isRunning.value).toBe(false)
+    expect(error.value).toMatch(/restarted/i)
+
+    // and it must stop polling rather than retrying a job that cannot return
+    const callsAfterGiveUp = getExtensionJob.mock.calls.length
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(getExtensionJob).toHaveBeenCalledTimes(callsAfterGiveUp)
+  })
+
+  it('keeps the percent and log it had when the job disappeared', async () => {
+    getExtensionJob
+      .mockResolvedValueOnce(jobResponse('configuring', 75))
+      .mockRejectedValue(new ExtensionsApiError(404, 'job not found'))
+    const { track, percent, log } = useInstallJob({ intervalMs: 1000 })
+
+    track('j1')
+    await flush()
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(percent.value).toBe(75)
+    expect(log.value).toEqual(['building image'])
+  })
+
+  it('gives up after a run of non-404 failures, but not before', async () => {
+    getExtensionJob.mockRejectedValue(new Error('connection refused'))
+    const { track, isFailed, error } = useInstallJob({ intervalMs: 1000 })
+
+    track('j1')
+    await flush()
+
+    // a long blip must still be tolerated
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(isFailed.value).toBe(false)
+
+    // ...but an unreachable server must not look like work in progress
+    await vi.advanceTimersByTimeAsync(20000)
+    expect(isFailed.value).toBe(true)
+    expect(error.value).toMatch(/lost contact/i)
+  })
+
+  it('a recovered blip resets the failure count', async () => {
+    getExtensionJob
+      .mockRejectedValueOnce(new Error('blip'))
+      .mockRejectedValueOnce(new Error('blip'))
+      .mockResolvedValueOnce(jobResponse('installing', 40))
+      .mockRejectedValue(new Error('blip'))
+    const { track, isFailed } = useInstallJob({ intervalMs: 1000 })
+
+    track('j1')
+    await flush()
+    await vi.advanceTimersByTimeAsync(10000)
+
+    // 2 failures, a success, then 8 more: under the cap thanks to the reset
+    expect(isFailed.value).toBe(false)
   })
 
   it('tracking a new job resets previous state', async () => {

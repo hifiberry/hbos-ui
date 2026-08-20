@@ -84,6 +84,19 @@ const baseUrl = () => useAppConfigStore().getConfigApiBaseUrl()
  *
  *  Routed through apiFetch: install/uninstall/refresh/source management are
  *  risky operations that may 401 and need the auth prompt + CSRF retry. */
+/** Carries the HTTP status, so callers can tell a specific failure (a 404 for
+ *  a job that no longer exists) from a generic one. Without it every failure
+ *  looks alike and the only safe response is to retry, forever. */
+export class ExtensionsApiError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(`Extensions API request failed: ${message}`)
+    this.name = 'ExtensionsApiError'
+    this.status = status
+  }
+}
+
 const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const response = await apiFetch(url, init)
   if (!response.ok) {
@@ -94,7 +107,7 @@ const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
     } catch {
       // no JSON body; the status code is all we have
     }
-    throw new Error(`Extensions API request failed: ${message}`)
+    throw new ExtensionsApiError(response.status, message)
   }
   return response.json()
 }

@@ -1,3 +1,13 @@
+hifiberry-webui (0.21.9) stable; urgency=medium
+
+  * Ship sendspin.svg, so the Music Assistant extension has an icon drawn
+    in the same style as the rest of the catalog. Mirrors squeezelite.svg
+    and spotify.svg, which are already carried here for the same reason:
+    an extension's icon has to resolve before the extension is installed,
+    so it cannot come from the package's own files.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 12:15:00 +0000
+
 hifiberry-webui (0.21.8) stable; urgency=medium
 
   * Players: point at the extension catalog. Several players (Music

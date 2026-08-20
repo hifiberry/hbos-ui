@@ -26,13 +26,14 @@ const status = (over = {}) => ({
   ...over,
 })
 
-const mountIt = (credentialsSet = false) =>
+const mountIt = (credentialsSet = false, initial = status()) =>
   mount(PlayerSetupPanel, {
     props: {
       baseUrl: '/api/soloist',
       playerName: 'Spotify (Soloist)',
       binaryName: 'soloist',
       credentialsSet,
+      status: initial,
     },
     global: { stubs: { StatusBlock: { template: '<div class="sb"><slot /></div>' } } },
   })
@@ -47,20 +48,17 @@ describe('PlayerSetupPanel', () => {
   afterEach(() => vi.useRealTimers())
 
   it('offers the download when the binary is missing', async () => {
-    getSetupStatus.mockResolvedValue(status())
     const w = mountIt()
     await flushPromises()
     expect(w.find('[data-test="setup-missing"]').exists()).toBe(true)
     expect(w.find('[data-test="setup-download"]').exists()).toBe(true)
   })
 
-  it('starts the download and reports success', async () => {
-    getSetupStatus.mockResolvedValueOnce(status())
+  it('starts the download and asks the card to re-read when it finishes', async () => {
     startSetupInstall.mockResolvedValue({ running: true, returncode: null, output: '' })
     getSetupInstallState.mockResolvedValue({
       running: false, returncode: 0, output: 'Installed /home/x/.local/bin/soloist',
     })
-    getSetupStatus.mockResolvedValue(status({ binary_installed: true, version: '1.3.7' }))
 
     const w = mountIt()
     await flushPromises()
@@ -69,12 +67,12 @@ describe('PlayerSetupPanel', () => {
     await vi.advanceTimersByTimeAsync(1600)
     await flushPromises()
 
-    expect(startSetupInstall).toHaveBeenCalled()
-    expect(w.find('[data-test="setup-version"]').text()).toContain('1.3.7')
+    expect(startSetupInstall).toHaveBeenCalledWith('/api/soloist')
+    // The card owns the status, so finishing means telling it to look again.
+    expect(w.emitted('changed')).toBeTruthy()
   })
 
   it('surfaces a failed download instead of reporting nothing', async () => {
-    getSetupStatus.mockResolvedValue(status())
     startSetupInstall.mockResolvedValue({ running: true, returncode: null, output: '' })
     getSetupInstallState.mockResolvedValue({
       running: false, returncode: 6, output: 'HTTP error (404)',
@@ -92,33 +90,25 @@ describe('PlayerSetupPanel', () => {
   })
 
   it('tells the user to fill in settings once the binary is there', async () => {
-    getSetupStatus.mockResolvedValue(status({ binary_installed: true, version: '1.3.7' }))
-    const w = mountIt(false)
+    const w = mountIt(false, status({ binary_installed: true, version: '1.3.7' }))
     await flushPromises()
     expect(w.find('[data-test="setup-needs-credentials"]').exists()).toBe(true)
   })
 
   it('stops asking once every secret is stored', async () => {
-    getSetupStatus.mockResolvedValue(status({ binary_installed: true, version: '1.3.7' }))
-    const w = mountIt(true)
+    const w = mountIt(true, status({ binary_installed: true, version: '1.3.7' }))
     await flushPromises()
     expect(w.find('[data-test="setup-needs-credentials"]').exists()).toBe(false)
     expect(w.find('[data-test="setup-not-logged-in"]').exists()).toBe(true)
   })
 
   it('confirms when the player is signed in', async () => {
-    getSetupStatus.mockResolvedValue(
+    const w = mountIt(
+      true,
       status({ binary_installed: true, version: '1.3.7', logged_in: true, device_name: 'Tannoy' }),
     )
-    const w = mountIt(true)
     await flushPromises()
     expect(w.find('[data-test="setup-ready"]').text()).toContain('Tannoy')
   })
 
-  it('reports an unreachable provider rather than looking idle', async () => {
-    getSetupStatus.mockRejectedValue(new Error('Setup API request failed: 502'))
-    const w = mountIt()
-    await flushPromises()
-    expect(w.find('.sb').text()).toContain('502')
-  })
 })

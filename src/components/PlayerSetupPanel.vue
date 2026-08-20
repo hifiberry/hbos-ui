@@ -62,17 +62,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import StatusBlock from '@/components/StatusBlock.vue'
 import {
   getSetupInstallState,
-  getSetupStatus,
   startSetupInstall,
   type PlayerSetupStatus,
 } from '@/api/player-setup'
 import { formatSetupVersion } from '@/utils/setup-version'
 
 const props = defineProps<{
+  /** Status owned by the card, so collapsed and expanded agree and only one
+   *  request is made. null while it has not been fetched yet. */
+  status: PlayerSetupStatus | null
   /** From the player's descriptor: where its setup endpoints live. */
   baseUrl: string
   /** Player name, for copy that has to name it. */
@@ -86,8 +88,10 @@ const credentialsSet = computed(() => props.credentialsSet)
 
 const POLL_MS = 1500
 
-const status = ref<PlayerSetupStatus | null>(null)
-const loading = ref(true)
+const emit = defineEmits<{ changed: [] }>()
+
+const status = computed(() => props.status)
+const loading = computed(() => props.status === null)
 const loadError = ref<string | null>(null)
 const installing = ref(false)
 const installError = ref<string | null>(null)
@@ -122,15 +126,9 @@ const expiryLabel = computed(() => {
   return `expires in ${days} day${days === 1 ? '' : 's'}`
 })
 
-async function refresh() {
-  try {
-    status.value = await getSetupStatus(props.baseUrl)
-    loadError.value = null
-  } catch (e) {
-    loadError.value = message(e)
-  } finally {
-    loading.value = false
-  }
+/** The card owns the status, so ask it to re-read rather than duplicating it. */
+function refresh() {
+  emit('changed')
 }
 
 async function pollInstall() {
@@ -144,7 +142,7 @@ async function pollInstall() {
       if (state.returncode !== 0) {
         installError.value = `Download failed (exit code ${state.returncode}).`
       }
-      await refresh()
+      refresh()
       return
     }
   } catch (e) {
@@ -168,7 +166,6 @@ async function download() {
   }
 }
 
-onMounted(refresh)
 onUnmounted(stop)
 </script>
 

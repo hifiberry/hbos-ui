@@ -1,3 +1,20 @@
+hifiberry-webui (0.23.1) stable; urgency=medium
+
+  * Players: say on the card itself when a player still needs setting up,
+    and stop offering a toggle that cannot work. The setup panel only
+    exists while the card is expanded, so a collapsed card gave no hint
+    that a player had no binary or no credentials -- and enabling it did
+    nothing visible, because start-soloist exits 0 in that state and
+    systemd reports inactive rather than failed. The card now carries a
+    "Setup required" line that opens the panel, and the toggle is disabled
+    until setup is finished.
+    Deliberately fails open: the toggle is only disabled when the provider
+    has actually said setup is unfinished. If it cannot be reached, the
+    toggle keeps working -- being unable to check is not the same as
+    knowing it will fail.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 17:00:00 +0000
+
 hifiberry-webui (0.23.0) stable; urgency=medium
 
   * Players: drive the setup panel from the player's descriptor instead of

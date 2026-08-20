@@ -26,6 +26,15 @@
             >
               Install
             </router-link>
+            <button
+              v-if="setupIncomplete === true"
+              type="button"
+              class="player-setup-required"
+              data-test="setup-required"
+              @click.stop="$emit('toggle-config')"
+            >
+              {{ needsBinary ? 'Setup required — download and configure' : 'Setup required — add settings' }}
+            </button>
             <div v-if="player.maintainerName" class="player-maintainer">
               <a v-if="player.maintainerUrl" :href="player.maintainerUrl" target="_blank" rel="noopener noreferrer" class="maintainer-link">{{ maintainerLabel(player.maintainerName) }}</a>
               <span v-else class="maintainer-name">{{ maintainerLabel(player.maintainerName) }}</span>
@@ -36,7 +45,13 @@
           <div class="player-toggle">
             <ToggleSwitch
               :model-value="player.providedBy === 'DSP' ? player.enabled : player.status === 'active'"
-              :disabled="player.loading || player.allow_change === false || player.exists === false"
+              :disabled="
+                player.loading ||
+                player.allow_change === false ||
+                player.exists === false ||
+                setupIncomplete === true
+              "
+              :title="setupIncomplete === true ? 'Finish setup before enabling this player' : undefined"
               :loading="player.loading"
               @update:model-value="$emit('toggle')"
             />
@@ -109,6 +124,8 @@
             :player-name="player.name"
             :binary-name="player.systemdService"
             :credentials-set="credentialsSet"
+            :status="setupStatus"
+            @changed="refreshSetup"
           />
           <div class="config-form">
             <template v-for="setting in player.settings" :key="setting.key">
@@ -201,6 +218,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import PlayerSetupPanel from '@/components/PlayerSetupPanel.vue'
+import { usePlayerSetup } from '@/composables/usePlayerSetup'
 import Icon from '@/components/Icon.vue'
 import InlineSvg from 'vue-inline-svg'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
@@ -274,10 +292,18 @@ const maintainerLabel = (name: string): string =>
 // the player declares must have a value; read from the settings the registry
 // already reports, so there is one source of truth -- a secret's value is
 // never sent to the browser, only whether it is set.
+const setupBaseUrl = computed(() => props.player.setup?.base_url ?? null)
+
 const credentialsSet = computed(() => {
   const secrets = props.player.settings?.filter((s) => s.type === 'secret') ?? []
   return secrets.every((s) => s.is_set)
 })
+
+// Fetched here, not in the panel: the panel only exists while the card is
+// expanded, so a collapsed card could not know -- and could not say -- that
+// the player is not ready to be switched on.
+const { status: setupStatus, setupIncomplete, needsBinary, refresh: refreshSetup } =
+  usePlayerSetup(setupBaseUrl, credentialsSet)
 
 const hasConfig = computed(() => {
   if (props.player.isExternal) {
@@ -349,6 +375,25 @@ const getStatusText = (player: Player) => {
           font-weight: 600;
           background-color: rgba(239, 68, 68, 0.1);
           color: #dc2626;
+        }
+      }
+
+      // The one thing on a collapsed card that stops the toggle working, so
+      // it gets the accent colour and is itself the way to open the panel.
+      .player-setup-required {
+        display: block;
+        margin-top: 4px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--primary);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover {
+          text-decoration: underline;
         }
       }
 

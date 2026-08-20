@@ -13,6 +13,7 @@ import {
   uninstallExtension,
   type Extension,
   type ExtensionCategory,
+  type JobPhase,
 } from '@/api/extensions'
 
 const route = useRoute()
@@ -48,6 +49,24 @@ const filtered = computed(() => {
       extension.package.toLowerCase().includes(term)
     )
   })
+})
+
+// The API's phase is a lowercase machine enum ("downloading"). Rendered raw
+// it put a bare token in front of the user as the dialog's only status line.
+const PHASE_LABELS: Record<JobPhase, string> = {
+  queued: 'Queued',
+  downloading: 'Downloading',
+  installing: 'Installing',
+  configuring: 'Configuring',
+  done: 'Done',
+  failed: 'Failed',
+}
+
+const phaseLabel = computed(() => {
+  const phase = job.phase.value
+  if (!phase) return 'Starting'
+  const label = PHASE_LABELS[phase] ?? phase
+  return job.isRunning.value ? `${label}\u2026` : label
 })
 
 const busyPackage = computed(() =>
@@ -174,28 +193,37 @@ onMounted(async () => {
 
     <div v-if="dialogOpen" class="extensions-dialog-overlay">
       <div class="extensions-dialog">
-        <h3>{{ dialogExtension?.name ?? 'Working' }}</h3>
+        <h3 class="extensions-dialog-title">{{ dialogExtension?.name ?? 'Working' }}</h3>
 
-        <p class="extensions-phase">{{ job.phase.value ?? 'starting' }}</p>
+        <div class="extensions-status">
+          <span class="extensions-phase">{{ phaseLabel }}</span>
+          <span v-if="job.isRunning.value" class="extensions-percent">{{ job.percent.value }}%</span>
+        </div>
         <progress :value="job.percent.value" max="100" class="extensions-progress" />
 
         <StatusBlock v-if="job.isFailed.value" variant="error" class="extensions-error">
           Failed: {{ job.error.value }}
         </StatusBlock>
 
-        <p v-if="job.isDone.value && job.rebootRequired.value">
+        <p v-if="job.isDone.value && job.rebootRequired.value" class="extensions-note">
           This change needs a reboot to take effect.
         </p>
 
-        <button type="button" class="extensions-log-toggle" @click="showLog = !showLog">
-          {{ showLog ? 'Hide' : 'Show' }} details
-        </button>
-
         <pre v-if="showLog" class="extensions-log">{{ job.log.value.join('\n') }}</pre>
 
-        <button type="button" class="extensions-dialog-close" :disabled="job.isRunning.value" @click="closeDialog">
-          Close
-        </button>
+        <div class="extensions-dialog-actions">
+          <button type="button" class="btn btn-ghost btn-sm" @click="showLog = !showLog">
+            {{ showLog ? 'Hide' : 'Show' }} details
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm extensions-dialog-close"
+            :disabled="job.isRunning.value"
+            @click="closeDialog"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   </PageContent>
@@ -307,10 +335,51 @@ onMounted(async () => {
   padding: 24px;
   min-width: 320px;
   max-width: 480px;
+  // The dialog stacked bare elements with only their default margins, so the
+  // two footer buttons -- both unstyled, both inline -- rendered flush
+  // against each other and read as one run-on word, "Show detailsClose".
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.extensions-dialog-title {
+  margin: 0;
+}
+
+// Default element margins would compound with the flex gap above.
+.extensions-note {
+  margin: 0;
+  color: var(--color-body-secondary);
+}
+
+.extensions-status {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.extensions-phase {
+  font-weight: 500;
+}
+
+.extensions-percent {
+  color: var(--color-body-secondary);
+  // Stop the readout jittering as the width of the digits changes.
+  font-variant-numeric: tabular-nums;
+}
+
+.extensions-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .extensions-progress {
   width: 100%;
+  height: 6px;
+  accent-color: var(--primary);
 }
 
 .extensions-log {

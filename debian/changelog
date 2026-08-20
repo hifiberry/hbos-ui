@@ -1,3 +1,18 @@
+hifiberry-webui (0.21.2) stable; urgency=medium
+
+  * Extensions install dialog: give it a layout. Its children were stacked
+    with only their default margins, so the two footer buttons -- both
+    unstyled, both inline -- rendered flush against each other and read as
+    one run-on word, "Show detailsClose". They are now a right-aligned
+    action row using .btn-ghost and .btn-primary.
+  * Extensions install dialog: show a readable status. The job phase was
+    rendered as the raw lowercase API enum ("downloading"), which put a
+    bare machine token in front of the user as the dialog's only status
+    line. Mapped to proper labels, paired with a percentage readout and a
+    themed progress bar.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 08:30:00 +0000
+
 hifiberry-webui (0.21.1) stable; urgency=medium
 
   * Sidebar: stop truncating the Settings submenu. The expanded dropdown

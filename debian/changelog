@@ -1,3 +1,14 @@
+hifiberry-webui (0.21.12) stable; urgency=medium
+
+  * Extensions: put extensions with an update waiting at the top of the
+    list, and label them "Upgrade available". They were sorted in with
+    everything else and distinguishable only by an "x -> y" version line
+    and the button reading Update rather than Install, so the one state on
+    the page that asks the user to act was the easiest to miss. The sort is
+    stable, so everything else keeps the server's alphabetical order.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 15:00:00 +0000
+
 hifiberry-webui (0.21.11) stable; urgency=medium
 
   * Players: separate the conflict notice from the first player card. The

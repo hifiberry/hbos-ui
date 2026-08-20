@@ -62,6 +62,14 @@ function onAction() {
               <template v-else>Version {{ extension.version ?? '—' }}</template>
             </p>
 
+            <p
+              v-if="extension.state === 'upgradable'"
+              class="extension-upgrade"
+              data-test="upgrade-hint"
+            >
+              Upgrade available
+            </p>
+
             <p v-if="showRebootHint" class="extension-reboot" data-test="reboot-hint">
               May require a reboot
             </p>
@@ -114,6 +122,16 @@ function onAction() {
 
     .extension-details {
       @include service-details-base;
+
+      // The one state on this page that asks the user to act, so it is the
+      // one that gets the accent colour. The version line above already
+      // carries the detail (old -> new); this says why it matters.
+      .extension-upgrade {
+        margin: 4px 0 0;
+        color: var(--primary);
+        font-size: 0.85em;
+        font-weight: 600;
+      }
 
       .extension-reboot {
         margin-top: 4px;

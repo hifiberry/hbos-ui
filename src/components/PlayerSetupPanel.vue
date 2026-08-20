@@ -1,6 +1,6 @@
 <template>
-  <div class="soloist-setup" data-test="soloist-setup">
-    <p v-if="loading" class="soloist-line">Checking Soloist&hellip;</p>
+  <div class="player-setup" data-test="player-setup">
+    <p v-if="loading" class="setup-line">Checking {{ playerName }}&hellip;</p>
 
     <StatusBlock v-else-if="loadError" variant="error">{{ loadError }}</StatusBlock>
 
@@ -8,45 +8,46 @@
       <!-- The state a fresh install lands in: the package is on, but Spotify's
            binary is not, and only the user can ask for it to be fetched. -->
       <template v-if="!status.binary_installed">
-        <p class="soloist-line" data-test="soloist-missing">
-          Soloist itself is not installed yet. HiFiBerry may not redistribute
-          Spotify's player, so it is downloaded from Spotify onto this device.
+        <p class="setup-line" data-test="setup-missing">
+          {{ playerName }} is not installed yet. Its player cannot be
+          redistributed with HiFiBerryOS, so it is downloaded onto this device
+          on request.
         </p>
         <StatusBlock v-if="installError" variant="error">{{ installError }}</StatusBlock>
-        <div class="soloist-actions">
+        <div class="setup-actions">
           <button
             type="button"
             class="btn btn-primary btn-sm"
-            data-test="soloist-download"
+            data-test="setup-download"
             :disabled="installing"
             @click="download"
           >
-            {{ installing ? 'Downloading…' : 'Download Soloist from Spotify' }}
+            {{ installing ? 'Downloading…' : `Download ${playerName}` }}
           </button>
         </div>
       </template>
 
       <template v-else>
-        <p class="soloist-line" data-test="soloist-version" :title="status.version ?? ''">
-          Soloist {{ shortVersion ?? '—' }}
-          <span v-if="expiryLabel" class="soloist-expiry">· {{ expiryLabel }}</span>
+        <p class="setup-line" data-test="setup-version" :title="status.version ?? ''">
+          {{ playerName }} {{ shortVersion ?? '—' }}
+          <span v-if="expiryLabel" class="setup-expiry">· {{ expiryLabel }}</span>
         </p>
-        <p v-if="!apiKeySet" class="soloist-line soloist-todo" data-test="soloist-needs-key">
-          Enter your Soloist API key below, then enable the player.
+        <p v-if="!credentialsSet" class="setup-line setup-todo" data-test="setup-needs-credentials">
+          Fill in the settings below, then enable the player.
         </p>
-        <p v-else-if="!status.logged_in" class="soloist-line" data-test="soloist-not-logged-in">
-          Not signed in to Spotify yet. Enable the player, then pick this device
-          in the Spotify app.
+        <p v-else-if="!status.logged_in" class="setup-line" data-test="setup-not-logged-in">
+          Not signed in yet. Enable the player, then pick this device in the
+          {{ playerName }} app.
         </p>
-        <p v-else class="soloist-line" data-test="soloist-ready">
+        <p v-else class="setup-line" data-test="setup-ready">
           Signed in{{ status.device_name ? ` as “${status.device_name}”` : '' }}.
         </p>
         <StatusBlock v-if="installError" variant="error">{{ installError }}</StatusBlock>
-        <div class="soloist-actions">
+        <div class="setup-actions">
           <button
             type="button"
             class="btn btn-secondary btn-sm"
-            data-test="soloist-update"
+            data-test="setup-update"
             :disabled="installing"
             @click="download"
           >
@@ -55,7 +56,7 @@
         </div>
       </template>
 
-      <pre v-if="installLog" class="soloist-log" data-test="soloist-log">{{ installLog }}</pre>
+      <pre v-if="installLog" class="setup-log" data-test="setup-log">{{ installLog }}</pre>
     </template>
   </div>
 </template>
@@ -64,19 +65,28 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import StatusBlock from '@/components/StatusBlock.vue'
 import {
-  getSoloistInstallState,
-  getSoloistStatus,
-  startSoloistInstall,
-  type SoloistStatus,
-} from '@/api/soloist'
-import { formatSoloistVersion } from '@/utils/soloist-version'
+  getSetupInstallState,
+  getSetupStatus,
+  startSetupInstall,
+  type PlayerSetupStatus,
+} from '@/api/player-setup'
+import { formatSetupVersion } from '@/utils/setup-version'
 
-const props = defineProps<{ apiKeySet: boolean }>()
-const apiKeySet = computed(() => props.apiKeySet)
+const props = defineProps<{
+  /** From the player's descriptor: where its setup endpoints live. */
+  baseUrl: string
+  /** Player name, for copy that has to name it. */
+  playerName: string
+  /** Token the provider's binary prints before its version, if known. */
+  binaryName?: string
+  /** Whether every required credential setting already has a value. */
+  credentialsSet: boolean
+}>()
+const credentialsSet = computed(() => props.credentialsSet)
 
 const POLL_MS = 1500
 
-const status = ref<SoloistStatus | null>(null)
+const status = ref<PlayerSetupStatus | null>(null)
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const installing = ref(false)
@@ -94,9 +104,11 @@ const stop = () => {
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
-// The heading already says "Soloist", and the build id, commit and platform
+// The line already names the player, and the build id, commit and platform
 // the binary prints are noise at this size. Full string kept as the title.
-const shortVersion = computed(() => formatSoloistVersion(status.value?.version))
+const shortVersion = computed(() =>
+  formatSetupVersion(status.value?.version, props.binaryName),
+)
 
 /** Builds stop working ~90 days after they are cut, so the date is the whole
  *  point of showing a version at all -- surface how close it is. */
@@ -112,7 +124,7 @@ const expiryLabel = computed(() => {
 
 async function refresh() {
   try {
-    status.value = await getSoloistStatus()
+    status.value = await getSetupStatus(props.baseUrl)
     loadError.value = null
   } catch (e) {
     loadError.value = message(e)
@@ -123,7 +135,7 @@ async function refresh() {
 
 async function pollInstall() {
   try {
-    const state = await getSoloistInstallState()
+    const state = await getSetupInstallState(props.baseUrl)
     installLog.value = state.output ?? ''
     if (!state.running) {
       installing.value = false
@@ -148,7 +160,7 @@ async function download() {
   installError.value = null
   installLog.value = ''
   try {
-    await startSoloistInstall()
+    await startSetupInstall(props.baseUrl)
     timer = setTimeout(pollInstall, POLL_MS)
   } catch (e) {
     installing.value = false
@@ -161,34 +173,34 @@ onUnmounted(stop)
 </script>
 
 <style scoped lang="scss">
-.soloist-setup {
+.player-setup {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-bottom: 16px;
 }
 
-.soloist-line {
+.setup-line {
   margin: 0;
   font-size: 0.85em;
   color: var(--color-body-secondary);
 }
 
-.soloist-todo {
+.setup-todo {
   color: var(--primary);
   font-weight: 600;
 }
 
-.soloist-expiry {
+.setup-expiry {
   opacity: 0.85;
 }
 
-.soloist-actions {
+.setup-actions {
   display: flex;
   gap: 8px;
 }
 
-.soloist-log {
+.setup-log {
   max-height: 10rem;
   overflow: auto;
   margin: 0;

@@ -571,6 +571,9 @@ export interface ExternalPlayer {
    *  declares it, because the other player ships from a package that has never
    *  heard of this one. Absent on older config-servers. */
   conflicts_with?: string[]
+  /** Where this player's own setup endpoints live, if it has a one-time
+   *  installation step. config-server validates it is a local absolute path. */
+  setup?: { base_url: string } | null
   maintainer_name: string
   maintainer_url: string
   settings?: PlayerSetting[]

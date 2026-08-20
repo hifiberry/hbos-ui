@@ -1,3 +1,21 @@
+hifiberry-webui (0.23.0) stable; urgency=medium
+
+  * Players: drive the setup panel from the player's descriptor instead of
+    its name. The panel was selected by a hardcoded check for the soloist
+    service, which put one extension's identity inside the shared web
+    interface and tied a package installable on demand to a UI on a
+    different release cycle. A player now declares setup.base_url and any
+    player needing a fetch-on-demand step gets the panel for free.
+    Needs hifiberry-configurator 2.17.3.
+  * Players: remove the Airplay version selector. It was unreachable --
+    shairport became an extension, so Airplay arrives from a descriptor
+    with config 'none' while the block required an object -- and inert
+    even when it did render: the handler wrote to an in-memory object and
+    logged to the console, and Save called no API at all. Anyone who
+    changed it and pressed Save was told nothing and changed nothing.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 16:30:00 +0000
+
 hifiberry-webui (0.22.1) stable; urgency=medium
 
   * Soloist setup panel: show just the version. The bridge reports the

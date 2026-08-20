@@ -60,40 +60,6 @@
       </div>
 
       <!-- Configuration section that expands the whole card -->
-      <div v-if="player.name === 'Airplay' && typeof player.config === 'object'" class="config-section">
-        <div v-if="isExpanded" class="config-content">
-          <div class="config-form">
-            <label class="config-option">
-              Airplay version:
-              <select
-                :value="(player.config as Record<string, number>).airplayVersion"
-                @change="$emit('update-airplay-version', parseInt(($event.target as HTMLSelectElement).value))"
-                class="version-select"
-              >
-                <option value="1">1</option>
-                <option value="2">2</option>
-              </select>
-            </label>
-          </div>
-          <div class="config-actions">
-            <button
-              class="config-btn config-btn--cancel"
-              @click="$emit('cancel-config')"
-              type="button"
-            >
-              Cancel
-            </button>
-            <button
-              class="config-btn config-btn--save"
-              @click="$emit('save-config')"
-              type="button"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- TOSLink Configuration section that expands the whole card -->
       <div v-if="player.name === 'TOSLink' && typeof player.config === 'object'" class="config-section">
         <div v-if="isExpanded" class="config-content">
@@ -133,14 +99,16 @@
       <!-- Generic external-plugin settings -->
       <div v-if="player.isExternal && (player.settings?.length ?? 0) > 0" class="config-section">
         <div v-if="isExpanded" class="config-content">
-          <!-- Soloist needs a one-time step no other player does: Spotify's
-               binary may not be redistributed, so the device fetches it on
-               request. Without this the extension installs, the toggle turns
-               on, start-soloist exits 0 saying "not installed yet", and
-               nothing in the UI ever says so. -->
-          <SoloistSetup
-            v-if="player.systemdService === 'soloist'"
-            :api-key-set="soloistApiKeySet"
+          <!-- Some players own a one-time installation step of their own --
+               Soloist's binary may not be redistributed, so the device fetches
+               it on request. The player declares where to drive that from in
+               its descriptor; nothing here knows any player by name. -->
+          <PlayerSetupPanel
+            v-if="player.setup?.base_url"
+            :base-url="player.setup.base_url"
+            :player-name="player.name"
+            :binary-name="player.systemdService"
+            :credentials-set="credentialsSet"
           />
           <div class="config-form">
             <template v-for="setting in player.settings" :key="setting.key">
@@ -232,7 +200,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import SoloistSetup from '@/components/SoloistSetup.vue'
+import PlayerSetupPanel from '@/components/PlayerSetupPanel.vue'
 import Icon from '@/components/Icon.vue'
 import InlineSvg from 'vue-inline-svg'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
@@ -267,6 +235,7 @@ interface Player {
   iconUrl?: string
   maintainerName?: string
   maintainerUrl?: string
+  setup?: { base_url: string } | null
   extension_package?: string
   settings?: PlayerSetting[]
 }
@@ -280,7 +249,6 @@ defineEmits<{
   toggle: []
   'toggle-config': []
   'navigate-bluetooth': []
-  'update-airplay-version': [version: number]
   'update-toslink-sensitivity': [sensitivity: string]
   'update-external-setting': [key: string, value: boolean | string | number]
   'cancel-config': []
@@ -302,19 +270,24 @@ const maintainerLabel = (name: string): string =>
     ? MAINTAINER_WANTED_LABEL
     : name
 
-// Drives the setup panel's "enter your key" prompt. Read from the settings
-// the registry already reports, so there is one source of truth for whether a
-// key is stored -- the secret's value is never sent to the browser.
-const soloistApiKeySet = computed(
-  () => props.player.settings?.some((s) => s.key === 'api_key' && s.is_set) ?? false,
-)
+// Drives the setup panel's "fill in the settings below" prompt. Every secret
+// the player declares must have a value; read from the settings the registry
+// already reports, so there is one source of truth -- a secret's value is
+// never sent to the browser, only whether it is set.
+const credentialsSet = computed(() => {
+  const secrets = props.player.settings?.filter((s) => s.type === 'secret') ?? []
+  return secrets.every((s) => s.is_set)
+})
 
 const hasConfig = computed(() => {
   if (props.player.isExternal) {
     return (props.player.settings?.length ?? 0) > 0
   }
-  return (props.player.name === 'Airplay' || props.player.name === 'TOSLink') &&
-         typeof props.player.config === 'object'
+  // TOSLink only: it is part of the base image and keeps its own config
+  // object. Airplay used to be listed here too, but shairport became an
+  // extension -- it now arrives from a descriptor with config 'none', so the
+  // clause never matched, and the panel it gated did nothing anyway.
+  return props.player.name === 'TOSLink' && typeof props.player.config === 'object'
 })
 
 const getStatusClass = (player: Player) => {

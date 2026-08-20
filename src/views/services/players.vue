@@ -17,7 +17,6 @@
           @toggle="handleToggleClick(player.name)"
           @toggle-config="toggleConfigExpanded(player.name)"
           @navigate-bluetooth="goToBluetoothSettings"
-          @update-airplay-version="(version) => updateAirplayVersion(player.name, version)"
           @update-toslink-sensitivity="(sensitivity) => updateTOSLinkSensitivity(player.name, sensitivity)"
           @cancel-config="cancelConfig(player.name)"
           @save-config="saveConfig(player.name)"
@@ -38,8 +37,7 @@
             @toggle="handleToggleClick(player.name)"
             @toggle-config="toggleConfigExpanded(player.name)"
             @navigate-bluetooth="goToBluetoothSettings"
-            @update-airplay-version="(version) => updateAirplayVersion(player.name, version)"
-            @update-toslink-sensitivity="(sensitivity) => updateTOSLinkSensitivity(player.name, sensitivity)"
+              @update-toslink-sensitivity="(sensitivity) => updateTOSLinkSensitivity(player.name, sensitivity)"
             @cancel-config="cancelConfig(player.name)"
             @save-config="saveConfig(player.name)"
             @update-external-setting="(key, value) => updateExternalSetting(player.name, key, value)"
@@ -111,6 +109,7 @@ interface Player {
   maintainerName?: string
   maintainerUrl?: string
   conflictsWith?: string[]
+  setup?: { base_url: string } | null
   settings?: import('@/api/config').PlayerSetting[]
 }
 
@@ -250,6 +249,7 @@ const refreshExternalPlayers = async (onlyServiceName?: string) => {
       maintainerName: ext.maintainer_name || undefined,
       maintainerUrl: ext.maintainer_url || undefined,
       conflictsWith: ext.conflicts_with ?? [],
+      setup: ext.setup ?? null,
       settings: ext.settings
     })
   }
@@ -581,17 +581,6 @@ const handleToggleClick = async (playerName: string) => {
     // This ensures the UI reflects the actual service state
     await refreshSingleServiceStatus(player.systemdService, playerIndex)
     player.loading = false
-  }
-}
-
-const updateAirplayVersion = (playerName: string, version: number) => {
-  const playerIndex = findPlayerIndex(playerName)
-  if (playerIndex === -1) return
-
-  const player = players.value[playerIndex]
-  if (player.name === 'Airplay' && typeof player.config === 'object') {
-    (player.config as Record<string, number>).airplayVersion = version
-    console.log(`Airplay version updated to ${version}`)
   }
 }
 

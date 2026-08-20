@@ -566,6 +566,11 @@ export interface ExternalPlayer {
   systemd_service: string
   icon_url: string
   allow_change: boolean
+  /** systemd_service names this player cannot run alongside (e.g. two Spotify
+   *  Connect endpoints). Treat as SYMMETRIC: only one side of a pair normally
+   *  declares it, because the other player ships from a package that has never
+   *  heard of this one. Absent on older config-servers. */
+  conflicts_with?: string[]
   maintainer_name: string
   maintainer_url: string
   settings?: PlayerSetting[]

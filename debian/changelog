@@ -1,3 +1,17 @@
+hifiberry-webui (0.21.4) stable; urgency=medium
+
+  * Players: stop two conflicting players being enabled at once. Players
+    that cannot coexist (two Spotify Connect endpoints) were shown as
+    independent toggles, so both could be left enabled -- systemd's
+    Conflicts= only stops them running at the same instant, so both would
+    start at boot and whichever won the race stopped the other, giving a
+    different player on different boots. Enabling one now switches the
+    other off first and says so. The conflict is read from the player
+    descriptor's conflicts_with (needs configurator 2.17.1) and applied
+    symmetrically, since only one side of a pair declares it.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 09:30:00 +0000
+
 hifiberry-webui (0.21.3) stable; urgency=medium
 
   * Extensions: stop the install dialog hanging for ever when its job

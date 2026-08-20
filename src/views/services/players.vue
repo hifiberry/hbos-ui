@@ -4,6 +4,10 @@
       <div class="players-header">
         <p>Manage and configure your audio players. We recommend that you only enable services that you regularly use.</p>
       </div>
+
+      <StatusBlock v-if="conflictNotice" variant="warning" class="players-conflict-notice">
+        {{ conflictNotice }}
+      </StatusBlock>
       <div class="players-list">
         <PlayerCard
           v-for="player in builtinPlayers"
@@ -50,6 +54,7 @@
 import { ref, computed, onMounted } from 'vue'
 import PlayerCard from '@/components/PlayerCard.vue'
 import PageContent from '@/components/PageContent.vue'
+import StatusBlock from '@/components/StatusBlock.vue'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
 import { storeToRefs } from 'pinia'
@@ -57,6 +62,10 @@ import { storeToRefs } from 'pinia'
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const { getExpertMode } = storeToRefs(settingsStore)
+
+// Explains an automatic change the user did not ask for: enabling one player
+// silently switched another off.
+const conflictNotice = ref<string | null>(null)
 
 const goToBluetoothSettings = () => {
   router.push('/services/bluetooth-settings')
@@ -94,6 +103,7 @@ interface Player {
   iconUrl?: string
   maintainerName?: string
   maintainerUrl?: string
+  conflictsWith?: string[]
   settings?: import('@/api/config').PlayerSetting[]
 }
 
@@ -232,6 +242,7 @@ const refreshExternalPlayers = async (onlyServiceName?: string) => {
       iconUrl: ext.icon_url,
       maintainerName: ext.maintainer_name || undefined,
       maintainerUrl: ext.maintainer_url || undefined,
+      conflictsWith: ext.conflicts_with ?? [],
       settings: ext.settings
     })
   }
@@ -401,6 +412,55 @@ const refreshSingleServiceStatus = async (serviceName: string, playerIndex: numb
   }
 }
 
+/** Every player that cannot coexist with `player`.
+ *
+ *  The relation is treated as symmetric on purpose. Only one side of a pair
+ *  normally declares the clash -- soloist-wrapper knows about librespot, but
+ *  librespot's descriptor predates Soloist and will never mention it -- so
+ *  matching in one direction only would enforce the rule when enabling
+ *  Soloist and silently skip it when enabling librespot.
+ */
+const conflictingPlayers = (player: Player): Player[] =>
+  players.value.filter((other) => {
+    if (other.systemdService === player.systemdService) return false
+    return (
+      (player.conflictsWith ?? []).includes(other.systemdService) ||
+      (other.conflictsWith ?? []).includes(player.systemdService)
+    )
+  })
+
+/** Turn off anything that conflicts with the player being switched on. */
+const disableConflictingPlayers = async (player: Player): Promise<boolean> => {
+  const peers = conflictingPlayers(player).filter(
+    (other) => other.status === 'active' || other.enabled,
+  )
+  if (peers.length === 0) return true
+
+  const disabled: string[] = []
+  for (const peer of peers) {
+    try {
+      await disableNowService(peer.systemdService)
+      disabled.push(peer.name)
+      const peerIndex = findPlayerIndex(peer.name)
+      if (peerIndex !== -1) await refreshSingleServiceStatus(peer.systemdService, peerIndex)
+    } catch (error) {
+      // Say which one could not be turned off, rather than starting the new
+      // player anyway and leaving two Spotify endpoints fighting over the
+      // name. Set it on the player instead of throwing: handleToggleClick's
+      // catch flattens every exception to "Failed to change service state".
+      console.error(`Failed to disable conflicting player ${peer.name}:`, error)
+      player.error = `Could not disable ${peer.name}, which cannot run at the same time`
+      return false
+    }
+  }
+
+  if (disabled.length > 0) {
+    conflictNotice.value =
+      `Disabled ${disabled.join(', ')}: only one of these players can run at a time.`
+  }
+  return true
+}
+
 const handleToggleClick = async (playerName: string) => {
   const playerIndex = findPlayerIndex(playerName)
   if (playerIndex === -1) return
@@ -462,6 +522,7 @@ const handleToggleClick = async (playerName: string) => {
 
   player.loading = true
   player.error = undefined // Clear any previous error
+  conflictNotice.value = null
   const isActive = player.status === 'active'
 
   try {
@@ -469,6 +530,13 @@ const handleToggleClick = async (playerName: string) => {
       // Disable and stop the service
       await disableNowService(player.systemdService)
     } else {
+      // Two players that conflict must not both be left enabled. systemd's
+      // Conflicts= only stops them running at the same instant: enabling both
+      // leaves both starting at boot, where whichever wins the race stops the
+      // other, so the device picks a different Spotify endpoint on different
+      // boots. Turn the loser off here, before starting the winner.
+      if (!(await disableConflictingPlayers(player))) return
+
       // Enable and start the service
       await enableNowService(player.systemdService)
     }

@@ -1,3 +1,12 @@
+hifiberry-webui (0.21.13) stable; urgency=medium
+
+  * Extensions: move the upgrade ordering into a tested helper
+    (sortByUpgradeFirst). No behaviour change from 0.21.12; the rule now
+    has coverage, including that the sort is stable and does not mutate,
+    which is what keeps the non-upgradable entries alphabetical.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 15:15:00 +0000
+
 hifiberry-webui (0.21.12) stable; urgency=medium
 
   * Extensions: put extensions with an update waiting at the top of the

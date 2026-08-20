@@ -13,9 +13,9 @@ import {
   uninstallExtension,
   type Extension,
   type ExtensionCategory,
-  type ExtensionState,
   type JobPhase,
 } from '@/api/extensions'
+import { sortByUpgradeFirst } from '@/utils/extension-order'
 
 const route = useRoute()
 const toast = useToastStore()
@@ -39,17 +39,6 @@ const categories: Array<{ value: ExtensionCategory | 'all'; label: string }> = [
   { value: 'tool', label: 'Tools' },
 ]
 
-// Anything with an update waiting is the only entry on this page that asks
-// the user to act, so it goes first; the rest keep the server's order, which
-// is alphabetical. A stable sort is what makes that second part true -- it
-// leaves equal-ranked entries in the order they arrived rather than
-// reshuffling them, and Array.prototype.sort has been stable since ES2019.
-const STATE_ORDER: Record<ExtensionState, number> = {
-  upgradable: 0,
-  installed: 1,
-  available: 1,
-}
-
 const filtered = computed(() => {
   const term = search.value.trim().toLowerCase()
   const matches = extensions.value.filter((extension) => {
@@ -61,9 +50,7 @@ const filtered = computed(() => {
       extension.package.toLowerCase().includes(term)
     )
   })
-  return [...matches].sort(
-    (a, b) => (STATE_ORDER[a.state] ?? 1) - (STATE_ORDER[b.state] ?? 1),
-  )
+  return sortByUpgradeFirst(matches)
 })
 
 // The API's phase is a lowercase machine enum ("downloading"). Rendered raw

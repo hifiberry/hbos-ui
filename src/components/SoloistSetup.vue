@@ -27,8 +27,8 @@
       </template>
 
       <template v-else>
-        <p class="soloist-line" data-test="soloist-version">
-          Soloist {{ status.version ?? '—' }}
+        <p class="soloist-line" data-test="soloist-version" :title="status.version ?? ''">
+          Soloist {{ shortVersion ?? '—' }}
           <span v-if="expiryLabel" class="soloist-expiry">· {{ expiryLabel }}</span>
         </p>
         <p v-if="!apiKeySet" class="soloist-line soloist-todo" data-test="soloist-needs-key">
@@ -69,6 +69,7 @@ import {
   startSoloistInstall,
   type SoloistStatus,
 } from '@/api/soloist'
+import { formatSoloistVersion } from '@/utils/soloist-version'
 
 const props = defineProps<{ apiKeySet: boolean }>()
 const apiKeySet = computed(() => props.apiKeySet)
@@ -92,6 +93,10 @@ const stop = () => {
 }
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
+
+// The heading already says "Soloist", and the build id, commit and platform
+// the binary prints are noise at this size. Full string kept as the title.
+const shortVersion = computed(() => formatSoloistVersion(status.value?.version))
 
 /** Builds stop working ~90 days after they are cut, so the date is the whole
  *  point of showing a version at all -- surface how close it is. */

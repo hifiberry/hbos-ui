@@ -1,3 +1,14 @@
+hifiberry-webui (0.22.1) stable; urgency=medium
+
+  * Soloist setup panel: show just the version. The bridge reports the
+    binary's whole --version line, so the panel read "Soloist soloist
+    1.3.7.423 build 1787221864 (20260820) (gb24005ef46) (linux/aarch64)" --
+    the word doubled and the build id, commit and platform buried the part
+    that matters. Trimmed to "Soloist 1.3.7.423"; the full string is kept
+    as the line's title for diagnosis.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 20 Aug 2026 16:00:00 +0000
+
 hifiberry-webui (0.22.0) stable; urgency=medium
 
   * Players: add the Soloist setup panel. Spotify's Soloist binary may not

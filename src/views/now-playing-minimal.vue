@@ -323,7 +323,7 @@ const tooltipStyles = computed(() => {
       width: 88%; /* Increased from 80% proportionally */
     }
 
-    @include media-down(md) {
+    @include media-down(sm) {
       width: 100%; /* Keep at 100% on mobile */
     }
   }

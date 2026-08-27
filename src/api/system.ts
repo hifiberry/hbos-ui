@@ -30,6 +30,35 @@ export interface SystemInfo {
     supports_dsp: boolean
     card_type: string[]
   }
+  // Optional: only present from hifiberry-configurator 2.17.8 onwards.
+  bluetooth?: {
+    available: boolean
+    // Whether this device can actually act as a Bluetooth speaker. An adapter
+    // can be powered, discoverable and pairable and still not be, if no A2DP
+    // sink endpoint was ever registered.
+    audio_ready: boolean
+    adapter: {
+      alias: string
+      address: string
+      powered: boolean
+      // BlueZ's configured intent, not proof the controller answers inquiries.
+      discoverable: boolean
+      discoverable_timeout: number
+      pairable: boolean
+      class: string
+      device_class: string
+      device_class_detail: string | null
+      a2dp_sink_registered: boolean
+      a2dp_source_registered: boolean
+    } | null
+    devices: Array<{
+      name: string
+      address: string
+      connected: boolean
+      trusted: boolean
+    }>
+    issues: string[]
+  }
   system: {
     uuid: string
     hostname: string

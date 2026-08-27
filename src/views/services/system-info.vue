@@ -667,6 +667,89 @@
           </table>
         </div>
 
+        <!-- Bluetooth -->
+        <div v-if="systemInfo?.bluetooth" class="info-card">
+          <div class="card-header">
+            <Icon icon="tabler/bluetooth" class="card-icon" />
+            <h2>Bluetooth</h2>
+          </div>
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <td class="label">Audio</td>
+                <td class="value">
+                  <span v-if="!systemInfo.bluetooth.available" class="status-badge orange">
+                    not available
+                  </span>
+                  <span v-else-if="systemInfo.bluetooth.audio_ready" class="status-badge green">
+                    ready
+                  </span>
+                  <span v-else class="status-badge red">not ready</span>
+                </td>
+              </tr>
+              <template v-if="systemInfo.bluetooth.adapter">
+                <tr>
+                  <td class="label">Name</td>
+                  <td class="value">{{ systemInfo.bluetooth.adapter.alias }}</td>
+                </tr>
+                <tr>
+                  <td class="label">Address</td>
+                  <td class="value uuid">{{ systemInfo.bluetooth.adapter.address }}</td>
+                </tr>
+                <tr>
+                  <td class="label">Appears as</td>
+                  <td class="value">
+                    {{ systemInfo.bluetooth.adapter.device_class
+                    }}<template v-if="systemInfo.bluetooth.adapter.device_class_detail">
+                      &middot; {{ systemInfo.bluetooth.adapter.device_class_detail }}</template>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="label">Pairing</td>
+                  <td class="value">
+                    <span :class="['status-badge', systemInfo.bluetooth.adapter.discoverable ? 'green' : 'orange']">
+                      {{ systemInfo.bluetooth.adapter.discoverable ? 'discoverable' : 'not discoverable' }}
+                    </span>
+                    <template v-if="systemInfo.bluetooth.adapter.discoverable">
+                      &middot;
+                      {{
+                        systemInfo.bluetooth.adapter.discoverable_timeout > 0
+                          ? `closes after ${systemInfo.bluetooth.adapter.discoverable_timeout}s`
+                          : 'no timeout'
+                      }}
+                    </template>
+                  </td>
+                </tr>
+              </template>
+              <tr v-if="systemInfo.bluetooth.devices.length > 0">
+                <td class="label">Paired devices</td>
+                <td class="value">
+                  <div v-for="dev in systemInfo.bluetooth.devices" :key="dev.address" class="input-info">
+                    <div class="input-header">
+                      <span :class="['status-badge', dev.connected ? 'green' : 'orange']">
+                        {{ dev.connected ? 'connected' : 'paired' }}
+                      </span>
+                      <span class="input-keys">{{ dev.name }}</span>
+                    </div>
+                    <div class="input-path">{{ dev.address }}</div>
+                    <div v-if="!dev.trusted" class="input-hint">
+                      not trusted &mdash; each reconnect needs the agent to authorise it again
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr v-else-if="systemInfo.bluetooth.available">
+                <td class="label">Paired devices</td>
+                <td class="value">None</td>
+              </tr>
+              <tr v-for="(issue, i) in systemInfo.bluetooth.issues" :key="`bt-issue-${i}`">
+                <td class="label">Problem</td>
+                <td class="value">{{ issue }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- File Existence -->
         <div class="info-card">
           <div class="card-header">

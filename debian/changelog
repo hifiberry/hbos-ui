@@ -1,3 +1,19 @@
+hifiberry-webui (0.23.3) stable; urgency=medium
+
+  * System info: add a Bluetooth card between Input Devices and System
+    Files. It leads with whether the device can actually act as a Bluetooth
+    speaker, which is not the same as Bluetooth being on: an adapter can be
+    powered, discoverable and pairable and still have no A2DP sink endpoint
+    registered, which is what made phones pair and then drop the link a few
+    seconds later. Also shows the name phones actually see, what the device
+    presents itself as, whether a pairing window is open and when it closes,
+    and paired devices with their connection state.
+    The card is hidden when the backend predates the bluetooth section, so
+    an older hifiberry-configurator renders as before.
+    See hifiberry/hifiberry-os#641, hifiberry/hifiberry-os#642.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 27 Aug 2026 08:00:00 +0000
+
 hifiberry-webui (0.23.2) stable; urgency=medium
 
   * Players: make credential fields visible. A setting's text input had no

@@ -336,9 +336,11 @@ export const usePlayerStore = defineStore('player', () => {
         method: 'POST',
       })
       console.log('sendCommand', response)
-      // ! We could update UI and State when getting WebSocket message
-      // ! but we dont get messages on 'loop_mode_changed' and 'shuffle_changed'
-      // ! that's why we fetchCurrentPlayer()
+      // The shuffle half of this was a subscription bug: we subscribed to
+      // 'shuffle_changed' while audiocontrol < 0.9.1 emitted 'random_changed',
+      // so the event was filtered out server-side and never arrived. Both
+      // names are subscribed now. The refetch is kept as a safety net for
+      // players whose backends do not report these changes at all.
       return new Promise((resolve) => {
         setTimeout(async () => {
           const data = await fetchCurrentPlayer()

@@ -38,8 +38,16 @@ export interface Song {
   metadata?: SongMetadata
 }
 
-export type LoopModeLowercase = 'no' | 'none' | 'song' | 'track' | 'playlist'
-export type LoopMode = LoopModeLowercase | Capitalize<LoopModeLowercase>
+/** Loop mode as audiocontrol *reports* it, in events and in player state. */
+export type ReceivedLoopMode = 'no' | 'song' | 'playlist'
+
+/** Loop mode as audiocontrol *accepts* it in a set_loop command. The two
+ *  vocabularies genuinely differ: /api/player/.../command/set_loop:<mode>
+ *  parses 'none' | 'track' | 'playlist', while LoopMode's Display impl emits
+ *  'no' | 'song' | 'playlist'. Both are listed here because this type is used
+ *  on the send and receive paths alike. */
+export type LoopModeLowercase = ReceivedLoopMode | 'none' | 'track'
+export type LoopMode = LoopModeLowercase
 
 export interface StreamDetails {
   sample_rate?: number // Hz, e.g. 44100

@@ -310,275 +310,34 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
   function handlePlayerEvent(data: WsPlayerEvent) {
     console.log('>>> handlePlayerEvent data', data)
 
-    // Handle different API response formats
-    let eventType, playerName, isActivePlayer, source
-
-    // Get the event type (could be in different formats)
-    if (data.event_type) {
-      // Camel case format (event_type key)
-      eventType = data.event_type
-      source = data.source || {}
-      playerName = source.player_name
-      isActivePlayer = source.is_active_player
-    } else if (data.type) {
-      // Snake case format (type key from WebSocket)
-      eventType = data.type
-      playerName = data.player_name
-      // For snake_case format, assume it's for the active player
-      // unless explicitly specified
-      isActivePlayer = data.is_active_player
-    } else {
+    const eventType = data.type
+    if (!eventType) {
       console.log('Unknown event format:', data)
       return
     }
 
-    // Handle volume events (system-wide events)
+    // Volume events are system-wide and carry no meaningful player source.
     if (eventType === 'volume_changed') {
       console.log('Volume event received:', eventType, data)
-      // Refresh volume state when volume changes
       playerStore.fetchVolumeState()
       return
     }
 
-    // Check if this event is for our current player
-    // When currentPlayerName is null, we're using the "Default (Active Player)" option
-    // In this case, we need to handle events from the active player
-    const isForCurrentPlayer =
-      (!playerStore.currentPlayerName &&
-        (isActivePlayer === true || data.is_active === true || data.is_active_player === true)) || // Event for active player
-      (playerStore.currentPlayerName && playerName === playerStore.currentPlayerName) // Event for a specific player we are viewing
-
-    // If we still can't determine if this event is for us, but we're using the active player,
-    // just assume it's for us since "active" is no longer supported in the WebSocket subscription
-    // and the server may not be sending the is_active flag
-    const assumeActiveForDefaultSelection =
-      !playerStore.currentPlayerName && !isActivePlayer && isActivePlayer !== false
-
-    if (isForCurrentPlayer || assumeActiveForDefaultSelection) {
-      // ! using debounceHandlePlayerEvent to debounce fetchCurrentPlayer()
-      playerStore.fetchCurrentPlayer()
-    }
+    // With no player explicitly selected we follow the active player, so every
+    // event we subscribed to is relevant. With a specific player selected,
+    // only that player's events are.
+    const selectedPlayer = playerStore.currentPlayerName
+    const isForCurrentPlayer = !selectedPlayer || data.player_name === selectedPlayer
 
     console.log(
-      `Event ${eventType} is for player ${playerName || 'unknown'}, is active: ${isActivePlayer}, current player is ${playerStore.currentPlayerName || 'active'}. ${isForCurrentPlayer || assumeActiveForDefaultSelection ? 'Processing' : 'Ignoring'}.`,
+      `Event ${eventType} is for player ${data.player_name || 'unknown'}, current player is ${selectedPlayer || 'active'}. ${isForCurrentPlayer ? 'Processing' : 'Ignoring'}.`,
     )
 
-    // !!! We don't get some messages and some information on data
-    // !!! that's why we don't use this logic yet
-    /*
-      // Map snake_case event types to camelCase
-      if (eventType) {
-        switch (eventType) {
-          case 'state_changed':
-            eventType = 'StateChanged'
-            if (data.state) {
-              data.state = data.state
-            }
-            break
-          case 'song_changed':
-            eventType = 'SongChanged'
-            break
-          case 'position_changed':
-            eventType = 'PlaybackPosition'
-            break
-          case 'loop_mode_changed':
-            eventType = 'LoopModeChanged'
-            if (data.mode) {
-              data.loop_mode = data.mode
-            }
-            break
-          case 'random_changed':
-          case 'shuffle_changed':
-            eventType = 'ShuffleChanged'
-            if (data.enabled !== undefined) {
-              data.shuffle = data.enabled
-            }
-            break
-          case 'queue_changed':
-            eventType = 'QueueChanged'
-            break
-          case 'capabilities_changed':
-            eventType = 'CapabilitiesChanged'
-            break
-          case 'song_information_update':
-            eventType = 'SongInformationUpdate'
-            break
-          case 'metadata_changed':
-            eventType = 'MetadataChanged'
-            break
-        }
-      }
-
-      if (isForCurrentPlayer || assumeActiveForDefaultSelection) {
-        // Update UI based on event type
-        switch (eventType) {
-          case 'PlayerChanged':
-          case 'PlayerAdded':
-          case 'PlayerRemoved':
-            console.log('PlayerChanged')
-
-            // ! for now we have only mpd player
-            // Player list might have changed, or active player changed
-            playerStore.fetchPlayersAndUpdatePlayerDropdown() // Refresh player dropdown
-            // If the active player changed, or our selected player was removed, we might need to refresh now-playing
-            playerStore.fetchCurrentPlayer()
-            break
-          case 'StateChanged':
-            // Update playback state and related UI elements
-            console.log('StateChanged')
-
-            if (playerStore.currentData) {
-              const _currentData = {
-                ...playerStore.currentData,
-                state: data.state,
-              }
-
-              // Potentially update position if included, though full fetch might be better
-              // ! We don't get data.position
-              if (data.position != undefined) {
-                if (typeof data.position === 'string') {
-                  _currentData.position = data.position
-                } else if (typeof data.position === 'object' && data.position.position) {
-                  _currentData.position = data.position.position
-                }
-              }
-
-              playerStore.currentData = _currentData
-            } else {
-              playerStore.fetchCurrentPlayer() // Fetch if no current data
-            }
-            break
-          case 'SongChanged':
-            console.log('SongChanged')
-
-            // Update with new song information
-            if (playerStore.currentData) {
-              const _currentData = {
-                ...playerStore.currentData,
-                song: data.song,
-              }
-
-              // ! We don't get data.position
-              if (data.position != undefined) {
-                if (typeof data.position === 'string') {
-                  _currentData.position = data.position
-                } else if (typeof data.position === 'object' && data.position.position) {
-                  _currentData.position = data.position.position
-                }
-              } else {
-                _currentData.position = 0
-              }
-
-              if (data.loop_mode !== undefined) _currentData.loop_mode = data.loop_mode
-              if (data.shuffle !== undefined) _currentData.shuffle = data.shuffle
-
-              playerStore.currentData = _currentData
-
-              // if (playerCapabilities.hasQueue) fetchQueue() // ! we dont handle this yet: Refresh queue if song changes
-            } else {
-              playerStore.fetchCurrentPlayer() // Fetch if no current data
-            }
-            break
-          case 'PlaybackPosition': // ! We don't get this message
-            // Update playback position
-            if (playerStore.currentData && playerStore.currentData.song) {
-              const _currentData = {
-                ...playerStore.currentData,
-              }
-
-              if (typeof data.position === 'string') {
-                _currentData.position = data.position
-              } else if (typeof data.position === 'object' && data.position.position) {
-                _currentData.position = data.position.position
-              }
-
-              playerStore.currentData = _currentData
-            }
-            break
-          case 'LoopModeChanged': // ! We don't get this message
-            console.log('LoopModeChanged')
-
-            if (playerStore.currentData) {
-              const _currentData = {
-                ...playerStore.currentData,
-              }
-
-              _currentData.loop_mode = data.loop_mode
-
-              playerStore.currentData = _currentData
-            }
-            break
-          case 'ShuffleChanged': // ! We don't get this message
-            console.log('ShuffleChanged')
-
-            if (playerStore.currentData) {
-              const _currentData = {
-                ...playerStore.currentData,
-              }
-
-              _currentData.shuffle = data.shuffle
-
-              playerStore.currentData = _currentData
-            }
-            break
-          case 'QueueChanged':
-            console.log('QueueChanged')
-
-            // Queue has changed, refresh playlist if player supports it
-            const { playerCapabilities } = playerStore
-            if (playerCapabilities.hasQueue) {
-              // Import and refresh playlist store
-              import('@/stores/playlist').then((module) => {
-                const { usePlaylistStore } = module
-                const playlistStore = usePlaylistStore()
-                playlistStore.fetchQueue()
-              })
-            }
-            break
-          case 'SongInformationUpdate':
-          case 'song_information_update':
-            console.log('SongInformationUpdate')
-
-            // Update song information (cover art, liked status, etc.) without changing the entire song
-            if (playerStore.currentData && playerStore.currentData.song && data.song) {
-              console.log('Received song information update:', data.song)
-
-              // Merge the updated song information with the existing song object
-              const _currentData = {
-                ...playerStore.currentData,
-                song: data.song,
-              }
-
-              playerStore.currentData = _currentData
-            }
-            break
-          case 'MetadataChanged':
-            console.log('MetadataChanged')
-
-            // Handle metadata changes similarly to song information updates
-            if (playerStore.currentData && playerStore.currentData.song && data.metadata) {
-              console.log('Received metadata change:', data.metadata)
-
-              // Update song metadata if present in the event
-              if (data.metadata.song) {
-                const _currentData = {
-                  ...playerStore.currentData,
-                  song: data.metadata.song,
-                }
-
-                playerStore.currentData = _currentData
-              }
-            }
-            break
-          default:
-            console.log('Unhandled event type:', eventType)
-        }
-      } else {
-        console.log(
-          `Event ${eventType} is for player ${playerName || 'unknown'}, but not relevant for current selection (${currentPlayerName || 'Default (Active Player)'}). Ignoring.`,
-        )
-      }
-    */
+    // The payload is deliberately not read: any relevant event triggers a
+    // refetch of the whole player state, debounced by the caller.
+    if (isForCurrentPlayer) {
+      playerStore.fetchCurrentPlayer()
+    }
   }
 
   const debounceHandlePlayerEvent = useDebounceFn(

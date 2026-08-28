@@ -11,6 +11,23 @@ hifiberry-webui (0.23.4) stable; urgency=medium
   * Dropped the subscription to 'metadata_changed', which audiocontrol has
     never emitted; song_information_update covers that case and was already
     subscribed.
+  * Removed the dead WebSocket event-dispatch logic. 213 lines of
+    commented-out per-event handlers carried a second, stale vocabulary
+    (PlaybackPosition, ShuffleChanged, MetadataChanged) that no longer
+    matched what audiocontrol emits. The live handler refetches player state
+    on any relevant event and never read the payload, so behaviour is
+    unchanged.
+  * The live handler no longer looks for 'event_type', 'is_active' or
+    'is_active_player'. audiocontrol has never sent any of them on the
+    WebSocket, and with them absent the branches reduced to "process when no
+    player is selected, or when the event's player matches the selected one",
+    which is now written directly.
+  * WsPlayerEvent now describes what audiocontrol actually sends: a typed
+    event-name union, position as a number rather than a number-or-object,
+    and no mode/loop_mode or is_active/is_active_player pairs. Documented
+    that the loop mode audiocontrol reports ('no' | 'song' | 'playlist')
+    differs from the one set_loop accepts ('none' | 'track' | 'playlist');
+    both are real and neither is legacy.
 
  -- HiFiBerry <support@hifiberry.com>  Fri, 28 Aug 2026 18:00:00 +0000
 

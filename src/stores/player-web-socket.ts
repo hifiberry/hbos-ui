@@ -260,15 +260,22 @@ export const usePlayerWebSocket = defineStore('player-web-socket', () => {
 
     console.log(`Subscribing to player events for: ${playerToSubscribe}`)
 
-    // Subscribe to player events
+    // Subscribe to player events.
+    // audiocontrol filters by these exact names, so a name that the server
+    // never emits silently drops the event: the handler below is then dead
+    // code. Keep this list in sync with convert_to_websocket_message in
+    // audiocontrol (src/api/events.rs).
     wsController.value.subscribe(playerToSubscribe, [
-      'state_changed', // ! We don't get the data.position on 'state_changed'
+      'state_changed',
       'song_changed',
-      'position_changed', // ! We don't get 'position_changed', instead getting 'state_changed'
-      'loop_mode_changed', // ! We don't get 'loop_mode_changed', nothing getting
-      'shuffle_changed', // ! We don't get 'loop_mode_changed', nothing getting
+      'position_changed',
+      'loop_mode_changed',
+      'shuffle_changed',
+      // audiocontrol < 0.9.1 emitted the shuffle event as 'random_changed'.
+      // Subscribe to both so shuffle also works against older devices; the
+      // handler treats them identically.
+      'random_changed',
       'capabilities_changed',
-      'metadata_changed',
       'song_information_update',
     ])
 

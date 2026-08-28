@@ -1,3 +1,19 @@
+hifiberry-webui (0.23.4) stable; urgency=medium
+
+  * Now Playing: fix the shuffle event never arriving over the WebSocket. We
+    subscribed to 'shuffle_changed', but audiocontrol emitted the event as
+    'random_changed' and filters subscriptions by exact event name, so it was
+    dropped server-side. Shuffle changes made from another client therefore
+    had no event of their own to refresh the UI, and only surfaced when some
+    unrelated event happened to trigger a refetch. Both names are subscribed
+    now, so this also works against devices still running audiocontrol
+    < 0.9.1, which emit the old name.
+  * Dropped the subscription to 'metadata_changed', which audiocontrol has
+    never emitted; song_information_update covers that case and was already
+    subscribed.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 28 Aug 2026 18:00:00 +0000
+
 hifiberry-webui (0.23.3) stable; urgency=medium
 
   * System info: add a Bluetooth card between Input Devices and System

@@ -1,12 +1,12 @@
 <template>
   <div class="poster">
-    <div :class="['poster-img', posterForm, { placeholder: error }]">
+    <div :class="['poster-img', posterForm, { placeholder: showPlaceholder }]">
       <Icon
-        v-if="error"
+        v-if="showPlaceholder"
         class="poster-img__placeholder"
         :icon="posterForm === 'circle' ? 'users-thin' : 'notebook-thin'"
       />
-      <img v-else :src="src" :alt="title" loading="lazy" />
+      <img v-else :src="src" :alt="title" loading="lazy" @error="error = true" />
     </div>
     <div class="poster-attr">
       <div class="h4">
@@ -29,8 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref as deepRef, watch } from 'vue'
-import { useImage } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
 
 import Icon from '@/components/Icon.vue'
 import CustomMarquee from '@/components/CustomMarquee.vue'
@@ -53,13 +52,20 @@ const {
   posterForm = 'square',
 } = defineProps<PosterProps>()
 
-const imageOptions = deepRef({ src })
-const { error } = useImage(imageOptions, { delay: 0 })
+// The <img> does the fetching, so the browser can honour loading="lazy" and
+// skip the covers that are still below the fold. Preloading through an
+// Image() - which is what useImage() does - starts every request in the grid
+// the moment the component mounts, whatever the attribute says.
+const error = ref(false)
+
+// An <img src=""> re-requests the current page instead of failing, so an item
+// with no cover never reaches @error. It has to be caught before rendering.
+const showPlaceholder = computed(() => !src || error.value)
 
 watch(
   () => src,
-  (src) => {
-    imageOptions.value.src = src
+  () => {
+    error.value = false
   },
 )
 </script>

@@ -1,3 +1,33 @@
+hifiberry-webui (0.24.0) stable; urgency=medium
+
+  * Library grids: request cover art at the size the grid draws it. The album
+    and artist grids asked audiocontrol for the original of every cover and
+    then drew it in a 140px cell, so a scroll through a large library pulled a
+    full-size image per album. Both now append ?size= with the number of device
+    pixels the cell needs - 140 or 280 at or above the 1024px breakpoint, 100
+    or 200 below it - and audiocontrol snaps that up to a ladder rung and
+    serves a cached variant. Three of those four sizes are ones audiocontrol
+    pre-warms after a library load, so a first scroll through a fresh library
+    is a cache hit rather than a decode per cell.
+  * The album detail page still asks for the original. It draws one cover at
+    400px, so a variant would split the cache for no gain.
+  * Sizing is gated on GET /capabilities, cached once per session. A daemon
+    that answers 404 does not resize, so the UI asks it for originals rather
+    than sending a parameter it would ignore. This works unchanged against
+    audiocontrol releases older than 0.11.
+  * Art that audiocontrol does not serve is left alone. An artist whose
+    thumb_url a metadata provider filled in still points at that provider, and
+    ?size= means nothing there.
+  * Posters no longer preload their image. The grid built an Image() for every
+    cell as it mounted, which started the request before loading="lazy" was
+    ever consulted, so all 50 to 100 covers in a chunk were fetched at once
+    whether or not they were on screen. The <img> now does the fetching and
+    the browser defers what is below the fold.
+  * A poster with no cover at all shows the placeholder instead of rendering
+    <img src="">, which re-requests the current page rather than failing.
+
+ -- HiFiBerry <support@hifiberry.com>  Mon, 31 Aug 2026 18:00:00 +0000
+
 hifiberry-webui (0.23.4) stable; urgency=medium
 
   * Now Playing: fix the shuffle event never arriving over the WebSocket. We

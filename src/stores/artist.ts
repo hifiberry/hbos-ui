@@ -7,10 +7,13 @@ import { useToastStore } from '@/stores/toast'
 import { useLibraryStore } from '@/stores/library'
 import { useLibraryFetch } from '@/composables/useLibraryFetch.ts'
 import { rewriteImageUrl } from '@/api/utils'
+import { gridImageSize, withImageSize } from '@/api/imagesize'
+import { useCapabilitiesStore } from '@/stores/capabilities'
 
 export const useArtistStore = defineStore('artist', () => {
   const libraryFetch = useLibraryFetch()
   const toastStore = useToastStore()
+  const capabilitiesStore = useCapabilitiesStore()
   const router = useRouter()
 
   const page = ref<number>(1)
@@ -53,6 +56,9 @@ export const useArtistStore = defineStore('artist', () => {
     loading.value = true
     loaded.value = false
 
+    // The ladder gates ?size=, so it has to be known before the URLs are built.
+    await capabilitiesStore.ensureLoaded()
+
     // Load all artists at once by using a large limit parameter
     const { error, data, isFinished } = await libraryFetch('/library/:activeLibrary/artists?limit=10000').json()
 
@@ -61,14 +67,22 @@ export const useArtistStore = defineStore('artist', () => {
     }
 
     if (data.value?.artists && data.value.artists.length > 0) {
+      const coverSize = gridImageSize()
       const mappedArtists = data.value.artists.map((artist: Artist) => {
         // Debug: Log what the backend is returning for thumb_url
         console.log('Artist:', artist.name, 'thumb_url:', artist.thumb_url)
 
         // Process the cover art URL through the rewrite function
+        // The grid draws these in a 140px circle. thumb_url is acr's own
+        // artist image route unless a provider filled it in first, which is
+        // why the size is applied through withImageSize rather than appended.
         let coverSrc = null
         if (artist.thumb_url && artist.thumb_url.length > 0) {
-          coverSrc = rewriteImageUrl(artist.thumb_url[0])
+          coverSrc = withImageSize(
+            rewriteImageUrl(artist.thumb_url[0]),
+            coverSize,
+            capabilitiesStore.imageSizes,
+          )
           console.log('Rewritten cover URL:', { original: artist.thumb_url[0], rewritten: coverSrc })
         }
 

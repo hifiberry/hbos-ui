@@ -13,12 +13,15 @@ import { useToastStore } from '@/stores/toast'
 import { useLibraryStore } from '@/stores/library.ts'
 
 import { useAppConfigStore } from '@/stores/appconfig'
+import { useCapabilitiesStore } from '@/stores/capabilities'
+import { gridImageSize, withImageSize } from '@/api/imagesize'
 
 export const useAlbumStore = defineStore('album', () => {
   const configStore = useAppConfigStore()
   const libraryFetch = useLibraryFetch()
   const toastStore = useToastStore()
   const libraryStore = useLibraryStore()
+  const capabilitiesStore = useCapabilitiesStore()
 
   // State
   const loading = ref<boolean>(false)
@@ -145,6 +148,9 @@ export const useAlbumStore = defineStore('album', () => {
     loading.value = true
     loaded.value = false
 
+    // The ladder gates ?size=, so it has to be known before the URLs are built.
+    await capabilitiesStore.ensureLoaded()
+
     const { error, data, isFinished } = await libraryFetch<AlbumsResponse>(
       '/library/:activeLibrary/albums',
     ).json()
@@ -154,6 +160,7 @@ export const useAlbumStore = defineStore('album', () => {
     }
 
     if (data.value?.albums && data.value.albums.length) {
+      const coverSize = gridImageSize()
       const mappedAlbums = data.value.albums.map((album: Album) => {
         return {
           ...album,
@@ -161,7 +168,7 @@ export const useAlbumStore = defineStore('album', () => {
           $title: album.name,
           $subtitle: `${album.artists[0]}`,
           $note: `${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'}`,
-          $cover_src: getAlbumCoverById(album.id),
+          $cover_src: getAlbumCoverById(album.id, coverSize),
         }
       })
 
@@ -201,6 +208,8 @@ export const useAlbumStore = defineStore('album', () => {
     loading.value = true
     albums.value = []
 
+    await capabilitiesStore.ensureLoaded()
+
     const { error, data } = await libraryFetch<AlbumByArtistResponse>(
       `/library/:activeLibrary/albums/by-artist-id/${id}`,
     ).json()
@@ -210,6 +219,7 @@ export const useAlbumStore = defineStore('album', () => {
     }
 
     if (data.value?.albums && data.value.albums.length > 0) {
+      const coverSize = gridImageSize()
       // albums.value = data.value.albums
       albums.value = data.value.albums.map((album: Album) => {
         return {
@@ -218,7 +228,7 @@ export const useAlbumStore = defineStore('album', () => {
           $title: album.name,
           $subtitle: `${album.artists[0]}`,
           $note: `${album.release_date ? album.release_date.substring(0, 4) : 'Unknown year'}`,
-          $cover_src: getAlbumCoverById(album.id),
+          $cover_src: getAlbumCoverById(album.id, coverSize),
         }
       })
     }
@@ -226,9 +236,18 @@ export const useAlbumStore = defineStore('album', () => {
     loading.value = false
   }
 
-  const getAlbumCoverById = (id: string) => {
+  /**
+   * Cover art URL for an album.
+   *
+   * `size` is the number of device pixels the caller will draw it in; omit it
+   * for the original. The grids pass one because they draw 50-100 covers in a
+   * 140px cell at once; the detail page draws one, so it keeps the original
+   * rather than splitting the cache for no gain.
+   */
+  const getAlbumCoverById = (id: string, size?: number) => {
     const apiBase = configStore.getApiBaseUrl()
-    return `${apiBase}/library/${libraryStore.activeLibrary}/image/album:${id}`
+    const url = `${apiBase}/library/${libraryStore.activeLibrary}/image/album:${id}`
+    return size === undefined ? url : withImageSize(url, size, capabilitiesStore.imageSizes)
   }
 
   const setSearchQuery = (query: string) => {

@@ -241,6 +241,50 @@ describe('auth store', () => {
     expect(logout).toHaveBeenCalledTimes(1)
   })
 
+  it('setPolicy rehydrates the csrf token when none is cached', async () => {
+    // The post-reload bug: the cookie is alive so the status flag still says
+    // authenticated, but the token is gone and setPolicy sent nothing.
+    getCsrf.mockResolvedValue({ csrf: 'tok-policy-rehydrated' })
+    setPolicy.mockResolvedValue(undefined)
+    getAuthStatus.mockResolvedValue({ protection: 'all', has_password: true, authenticated: true })
+    const store = useAuthStore()
+    expect(store.csrf).toBeNull()
+
+    await store.setPolicy('all')
+
+    expect(getCsrf).toHaveBeenCalled()
+    expect(setPolicy).toHaveBeenCalledWith('all', 'tok-policy-rehydrated')
+  })
+
+  it('setPolicy retries once after re-fetching a stale token', async () => {
+    login.mockResolvedValue({ csrf: 'tok-policy-stale' })
+    getAuthStatus.mockResolvedValue({ protection: 'all', has_password: true, authenticated: true })
+    getCsrf.mockResolvedValue({ csrf: 'tok-policy-fresh' })
+    setPolicy.mockRejectedValueOnce(new AuthApiError(401, 'stale csrf')).mockResolvedValueOnce(undefined)
+    const store = useAuthStore()
+    await store.login('secret')
+
+    await store.setPolicy('off')
+
+    expect(setPolicy).toHaveBeenNthCalledWith(1, 'off', 'tok-policy-stale')
+    expect(setPolicy).toHaveBeenNthCalledWith(2, 'off', 'tok-policy-fresh')
+    // Unlike sign-out the token is not spent here — later writes still need it.
+    expect(store.csrf).toBe('tok-policy-fresh')
+  })
+
+  it('setPolicy reports a dead session as a failure, not a silent success', async () => {
+    login.mockResolvedValue({ csrf: 'tok-policy-9' })
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: false })
+    setPolicy.mockRejectedValue(new AuthApiError(401, 'no session'))
+    getCsrf.mockRejectedValue(new AuthApiError(401, 'no session'))
+    const store = useAuthStore()
+    await store.login('secret')
+
+    // A gone session means sign-out succeeded, but it means the policy change
+    // did not happen — the two must not be treated alike.
+    await expect(store.setPolicy('off')).rejects.toMatchObject({ status: 401 })
+  })
+
   it('setPolicy sends the cached csrf and refreshes status', async () => {
     login.mockResolvedValue({ csrf: 'tok-4' })
     setPolicy.mockResolvedValue(undefined)

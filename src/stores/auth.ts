@@ -57,58 +57,55 @@ export const useAuthStore = defineStore('auth', () => {
     return result
   }
 
-  /** The CSRF token lives only in memory, so a page reload loses it while
-   *  the session cookie survives. The server requires it on logout, so
-   *  rehydrate before asking — otherwise sign-out silently does nothing.
+  /** Run a write that needs the CSRF token, rehydrating and retrying the way
+   *  `apiFetch` already does for its own callers (src/api/http.ts). The token
+   *  lives only in memory, so a page reload loses it while the session cookie
+   *  survives; and a token that survived can still be stale, because another
+   *  tab logging in again rotates the cookie.
    *
-   *  A cached token can also be stale rather than merely missing: another
-   *  tab that logged in again rotated the cookie, so this tab's token no
-   *  longer matches. That surfaces as a 401 even though we sent a token.
-   *  Mirroring the retry apiFetch already does for a login-hinted 401
-   *  (src/api/http.ts), re-fetch once and retry.
+   *  Returns 'done' when the write went through, and 'session-gone' when the
+   *  session turned out to be dead. Only a 401 from `/api/auth/csrf` proves
+   *  that — `ensureCsrf()` reports every failure alike, so an outage there
+   *  would otherwise masquerade as a dead session. Everything else throws.
    *
-   *  The two 401s that reach the caller are not the same thing, so they are
-   *  not treated the same:
+   *  What a dead session means is the caller's to decide: for signing out it
+   *  is success, because there is nothing left to end; for any other write it
+   *  is a failure the user has to be told about.
    *
-   *  - `/api/auth/csrf` answering 401 means the session is already gone. The
-   *    sign-out has effectively happened, so this resolves. Only a 401 counts:
-   *    an outage there is a failure like any other and propagates.
-   *  - a 401 on a token we minted moments earlier means the server rejected
-   *    a token it had just issued — `/api/auth/csrf` only answers for a
-   *    valid session, so this is not an expiry. It propagates. Swallowing
-   *    it would restore the silent no-op this whole change exists to remove.
-   *
-   *  The token is only discarded when it is either spent or suspect. A 5xx
-   *  or a network failure leaves the session alive and the cached token
-   *  good, and throwing it away there would break the next write that needs
-   *  it. */
-  const logout = async () => {
-    // Only an already-cached token can be stale. One minted by this call
-    // cannot be, and if that mint failed we are sending none at all — in
-    // neither case is a 401 a stale-token problem, so neither is retried.
+   *  A 401 on a token minted moments earlier is not an expiry — `/api/auth/csrf`
+   *  only answers for a valid session — so it propagates rather than being
+   *  retried or swallowed. The cached token is discarded only when it is spent
+   *  or refused: a 5xx or a network failure leaves both the session and the
+   *  token good, and dropping it there would break the next write. */
+  const withCsrf = async (
+    send: (token: string | undefined) => Promise<void>,
+  ): Promise<'done' | 'session-gone'> => {
     const hadCachedToken = !!csrf.value
     if (!hadCachedToken) await ensureCsrf()
     try {
+      await send(csrf.value ?? undefined)
+    } catch (e) {
+      if (!(e instanceof AuthApiError && e.status === 401)) throw e
+      csrf.value = null // refused, so spent either way
+      if (!hadCachedToken) throw e
+      let fresh: string
       try {
-        await apiLogout(csrf.value ?? undefined)
-      } catch (e) {
-        if (!(e instanceof AuthApiError && e.status === 401)) throw e
-        csrf.value = null // refused, so spent either way
-        if (!hadCachedToken) throw e
-        // Re-fetch directly rather than through ensureCsrf(), which reports
-        // every failure as false: only a 401 from /api/auth/csrf means the
-        // session is gone. A 500 or a dropped connection there must not be
-        // read as a clean sign-out.
-        let fresh: string
-        try {
-          fresh = (await apiGetCsrf()).csrf
-        } catch (csrfError) {
-          if (csrfError instanceof AuthApiError && csrfError.status === 401) return
-          throw csrfError
-        }
-        csrf.value = fresh
-        await apiLogout(fresh)
+        fresh = (await apiGetCsrf()).csrf
+      } catch (csrfError) {
+        if (csrfError instanceof AuthApiError && csrfError.status === 401) return 'session-gone'
+        throw csrfError
       }
+      csrf.value = fresh
+      await send(fresh)
+    }
+    return 'done'
+  }
+
+  const logout = async () => {
+    try {
+      // Either the session ended here or it had already ended; both leave the
+      // user signed out, and the token is spent either way.
+      await withCsrf((token) => apiLogout(token))
       csrf.value = null
     } catch (e) {
       if (e instanceof AuthApiError && e.status === 401) csrf.value = null
@@ -120,7 +117,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const setPolicy = async (protection: ProtectionLevel) => {
-    await apiSetPolicy(protection, csrf.value ?? undefined)
+    // Unlike signing out, a dead session means the policy did NOT change.
+    if ((await withCsrf((token) => apiSetPolicy(protection, token))) === 'session-gone') {
+      throw new AuthApiError(401, 'session expired')
+    }
     await refreshStatus()
   }
 

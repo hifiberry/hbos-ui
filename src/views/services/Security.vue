@@ -261,7 +261,13 @@ async function onSetPolicy(protection: ProtectionLevel) {
     if (!(await ensureAuthenticated())) return
     await authStore.setPolicy(protection)
   } catch (e) {
-    policyError.value = describeAuthError(e)
+    // ensureAuthenticated() only checks the status flag, which stays true on
+    // a reload while the in-memory token is gone. A 401 here means the
+    // session expired, not that a password was mistyped.
+    policyError.value =
+      e instanceof AuthApiError && e.status === 401
+        ? 'Your session has expired. Sign in again and retry.'
+        : describeAuthError(e)
   } finally {
     busy.value = false
   }

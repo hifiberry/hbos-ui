@@ -278,17 +278,18 @@ async function onLogout() {
   try {
     await authStore.logout()
   } catch (e) {
-    // The store already retries once on a stale token; a 401 that survives
-    // that means the session is genuinely gone (revoked elsewhere, or a
-    // stale-CSRF race with another tab), not a wrong password. Local state
-    // is already cleared by the store's `finally`, so the user is simply
-    // signed out — don't relabel that as a failed sign-in. Real errors
-    // (network failures, 5xx) still surface.
-    if (!(e instanceof AuthApiError && e.status === 401)) {
-      loadError.value = describeAuthError(e)
-    }
+    // A session that was already gone resolves in the store — the user is
+    // signed out and there is nothing to report. Anything reaching here is
+    // a real failure. A 401 among them means the daemon refused a token it
+    // had just issued, which is not a wrong password, so describeAuthError
+    // would mislabel it.
+    loadError.value =
+      e instanceof AuthApiError && e.status === 401
+        ? 'Signing out was refused. Reload the page and try again.'
+        : describeAuthError(e)
   } finally {
-    await authStore.refreshStatus()
+    // The store refreshes status itself; doing it again here only doubles
+    // the request.
     busy.value = false
   }
 }

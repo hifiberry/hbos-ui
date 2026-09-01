@@ -63,26 +63,44 @@ export const useAuthStore = defineStore('auth', () => {
    *
    *  A cached token can also be stale rather than merely missing: another
    *  tab that logged in again rotated the cookie, so this tab's token no
-   *  longer matches. That surfaces as a 401 from apiLogout even though we
-   *  sent a token. Mirroring the retry apiFetch already does for a
-   *  login-hinted 401 (src/api/http.ts), re-fetch the token once and retry
-   *  the logout; if that retry also 401s the session really is gone and we
-   *  let the error propagate. */
+   *  longer matches. That surfaces as a 401 even though we sent a token.
+   *  Mirroring the retry apiFetch already does for a login-hinted 401
+   *  (src/api/http.ts), re-fetch once and retry.
+   *
+   *  The two 401s that reach the caller are not the same thing, so they are
+   *  not treated the same:
+   *
+   *  - `/api/auth/csrf` refusing means the session is already gone. The
+   *    sign-out has effectively happened, so this resolves.
+   *  - a 401 on a token we minted moments earlier means the server rejected
+   *    a token it had just issued — `/api/auth/csrf` only answers for a
+   *    valid session, so this is not an expiry. It propagates. Swallowing
+   *    it would restore the silent no-op this whole change exists to remove.
+   *
+   *  The token is only discarded when it is either spent or suspect. A 5xx
+   *  or a network failure leaves the session alive and the cached token
+   *  good, and throwing it away there would break the next write that needs
+   *  it. */
   const logout = async () => {
-    if (!csrf.value) await ensureCsrf()
+    // A token minted by this call cannot be stale, so a 401 on it is not
+    // worth a second mint.
+    const rehydrated = !csrf.value && (await ensureCsrf())
     try {
       try {
         await apiLogout(csrf.value ?? undefined)
       } catch (e) {
-        if (e instanceof AuthApiError && e.status === 401 && (await ensureCsrf())) {
-          await apiLogout(csrf.value ?? undefined)
-        } else {
-          throw e
-        }
+        if (!(e instanceof AuthApiError && e.status === 401)) throw e
+        if (rehydrated) throw e
+        if (await ensureCsrf()) await apiLogout(csrf.value ?? undefined)
+        // else: the session is already gone — nothing left to end.
       }
-    } finally {
       csrf.value = null
-      await refreshStatus()
+    } catch (e) {
+      if (e instanceof AuthApiError && e.status === 401) csrf.value = null
+      throw e
+    } finally {
+      // Never let a failed status refresh replace the error being thrown.
+      await refreshStatus().catch(() => {})
     }
   }
 

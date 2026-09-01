@@ -158,6 +158,56 @@ describe('auth store', () => {
     expect(store.csrf).toBeNull()
   })
 
+  it('logout keeps the cached token when the failure is not a 401', async () => {
+    login.mockResolvedValue({ csrf: 'tok-9' })
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
+    const serverError = new AuthApiError(500, 'boom')
+    logout.mockRejectedValue(serverError)
+    const store = useAuthStore()
+    await store.login('secret')
+
+    await expect(store.logout()).rejects.toBe(serverError)
+
+    // The session is still alive and the token is still valid; discarding it
+    // would break the next write that needs one.
+    expect(store.csrf).toBe('tok-9')
+    expect(getCsrf).not.toHaveBeenCalled()
+  })
+
+  it('logout does not mint a second token when the one it just fetched is refused', async () => {
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
+    getCsrf.mockResolvedValue({ csrf: 'tok-fresh-10' })
+    const refused = new AuthApiError(401, 'refused')
+    logout.mockRejectedValue(refused)
+    const store = useAuthStore()
+    // Post-reload state: cookie alive, no token in memory.
+    expect(store.csrf).toBeNull()
+
+    await expect(store.logout()).rejects.toBe(refused)
+
+    // /api/auth/csrf only answers for a valid session, so this 401 is the
+    // daemon refusing a token it had just issued — not an expiry. One mint is
+    // enough, and the error must not be swallowed.
+    expect(getCsrf).toHaveBeenCalledTimes(1)
+    expect(logout).toHaveBeenCalledTimes(1)
+    expect(store.csrf).toBeNull()
+  })
+
+  it('logout resolves when the session turns out to be gone already', async () => {
+    login.mockResolvedValue({ csrf: 'tok-11' })
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: false })
+    logout.mockRejectedValue(new AuthApiError(401, 'no session'))
+    getCsrf.mockRejectedValue(new AuthApiError(401, 'no session'))
+    const store = useAuthStore()
+    await store.login('secret')
+
+    // Nothing left to end, so signing out succeeded as far as the user cares.
+    await expect(store.logout()).resolves.toBeUndefined()
+
+    expect(logout).toHaveBeenCalledTimes(1)
+    expect(store.csrf).toBeNull()
+  })
+
   it('setPolicy sends the cached csrf and refreshes status', async () => {
     login.mockResolvedValue({ csrf: 'tok-4' })
     setPolicy.mockResolvedValue(undefined)

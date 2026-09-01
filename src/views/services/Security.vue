@@ -261,7 +261,13 @@ async function onSetPolicy(protection: ProtectionLevel) {
     if (!(await ensureAuthenticated())) return
     await authStore.setPolicy(protection)
   } catch (e) {
-    policyError.value = describeAuthError(e)
+    // ensureAuthenticated() only checks the status flag, which stays true on
+    // a reload while the in-memory token is gone. A 401 here means the
+    // session expired, not that a password was mistyped.
+    policyError.value =
+      e instanceof AuthApiError && e.status === 401
+        ? 'Your session has expired. Sign in again and retry.'
+        : describeAuthError(e)
   } finally {
     busy.value = false
   }
@@ -274,12 +280,22 @@ async function onTurnOff() {
 async function onLogout() {
   if (busy.value) return
   busy.value = true
+  loadError.value = null
   try {
     await authStore.logout()
-  } catch {
-    // best-effort: refresh status regardless so the UI reflects reality
+  } catch (e) {
+    // A session that was already gone resolves in the store — the user is
+    // signed out and there is nothing to report. Anything reaching here is
+    // a real failure. A 401 among them means the daemon refused a token it
+    // had just issued, which is not a wrong password, so describeAuthError
+    // would mislabel it.
+    loadError.value =
+      e instanceof AuthApiError && e.status === 401
+        ? 'Signing out was refused. Reload the page and try again.'
+        : describeAuthError(e)
   } finally {
-    await authStore.refreshStatus()
+    // The store refreshes status itself; doing it again here only doubles
+    // the request.
     busy.value = false
   }
 }

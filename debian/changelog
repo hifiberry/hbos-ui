@@ -1,3 +1,24 @@
+hifiberry-webui (0.24.2) stable; urgency=medium
+
+  * Signing out works again after a page reload. The CSRF token the daemon
+    requires is held in memory only, so a reload lost it while the session
+    cookie survived; sign-out then sent no token, was refused, and the error
+    was discarded, so it reported success having done nothing. The token is
+    now fetched when it is missing, and fetched once more when one cached
+    before another tab signed in again turns out to be stale.
+  * A refused sign-out is reported rather than swallowed, and is no longer
+    labelled "Wrong password. Please try again." A session that had already
+    ended is still reported as success -- there was nothing left to end.
+  * Changing the protection level had the same missing-token problem after a
+    reload, and the same misleading message. It now takes the same path.
+  * A daemon that cannot be reached for a token is reported as a failure
+    rather than as an expired session, so an outage no longer sends the user
+    to sign in again.
+  * Sign-out only ends the session on the device itself with hifiberry-auth
+    0.2.0 or later; against an older daemon it behaves as it did before.
+
+ -- HiFiBerry <support@hifiberry.com>  Tue, 01 Sep 2026 19:13:30 +0000
+
 hifiberry-webui (0.24.1) stable; urgency=medium
 
   * Speaker Equalizer: loading a Room EQ correction or an EQ file now writes
@@ -594,6 +615,7 @@ hifiberry-webui (0.20.12) stable; urgency=medium
     cancels the sign-in prompt instead of collecting the report.
 
  -- HiFiBerry <support@hifiberry.com>  Fri, 07 Aug 2026 19:00:00 +0200
+
 hifiberry-webui (0.20.11) stable; urgency=medium
 
   * System Tools can now create the diagnostic support report, show it

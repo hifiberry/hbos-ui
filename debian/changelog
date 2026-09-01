@@ -30,6 +30,11 @@ hifiberry-webui (0.24.1) stable; urgency=medium
   * Speaker Equalizer: loading an EQ file converts every channel before
     writing any of them, so a file carrying a filter type the DSP cannot
     render leaves both channels untouched instead of applying to one.
+  * Now Playing: the volume control is no longer hidden on phones. A rule left
+    over from when the control lived only in the header hid it below 960px --
+    and the header itself is hidden below 1024px, so the rule could only ever
+    hide the control on the Now Playing screens, which is where a phone user
+    reaches for it. Reported as hifiberry/hifiberry-os#651.
  -- HiFiBerry <support@hifiberry.com>  Tue, 01 Sep 2026 08:20:32 +0000
 
 hifiberry-webui (0.24.0) stable; urgency=medium

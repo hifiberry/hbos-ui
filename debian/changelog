@@ -44,8 +44,11 @@ hifiberry-webui (0.24.1) stable; urgency=medium
     an old daemon can still pair with a new interface, and that failure is
     silent: the un-prefixed path falls through nginx to this app, which answers
     200 with index.html, and the browser caches an HTML document as an album
-    cover. The warning is the evidence for deleting the repair a release from
-    now.
+    cover. The warning is a diagnostic rather than the criterion for deleting
+    the repair: nothing collects a console.warn off a user's device, so a quiet
+    field would mostly mean nobody looked. It goes when this package can depend
+    on a hifiberry-audiocontrol carrying acr#30, which makes the pairing that
+    needs it uninstallable instead of merely unlikely.
   * Now Playing: a cover art path sent by audiocontrol without the
     /api/audiocontrol prefix is resolved rather than used verbatim. Over the
     WebSocket audiocontrol sends song.cover_art_url un-prefixed, and it was

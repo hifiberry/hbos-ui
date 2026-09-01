@@ -159,6 +159,21 @@ describe('repair deprecation warning', () => {
     expect(warn).toHaveBeenCalledTimes(1)
   })
 
+  /**
+   * The gate in rewriteImageUrl is IMAGE_PROXY_PREFIXES, not REPAIRED_PREFIXES,
+   * because it answers a different question: whether the URL is audiocontrol's
+   * to serve as an image at all. Lyrics are not, so they must fall straight
+   * through. Without this case, widening the gate to REPAIRED_PREFIXES passes
+   * the whole suite -- which is the edit the comment there exists to prevent.
+   */
+  it('leaves a lyrics path alone in the image rewriter', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { rewriteImageUrl } = await freshUtils()
+
+    expect(rewriteImageUrl('/api/lyrics/mpd/dHJhY2s')).toBe('/api/lyrics/mpd/dHJhY2s')
+    expect(warn).not.toHaveBeenCalled()
+  })
+
   it('still repairs the path it warned about', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     const { rewriteImageUrl } = await freshUtils()

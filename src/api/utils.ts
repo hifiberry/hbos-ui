@@ -11,6 +11,9 @@ const IMAGE_PROXY_PREFIXES = [
 /** Prefixes already announced this session, so each is reported once. */
 const announcedRepairs = new Set<string>()
 
+/** The prefixes audiocontrol used to emit without /api/audiocontrol. */
+const REPAIRED_PREFIXES = ['/api/library/', '/api/lyrics/', '/api/coverart/'] as const
+
 /**
  * Announce a repair that should no longer be necessary.
  *
@@ -24,16 +27,17 @@ const announcedRepairs = new Set<string>()
  * un-prefixed path falls through nginx to this app, which answers 200 with
  * index.html, so the browser caches an HTML document as an album cover.
  *
- * This warning is the evidence for deleting them. If it never appears in the
- * field, the repair is not load-bearing and can go.
+ * The warning is a diagnostic, not the criterion for deleting them: it is a
+ * console.warn on someone's device and nothing collects it, so a quiet field
+ * would mostly mean nobody looked. The repair goes when hifiberry-webui can
+ * declare hifiberry-audiocontrol (>= the release carrying acr#30), which makes
+ * the pairing that needs it uninstallable rather than merely unlikely.
  *
  * Reported once per prefix per session. The artist store rewrites one URL per
  * artist and the album grid one per cell, so warning on each would put
  * thousands of identical lines in front of whoever is reading the console --
  * which buries the real ones and says nothing the first line did not.
  */
-const REPAIRED_PREFIXES = ['/api/library/', '/api/lyrics/', '/api/coverart/'] as const
-
 const warnRepairedPath = (prefix: string, original: string, corrected: string): void => {
   if (announcedRepairs.has(prefix)) {
     return

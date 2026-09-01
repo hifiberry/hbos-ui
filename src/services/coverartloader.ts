@@ -280,12 +280,14 @@ export class CoverArtLoader {
 
     // First, check if song already has cover art URLs
     const existingUrls = []
-    // Both arrive device-relative, and audiocontrol sends cover_art_url without
+    // cover_art_url is device-relative, and audiocontrol sends it without
     // the /api/audiocontrol prefix over the WebSocket. Bound straight to an
     // <img src> such a path does not 404 -- it falls through nginx to this app,
     // which answers 200 with index.html, so the browser caches an HTML document
     // as the cover and nothing reports an error. rewriteImageUrl resolves it
-    // against the device and leaves provider URLs alone.
+    // against the device. artwork_url goes through the same call because it is
+    // sometimes device-relative too, and rewriteImageUrl is a no-op on the
+    // absolute provider URLs it otherwise carries.
     if (song.artwork_url) existingUrls.push(rewriteImageUrl(song.artwork_url))
     if (song.cover_art_url) existingUrls.push(rewriteImageUrl(song.cover_art_url))
 

@@ -112,6 +112,10 @@ export function useEqFilters() {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`speaker-equalizer: ${what} failed:`, error);
       toastStore.showErrorToast(message);
+      // The caller mutated the local filter arrays before attempting the
+      // write, so the editor is now showing an edit the hardware refused.
+      // Fall back to what the backend actually holds.
+      await loadFiltersFromBackend();
       return undefined;
     }
   }

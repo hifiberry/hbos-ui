@@ -16,6 +16,11 @@ hifiberry-webui (0.24.1) stable; urgency=medium
     filter appeared on the EQ curve and reported success while doing nothing.
     Failed filter writes are surfaced to the user rather than logged to the
     console, and a drag that fails no longer leaves the editor stuck.
+  * Speaker Equalizer and Crossover: an edit the DSP refuses no longer stays
+    on the curve. Both editors mutate their local filter arrays before the
+    write is attempted, so a rejected write left the UI showing an edit the
+    hardware never took. They now resync from the backend after reporting the
+    error.
 
  -- HiFiBerry <support@hifiberry.com>  Tue, 01 Sep 2026 08:20:32 +0000
 

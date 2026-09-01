@@ -81,6 +81,57 @@ describe('useBypass', () => {
     expect([...lastCallsPerBank.values()]).toEqual([false, false])
   })
 
+  /**
+   * A double tap: press, release, press again while the first release's
+   * restore is still in flight, then release again. endBypass() clears
+   * previousFilterStates from inside its queued closure, after the network
+   * round-trip -- so the first release's completion can land after the second
+   * press has already recorded the banks it will need to restore, wiping
+   * them. The second release then finds nothing to restore and leaves the
+   * bank bypassed in hardware while isBypassed reads false.
+   */
+  it('restores the banks after a double tap', async () => {
+    const resolvers: Array<() => void> = []
+    setFilterBankBypassState.mockImplementation(
+      () => new Promise<void>((resolve) => { resolvers.push(resolve) })
+    )
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+    const { startBypass, endBypass, isBypassed } = useBypass(() => ['left'], ref(false))
+
+    const press1 = startBypass()
+    const release1 = endBypass()
+
+    // Let the bypass-on write finish, so the restore is the operation in flight.
+    await settle()
+    resolvers.splice(0).forEach((r) => r())
+    await press1
+    await settle()
+
+    // Second press lands while that restore is still in flight.
+    const press2 = startBypass()
+
+    // The restore completes -- and clears the banks press2 just recorded.
+    resolvers.splice(0).forEach((r) => r())
+    await release1
+    await settle()
+
+    const release2 = endBypass()
+
+    for (let i = 0; i < 5; i++) {
+      resolvers.splice(0).forEach((r) => r())
+      await settle()
+    }
+    await Promise.all([press2, release2])
+
+    expect(isBypassed.value).toBe(false)
+    const lastCallsPerBank = new Map<string, boolean>()
+    for (const [bank, bypassed] of setFilterBankBypassState.mock.calls) {
+      lastCallsPerBank.set(bank as string, bypassed as boolean)
+    }
+    expect([...lastCallsPerBank.entries()]).toEqual([['left', false]])
+  })
+
   it('ignores a press while a filter is being dragged', async () => {
     setFilterBankBypassState.mockResolvedValue(undefined)
 

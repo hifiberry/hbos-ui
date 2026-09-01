@@ -144,6 +144,11 @@ export interface BankWriteRequest {
   address: string
   filters: BankFilterEntry[]
   sampleRate?: number
+  /**
+   * Profile checksum to file the write under. Left unset by this client: the
+   * endpoint falls back to the checksum of the running profile, which is the
+   * one we would have sent. Declared because the endpoint accepts it.
+   */
   checksum?: string
 }
 

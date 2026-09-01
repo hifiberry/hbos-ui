@@ -7,8 +7,58 @@ import { type Filter } from '@/utils/filtercalc';
 import { useFilterStore } from '@/stores/filter_connector';
 import { useToastStore } from '@/stores/toast';
 import { convertUIFilterToStore } from '@/utils/filter-conversions';
+import { type Filter as StoreFilter } from '@/stores/filter_backend_interface';
 
 const EQ_FILE_PREFIX = 'speaker-eq';
+
+/**
+ * Apply a loaded set of per-channel filters to the hardware.
+ *
+ * Shared by the current and legacy file formats, which differ only in where
+ * the per-channel arrays come from.
+ *
+ * Every channel is converted before any channel is written. A loaded file is
+ * arbitrary user input and convertUIFilterToStore() now throws on an icon it
+ * cannot map, so converting inside the write loop would put the file's EQ on
+ * one channel and leave the old one on the other, behind a single toast.
+ */
+export async function applyLoadedChannelFilters(
+  setBankFilters: (channel: string, filters: Omit<StoreFilter, 'id'>[]) => Promise<void>,
+  channelNames: string[],
+  source: Record<string, Filter[]>
+): Promise<Record<string, Filter[]>> {
+  const prepared: Array<{
+    channel: string;
+    uiFilters: Filter[];
+    storeFilters: Omit<StoreFilter, 'id'>[];
+  }> = [];
+
+  for (const ch of channelNames) {
+    const loaded = source[ch];
+    if (!loaded) continue;
+
+    const uiFilters = loaded.map((filter: Filter, index: number) => ({
+      ...filter,
+      frequency: Math.round(filter.frequency),
+      id: Date.now() + index + channelNames.indexOf(ch) * 1000
+    }));
+
+    prepared.push({
+      channel: ch,
+      uiFilters,
+      storeFilters: uiFilters.map(convertUIFilterToStore)
+    });
+  }
+
+  const applied: Record<string, Filter[]> = {};
+
+  for (const { channel, uiFilters, storeFilters } of prepared) {
+    await setBankFilters(channel, storeFilters);
+    applied[channel] = uiFilters;
+  }
+
+  return applied;
+}
 
 export function useEqFileIO(
   channelNames: Ref<string[]>,
@@ -71,20 +121,11 @@ export function useEqFileIO(
           try {
             // Support new format (channelFilters Record)
             if (data.channelFilters) {
-              for (const ch of channelNames.value) {
-                if (data.channelFilters[ch]) {
-                  const newFilters = data.channelFilters[ch].map((filter: Filter, index: number) => ({
-                    ...filter,
-                    frequency: Math.round(filter.frequency),
-                    id: Date.now() + index + channelNames.value.indexOf(ch) * 1000
-                  }));
-
-                  await filterStore.setBankFilters(
-                    ch, newFilters.map(convertUIFilterToStore));
-
-                  channelFilters.value[ch] = newFilters;
-                }
-              }
+              Object.assign(channelFilters.value, await applyLoadedChannelFilters(
+                (ch, f) => filterStore.setBankFilters(ch, f),
+                channelNames.value,
+                data.channelFilters
+              ));
             }
             // Legacy format (leftFilters/rightFilters)
             else if (data.leftFilters && data.rightFilters) {
@@ -92,21 +133,11 @@ export function useEqFileIO(
                 left: data.leftFilters,
                 right: data.rightFilters
               };
-              for (const ch of channelNames.value) {
-                const legacyFilters = legacyMap[ch];
-                if (legacyFilters) {
-                  const newFilters = legacyFilters.map((filter: Filter, index: number) => ({
-                    ...filter,
-                    frequency: Math.round(filter.frequency),
-                    id: Date.now() + index + channelNames.value.indexOf(ch) * 1000
-                  }));
-
-                  await filterStore.setBankFilters(
-                    ch, newFilters.map(convertUIFilterToStore));
-
-                  channelFilters.value[ch] = newFilters;
-                }
-              }
+              Object.assign(channelFilters.value, await applyLoadedChannelFilters(
+                (ch, f) => filterStore.setBankFilters(ch, f),
+                channelNames.value,
+                legacyMap
+              ));
             }
 
             const currentFilters = filters.value;

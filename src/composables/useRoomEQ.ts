@@ -120,8 +120,14 @@ export function useRoomEQ(
         channelsToApply.push(channels[1]);
       }
 
+      // Convert once, above the loop. Every channel gets the same correction,
+      // so mapping inside the loop repeated identical work per channel, and
+      // converting first keeps an unconvertible filter from being discovered
+      // after a channel has already been written.
+      const storeFilters = convertedFilters.map(convertUIFilterToStore);
+
       for (const ch of channelsToApply) {
-        await filterStore.setBankFilters(ch, convertedFilters.map(convertUIFilterToStore));
+        await filterStore.setBankFilters(ch, storeFilters);
         channelFilters.value[ch] = [...convertedFilters];
       }
 

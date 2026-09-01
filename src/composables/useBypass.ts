@@ -82,7 +82,14 @@ export function useBypass(
         );
 
         await Promise.all(restorePromises);
-        previousFilterStates.value = [];
+        // previousFilterStates is deliberately not cleared here. This runs
+        // after the round-trip, and a second press that lands while this
+        // restore is in flight has already recorded its own banks -- clearing
+        // them here would wipe that, and the second release would then find
+        // nothing to restore and leave the bank bypassed in hardware while
+        // isBypassed reads false. startBypass() overwrites the ref on every
+        // press, and the isBypassed guard blocks a spurious restore, so
+        // clearing buys nothing.
       } catch (error) {
         console.error('Failed to end bypass:', error);
       }

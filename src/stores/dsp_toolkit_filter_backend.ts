@@ -693,6 +693,13 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       filter: i < withIds.length ? this.convertFilterToDSPFormat(withIds[i]) : transparentFilter
     }))
 
+    // No storeFiltersInDSP() on this path, unlike every other write here:
+    // /filters/bank persists server-side. The endpoint resolves the profile
+    // checksum itself when the request omits one, and its _write_one_biquad()
+    // records each slot in the settings store under the same write lock,
+    // failing the slot if that persist fails. Repeating it client-side would
+    // be a second checksum + store round-trip for work already done. The
+    // fallback below is different: updateDSPHardware() persists it itself.
     try {
       await setFilterBank({
         address: metadataKey,

@@ -18,10 +18,14 @@ vi.mock('@/stores/appconfig', () => ({
   }),
 }))
 
-import { rewriteAudiocontrolApiUrl } from '@/api/utils'
+import { rewriteAudiocontrolApiUrl, rewriteImageUrl } from '@/api/utils'
 
 describe('rewriteAudiocontrolApiUrl', () => {
   beforeEach(() => {
+    // Without this the console spies are shared across cases and their call
+    // counts accumulate, so a "must not warn" assertion sees the previous
+    // test's warning.
+    vi.restoreAllMocks()
     apiConfig.useProxy = false
     vi.spyOn(console, 'log').mockImplementation(() => {})
   })
@@ -67,5 +71,58 @@ describe('rewriteAudiocontrolApiUrl', () => {
     expect(rewriteAudiocontrolApiUrl('https://example.com/x')).toBe('https://example.com/x')
     expect(rewriteAudiocontrolApiUrl('/images/logo.svg')).toBe('/images/logo.svg')
     expect(rewriteAudiocontrolApiUrl('')).toBe('')
+  })
+
+  /**
+   * hifiberry/acr#30 makes audiocontrol emit every path under the externally
+   * visible prefix, over REST and the WebSocket alike, which makes the repair
+   * below dead code. It is kept for one release rather than deleted on trust:
+   * the warning is what will say whether any fielded daemon still needs it.
+   */
+  it('warns when it has to repair a shortened path', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    rewriteAudiocontrolApiUrl('/api/lyrics/mpd/dHJhY2s')
+
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0][0]).toContain('/api/lyrics/mpd/dHJhY2s')
+    expect(warn.mock.calls[0][0]).toMatch(/deprecated/i)
+  })
+
+  it('stays quiet for a path that already carries the prefix', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    rewriteAudiocontrolApiUrl('/api/audiocontrol/now-playing')
+
+    expect(warn).not.toHaveBeenCalled()
+  })
+})
+
+describe('rewriteImageUrl', () => {
+  beforeEach(() => {
+    // Without this the console spies are shared across cases and their call
+    // counts accumulate, so a "must not warn" assertion sees the previous
+    // test's warning.
+    vi.restoreAllMocks()
+    apiConfig.useProxy = false
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  it('warns when it has to repair a shortened image path', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    rewriteImageUrl('/api/coverart/artist/QXJ0aXN0/image')
+
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0][0]).toContain('/api/coverart/artist/QXJ0aXN0/image')
+  })
+
+  it('stays quiet for an image path that already carries the prefix', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    expect(rewriteImageUrl('/api/audiocontrol/coverart/artist/QXJ0aXN0/image')).toBe(
+      'http://192.168.1.12/api/audiocontrol/coverart/artist/QXJ0aXN0/image',
+    )
+    expect(warn).not.toHaveBeenCalled()
   })
 })

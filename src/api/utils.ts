@@ -9,6 +9,30 @@ const IMAGE_PROXY_PREFIXES = [
 ] as const
 
 /**
+ * Announce a repair that should no longer be necessary.
+ *
+ * audiocontrol emits every image and lyrics path under the externally visible
+ * /api/audiocontrol prefix as of hifiberry/acr#30, over REST and the WebSocket
+ * alike, which makes the repairs below dead code against a current daemon.
+ * They are kept for one release rather than deleted on trust: hifiberry-webui
+ * declares no dependency on hifiberry-audiocontrol, so nothing stops an old
+ * daemon pairing with a new interface, and the failure is silent -- an
+ * un-prefixed path falls through nginx to this app, which answers 200 with
+ * index.html, so the browser caches an HTML document as an album cover.
+ *
+ * This warning is the evidence for deleting them. If it never appears in the
+ * field, the repair is not load-bearing and can go.
+ */
+const warnRepairedPath = (original: string, corrected: string): void => {
+  console.warn(
+    `[deprecated] audiocontrol returned a path without the /api/audiocontrol prefix; ` +
+    `the web interface repaired it: ${original} -> ${corrected}. ` +
+    `A daemon carrying hifiberry/acr#30 does not need this, and the repair is ` +
+    `scheduled for removal.`
+  )
+}
+
+/**
  * Rewrite image URLs to be accessible through the proxy or production API
  * This is specifically for images returned by the audiocontrol API
  * @param url - The image URL to rewrite
@@ -42,8 +66,10 @@ export const rewriteImageUrl = (url: string): string => {
     // Convert /api/library/ to /api/audiocontrol/library/ and similar
     if (url.startsWith('/api/library/')) {
       correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
+      warnRepairedPath(url, correctedUrl)
     } else if (url.startsWith('/api/coverart/')) {
       correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
+      warnRepairedPath(url, correctedUrl)
     }
   }
 
@@ -101,13 +127,13 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
   let correctedUrl = url
   if (url.startsWith('/api/library/')) {
     correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
-    console.log('Fixed library URL path:', { original: url, corrected: correctedUrl })
+    warnRepairedPath(url, correctedUrl)
   } else if (url.startsWith('/api/lyrics/')) {
     correctedUrl = url.replace('/api/lyrics/', '/api/audiocontrol/lyrics/')
-    console.log('Fixed lyrics URL path:', { original: url, corrected: correctedUrl })
+    warnRepairedPath(url, correctedUrl)
   } else if (url.startsWith('/api/coverart/')) {
     correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
-    console.log('Fixed coverart URL path:', { original: url, corrected: correctedUrl })
+    warnRepairedPath(url, correctedUrl)
   }
 
   if (useProxy) {

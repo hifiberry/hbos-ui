@@ -26,7 +26,9 @@ import {
   type FilterCoefficients,
   type BiquadRequest,
   getDSPProgramChecksum,
-  type StoredFilter
+  type StoredFilter,
+  setFilterBank,
+  BankEndpointUnavailableError
 } from '@/api/dsptoolkit'
 import { useDSPToolkitStore } from './dsp-toolkit'
 
@@ -649,6 +651,87 @@ export class DSPToolkitFilterBackend extends FilterBackend {
     await this.updateDSPHardware(bankName, [])
   }
 
+  /**
+   * Replace a bank's contents with a single request.
+   *
+   * Sends every slot of the bank -- real filters first, transparent
+   * pass-throughs for the rest -- so the hardware is updated in one
+   * server-side pass instead of one round-trip per slot per added filter.
+   */
+  async setBankFilters(bankName: string, filters: Omit<Filter, 'id'>[]): Promise<void> {
+    await this.initialize()
+
+    const bank = this.filterBanks[bankName]
+    if (!bank) {
+      throw new Error(`Filter bank '${bankName}' not found`)
+    }
+
+    if (filters.length > bank.maxFilters) {
+      throw new Error(
+        `Cannot write ${filters.length} filters to ${bankName}: bank holds at most ${bank.maxFilters}`
+      )
+    }
+
+    const metadataKey = bank.metadataKey || this.getMetadataKeyForBank(bankName)
+    if (!metadataKey) {
+      console.warn(`No metadata key found for bank '${bankName}', skipping hardware update`)
+      return
+    }
+
+    const withIds: Filter[] = filters.map((filter, index) => ({
+      ...filter,
+      id: `${bankName}_${Date.now()}_${index}`
+    }))
+
+    const transparentFilter: FilterCoefficients = {
+      a0: 1.0, a1: 0.0, a2: 0.0,
+      b0: 1.0, b1: 0.0, b2: 0.0
+    }
+
+    const slots = Array.from({ length: bank.maxFilters }, (_, i) => ({
+      offset: i,
+      filter: i < withIds.length ? this.convertFilterToDSPFormat(withIds[i]) : transparentFilter
+    }))
+
+    // No storeFiltersInDSP() on this path, unlike every other write here:
+    // /filters/bank persists server-side. The endpoint resolves the profile
+    // checksum itself when the request omits one, and its _write_one_biquad()
+    // records each slot in the settings store under the same write lock,
+    // failing the slot if that persist fails. Repeating it client-side would
+    // be a second checksum + store round-trip for work already done. The
+    // fallback below is different: updateDSPHardware() persists it itself.
+    try {
+      await setFilterBank({
+        address: metadataKey,
+        sampleRate: this.metadata?._system?.sampleRate || 48000,
+        filters: slots
+      })
+    } catch (error) {
+      if (error instanceof BankEndpointUnavailableError) {
+        console.warn(
+          `DSP Toolkit: device has no /filters/bank endpoint, falling back to per-slot writes for ${bankName}`
+        )
+        // updateDSPHardware() persists the filters itself, so do not call
+        // storeFiltersInDSP() again here -- that would repeat a live
+        // getDSPProgramChecksum() + storeFilters() round-trip on exactly the
+        // path (older firmware) where round-trips are most expensive.
+        //
+        // Assign bank.filters only after the write completes. Claiming it up
+        // front would leave the in-memory bank asserting a full write that a
+        // failing per-slot sequence never delivered -- the same lie about
+        // hardware state this whole task exists to eliminate.
+        await this.updateDSPHardware(bankName, withIds)
+        bank.filters = withIds
+        return
+      }
+      throw error
+    }
+
+    bank.filters = withIds
+
+    console.log(`DSP Hardware: Wrote ${withIds.length} filters to ${bankName} in one request`)
+  }
+
   async createFilterBank(bankName: string): Promise<void> {
     await this.initialize()
 
@@ -761,6 +844,10 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       return
     }
 
+    // Convert everything up front: a filter the DSP cannot render must fail
+    // before the first register is touched, not halfway down the bank.
+    const convertedFilters = filters.map(filter => this.convertFilterToDSPFormat(filter))
+
     try {
       // Clear all existing filters in the bank by writing empty filters
       const maxFilters = bank.maxFilters
@@ -768,7 +855,7 @@ export class DSPToolkitFilterBackend extends FilterBackend {
         if (i < filters.length) {
           // Write the actual filter
           const filter = filters[i]
-          const dspFilter = this.convertFilterToDSPFormat(filter)
+          const dspFilter = convertedFilters[i]
 
           const biquadRequest: BiquadRequest = {
             address: metadataKey,
@@ -857,19 +944,18 @@ export class DSPToolkitFilterBackend extends FilterBackend {
       case 'bandpass':
       case 'bandstop':
       case 'allpass':
-        // For unsupported filter types, create a transparent volume filter
-        console.warn(`Filter type '${filter.type}' not directly supported by DSP API, using transparent filter`)
-        return {
-          type: 'Volume',
-          db: 0
-        }
+        // Previously returned a transparent Volume filter with a console
+        // warning: the filter appeared on the EQ curve, the write returned
+        // success, and nothing was audible. Fail instead of lying.
+        throw new Error(
+          `Filter type '${filter.type}' is not supported by the DSP profile and cannot be ` +
+          `applied. Remove the filter at ${filter.frequency} Hz or change its type.`
+        )
       default:
-        // Fallback to a transparent filter for unknown types
-        console.warn(`Unknown filter type: ${filter.type}, using transparent filter`)
-        return {
-          type: 'Volume',
-          db: 0
-        }
+        throw new Error(
+          `Unknown filter type '${filter.type}' at ${filter.frequency} Hz — refusing to ` +
+          `write a transparent filter in its place.`
+        )
     }
   }
 

@@ -120,12 +120,15 @@ export function useRoomEQ(
         channelsToApply.push(channels[1]);
       }
 
+      // Convert once, above the loop. Every channel gets the same correction,
+      // so mapping inside the loop repeated identical work per channel, and
+      // converting first keeps an unconvertible filter from being discovered
+      // after a channel has already been written.
+      const storeFilters = convertedFilters.map(convertUIFilterToStore);
+
       for (const ch of channelsToApply) {
-        await filterStore.clearFiltersFromBank(ch);
+        await filterStore.setBankFilters(ch, storeFilters);
         channelFilters.value[ch] = [...convertedFilters];
-        for (const [index, filter] of convertedFilters.entries()) {
-          await filterStore.addFilter(ch, index, convertUIFilterToStore(filter));
-        }
       }
 
       if (convertedFilters.length > 0) {
@@ -136,7 +139,8 @@ export function useRoomEQ(
       console.log(`speaker-equalizer: Loaded Room EQ configuration "${config.data.name}" to ${targetMode} channel(s)`);
     } catch (error) {
       console.error('speaker-equalizer: Failed to load Room EQ configuration:', error);
-      toastStore.showErrorToast('Error loading Room EQ configuration. Please try again.');
+      const message = error instanceof Error ? error.message : String(error);
+      toastStore.showErrorToast(`Error loading Room EQ configuration: ${message}`);
     }
   }
 

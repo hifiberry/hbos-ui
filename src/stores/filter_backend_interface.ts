@@ -93,6 +93,22 @@ export abstract class FilterBackend {
   abstract clearFiltersFromBank(bankName: string): Promise<void>
 
   /**
+   * Replace the entire contents of a bank in one operation.
+   *
+   * The default implementation clears the bank and adds the filters one by
+   * one, which is correct but not atomic. Backends that can write a whole
+   * bank in a single request should override this -- see
+   * DSPToolkitFilterBackend, where the per-filter path issued 136 hardware
+   * writes for a 16-band correction (hifiberry-os#626).
+   */
+  async setBankFilters(bankName: string, filters: Omit<Filter, 'id'>[]): Promise<void> {
+    await this.clearFiltersFromBank(bankName)
+    for (const [index, filter] of filters.entries()) {
+      await this.addFilter(bankName, index, filter)
+    }
+  }
+
+  /**
    * Create a new filter bank
    */
   abstract createFilterBank(bankName: string): Promise<void>

@@ -24,28 +24,44 @@ export function useBypass(
   const isBypassed = ref(false);
   const previousFilterStates = ref<string[]>([]);
 
+  // Bypass is press-and-hold, so a quick tap fires startBypass() and
+  // endBypass() back to back. Both write live hardware registers, and
+  // without this chain the restore requests overtook the still-in-flight
+  // bypass requests, leaving banks in the wrong state and popping the
+  // output (hifiberry-os#626). Every hardware operation queues behind the
+  // previous one.
+  let pending: Promise<void> = Promise.resolve();
+
+  function enqueue(operation: () => Promise<void>): Promise<void> {
+    const next = pending.then(operation, operation);
+    // Keep the chain alive even if an operation rejects.
+    pending = next.catch(() => undefined);
+    return next;
+  }
+
   async function startBypass() {
     if (isBypassed.value || isDragging.value) return;
 
     isBypassed.value = true;
 
-    try {
-      const banksToBypass = getBanksToBypass();
+    const banksToBypass = getBanksToBypass();
+    previousFilterStates.value = [...banksToBypass];
 
-      previousFilterStates.value = [...banksToBypass];
+    return enqueue(async () => {
+      try {
+        const bypassPromises: Promise<FilterBypassSetResponse>[] = banksToBypass.map(bankName =>
+          setFilterBankBypassState(bankName, true).catch((error: Error) => {
+            console.error(`Failed to bypass filter bank ${bankName}:`, error);
+            throw error;
+          })
+        );
 
-      const bypassPromises: Promise<FilterBypassSetResponse>[] = banksToBypass.map(bankName =>
-        setFilterBankBypassState(bankName, true).catch((error: Error) => {
-          console.error(`Failed to bypass filter bank ${bankName}:`, error);
-          throw error;
-        })
-      );
-
-      await Promise.all(bypassPromises);
-    } catch (error) {
-      console.error('Failed to start bypass:', error);
-      isBypassed.value = false;
-    }
+        await Promise.all(bypassPromises);
+      } catch (error) {
+        console.error('Failed to start bypass:', error);
+        isBypassed.value = false;
+      }
+    });
   }
 
   async function endBypass() {
@@ -53,21 +69,31 @@ export function useBypass(
 
     isBypassed.value = false;
 
-    if (previousFilterStates.value.length === 0) return;
+    const banksToRestore = [...previousFilterStates.value];
+    if (banksToRestore.length === 0) return;
 
-    try {
-      const restorePromises: Promise<FilterBypassSetResponse>[] = previousFilterStates.value.map(bankName =>
-        setFilterBankBypassState(bankName, false).catch((error: Error) => {
-          console.error(`Failed to restore filter bank ${bankName}:`, error);
-          throw error;
-        })
-      );
+    return enqueue(async () => {
+      try {
+        const restorePromises: Promise<FilterBypassSetResponse>[] = banksToRestore.map(bankName =>
+          setFilterBankBypassState(bankName, false).catch((error: Error) => {
+            console.error(`Failed to restore filter bank ${bankName}:`, error);
+            throw error;
+          })
+        );
 
-      await Promise.all(restorePromises);
-      previousFilterStates.value = [];
-    } catch (error) {
-      console.error('Failed to end bypass:', error);
-    }
+        await Promise.all(restorePromises);
+        // previousFilterStates is deliberately not cleared here. This runs
+        // after the round-trip, and a second press that lands while this
+        // restore is in flight has already recorded its own banks -- clearing
+        // them here would wipe that, and the second release would then find
+        // nothing to restore and leave the bank bypassed in hardware while
+        // isBypassed reads false. startBypass() overwrites the ref on every
+        // press, and the isBypassed guard blocks a spurious restore, so
+        // clearing buys nothing.
+      } catch (error) {
+        console.error('Failed to end bypass:', error);
+      }
+    });
   }
 
   return {

@@ -27,13 +27,23 @@ const iconMapping: Record<StoreFilter['type'], BiquadFilterType> = {
   'allpass': 'peaking'   // Fallback to peaking for unsupported types
 }
 
-export const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => ({
-  type: typeMapping[uiFilter.icon] || 'peak',
-  frequency: uiFilter.frequency,
-  gain: uiFilter.gain,
-  q: uiFilter.Q,
-  enabled: uiFilter.enabled
-})
+export const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
+  const type = typeMapping[uiFilter.icon]
+  if (!type) {
+    throw new Error(
+      `Unrecognised filter icon '${uiFilter.icon}' at ${uiFilter.frequency} Hz — refusing to ` +
+      `substitute a peak filter for it.`
+    )
+  }
+
+  return {
+    type,
+    frequency: uiFilter.frequency,
+    gain: uiFilter.gain,
+    q: uiFilter.Q,
+    enabled: uiFilter.enabled
+  }
+}
 
 export const convertStoreFilterToUI = (storeFilter: StoreFilter, id: string): Filter => ({
   id: parseInt(id.split('_')[1]) || 0,

@@ -99,6 +99,27 @@ export function useEqFilters() {
     return isCurrentPairLinked.value ? 'both' : 'individual';
   }
 
+  /**
+   * Report a store write that failed instead of letting it become an
+   * unhandled rejection. A filter the DSP cannot render now throws, and these
+   * callbacks sit under drag/nudge handlers that neither await nor catch --
+   * without this the edit silently does nothing.
+   */
+  async function reportingStoreWrite<T>(what: string, write: () => Promise<T>): Promise<T | undefined> {
+    try {
+      return await write();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`speaker-equalizer: ${what} failed:`, error);
+      toastStore.showErrorToast(message);
+      // The caller mutated the local filter arrays before attempting the
+      // write, so the editor is now showing an edit the hardware refused.
+      // Fall back to what the backend actually holds.
+      await loadFiltersFromBackend();
+      return undefined;
+    }
+  }
+
   // Linked channel config helper (same pattern as crossover)
   function createLinkedChannelConfig(): LinkedChannelConfig {
     const targetChannels: string[] = [activeChannel.value];
@@ -120,16 +141,20 @@ export function useEqFilters() {
       channelArrays: arrays,
       bankAddresses: addresses,
       updateStoreCallback: async (channelName: string, filterIndex: number, filter: Filter) => {
-        await filterStore.updateFilter(channelName, filterIndex, convertUIFilterToStore(filter));
+        await reportingStoreWrite('Updating filter', () =>
+          filterStore.updateFilter(channelName, filterIndex, convertUIFilterToStore(filter)));
       },
       addStoreCallback: async (channelName: string, filterIndex: number, filter: Filter) => {
-        await filterStore.addFilter(channelName, filterIndex, convertUIFilterToStore(filter));
+        await reportingStoreWrite('Adding filter', () =>
+          filterStore.addFilter(channelName, filterIndex, convertUIFilterToStore(filter)));
       },
       removeStoreCallback: async (channelName: string, filterIndex: number) => {
-        await filterStore.removeFilter(channelName, filterIndex);
+        await reportingStoreWrite('Removing filter', () =>
+          filterStore.removeFilter(channelName, filterIndex));
       },
       clearStoreCallback: async (channelName: string) => {
-        await filterStore.clearFiltersFromBank(channelName);
+        await reportingStoreWrite('Clearing filters', () =>
+          filterStore.clearFiltersFromBank(channelName));
       }
     };
   }
@@ -378,8 +403,11 @@ export function useEqFilters() {
 
   async function onGraphDragEnd(id: number) {
     const config = createLinkedChannelConfig();
-    await updateFilterPropertyLinked(config, id, () => { /* persist current values */ });
-    isDragging.value = false;
+    try {
+      await updateFilterPropertyLinked(config, id, () => { /* persist current values */ });
+    } finally {
+      isDragging.value = false;
+    }
   }
 
   return {

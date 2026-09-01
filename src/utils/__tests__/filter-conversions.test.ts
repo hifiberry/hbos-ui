@@ -43,9 +43,11 @@ describe('convertUIFilterToStore', () => {
     expect(result.type).toBe('lowpass')
   })
 
-  it('falls back to peak for unknown types', () => {
-    const result = convertUIFilterToStore({ ...baseUIFilter, icon: 'unknown_type' as any })
-    expect(result.type).toBe('peak')
+  it('refuses an unrecognised UI icon instead of silently making it a peak filter', () => {
+    expect(() => convertUIFilterToStore({
+      id: 1, icon: 'notARealIcon', text: '1000', frequency: 1000,
+      gain: -3, Q: 1, enabled: true,
+    } as never)).toThrow(/notARealIcon/)
   })
 
   it('does not include id in result', () => {

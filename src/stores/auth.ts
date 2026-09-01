@@ -77,26 +77,40 @@ export const useAuthStore = defineStore('auth', () => {
    *  retried or swallowed. The cached token is discarded only when it is spent
    *  or refused: a 5xx or a network failure leaves both the session and the
    *  token good, and dropping it there would break the next write. */
+  /** Fetch a token, keeping the distinction ensureCsrf()'s boolean discards:
+   *  only a 401 from `/api/auth/csrf` means the session is gone. An outage
+   *  there is a failure like any other and must not masquerade as one. */
+  const fetchCsrf = async (): Promise<'ok' | 'session-gone'> => {
+    try {
+      csrf.value = (await apiGetCsrf()).csrf
+      return 'ok'
+    } catch (e) {
+      csrf.value = null
+      if (e instanceof AuthApiError && e.status === 401) return 'session-gone'
+      throw e
+    }
+  }
+
   const withCsrf = async (
     send: (token: string | undefined) => Promise<void>,
   ): Promise<'done' | 'session-gone'> => {
     const hadCachedToken = !!csrf.value
-    if (!hadCachedToken) await ensureCsrf()
+    if (!hadCachedToken && (await fetchCsrf()) === 'session-gone') return 'session-gone'
     try {
       await send(csrf.value ?? undefined)
     } catch (e) {
       if (!(e instanceof AuthApiError && e.status === 401)) throw e
       csrf.value = null // refused, so spent either way
+      // Only an already-cached token can be stale; one minted moments ago
+      // cannot, so a 401 on it is the daemon refusing what it just issued.
       if (!hadCachedToken) throw e
-      let fresh: string
+      if ((await fetchCsrf()) === 'session-gone') return 'session-gone'
       try {
-        fresh = (await apiGetCsrf()).csrf
-      } catch (csrfError) {
-        if (csrfError instanceof AuthApiError && csrfError.status === 401) return 'session-gone'
-        throw csrfError
+        await send(csrf.value ?? undefined)
+      } catch (retryError) {
+        if (retryError instanceof AuthApiError && retryError.status === 401) csrf.value = null
+        throw retryError
       }
-      csrf.value = fresh
-      await send(fresh)
     }
     return 'done'
   }
@@ -104,12 +118,10 @@ export const useAuthStore = defineStore('auth', () => {
   const logout = async () => {
     try {
       // Either the session ended here or it had already ended; both leave the
-      // user signed out, and the token is spent either way.
+      // user signed out, and the token is spent either way. withCsrf() clears
+      // a refused token itself, so there is nothing to mop up on failure.
       await withCsrf((token) => apiLogout(token))
       csrf.value = null
-    } catch (e) {
-      if (e instanceof AuthApiError && e.status === 401) csrf.value = null
-      throw e
     } finally {
       // Never let a failed status refresh replace the error being thrown.
       await refreshStatus().catch(() => {})

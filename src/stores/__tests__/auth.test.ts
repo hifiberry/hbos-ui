@@ -224,21 +224,61 @@ describe('auth store', () => {
     expect(logout).toHaveBeenCalledTimes(1)
   })
 
-  it('logout does not report success when no token could be fetched at all', async () => {
+  it('logout surfaces a /csrf outage rather than the 401 it would have caused', async () => {
     getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
-    getCsrf.mockRejectedValue(new AuthApiError(500, 'csrf endpoint down'))
-    const refused = new AuthApiError(401, 'no csrf header')
-    logout.mockRejectedValue(refused)
+    const outage = new AuthApiError(500, 'csrf endpoint down')
+    getCsrf.mockRejectedValue(outage)
+    logout.mockRejectedValue(new AuthApiError(401, 'no csrf header'))
     const store = useAuthStore()
     // Post-reload with /api/auth/csrf down: no cached token, and none to be had.
     expect(store.csrf).toBeNull()
 
-    await expect(store.logout()).rejects.toBe(refused)
+    // The daemon is unwell, not the session. Reporting the downstream 401
+    // would send the user to sign in again over an outage.
+    await expect(store.logout()).rejects.toBe(outage)
 
-    // One attempt at a token, one logout, no retry — and crucially no silent
-    // resolve, which is the failure this whole change exists to remove.
-    expect(getCsrf).toHaveBeenCalledTimes(1)
-    expect(logout).toHaveBeenCalledTimes(1)
+    expect(logout).not.toHaveBeenCalled()
+  })
+
+  it('logout resolves when a post-reload rehydrate finds the session already gone', async () => {
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: false })
+    getCsrf.mockRejectedValue(new AuthApiError(401, 'no session'))
+    logout.mockRejectedValue(new AuthApiError(401, 'no session'))
+    const store = useAuthStore()
+    expect(store.csrf).toBeNull()
+
+    // The cached-token path already resolved here. Having to fetch the token
+    // first must not turn the same situation into "signing out was refused".
+    await expect(store.logout()).resolves.toBeUndefined()
+
+    expect(logout).not.toHaveBeenCalled()
+  })
+
+  it('setPolicy surfaces a /csrf outage rather than claiming the session expired', async () => {
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
+    const outage = new AuthApiError(500, 'csrf endpoint down')
+    getCsrf.mockRejectedValue(outage)
+    const store = useAuthStore()
+    expect(store.csrf).toBeNull()
+
+    await expect(store.setPolicy('off')).rejects.toBe(outage)
+
+    expect(setPolicy).not.toHaveBeenCalled()
+  })
+
+  it('setPolicy clears a freshly fetched token that is refused in turn', async () => {
+    login.mockResolvedValue({ csrf: 'tok-policy-stale2' })
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
+    getCsrf.mockResolvedValue({ csrf: 'tok-policy-fresh2' })
+    setPolicy.mockRejectedValue(new AuthApiError(401, 'refused'))
+    const store = useAuthStore()
+    await store.login('secret')
+
+    await expect(store.setPolicy('off')).rejects.toMatchObject({ status: 401 })
+
+    // Refused is refused: the helper discards it for every caller, not just
+    // the one that used to clean up after itself.
+    expect(store.csrf).toBeNull()
   })
 
   it('setPolicy rehydrates the csrf token when none is cached', async () => {

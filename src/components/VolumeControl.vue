@@ -163,10 +163,4 @@ const handleVolumeChange = (newVolume: number) => {
     }
   }
 }
-
-@include media-down(md) {
-  .volume-control {
-    display: none;
-  }
-}
 </style>

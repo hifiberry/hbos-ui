@@ -40,12 +40,19 @@ hifiberry-webui (0.24.1) stable; urgency=medium
     session. audiocontrol emits every path it hands a client already prefixed
     as of hifiberry/acr#30 -- library images, artist cover art, song cover art
     and lyrics -- which makes the repair dead code against a current daemon,
-    but hifiberry-webui
-    declares no dependency on hifiberry-audiocontrol, so an old daemon can
-    still pair with a new interface, and that failure is silent: the
-    un-prefixed path falls through nginx to this app, which answers 200 with
-    index.html, and the browser caches an HTML document as an album cover. The
-    warning is the evidence for deleting the repair a release from now.
+    but hifiberry-webui declares no dependency on hifiberry-audiocontrol, so
+    an old daemon can still pair with a new interface, and that failure is
+    silent: the un-prefixed path falls through nginx to this app, which answers
+    200 with index.html, and the browser caches an HTML document as an album
+    cover. The warning is the evidence for deleting the repair a release from
+    now.
+  * Now Playing: a cover art path sent by audiocontrol without the
+    /api/audiocontrol prefix is resolved rather than used verbatim. Over the
+    WebSocket audiocontrol sends song.cover_art_url un-prefixed, and it was
+    bound straight to an <img src>, so the cover silently became a copy of
+    index.html served by nginx at 200. Fixed for good by hifiberry/acr#30,
+    which prefixes it at the source; this makes the interface robust either
+    way, and is what puts that path behind the warning above.
 
  -- HiFiBerry <support@hifiberry.com>  Tue, 01 Sep 2026 08:20:32 +0000
 

@@ -32,6 +32,8 @@ const announcedRepairs = new Set<string>()
  * thousands of identical lines in front of whoever is reading the console --
  * which buries the real ones and says nothing the first line did not.
  */
+const REPAIRED_PREFIXES = ['/api/library/', '/api/lyrics/', '/api/coverart/'] as const
+
 const warnRepairedPath = (prefix: string, original: string, corrected: string): void => {
   if (announcedRepairs.has(prefix)) {
     return
@@ -44,6 +46,24 @@ const warnRepairedPath = (prefix: string, original: string, corrected: string): 
     `A daemon carrying hifiberry/acr#30 does not need this, and the repair is ` +
     `scheduled for removal. Further ${prefix} repairs this session are not reported.`
   )
+}
+
+/**
+ * Insert the audiocontrol segment into a path that is missing it.
+ *
+ * The repair is uniform across every prefix -- audiocontrol's routes all sit
+ * one segment below /api -- so this is the single place it happens, and the
+ * single thing to delete when the daemons that need it are gone.
+ */
+const repairPath = (url: string): string => {
+  const prefix = REPAIRED_PREFIXES.find(candidate => url.startsWith(candidate))
+  if (!prefix) {
+    return url
+  }
+
+  const corrected = url.replace('/api/', '/api/audiocontrol/')
+  warnRepairedPath(prefix, url, corrected)
+  return corrected
 }
 
 /**
@@ -67,24 +87,15 @@ export const rewriteImageUrl = (url: string): string => {
 
   // If URL already starts with /api/audiocontrol/, it's already been rewritten
   let correctedUrl = url
-  if (url.startsWith('/api/audiocontrol/')) {
-    correctedUrl = url
-  } else {
-    // Check if URL matches any of the image proxy prefixes
-    const matchedPrefix = IMAGE_PROXY_PREFIXES.find(prefix => url.startsWith(prefix))
-    if (!matchedPrefix) {
+  if (!url.startsWith('/api/audiocontrol/')) {
+    // The gate, and deliberately not REPAIRED_PREFIXES: this decides whether
+    // the URL is audiocontrol's to serve at all, and lyrics are not images.
+    if (!IMAGE_PROXY_PREFIXES.some(prefix => url.startsWith(prefix))) {
       // URL doesn't need proxying, return as-is
       return url
     }
 
-    // Convert /api/library/ to /api/audiocontrol/library/ and similar
-    if (url.startsWith('/api/library/')) {
-      correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
-      warnRepairedPath('/api/library/', url, correctedUrl)
-    } else if (url.startsWith('/api/coverart/')) {
-      correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
-      warnRepairedPath('/api/coverart/', url, correctedUrl)
-    }
+    correctedUrl = repairPath(url)
   }
 
   if (useProxy) {
@@ -138,17 +149,7 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
   // and /api/coverart/ to /api/audiocontrol/coverart/
   // This is needed because the API server sometimes returns shortened paths
   // but they should include /audiocontrol/ to match our API structure
-  let correctedUrl = url
-  if (url.startsWith('/api/library/')) {
-    correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
-    warnRepairedPath('/api/library/', url, correctedUrl)
-  } else if (url.startsWith('/api/lyrics/')) {
-    correctedUrl = url.replace('/api/lyrics/', '/api/audiocontrol/lyrics/')
-    warnRepairedPath('/api/lyrics/', url, correctedUrl)
-  } else if (url.startsWith('/api/coverart/')) {
-    correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
-    warnRepairedPath('/api/coverart/', url, correctedUrl)
-  }
+  const correctedUrl = repairPath(url)
 
   if (useProxy) {
     // In development with proxy, return the corrected URL

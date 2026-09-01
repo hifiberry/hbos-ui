@@ -1,5 +1,6 @@
 import { useAppConfigStore } from '@/stores/appconfig'
 import { apiFetch } from '@/api/http'
+import { rewriteImageUrl } from '@/api/utils'
 import type { Song } from '@/types/player'
 
 export interface CoverArtProvider {
@@ -279,8 +280,14 @@ export class CoverArtLoader {
 
     // First, check if song already has cover art URLs
     const existingUrls = []
-    if (song.artwork_url) existingUrls.push(song.artwork_url)
-    if (song.cover_art_url) existingUrls.push(song.cover_art_url)
+    // Both arrive device-relative, and audiocontrol sends cover_art_url without
+    // the /api/audiocontrol prefix over the WebSocket. Bound straight to an
+    // <img src> such a path does not 404 -- it falls through nginx to this app,
+    // which answers 200 with index.html, so the browser caches an HTML document
+    // as the cover and nothing reports an error. rewriteImageUrl resolves it
+    // against the device and leaves provider URLs alone.
+    if (song.artwork_url) existingUrls.push(rewriteImageUrl(song.artwork_url))
+    if (song.cover_art_url) existingUrls.push(rewriteImageUrl(song.cover_art_url))
 
     console.log('🔍 Existing URLs found:', existingUrls)
     console.log('🔍 Song metadata:', song.metadata)

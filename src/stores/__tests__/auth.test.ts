@@ -10,16 +10,21 @@ const { getAuthStatus, getCsrf, login, logout, setPassword, setPolicy } = vi.hoi
   setPolicy: vi.fn(),
 }))
 
-vi.mock('@/api/auth', () => ({
-  getAuthStatus,
-  getCsrf,
-  login,
-  logout,
-  setPassword,
-  setPolicy,
-}))
+vi.mock('@/api/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/api/auth')>('@/api/auth')
+  return {
+    ...actual,
+    getAuthStatus,
+    getCsrf,
+    login,
+    logout,
+    setPassword,
+    setPolicy,
+  }
+})
 
 import { useAuthStore } from '@/stores/auth'
+import { AuthApiError } from '@/api/auth'
 
 describe('auth store', () => {
   beforeEach(() => {
@@ -115,6 +120,42 @@ describe('auth store', () => {
     await store.login('secret')
 
     await expect(store.logout()).rejects.toThrow('HTTP 401')
+  })
+
+  it('logout retries once after re-fetching a stale token, and succeeds', async () => {
+    login.mockResolvedValue({ csrf: 'tok-stale-7' })
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: false })
+    getCsrf.mockResolvedValue({ csrf: 'tok-fresh-7' })
+    logout
+      .mockRejectedValueOnce(new AuthApiError(401, 'stale csrf'))
+      .mockResolvedValueOnce(undefined)
+    const store = useAuthStore()
+    await store.login('secret')
+
+    await store.logout()
+
+    expect(logout).toHaveBeenNthCalledWith(1, 'tok-stale-7')
+    expect(getCsrf).toHaveBeenCalled()
+    expect(logout).toHaveBeenNthCalledWith(2, 'tok-fresh-7')
+    expect(logout).toHaveBeenCalledTimes(2)
+    expect(store.csrf).toBeNull()
+  })
+
+  it('logout propagates the error when the retry after rehydrating also fails', async () => {
+    login.mockResolvedValue({ csrf: 'tok-stale-8' })
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: false })
+    getCsrf.mockResolvedValue({ csrf: 'tok-fresh-8' })
+    const secondError = new AuthApiError(401, 'session gone')
+    logout
+      .mockRejectedValueOnce(new AuthApiError(401, 'stale csrf'))
+      .mockRejectedValueOnce(secondError)
+    const store = useAuthStore()
+    await store.login('secret')
+
+    await expect(store.logout()).rejects.toBe(secondError)
+
+    expect(logout).toHaveBeenCalledTimes(2)
+    expect(store.csrf).toBeNull()
   })
 
   it('setPolicy sends the cached csrf and refreshes status', async () => {

@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
+  AuthApiError,
   getAuthStatus,
   getCsrf as apiGetCsrf,
   login as apiLogin,
@@ -58,11 +59,27 @@ export const useAuthStore = defineStore('auth', () => {
 
   /** The CSRF token lives only in memory, so a page reload loses it while
    *  the session cookie survives. The server requires it on logout, so
-   *  rehydrate before asking — otherwise sign-out silently does nothing. */
+   *  rehydrate before asking — otherwise sign-out silently does nothing.
+   *
+   *  A cached token can also be stale rather than merely missing: another
+   *  tab that logged in again rotated the cookie, so this tab's token no
+   *  longer matches. That surfaces as a 401 from apiLogout even though we
+   *  sent a token. Mirroring the retry apiFetch already does for a
+   *  login-hinted 401 (src/api/http.ts), re-fetch the token once and retry
+   *  the logout; if that retry also 401s the session really is gone and we
+   *  let the error propagate. */
   const logout = async () => {
     if (!csrf.value) await ensureCsrf()
     try {
-      await apiLogout(csrf.value ?? undefined)
+      try {
+        await apiLogout(csrf.value ?? undefined)
+      } catch (e) {
+        if (e instanceof AuthApiError && e.status === 401 && (await ensureCsrf())) {
+          await apiLogout(csrf.value ?? undefined)
+        } else {
+          throw e
+        }
+      }
     } finally {
       csrf.value = null
       await refreshStatus()

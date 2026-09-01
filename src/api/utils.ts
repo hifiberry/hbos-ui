@@ -8,11 +8,15 @@ const IMAGE_PROXY_PREFIXES = [
   '/api/coverart/',    // Cover art API: /api/coverart/...
 ] as const
 
+/** Prefixes already announced this session, so each is reported once. */
+const announcedRepairs = new Set<string>()
+
 /**
  * Announce a repair that should no longer be necessary.
  *
- * audiocontrol emits every image and lyrics path under the externally visible
- * /api/audiocontrol prefix as of hifiberry/acr#30, over REST and the WebSocket
+ * As of hifiberry/acr#30 audiocontrol emits every path it hands a client -
+ * library images, artist cover art, song cover art and lyrics - under the
+ * externally visible /api/audiocontrol prefix, over REST and the WebSocket
  * alike, which makes the repairs below dead code against a current daemon.
  * They are kept for one release rather than deleted on trust: hifiberry-webui
  * declares no dependency on hifiberry-audiocontrol, so nothing stops an old
@@ -22,13 +26,23 @@ const IMAGE_PROXY_PREFIXES = [
  *
  * This warning is the evidence for deleting them. If it never appears in the
  * field, the repair is not load-bearing and can go.
+ *
+ * Reported once per prefix per session. The artist store rewrites one URL per
+ * artist and the album grid one per cell, so warning on each would put
+ * thousands of identical lines in front of whoever is reading the console --
+ * which buries the real ones and says nothing the first line did not.
  */
-const warnRepairedPath = (original: string, corrected: string): void => {
+const warnRepairedPath = (prefix: string, original: string, corrected: string): void => {
+  if (announcedRepairs.has(prefix)) {
+    return
+  }
+  announcedRepairs.add(prefix)
+
   console.warn(
     `[deprecated] audiocontrol returned a path without the /api/audiocontrol prefix; ` +
     `the web interface repaired it: ${original} -> ${corrected}. ` +
     `A daemon carrying hifiberry/acr#30 does not need this, and the repair is ` +
-    `scheduled for removal.`
+    `scheduled for removal. Further ${prefix} repairs this session are not reported.`
   )
 }
 
@@ -66,10 +80,10 @@ export const rewriteImageUrl = (url: string): string => {
     // Convert /api/library/ to /api/audiocontrol/library/ and similar
     if (url.startsWith('/api/library/')) {
       correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
-      warnRepairedPath(url, correctedUrl)
+      warnRepairedPath('/api/library/', url, correctedUrl)
     } else if (url.startsWith('/api/coverart/')) {
       correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
-      warnRepairedPath(url, correctedUrl)
+      warnRepairedPath('/api/coverart/', url, correctedUrl)
     }
   }
 
@@ -127,13 +141,13 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
   let correctedUrl = url
   if (url.startsWith('/api/library/')) {
     correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
-    warnRepairedPath(url, correctedUrl)
+    warnRepairedPath('/api/library/', url, correctedUrl)
   } else if (url.startsWith('/api/lyrics/')) {
     correctedUrl = url.replace('/api/lyrics/', '/api/audiocontrol/lyrics/')
-    warnRepairedPath(url, correctedUrl)
+    warnRepairedPath('/api/lyrics/', url, correctedUrl)
   } else if (url.startsWith('/api/coverart/')) {
     correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
-    warnRepairedPath(url, correctedUrl)
+    warnRepairedPath('/api/coverart/', url, correctedUrl)
   }
 
   if (useProxy) {

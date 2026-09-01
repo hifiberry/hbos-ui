@@ -36,9 +36,11 @@ hifiberry-webui (0.24.1) stable; urgency=medium
     hide the control on the Now Playing screens, which is where a phone user
     reaches for it. Reported as hifiberry/hifiberry-os#651.
   * The two helpers that repair an audiocontrol path missing the
-    /api/audiocontrol prefix now warn when they fire. audiocontrol emits every
-    image and lyrics path already prefixed as of hifiberry/acr#30, which makes
-    the repair dead code against a current daemon -- but hifiberry-webui
+    /api/audiocontrol prefix now warn when they fire, once per prefix per
+    session. audiocontrol emits every path it hands a client already prefixed
+    as of hifiberry/acr#30 -- library images, artist cover art, song cover art
+    and lyrics -- which makes the repair dead code against a current daemon,
+    but hifiberry-webui
     declares no dependency on hifiberry-audiocontrol, so an old daemon can
     still pair with a new interface, and that failure is silent: the
     un-prefixed path falls through nginx to this app, which answers 200 with

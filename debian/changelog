@@ -21,7 +21,6 @@ hifiberry-webui (0.24.1) stable; urgency=medium
     write is attempted, so a rejected write left the UI showing an edit the
     hardware never took. They now resync from the backend after reporting the
     error.
-
   * Speaker Equalizer: a double tap on the bypass control no longer leaves the
     bank bypassed. The restore cleared its record of which banks to restore
     after the round-trip, so a second press that landed while it was still in
@@ -57,7 +56,7 @@ hifiberry-webui (0.24.1) stable; urgency=medium
     which prefixes it at the source; this makes the interface robust either
     way, and is what puts that path behind the warning above.
 
- -- HiFiBerry <support@hifiberry.com>  Tue, 01 Sep 2026 08:20:32 +0000
+ -- HiFiBerry <support@hifiberry.com>  Tue, 01 Sep 2026 12:48:26 +0200
 
 hifiberry-webui (0.24.0) stable; urgency=medium
 

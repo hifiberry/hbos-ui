@@ -208,6 +208,39 @@ describe('auth store', () => {
     expect(store.csrf).toBeNull()
   })
 
+  it('logout propagates a /csrf outage during the retry instead of reporting a clean sign-out', async () => {
+    login.mockResolvedValue({ csrf: 'tok-stale-12' })
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
+    const outage = new AuthApiError(500, 'csrf endpoint down')
+    logout.mockRejectedValueOnce(new AuthApiError(401, 'stale csrf'))
+    getCsrf.mockRejectedValue(outage)
+    const store = useAuthStore()
+    await store.login('secret')
+
+    // Only a 401 from /api/auth/csrf means the session is gone. An outage is
+    // a failure like any other and must not resolve as a successful sign-out.
+    await expect(store.logout()).rejects.toBe(outage)
+
+    expect(logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('logout does not report success when no token could be fetched at all', async () => {
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
+    getCsrf.mockRejectedValue(new AuthApiError(500, 'csrf endpoint down'))
+    const refused = new AuthApiError(401, 'no csrf header')
+    logout.mockRejectedValue(refused)
+    const store = useAuthStore()
+    // Post-reload with /api/auth/csrf down: no cached token, and none to be had.
+    expect(store.csrf).toBeNull()
+
+    await expect(store.logout()).rejects.toBe(refused)
+
+    // One attempt at a token, one logout, no retry — and crucially no silent
+    // resolve, which is the failure this whole change exists to remove.
+    expect(getCsrf).toHaveBeenCalledTimes(1)
+    expect(logout).toHaveBeenCalledTimes(1)
+  })
+
   it('setPolicy sends the cached csrf and refreshes status', async () => {
     login.mockResolvedValue({ csrf: 'tok-4' })
     setPolicy.mockResolvedValue(undefined)

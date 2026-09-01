@@ -57,26 +57,6 @@ export const useAuthStore = defineStore('auth', () => {
     return result
   }
 
-  /** Run a write that needs the CSRF token, rehydrating and retrying the way
-   *  `apiFetch` already does for its own callers (src/api/http.ts). The token
-   *  lives only in memory, so a page reload loses it while the session cookie
-   *  survives; and a token that survived can still be stale, because another
-   *  tab logging in again rotates the cookie.
-   *
-   *  Returns 'done' when the write went through, and 'session-gone' when the
-   *  session turned out to be dead. Only a 401 from `/api/auth/csrf` proves
-   *  that — `ensureCsrf()` reports every failure alike, so an outage there
-   *  would otherwise masquerade as a dead session. Everything else throws.
-   *
-   *  What a dead session means is the caller's to decide: for signing out it
-   *  is success, because there is nothing left to end; for any other write it
-   *  is a failure the user has to be told about.
-   *
-   *  A 401 on a token minted moments earlier is not an expiry — `/api/auth/csrf`
-   *  only answers for a valid session — so it propagates rather than being
-   *  retried or swallowed. The cached token is discarded only when it is spent
-   *  or refused: a 5xx or a network failure leaves both the session and the
-   *  token good, and dropping it there would break the next write. */
   /** Fetch a token, keeping the distinction ensureCsrf()'s boolean discards:
    *  only a 401 from `/api/auth/csrf` means the session is gone. An outage
    *  there is a failure like any other and must not masquerade as one. */
@@ -91,6 +71,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /** Run a write that needs the CSRF token, rehydrating and retrying the way
+   *  `apiFetch` already does for its own callers (src/api/http.ts). The token
+   *  lives only in memory, so a page reload loses it while the session cookie
+   *  survives; and a token that survived can still be stale, because another
+   *  tab logging in again rotates the cookie.
+   *
+   *  Returns 'done' when the write went through, and 'session-gone' when the
+   *  session turned out to be dead; everything else throws.
+   *
+   *  What a dead session means is the caller's to decide: for signing out it
+   *  is success, because there is nothing left to end; for any other write it
+   *  is a failure the user has to be told about.
+   *
+   *  A 401 on a token minted moments earlier is not an expiry — `/api/auth/csrf`
+   *  only answers for a valid session — so it propagates rather than being
+   *  retried or swallowed. The cached token is discarded only when it is spent
+   *  or refused: a 5xx or a network failure leaves both the session and the
+   *  token good, and dropping it there would break the next write. */
   const withCsrf = async (
     send: (token: string | undefined) => Promise<void>,
   ): Promise<'done' | 'session-gone'> => {

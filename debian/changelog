@@ -1,3 +1,24 @@
+hifiberry-webui (0.24.1) stable; urgency=medium
+
+  * Speaker Equalizer: loading a Room EQ correction or an EQ file now writes
+    each filter bank in a single request. Every addFilter() rewrote the whole
+    bank, so a 16-band correction was 136 hardware writes per channel, each
+    transiently leaving the not-yet-reached slots transparent -- a dropped
+    request anywhere in that sequence left the channels with different
+    filters. Devices running an older sigmatcpserver fall back to the
+    previous per-slot path.
+  * Speaker Equalizer: a quick tap on the bypass control no longer sends its
+    restore requests while the bypass requests are still in flight, which
+    could leave banks in the wrong state and pop the output.
+  * Speaker Equalizer: a filter the DSP profile cannot render is now refused
+    with an error naming the filter, instead of being written as an inaudible
+    pass-through. Previously a bandpass, bandstop, allpass or unrecognised
+    filter appeared on the EQ curve and reported success while doing nothing.
+    Failed filter writes are surfaced to the user rather than logged to the
+    console, and a drag that fails no longer leaves the editor stuck.
+
+ -- HiFiBerry <support@hifiberry.com>  Tue, 01 Sep 2026 08:20:32 +0000
+
 hifiberry-webui (0.24.0) stable; urgency=medium
 
   * Library grids: request cover art at the size the grid draws it. The album

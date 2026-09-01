@@ -274,10 +274,11 @@ async function onTurnOff() {
 async function onLogout() {
   if (busy.value) return
   busy.value = true
+  loadError.value = null
   try {
     await authStore.logout()
-  } catch {
-    // best-effort: refresh status regardless so the UI reflects reality
+  } catch (e) {
+    loadError.value = describeAuthError(e)
   } finally {
     await authStore.refreshStatus()
     busy.value = false

@@ -79,6 +79,44 @@ describe('auth store', () => {
     expect(store.csrf).toBeNull()
   })
 
+  it('logout rehydrates the csrf token when none is cached', async () => {
+    getCsrf.mockResolvedValue({ csrf: 'tok-rehydrated' })
+    logout.mockResolvedValue(undefined)
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: false })
+    const store = useAuthStore()
+    // no login(): this is the post-reload state — cookie alive, token gone
+    expect(store.csrf).toBeNull()
+
+    await store.logout()
+
+    expect(getCsrf).toHaveBeenCalled()
+    expect(logout).toHaveBeenCalledWith('tok-rehydrated')
+    expect(store.csrf).toBeNull()
+  })
+
+  it('logout does not refetch a token it already has', async () => {
+    login.mockResolvedValue({ csrf: 'tok-5' })
+    logout.mockResolvedValue(undefined)
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: false })
+    const store = useAuthStore()
+    await store.login('secret')
+
+    await store.logout()
+
+    expect(getCsrf).not.toHaveBeenCalled()
+    expect(logout).toHaveBeenCalledWith('tok-5')
+  })
+
+  it('logout propagates a server refusal instead of reporting success', async () => {
+    login.mockResolvedValue({ csrf: 'tok-6' })
+    logout.mockRejectedValue(new Error('HTTP 401'))
+    getAuthStatus.mockResolvedValue({ protection: 'risky', has_password: true, authenticated: true })
+    const store = useAuthStore()
+    await store.login('secret')
+
+    await expect(store.logout()).rejects.toThrow('HTTP 401')
+  })
+
   it('setPolicy sends the cached csrf and refreshes status', async () => {
     login.mockResolvedValue({ csrf: 'tok-4' })
     setPolicy.mockResolvedValue(undefined)

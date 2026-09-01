@@ -56,10 +56,17 @@ export const useAuthStore = defineStore('auth', () => {
     return result
   }
 
+  /** The CSRF token lives only in memory, so a page reload loses it while
+   *  the session cookie survives. The server requires it on logout, so
+   *  rehydrate before asking — otherwise sign-out silently does nothing. */
   const logout = async () => {
-    await apiLogout(csrf.value ?? undefined)
-    csrf.value = null
-    await refreshStatus()
+    if (!csrf.value) await ensureCsrf()
+    try {
+      await apiLogout(csrf.value ?? undefined)
+    } finally {
+      csrf.value = null
+      await refreshStatus()
+    }
   }
 
   const setPolicy = async (protection: ProtectionLevel) => {

@@ -35,6 +35,28 @@ hifiberry-webui (0.24.1) stable; urgency=medium
     and the header itself is hidden below 1024px, so the rule could only ever
     hide the control on the Now Playing screens, which is where a phone user
     reaches for it. Reported as hifiberry/hifiberry-os#651.
+  * The two helpers that repair an audiocontrol path missing the
+    /api/audiocontrol prefix now warn when they fire, once per prefix per
+    session. audiocontrol emits every path it hands a client already prefixed
+    as of hifiberry/acr#30 -- library images, artist cover art, song cover art
+    and lyrics -- which makes the repair dead code against a current daemon,
+    but hifiberry-webui declares no dependency on hifiberry-audiocontrol, so
+    an old daemon can still pair with a new interface, and that failure is
+    silent: the un-prefixed path falls through nginx to this app, which answers
+    200 with index.html, and the browser caches an HTML document as an album
+    cover. The warning is a diagnostic rather than the criterion for deleting
+    the repair: nothing collects a console.warn off a user's device, so a quiet
+    field would mostly mean nobody looked. It goes when this package can depend
+    on a hifiberry-audiocontrol carrying acr#30, which makes the pairing that
+    needs it uninstallable instead of merely unlikely.
+  * Now Playing: a cover art path sent by audiocontrol without the
+    /api/audiocontrol prefix is resolved rather than used verbatim. Over the
+    WebSocket audiocontrol sends song.cover_art_url un-prefixed, and it was
+    bound straight to an <img src>, so the cover silently became a copy of
+    index.html served by nginx at 200. Fixed for good by hifiberry/acr#30,
+    which prefixes it at the source; this makes the interface robust either
+    way, and is what puts that path behind the warning above.
+
  -- HiFiBerry <support@hifiberry.com>  Tue, 01 Sep 2026 08:20:32 +0000
 
 hifiberry-webui (0.24.0) stable; urgency=medium

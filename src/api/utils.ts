@@ -8,6 +8,68 @@ const IMAGE_PROXY_PREFIXES = [
   '/api/coverart/',    // Cover art API: /api/coverart/...
 ] as const
 
+/** Prefixes already announced this session, so each is reported once. */
+const announcedRepairs = new Set<string>()
+
+/** The prefixes audiocontrol used to emit without /api/audiocontrol. */
+const REPAIRED_PREFIXES = ['/api/library/', '/api/lyrics/', '/api/coverart/'] as const
+
+/**
+ * Announce a repair that should no longer be necessary.
+ *
+ * As of hifiberry/acr#30 audiocontrol emits every path it hands a client -
+ * library images, artist cover art, song cover art and lyrics - under the
+ * externally visible /api/audiocontrol prefix, over REST and the WebSocket
+ * alike, which makes the repairs below dead code against a current daemon.
+ * They are kept for one release rather than deleted on trust: hifiberry-webui
+ * declares no dependency on hifiberry-audiocontrol, so nothing stops an old
+ * daemon pairing with a new interface, and the failure is silent -- an
+ * un-prefixed path falls through nginx to this app, which answers 200 with
+ * index.html, so the browser caches an HTML document as an album cover.
+ *
+ * The warning is a diagnostic, not the criterion for deleting them: it is a
+ * console.warn on someone's device and nothing collects it, so a quiet field
+ * would mostly mean nobody looked. The repair goes when hifiberry-webui can
+ * declare hifiberry-audiocontrol (>= the release carrying acr#30), which makes
+ * the pairing that needs it uninstallable rather than merely unlikely.
+ *
+ * Reported once per prefix per session. The artist store rewrites one URL per
+ * artist and the album grid one per cell, so warning on each would put
+ * thousands of identical lines in front of whoever is reading the console --
+ * which buries the real ones and says nothing the first line did not.
+ */
+const warnRepairedPath = (prefix: string, original: string, corrected: string): void => {
+  if (announcedRepairs.has(prefix)) {
+    return
+  }
+  announcedRepairs.add(prefix)
+
+  console.warn(
+    `[deprecated] audiocontrol returned a path without the /api/audiocontrol prefix; ` +
+    `the web interface repaired it: ${original} -> ${corrected}. ` +
+    `A daemon carrying hifiberry/acr#30 does not need this, and the repair is ` +
+    `scheduled for removal. Further ${prefix} repairs this session are not reported.`
+  )
+}
+
+/**
+ * Insert the audiocontrol segment into a path that is missing it.
+ *
+ * The repair is uniform across every prefix -- audiocontrol's routes all sit
+ * one segment below /api -- so this is the single place it happens, and the
+ * single thing to delete when the daemons that need it are gone.
+ */
+const repairPath = (url: string): string => {
+  const prefix = REPAIRED_PREFIXES.find(candidate => url.startsWith(candidate))
+  if (!prefix) {
+    return url
+  }
+
+  const corrected = url.replace('/api/', '/api/audiocontrol/')
+  warnRepairedPath(prefix, url, corrected)
+  return corrected
+}
+
 /**
  * Rewrite image URLs to be accessible through the proxy or production API
  * This is specifically for images returned by the audiocontrol API
@@ -29,22 +91,15 @@ export const rewriteImageUrl = (url: string): string => {
 
   // If URL already starts with /api/audiocontrol/, it's already been rewritten
   let correctedUrl = url
-  if (url.startsWith('/api/audiocontrol/')) {
-    correctedUrl = url
-  } else {
-    // Check if URL matches any of the image proxy prefixes
-    const matchedPrefix = IMAGE_PROXY_PREFIXES.find(prefix => url.startsWith(prefix))
-    if (!matchedPrefix) {
+  if (!url.startsWith('/api/audiocontrol/')) {
+    // The gate, and deliberately not REPAIRED_PREFIXES: this decides whether
+    // the URL is audiocontrol's to serve at all, and lyrics are not images.
+    if (!IMAGE_PROXY_PREFIXES.some(prefix => url.startsWith(prefix))) {
       // URL doesn't need proxying, return as-is
       return url
     }
 
-    // Convert /api/library/ to /api/audiocontrol/library/ and similar
-    if (url.startsWith('/api/library/')) {
-      correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
-    } else if (url.startsWith('/api/coverart/')) {
-      correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
-    }
+    correctedUrl = repairPath(url)
   }
 
   if (useProxy) {
@@ -98,17 +153,7 @@ export const rewriteAudiocontrolApiUrl = (url: string): string => {
   // and /api/coverart/ to /api/audiocontrol/coverart/
   // This is needed because the API server sometimes returns shortened paths
   // but they should include /audiocontrol/ to match our API structure
-  let correctedUrl = url
-  if (url.startsWith('/api/library/')) {
-    correctedUrl = url.replace('/api/library/', '/api/audiocontrol/library/')
-    console.log('Fixed library URL path:', { original: url, corrected: correctedUrl })
-  } else if (url.startsWith('/api/lyrics/')) {
-    correctedUrl = url.replace('/api/lyrics/', '/api/audiocontrol/lyrics/')
-    console.log('Fixed lyrics URL path:', { original: url, corrected: correctedUrl })
-  } else if (url.startsWith('/api/coverart/')) {
-    correctedUrl = url.replace('/api/coverart/', '/api/audiocontrol/coverart/')
-    console.log('Fixed coverart URL path:', { original: url, corrected: correctedUrl })
-  }
+  const correctedUrl = repairPath(url)
 
   if (useProxy) {
     // In development with proxy, return the corrected URL

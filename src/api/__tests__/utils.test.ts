@@ -18,12 +18,19 @@ vi.mock('@/stores/appconfig', () => ({
   }),
 }))
 
-import { rewriteAudiocontrolApiUrl } from '@/api/utils'
+import { rewriteAudiocontrolApiUrl, rewriteImageUrl } from '@/api/utils'
 
 describe('rewriteAudiocontrolApiUrl', () => {
   beforeEach(() => {
+    // Without this the console spies are shared across cases and their call
+    // counts accumulate, so a "must not warn" assertion sees the previous
+    // test's warning.
+    vi.restoreAllMocks()
     apiConfig.useProxy = false
     vi.spyOn(console, 'log').mockImplementation(() => {})
+    // Several cases below repair a shortened path, which now warns. They do
+    // not assert on it, so stub it rather than printing it.
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
   /** audiocontrol reports lyrics_url as a shortened /api/lyrics/... path. The
@@ -67,5 +74,116 @@ describe('rewriteAudiocontrolApiUrl', () => {
     expect(rewriteAudiocontrolApiUrl('https://example.com/x')).toBe('https://example.com/x')
     expect(rewriteAudiocontrolApiUrl('/images/logo.svg')).toBe('/images/logo.svg')
     expect(rewriteAudiocontrolApiUrl('')).toBe('')
+  })
+
+})
+
+/**
+ * hifiberry/acr#30 makes audiocontrol emit every path under the externally
+ * visible prefix, over REST and the WebSocket alike, which makes the repair
+ * dead code against a current daemon. It is kept for one release rather than
+ * deleted on trust, and warns so the field says whether it is still needed.
+ *
+ * The warning de-duplicates per session, so each case needs a module whose
+ * "already announced" set is empty. A reset hook exported for the tests would
+ * be production code that exists only to serve them; re-importing is not.
+ */
+describe('repair deprecation warning', () => {
+  const freshUtils = async () => {
+    vi.resetModules()
+    return import('@/api/utils')
+  }
+
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    apiConfig.useProxy = false
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  it('warns when it has to repair a shortened path', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { rewriteAudiocontrolApiUrl: rewrite } = await freshUtils()
+
+    rewrite('/api/lyrics/mpd/dHJhY2s')
+
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0][0]).toContain('/api/lyrics/mpd/dHJhY2s')
+    expect(warn.mock.calls[0][0]).toMatch(/deprecated/i)
+  })
+
+  it('stays quiet for a path that already carries the prefix', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { rewriteAudiocontrolApiUrl: rewrite } = await freshUtils()
+
+    rewrite('/api/audiocontrol/now-playing')
+
+    expect(warn).not.toHaveBeenCalled()
+  })
+
+  /**
+   * The artist store rewrites one URL per artist and the album grid one per
+   * cell, so against an old daemon an unguarded warning is thousands of
+   * identical lines per library scroll -- which buries the real ones and is
+   * no better as evidence than a single line.
+   */
+  it('warns once however many paths share the repaired prefix', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { rewriteImageUrl: rewrite } = await freshUtils()
+
+    for (let i = 0; i < 50; i++) {
+      rewrite(`/api/library/mpd/image/album${i}`)
+    }
+
+    expect(warn).toHaveBeenCalledTimes(1)
+  })
+
+  it('warns once for each distinct repaired prefix', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { rewriteAudiocontrolApiUrl: rewrite } = await freshUtils()
+
+    rewrite('/api/lyrics/mpd/dHJhY2s')
+    rewrite('/api/library/mpd/image/dHJhY2s')
+    rewrite('/api/coverart/artist/QXJ0aXN0/image')
+    rewrite('/api/lyrics/mpd/b3RoZXI')
+
+    expect(warn).toHaveBeenCalledTimes(3)
+  })
+
+  it('counts a repair the same whichever helper made it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { rewriteImageUrl, rewriteAudiocontrolApiUrl: rewrite } = await freshUtils()
+
+    rewriteImageUrl('/api/coverart/artist/QXJ0aXN0/image')
+    rewrite('/api/coverart/artist/QXJ0aXN0/image')
+
+    expect(warn).toHaveBeenCalledTimes(1)
+  })
+
+  /**
+   * The gate in rewriteImageUrl is IMAGE_PROXY_PREFIXES, not REPAIRED_PREFIXES,
+   * because it answers a different question: whether the URL is audiocontrol's
+   * to serve as an image at all. Lyrics are not, so they must fall straight
+   * through. Without this case, widening the gate to REPAIRED_PREFIXES passes
+   * the whole suite -- which is the edit the comment there exists to prevent.
+   */
+  it('leaves a lyrics path alone in the image rewriter', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { rewriteImageUrl } = await freshUtils()
+
+    expect(rewriteImageUrl('/api/lyrics/mpd/dHJhY2s')).toBe('/api/lyrics/mpd/dHJhY2s')
+    expect(warn).not.toHaveBeenCalled()
+  })
+
+  it('still repairs the path it warned about', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { rewriteImageUrl } = await freshUtils()
+
+    expect(rewriteImageUrl('/api/library/mpd/image/a')).toBe(
+      'http://192.168.1.12/api/audiocontrol/library/mpd/image/a',
+    )
+    // ...including every one after the warning was suppressed.
+    expect(rewriteImageUrl('/api/library/mpd/image/b')).toBe(
+      'http://192.168.1.12/api/audiocontrol/library/mpd/image/b',
+    )
   })
 })

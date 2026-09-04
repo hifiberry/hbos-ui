@@ -21,6 +21,17 @@
         </p>
       </ContentBoxLink>
 
+      <ContentBoxLink :to="{ name: 'speaker-presets' }" :height="150">
+        <div class="soundCardHeader">
+          <Icon icon="tabler/speaker" class="soundCardHeaderIcon" />
+          <h2>Speaker Presets</h2>
+        </div>
+        <p class="soundCardDescription">
+          Ready-made crossover and equalisation for known loudspeakers, on a
+          DSP board
+        </p>
+      </ContentBoxLink>
+
       <ContentBoxLink :to="{ name: 'crossover-design' }"  height=150>
         <div class="soundCardHeader">
           <Icon icon="tabler/crossover" class="soundCardHeaderIcon" />

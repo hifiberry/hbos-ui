@@ -13,6 +13,11 @@ export interface DetectedDSP {
 // Metadata Types
 export interface DSPMetadata {
   checksum: string
+  // Declared by the profile XML, so present on any profile that names them.
+  // programID identifies the DSP program; modelName the board it was built
+  // for, which is what decides whether another profile may replace it.
+  programID?: string
+  modelName?: string
   _system?: {
     profileName: string
     profileVersion: string

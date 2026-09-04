@@ -16,9 +16,9 @@
       </div>
       <div class="header-actions">
         <Icon icon="link"
-          @click="toggleChannelMode"
+          @click="guardedToggleChannelMode"
           title="Channel Mode"
-          :class="{ linked: channelMode === 'both' }"
+          :class="{ linked: channelMode === 'both', 'icon-disabled': isPresetOwned }"
           class="icon-btn" />
         <Icon icon="ear"
           @mousedown="startBypass"
@@ -29,10 +29,22 @@
           :class="{ bypassed: isBypassed }"
           class="icon-btn"
           title="Bypass" />
-        <Icon icon="tabler/armchair" @click="loadRoomEQSettings" title="Load Room EQ Configuration" class="icon-btn" />
-        <Icon icon="folder_open" @click="loadEQSettings" title="Load EQ Settings" class="icon-btn" />
+        <Icon icon="tabler/armchair" @click="guardedLoadRoomEQSettings" title="Load Room EQ Configuration"
+          :class="{ 'icon-disabled': isPresetOwned }" class="icon-btn" />
+        <Icon icon="folder_open" @click="guardedLoadEQSettings" title="Load EQ Settings"
+          :class="{ 'icon-disabled': isPresetOwned }" class="icon-btn" />
         <Icon icon="save" @click="saveEQSettings" title="Save EQ Settings" class="icon-btn" />
       </div>
+    </div>
+
+    <div v-if="isPresetOwned" class="preset-lock-banner" data-test="preset-lock-banner">
+      <Icon icon="lock" class="banner-icon" />
+      <div class="banner-text">
+        <p>{{ lockMessage }}</p>
+      </div>
+      <button class="banner-action" data-test="clear-preset" @click="showClearDialog = true">
+        Clear preset and edit freely
+      </button>
     </div>
 
     <div class="card">
@@ -43,10 +55,10 @@
           :show-bandwidth-lines="true"
           :sample-rate="SAMPLE_RATE"
           @set-active-filter="activeFilterId = $event"
-          @update:freq-gain="onGraphUpdateFreqGain"
-          @update:q="onGraphUpdateQ"
-          @drag-start="onGraphDragStart"
-          @drag-end="onGraphDragEnd"
+          @update:freq-gain="guardedUpdateFreqGain"
+          @update:q="guardedUpdateQ"
+          @drag-start="guardedDragStart"
+          @drag-end="guardedDragEnd"
         />
       </div>
     </div>
@@ -64,38 +76,40 @@
           </button>
         </div>
 
-        <div class="filters-list">
+        <div class="filters-list" :class="{ 'preset-locked': isPresetOwned }">
           <div v-for="filter in filters" :key="filter.id" class="card">
             <EqFilterItem
               :filter="filter"
               :is-active="activeFilterId === filter.id"
               @select="activeFilterId = $event"
-              @remove="removeFilter"
-              @toggle-enabled="toggleFilterEnabled"
-              @increment-frequency="incrementFilterFrequency"
-              @decrement-frequency="decrementFilterFrequency"
-              @increment-gain="incrementFilterGain"
-              @decrement-gain="decrementFilterGain"
-              @widen-band="widenFilterBand"
-              @narrow-band="narrowFilterBand"
-              @update-generic-coeff="updateGenericCoeff"
+              @remove="guardedRemoveFilter"
+              @toggle-enabled="guardedToggleFilterEnabled"
+              @increment-frequency="guardedIncrementFrequency"
+              @decrement-frequency="guardedDecrementFrequency"
+              @increment-gain="guardedIncrementGain"
+              @decrement-gain="guardedDecrementGain"
+              @widen-band="guardedWidenBand"
+              @narrow-band="guardedNarrowBand"
+              @update-generic-coeff="guardedUpdateGenericCoeff"
             />
           </div>
 
           <div class="card">
             <div class="filter-item add-filter-item"
-                 :class="{ disabled: !canAddFilterToCurrentChannel }"
-                 @click="canAddFilterToCurrentChannel && (showAddFilterModal = true)">
+                 :class="{ disabled: !canAddFilter }"
+                 data-test="add-filter"
+                 @click="canAddFilter && (showAddFilterModal = true)">
               <div class="filter-main">
                 <div class="filter-info">
                   <Icon icon="plus" class="filter-icon" />
                   <div class="filter-details">
-                    <h3>{{ canAddFilterToCurrentChannel ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
+                    <h3 v-if="isPresetOwned">Preset Filters — Read Only</h3>
+                    <h3 v-else>{{ canAddFilter ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
                     <div class="filter-frequency">
                       <span v-if="currentChannelFilterInfo">
                         {{ currentChannelFilterInfo.currentFilterCount }}/{{ currentChannelFilterInfo.maxFilters }} filters
                       </span>
-                      <span v-else-if="canAddFilterToCurrentChannel">Click to add</span>
+                      <span v-else-if="canAddFilter">Click to add</span>
                       <span v-else>Cannot add more filters</span>
                     </div>
                   </div>
@@ -121,6 +135,18 @@
     @close="showBackendInfoModal = false"
   />
 
+  <ConfirmationDialog
+    :is-open="showClearDialog"
+    title="Clear speaker preset?"
+    :message="clearConfirmationMessage"
+    confirm-button-text="Clear preset"
+    :is-dangerous="true"
+    :disabled="isClearing"
+    icon="lock"
+    @close="showClearDialog = false"
+    @confirm="handleClearPreset"
+  />
+
   <RoomEqLoaderModal
     :open="showRoomEQModal"
     :loading="loadingRoomEQConfigs"
@@ -132,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import Icon from '@/components/Icon.vue';
 import PageContent from '@/components/PageContent.vue';
@@ -141,12 +167,14 @@ import EqFilterItem from '@/components/speaker-eq/EqFilterItem.vue';
 import AddFilterModal from '@/components/speaker-eq/AddFilterModal.vue';
 import BackendInfoModal from '@/components/speaker-eq/BackendInfoModal.vue';
 import RoomEqLoaderModal, { type RoomEQConfigItem } from '@/components/speaker-eq/RoomEqLoaderModal.vue';
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue';
 
 import { type BiquadFilterType } from '@/utils/biquad';
 import { useEqFilters } from '@/composables/useEqFilters';
 import { useBypass } from '@/composables/useBypass';
 import { useEqFileIO } from '@/composables/useEqFileIO';
 import { useRoomEQ } from '@/composables/useRoomEQ';
+import { usePresetLock } from '@/composables/usePresetLock';
 
 // Available filter types for the UI
 const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = ['lowshelf', 'peaking', 'highshelf', 'generic_normalized'];
@@ -168,6 +196,7 @@ const {
   isCurrentPairLinked,
   initialize,
   loadBackendCapabilities,
+  loadFiltersFromBackend,
   setActiveChannel,
   toggleChannelMode,
   addFilterOfType,
@@ -216,6 +245,50 @@ const {
   loadSelectedRoomEQConfig,
 } = useRoomEQ(channelNames, channelFilters, activeFilterId);
 
+// --- Speaker preset ownership ---
+// A bank written by a speaker preset holds raw-coefficient filters. They stay
+// visible and the curve stays correct, but every path that rewrites the bank
+// is closed — including loading a Room EQ correction or a saved EQ file,
+// which would overwrite the preset just as thoroughly as a band edit.
+const {
+  isPresetOwned,
+  lockMessage,
+  clearConfirmationMessage,
+  showClearDialog,
+  isClearing,
+  loadAppliedPreset,
+  readOnly,
+  confirmClearPreset,
+} = usePresetLock(filters);
+
+const canAddFilter = computed(() => canAddFilterToCurrentChannel.value && !isPresetOwned.value);
+
+// Linking the channels copies the active channel's filters over its partner,
+// which would overwrite the partner's share of the preset just as thoroughly.
+const guardedToggleChannelMode = readOnly(toggleChannelMode);
+const guardedRemoveFilter = readOnly(removeFilter);
+const guardedToggleFilterEnabled = readOnly(toggleFilterEnabled);
+const guardedIncrementFrequency = readOnly(incrementFilterFrequency);
+const guardedDecrementFrequency = readOnly(decrementFilterFrequency);
+const guardedIncrementGain = readOnly(incrementFilterGain);
+const guardedDecrementGain = readOnly(decrementFilterGain);
+const guardedWidenBand = readOnly(widenFilterBand);
+const guardedNarrowBand = readOnly(narrowFilterBand);
+const guardedUpdateGenericCoeff = readOnly(updateGenericCoeff);
+const guardedUpdateFreqGain = readOnly(onGraphUpdateFreqGain);
+const guardedUpdateQ = readOnly(onGraphUpdateQ);
+const guardedDragStart = readOnly(onGraphDragStart);
+const guardedDragEnd = readOnly(onGraphDragEnd);
+const guardedLoadRoomEQSettings = readOnly(loadRoomEQSettings);
+const guardedLoadEQSettings = readOnly(loadEQSettings);
+
+async function handleClearPreset() {
+  await confirmClearPreset(async () => {
+    await loadFiltersFromBackend();
+    await loadBackendCapabilities();
+  });
+}
+
 // --- Modal state ---
 const showAddFilterModal = ref(false);
 const showBackendInfoModal = ref(false);
@@ -260,9 +333,12 @@ onMounted(async () => {
   const route = useRoute();
 
   await initialize();
+  await loadAppliedPreset();
 
   // Check for Room EQ query parameters
-  if (route.query.applyRoomEQ && route.query.channel) {
+  // Not even by deep link: applying a Room EQ correction rewrites the bank a
+  // speaker preset owns.
+  if (route.query.applyRoomEQ && route.query.channel && !isPresetOwned.value) {
     await loadRoomEQSettings();
     const roomEQKey = route.query.applyRoomEQ as string;
     const channel = route.query.channel as 'left' | 'right' | 'both';
@@ -343,6 +419,58 @@ watch(activeChannel, async () => {
         &:hover { opacity: 0.5; }
         &.linked { stroke: red; }
         &.bypassed { stroke: blue; }
+
+        // A preset owns the bank: loading a Room EQ correction or a saved EQ
+        // file would overwrite it.
+        &.icon-disabled { opacity: 0.35; cursor: not-allowed; }
+      }
+    }
+  }
+
+  .preset-lock-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    background: rgba(0, 184, 255, 0.08);
+    border: 1px solid rgba(0, 184, 255, 0.4);
+
+    .banner-icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      stroke: #00b8ff;
+    }
+
+    .banner-text {
+      flex: 1;
+      min-width: 200px;
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--color-text);
+      }
+    }
+
+    .banner-action {
+      padding: 8px 16px;
+      border: 1px solid rgba(112, 112, 112, 0.5);
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--color-text);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(225, 30, 74, 0.2);
+        border-color: var(--primary, #e11e4a);
       }
     }
   }
@@ -397,6 +525,21 @@ watch(activeChannel, async () => {
       display: flex;
       flex-direction: column;
       gap: 15px;
+
+      // Read-only, not hidden: the filters a preset wrote stay legible and
+      // the count stays honest; only the controls that would rewrite the
+      // bank stop responding.
+      &.preset-locked {
+        :deep(.filter-item) {
+          pointer-events: none;
+          opacity: 0.75;
+        }
+
+        :deep(input),
+        :deep(button) {
+          pointer-events: none;
+        }
+      }
 
       .filter-item {
         padding: 20px;

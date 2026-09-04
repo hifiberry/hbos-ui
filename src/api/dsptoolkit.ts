@@ -761,6 +761,17 @@ export interface SpeakerPresetApplyResponse {
   registersWritten: number
 }
 
+/**
+ * Answer to DELETE /presets/current. `cleared` is the id of the preset that
+ * was applied, or null when there was nothing to clear.
+ */
+export interface SpeakerPresetClearResponse {
+  status: 'success'
+  cleared: string | null
+  banksCleared: number
+  filtersCleared: number
+}
+
 export async function listSpeakerPresets(): Promise<SpeakerPresetListResponse> {
   return apiRequest<SpeakerPresetListResponse>('/presets')
 }
@@ -776,6 +787,19 @@ export async function applySpeakerPreset(
     `/presets/${encodeURIComponent(id)}/apply`,
     { method: 'POST' }
   )
+}
+
+/**
+ * Return all four channels to no filters and forget the recorded selection.
+ *
+ * The server writes transparent biquads to every bank, clears their stored
+ * filters and bypass state, and deliberately leaves the per-channel
+ * role/level/delay/polarity registers alone — those are not filters.
+ */
+export async function clearSpeakerPreset(): Promise<SpeakerPresetClearResponse> {
+  return apiRequest<SpeakerPresetClearResponse>('/presets/current', {
+    method: 'DELETE'
+  })
 }
 
 // DSP Toolkit Status Check

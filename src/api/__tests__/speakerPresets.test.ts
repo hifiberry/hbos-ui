@@ -11,6 +11,7 @@ import {
   listSpeakerPresets,
   getSpeakerPreset,
   applySpeakerPreset,
+  clearSpeakerPreset,
 } from '@/api/dsptoolkit'
 
 const jsonResponse = (status: number, body: unknown) => ({
@@ -95,6 +96,42 @@ describe('speaker preset API', () => {
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     expect(result.status).toBe('success')
     expect(result.banksWritten).toBe(4)
+  })
+
+  it('clears the applied preset with a DELETE on /presets/current', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, {
+        status: 'success',
+        cleared: 'beovox-s35',
+        banksCleared: 4,
+        filtersCleared: 30,
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await clearSpeakerPreset()
+
+    expect(fetchMock.mock.calls[0][0]).toBe('http://host/api/dsptoolkit/presets/current')
+    expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
+    expect(result.cleared).toBe('beovox-s35')
+    expect(result.filtersCleared).toBe(30)
+  })
+
+  it('reports no preset as cleared: null rather than an error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(200, { status: 'success', cleared: null, banksCleared: 4, filtersCleared: 0 }),
+      ),
+    )
+
+    expect((await clearSpeakerPreset()).cleared).toBeNull()
+  })
+
+  it('surfaces a failed clear as an error instead of a silent no-op', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(500, { detail: 'dsp busy' })))
+
+    await expect(clearSpeakerPreset()).rejects.toThrow('500')
   })
 
   it('surfaces an incompatible preset as an error rather than a silent no-op', async () => {

@@ -1,3 +1,26 @@
+hifiberry-webui (0.25.0) stable; urgency=medium
+
+  * New Sound page: Speaker Presets. A speaker preset configures all four
+    amplifier channels for one loudspeaker -- crossover, driver
+    equalisation, routing and levels -- and is applied by the DSP daemon as a
+    unit. The page lists what is installed, marks the one currently applied,
+    and says why an incompatible preset cannot be applied rather than only
+    disabling the button. The confirmation says what applying costs: it
+    rewrites all four channels, including any room correction already loaded
+    into the same banks.
+  * A board running the wrong DSP program is offered the profile deployment
+    and the apply as two explicit steps, because applying does not deploy
+    profiles. That offer is made only where it is the right remedy: the
+    loaded profile must be readable, must name a different program, and the
+    profile that would replace it must target the same board. Otherwise a
+    DAC+DSP or DSP Add-On would have been offered a Beocreate profile --
+    every profile ships on every device, so their presence says nothing --
+    and writing one into that board's EEPROM persists across reboots.
+  * On a system with no DSP board or no DSP service the page now says so,
+    instead of printing the proxy's "HTTP 502: Bad Gateway" verbatim.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 04 Sep 2026 13:33:26 +0000
+
 hifiberry-webui (0.24.3) stable; urgency=medium
 
   * The VU meter is back on a Compute Module 5. Everything gated on "Pi 5 or

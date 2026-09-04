@@ -1,3 +1,11 @@
+hifiberry-webui (0.25.1) stable; urgency=medium
+
+  * Speaker presets: the apply button is styled like the other action buttons
+    in Sound. It previously rendered as plain text, giving no indication it
+    could be pressed.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 04 Sep 2026 13:58:47 +0000
+
 hifiberry-webui (0.25.0) stable; urgency=medium
 
   * New Sound page: Speaker Presets. A speaker preset configures all four

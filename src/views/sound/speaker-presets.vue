@@ -346,11 +346,24 @@ onMounted(load)
 }
 
 .applyButton {
+  padding: 12px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
-}
+  font-weight: 500;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
 
-.applyButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+  &:hover:not(:disabled) {
+    background: var(--primary-dark, var(--primary));
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 </style>

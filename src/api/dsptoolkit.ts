@@ -713,6 +713,66 @@ export async function writeChannelSelect(address: number, mode: number): Promise
   await writeMemory({ address: String(address), value: mode })
 }
 
+// Speaker Presets API — a preset describes one loudspeaker as four DSP
+// channels and is applied server-side as a unit.
+
+export interface SpeakerPresetSummary {
+  id: string
+  name: string
+  description?: string | null
+  requiredProfile: string
+  sampleRate: number
+  readOnly: boolean
+  filterCounts: Record<string, number>
+  compatible: boolean
+  incompatibleReason: string | null
+}
+
+export interface SpeakerPresetChannel {
+  role: string
+  level: number
+  delayMs: number
+  invert: boolean
+  enabled: boolean
+  filters: FilterCoefficients[]
+}
+
+export interface SpeakerPreset extends SpeakerPresetSummary {
+  schemaVersion: number
+  minProfileVersion: number
+  channels: Record<string, SpeakerPresetChannel>
+}
+
+export interface SpeakerPresetListResponse {
+  presets: SpeakerPresetSummary[]
+  current: string | null
+}
+
+export interface SpeakerPresetApplyResponse {
+  status: 'success' | 'partial'
+  preset: string
+  banksWritten: number
+  filtersWritten: number
+  registersWritten: number
+}
+
+export async function listSpeakerPresets(): Promise<SpeakerPresetListResponse> {
+  return apiRequest<SpeakerPresetListResponse>('/presets')
+}
+
+export async function getSpeakerPreset(id: string): Promise<SpeakerPreset> {
+  return apiRequest<SpeakerPreset>(`/presets/${encodeURIComponent(id)}`)
+}
+
+export async function applySpeakerPreset(
+  id: string
+): Promise<SpeakerPresetApplyResponse> {
+  return apiRequest<SpeakerPresetApplyResponse>(
+    `/presets/${encodeURIComponent(id)}/apply`,
+    { method: 'POST' }
+  )
+}
+
 // DSP Toolkit Status Check
 export type DSPToolkitStatus = 'yes' | 'no' | 'backend_error'
 

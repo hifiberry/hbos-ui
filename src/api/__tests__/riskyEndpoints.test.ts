@@ -7,6 +7,7 @@ vi.mock('@/stores/appconfig', () => ({
     getApiBaseUrl: () => 'http://host/api/audiocontrol',
     getConfigApiBaseUrl: () => 'http://host/api/config/v1',
     getRoomEQApiBaseUrl: () => 'http://host/api/roomeq',
+    getDSPToolkitApiBaseUrl: () => 'http://host/api/dsptoolkit',
   }),
 }))
 
@@ -14,6 +15,7 @@ import { getAllConfig, getConfigValue } from '@/api/config'
 import { getFilterChain } from '@/api/filterchain'
 import { startRoomEQRecording, startRoomMeasure } from '@/api/roomeq'
 import { rebootSystem, shutdownSystem } from '@/api/system'
+import { applySpeakerPreset } from '@/api/dsptoolkit'
 
 const jsonResponse = (status: number, body: unknown, headers: Record<string, string> = {}) => ({
   ok: status >= 200 && status < 300,
@@ -177,5 +179,28 @@ describe('risky endpoints outside the spotify/lastfm flows', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('http://host/api/config/v1/system/shutdown')
     expect(init.method).toBe('POST')
+  })
+
+  /** dsptoolkit.json leaves POST /presets/<id>/apply on the risky default:
+   *  applying a preset rewrites the crossover of whatever is connected. */
+  it('applySpeakerPreset prompts for the password on a 401 and retries', async () => {
+    const authStore = useAuthStore()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(challenge())
+      .mockResolvedValue(
+        jsonResponse(200, { status: 'success', preset: 'beovox-s35' }, {
+          'content-type': 'application/json',
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(authStore, 'ensureCsrf').mockResolvedValue(false)
+    const promptSpy = vi.spyOn(authStore, 'promptForAuth').mockResolvedValue(true)
+
+    const result = await applySpeakerPreset('beovox-s35')
+
+    expect(promptSpy).toHaveBeenCalledWith('login')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(result.status).toBe('success')
   })
 })

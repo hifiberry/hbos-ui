@@ -11,11 +11,18 @@
  */
 export interface Filter {
   id: string
-  type: 'highpass' | 'lowpass' | 'bandpass' | 'bandstop' | 'peak' | 'shelf-low' | 'shelf-high' | 'allpass'
+  type: 'highpass' | 'lowpass' | 'bandpass' | 'bandstop' | 'peak' | 'shelf-low' | 'shelf-high' | 'allpass' | 'generic'
   frequency: number
   gain?: number // For peak and shelf filters
   q?: number // Quality factor
   enabled: boolean
+  /**
+   * Raw, a0-normalised biquad coefficients. Only 'generic' filters carry
+   * these: a filter written to the DSP as coefficients (a speaker preset,
+   * for instance) has no frequency/gain/Q to describe it, and forcing it
+   * into a typed filter would change what the speaker plays.
+   */
+  coefficients?: { b0: number; b1: number; b2: number; a1: number; a2: number }
 }
 
 /**

@@ -54,6 +54,62 @@ describe('convertUIFilterToStore', () => {
     const result = convertUIFilterToStore(baseUIFilter)
     expect(result).not.toHaveProperty('id')
   })
+
+  it('converts a generic biquad to a generic store filter carrying its coefficients', () => {
+    const result = convertUIFilterToStore({
+      ...baseUIFilter,
+      icon: 'generic_normalized',
+      genericCoeffs: { b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 },
+    })
+
+    expect(result.type).toBe('generic')
+    expect(result.coefficients).toEqual({ b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 })
+  })
+})
+
+describe('round-tripping a generic biquad', () => {
+  /**
+   * The old mapping degraded a preset's biquad into a peak filter at whatever
+   * frequency happened to be on the object — a silent change to what the
+   * speaker plays.
+   */
+  it('preserves the coefficients instead of degrading into a peak filter', () => {
+    const coefficients = { b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 }
+    const uiFilter: UIFilter = {
+      id: 4,
+      icon: 'generic_normalized',
+      text: '0',
+      frequency: 0,
+      gain: 0,
+      Q: 0.71,
+      enabled: true,
+      genericCoeffs: coefficients,
+    }
+
+    const stored = convertUIFilterToStore(uiFilter)
+    const roundTripped = convertStoreFilterToUI({ ...stored, id: 'filter_4' }, 'filter_4')
+
+    expect(roundTripped.icon).toBe('generic_normalized')
+    expect(roundTripped.genericCoeffs).toEqual(coefficients)
+  })
+
+  it('does not alias the coefficient object between the two representations', () => {
+    const uiFilter: UIFilter = {
+      id: 4,
+      icon: 'generic_normalized',
+      text: '0',
+      frequency: 0,
+      gain: 0,
+      Q: 0.71,
+      enabled: true,
+      genericCoeffs: { b0: 1.2, b1: 0, b2: 0, a1: 0, a2: 0 },
+    }
+
+    const stored = convertUIFilterToStore(uiFilter)
+    uiFilter.genericCoeffs!.b0 = 99
+
+    expect(stored.coefficients?.b0).toBe(1.2)
+  })
 })
 
 describe('convertStoreFilterToUI', () => {
@@ -107,6 +163,22 @@ describe('convertStoreFilterToUI', () => {
     const filter = { ...baseStoreFilter, q: undefined }
     const result = convertStoreFilterToUI(filter as any, 'filter_0')
     expect(result.Q).toBe(0.71)
+  })
+
+  it('maps a generic store filter back to the generic biquad icon with its coefficients', () => {
+    const result = convertStoreFilterToUI(
+      {
+        id: 'filter_2',
+        type: 'generic',
+        frequency: 0,
+        enabled: true,
+        coefficients: { b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 },
+      },
+      'filter_2',
+    )
+
+    expect(result.icon).toBe('generic_normalized')
+    expect(result.genericCoeffs).toEqual({ b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 })
   })
 
   it('falls back to peaking icon for unmapped store types', () => {

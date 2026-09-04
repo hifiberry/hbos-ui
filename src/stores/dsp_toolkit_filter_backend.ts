@@ -62,6 +62,44 @@ const FILTER_BANK_MAPPING: Record<string, string> = {
  * Solving for S: S = (A + 1/A) / (A + 1/A + A/Q² - 2)
  * where A = 10^(dBgain/40)
  */
+/**
+ * Coefficients closer to a pass-through than this count as an empty slot.
+ *
+ * Comfortably above the quantisation of the DSP's fixed-point formats (8.24
+ * resolves to ~6e-8) and far below any deviation a real filter would show, so
+ * the classification survives the round trip through the hardware.
+ */
+export const TRANSPARENT_BIQUAD_TOLERANCE = 1e-6
+
+/**
+ * True for the biquad the firmware writes into an unused slot:
+ * b0 = 1, everything else 0, i.e. y[n] = x[n].
+ *
+ * This distinction is what makes a 9-filter channel read "9/16" rather than
+ * "16/16", and what lets a bank that has just been cleared read as empty
+ * instead of staying locked behind sixteen imaginary generic filters.
+ * Compared after normalising by a0, and with a tolerance, because these
+ * values come back through a fixed-point conversion.
+ */
+export function isTransparentBiquad(coefficients: Partial<FilterCoefficients>): boolean {
+  const a0 = coefficients.a0 ?? 1
+  if (!isFinite(a0) || a0 === 0) return false
+
+  const normalised = {
+    b0: (coefficients.b0 ?? 0) / a0,
+    b1: (coefficients.b1 ?? 0) / a0,
+    b2: (coefficients.b2 ?? 0) / a0,
+    a1: (coefficients.a1 ?? 0) / a0,
+    a2: (coefficients.a2 ?? 0) / a0
+  }
+
+  return Math.abs(normalised.b0 - 1) <= TRANSPARENT_BIQUAD_TOLERANCE &&
+    Math.abs(normalised.b1) <= TRANSPARENT_BIQUAD_TOLERANCE &&
+    Math.abs(normalised.b2) <= TRANSPARENT_BIQUAD_TOLERANCE &&
+    Math.abs(normalised.a1) <= TRANSPARENT_BIQUAD_TOLERANCE &&
+    Math.abs(normalised.a2) <= TRANSPARENT_BIQUAD_TOLERANCE
+}
+
 function qToShelfSlope(Q: number, dBgain: number): number {
   const A = Math.pow(10, dBgain / 40)
   const sum = A + 1 / A           // A + 1/A
@@ -438,10 +476,33 @@ export class DSPToolkitFilterBackend extends FilterBackend {
   private convertDSPFilterToInternalFormat(storedFilter: StoredFilter, filterKey: string): Filter | null {
     const filter = storedFilter.filter
 
-    // Handle direct coefficients (unsupported for now)
+    // Raw coefficients: what a speaker preset writes, and what the firmware
+    // writes into unused slots. Dropping both used to make an applied preset
+    // read as an empty bank -- which the editor would then happily overwrite.
     if ('a0' in filter) {
-      console.warn(`Direct coefficient filters not supported for reconstruction: ${filterKey}`)
-      return null
+      const coefficients = filter as FilterCoefficients
+
+      if (isTransparentBiquad(coefficients)) {
+        // An empty slot, not a filter.
+        return null
+      }
+
+      const a0 = coefficients.a0 ?? 1
+      return {
+        id: filterKey,
+        enabled: true,
+        // A raw biquad has no centre frequency; the UI shows its coefficients
+        // instead, and the graph draws no node for it.
+        frequency: 0,
+        type: 'generic',
+        coefficients: {
+          b0: coefficients.b0 / a0,
+          b1: coefficients.b1 / a0,
+          b2: coefficients.b2 / a0,
+          a1: coefficients.a1 / a0,
+          a2: coefficients.a2 / a0
+        }
+      }
     }
 
     // Convert typed filters
@@ -901,9 +962,27 @@ export class DSPToolkitFilterBackend extends FilterBackend {
   /**
    * Convert our internal Filter format to DSP API format
    */
-  private convertFilterToDSPFormat(filter: Filter): DSPFilter {
+  private convertFilterToDSPFormat(filter: Filter): DSPFilter | FilterCoefficients {
     // Convert our internal filter representation to the DSP API format
     switch (filter.type) {
+      case 'generic':
+        // Written back exactly as it came off the hardware: raw coefficients,
+        // the same shape the transparent pass-through uses. Nothing else
+        // describes a biquad that was never a typed filter to begin with.
+        if (!filter.coefficients) {
+          throw new Error(
+            `Generic biquad filter '${filter.id}' has no coefficients — refusing to write a ` +
+            `transparent filter in its place.`
+          )
+        }
+        return {
+          a0: 1.0,
+          a1: filter.coefficients.a1,
+          a2: filter.coefficients.a2,
+          b0: filter.coefficients.b0,
+          b1: filter.coefficients.b1,
+          b2: filter.coefficients.b2
+        }
       case 'peak':
         return {
           type: 'PeakingEq',

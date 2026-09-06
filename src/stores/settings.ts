@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { getConfigKeys, getConfigValue, setConfigValue, deleteConfigValue } from '@/api/config'
 import { enableService, disableService } from '@/api/config'
 import { getSystemInfo } from '@/api/system'
+import { isPi5OrNewer } from '@/utils/pi-version'
 
 export interface ServiceSettings {
   lastfm: {
@@ -63,10 +64,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const getSpotifySettings = computed(() => settings.value.service.spotify)
   const getExpertMode = computed(() => settings.value.expertMode)
   const getVuMeterEnabled = computed(() => settings.value.vuMeterEnabled)
-  const isPi5OrHigher = computed(() => {
-    const v = parseInt(piVersion.value, 10)
-    return !isNaN(v) && v >= 5
-  })
+  const isPi5OrHigher = computed(() => isPi5OrNewer(piVersion.value))
 
   // Actions
   const updateServiceSettings = async <T extends keyof ServiceSettings>(

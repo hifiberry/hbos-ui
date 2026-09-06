@@ -1,3 +1,16 @@
+hifiberry-webui (0.24.3) stable; urgency=medium
+
+  * The VU meter is back on a Compute Module 5. Everything gated on "Pi 5 or
+    newer" read the board as a number, but a compute module is reported as
+    "CM5" rather than "5", which parsed as not-a-number and so counted as
+    older than a Pi 5. A CM5 lost the sidebar meter, the Display Settings
+    toggle and the System Info entry at once, and with the toggle hidden there
+    was no way to switch any of them back on. The model prefix is now stripped
+    before the generation is read, so a CM5 counts as Pi 5 hardware -- and a
+    CM4, which had been excluded for the same wrong reason, still does not.
+
+ -- HiFiBerry <support@hifiberry.com>  Sun, 06 Sep 2026 16:21:08 +0000
+
 hifiberry-webui (0.24.2) stable; urgency=medium
 
   * Signing out works again after a page reload. The CSRF token the daemon

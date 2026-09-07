@@ -16,6 +16,14 @@ hifiberry-webui (0.26.0) stable; urgency=medium
   * A transparent biquad is read as an empty slot rather than a filter, so a
     channel reports the filters it actually has and a cleared bank reads as
     empty instead of staying locked.
+  * The Speaker Presets page is now reachable from the sidebar. Only the
+    route and the Sound overview card existed, so the page could be found
+    only by going via Sound or typing the URL. Listed after Crossover in
+    both places, so the sidebar and the overview agree on the order.
+  * Speaker preset cards have padding again. ContentBox supplies the card
+    surface but no padding, and its bottom margin -- meant for stacked
+    boxes -- pulled a stretched card's surface up out from under its own
+    Apply button.
 
  -- HiFiBerry <support@hifiberry.com>  Fri, 04 Sep 2026 16:45:00 +0000
 

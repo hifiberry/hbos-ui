@@ -142,6 +142,11 @@ const routes = computed(() => {
           icon: 'tabler/crossover',
         },
         {
+          name: 'speaker-presets',
+          title: 'Presets',
+          icon: 'tabler/stack',
+        },
+        {
           name: 'room-acoustics',
           title: 'Room Eq',
           icon: 'tabler/armchair',

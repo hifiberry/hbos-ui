@@ -21,6 +21,14 @@
         </p>
       </ContentBoxLink>
 
+      <ContentBoxLink :to="{ name: 'crossover-design' }"  height=150>
+        <div class="soundCardHeader">
+          <Icon icon="tabler/crossover" class="soundCardHeaderIcon" />
+          <h2>Crossover Design</h2>
+        </div>
+        <p class="soundCardDescription">Configure frequency separation and phase alignment for multi-way speaker systems</p>
+      </ContentBoxLink>
+
       <ContentBoxLink :to="{ name: 'speaker-presets' }" :height="150">
         <div class="soundCardHeader">
           <Icon icon="tabler/speaker" class="soundCardHeaderIcon" />
@@ -30,14 +38,6 @@
           Ready-made crossover and equalisation for known loudspeakers, on a
           DSP board
         </p>
-      </ContentBoxLink>
-
-      <ContentBoxLink :to="{ name: 'crossover-design' }"  height=150>
-        <div class="soundCardHeader">
-          <Icon icon="tabler/crossover" class="soundCardHeaderIcon" />
-          <h2>Crossover Design</h2>
-        </div>
-        <p class="soundCardDescription">Configure frequency separation and phase alignment for multi-way speaker systems</p>
       </ContentBoxLink>
 
       <ContentBoxLink :to="{ name: 'room-acoustics' }" height=150>

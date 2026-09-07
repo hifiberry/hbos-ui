@@ -103,7 +103,7 @@ const render = async () => {
         Icon: true,
         PageContent: { template: '<div><slot /></div>' },
         FilterGraph: { name: 'FilterGraph', props: ['filters'], template: '<div data-test="graph" />' },
-        AddFilterModal: true,
+        AddFilterModal: { name: 'AddFilterModal', template: '<div data-test="add-modal" />' },
         BackendInfoModal: true,
         ConfirmationDialog: {
           props: ['isOpen'],
@@ -171,6 +171,19 @@ describe('crossover design with a preset-owned bank', () => {
     await wrapper.find('[data-test="add-filter"]').trigger('click')
 
     expect(wrapper.find('[data-test="add-filter"]').classes()).toContain('disabled')
+    expect(addFilterOfType).not.toHaveBeenCalled()
+  })
+
+  it('swallows an add that reaches the handler without the tile', async () => {
+    // The disabled tile is the only way into the modal today, so this is
+    // defence in depth -- but every other mutating path is stopped at the
+    // handler, and an add that got through would rewrite the whole bank.
+    channelFilters.value.iir_a = [generic(1)]
+
+    const wrapper = await render()
+    wrapper.findComponent({ name: 'AddFilterModal' }).vm.$emit('add', 'peaking')
+    await flushPromises()
+
     expect(addFilterOfType).not.toHaveBeenCalled()
   })
 

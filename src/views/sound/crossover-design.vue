@@ -195,7 +195,7 @@
     :open="showAddFilterModal"
     :filter-types="AVAILABLE_FILTER_TYPES"
     @close="showAddFilterModal = false"
-    @add="handleAddFilter"
+    @add="guardedAddFilter"
   />
 
   <BackendInfoModal
@@ -304,6 +304,11 @@ const guardedUpdateFreqGain = readOnly(onGraphUpdateFreqGain);
 const guardedUpdateQ = readOnly(onGraphUpdateQ);
 const guardedDragStart = readOnly(onGraphDragStart);
 const guardedDragEnd = readOnly(onGraphDragEnd);
+// Adding is guarded here too, not only by disabling the tile that opens the
+// modal. The tile is the sole way in today, so this changes nothing now --
+// but every other mutating path is stopped at the handler, and an add that
+// got through would rewrite the bank exactly like the rest of them.
+const guardedAddFilter = readOnly(handleAddFilter);
 
 async function handleClearPreset() {
   await confirmClearPreset(async () => {

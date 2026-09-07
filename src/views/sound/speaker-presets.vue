@@ -298,10 +298,23 @@ onMounted(load)
   opacity: 0.8;
 }
 
+// ContentBox draws the card surface but carries no padding of its own; each
+// page supplies it, the way ContentBoxLink and the library cards do.
+:deep(.contentBox) {
+  padding: 20px;
+}
+
 .presetList {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 25px;
+
+  // The bottom margin ContentBox carries for stacked boxes fights the grid:
+  // the gap already spaces the rows, and on a card stretched to its row's
+  // height the margin pulls the surface up out from under the content.
+  :deep(.contentBox) {
+    margin-bottom: 0;
+  }
 }
 
 .presetHeader {

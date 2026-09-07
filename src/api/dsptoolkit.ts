@@ -768,8 +768,11 @@ export interface SpeakerPresetApplyResponse {
 export interface SpeakerPresetClearResponse {
   status: 'success'
   cleared: string | null
-  banksCleared: number
-  filtersCleared: number
+  // Only sent when something was actually cleared: with no preset applied
+  // the server returns early, before it writes any bank. Optional so the
+  // type says that, rather than promising a number that isn't there.
+  banksCleared?: number
+  filtersCleared?: number
 }
 
 export async function listSpeakerPresets(): Promise<SpeakerPresetListResponse> {

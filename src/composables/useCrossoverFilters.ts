@@ -329,7 +329,7 @@ export function useCrossoverFilters() {
       const newId = Date.now();
       const newFilter: Filter = {
         id: newId,
-        icon: type,
+        kind: type,
         text: 'New',
         frequency: 1000,
         gain: 0,

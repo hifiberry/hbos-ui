@@ -14,11 +14,11 @@ import { usePresetLock } from '@/composables/usePresetLock'
 import type { Filter } from '@/utils/filtercalc'
 
 const peaking = (frequency: number): Filter => ({
-  id: frequency, icon: 'peaking', text: `${frequency}`, frequency, gain: -3, Q: 1, enabled: true,
+  id: frequency, kind: 'peaking', text: `${frequency}`, frequency, gain: -3, Q: 1, enabled: true,
 })
 
 const generic = (id: number): Filter => ({
-  id, icon: 'generic_normalized', text: '0', frequency: 0, gain: 0, Q: 0.71, enabled: true,
+  id, kind: 'generic_normalized', text: '0', frequency: 0, gain: 0, Q: 0.71, enabled: true,
   genericCoeffs: { b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 },
 })
 

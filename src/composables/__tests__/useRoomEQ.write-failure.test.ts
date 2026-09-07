@@ -31,7 +31,7 @@ describe('loadSelectedRoomEQConfig - rejected bank write', () => {
     setBankFilters.mockRejectedValue(new Error('hardware rejected write'))
 
     const channelNames = ref(['left', 'right'])
-    const staleLeftFilters = [{ id: 1, icon: 'peaking', text: 'stale', frequency: 100, gain: -1, Q: 1, enabled: true }]
+    const staleLeftFilters = [{ id: 1, kind: 'peaking', text: 'stale', frequency: 100, gain: -1, Q: 1, enabled: true }]
     const channelFilters = ref<Record<string, unknown[]>>({ left: staleLeftFilters, right: [] })
     const activeFilterId = ref<number | string | null>(null)
 

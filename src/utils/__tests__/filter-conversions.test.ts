@@ -6,7 +6,7 @@ import type { Filter as StoreFilter } from '@/stores/filter_backend_interface'
 describe('convertUIFilterToStore', () => {
   const baseUIFilter: UIFilter = {
     id: 1,
-    icon: 'peaking',
+    kind: 'peaking',
     text: '1000',
     frequency: 1000,
     gain: 3.5,
@@ -24,28 +24,28 @@ describe('convertUIFilterToStore', () => {
   })
 
   it('converts lowshelf to shelf-low', () => {
-    const result = convertUIFilterToStore({ ...baseUIFilter, icon: 'lowshelf' })
+    const result = convertUIFilterToStore({ ...baseUIFilter, kind: 'lowshelf' })
     expect(result.type).toBe('shelf-low')
   })
 
   it('converts highshelf to shelf-high', () => {
-    const result = convertUIFilterToStore({ ...baseUIFilter, icon: 'highshelf' })
+    const result = convertUIFilterToStore({ ...baseUIFilter, kind: 'highshelf' })
     expect(result.type).toBe('shelf-high')
   })
 
   it('converts highpass', () => {
-    const result = convertUIFilterToStore({ ...baseUIFilter, icon: 'highpass' })
+    const result = convertUIFilterToStore({ ...baseUIFilter, kind: 'highpass' })
     expect(result.type).toBe('highpass')
   })
 
   it('converts lowpass', () => {
-    const result = convertUIFilterToStore({ ...baseUIFilter, icon: 'lowpass' })
+    const result = convertUIFilterToStore({ ...baseUIFilter, kind: 'lowpass' })
     expect(result.type).toBe('lowpass')
   })
 
-  it('refuses an unrecognised UI icon instead of silently making it a peak filter', () => {
+  it('refuses an unrecognised UI filter kind instead of silently making it a peak filter', () => {
     expect(() => convertUIFilterToStore({
-      id: 1, icon: 'notARealIcon', text: '1000', frequency: 1000,
+      id: 1, kind: 'notARealIcon', text: '1000', frequency: 1000,
       gain: -3, Q: 1, enabled: true,
     } as never)).toThrow(/notARealIcon/)
   })
@@ -58,7 +58,7 @@ describe('convertUIFilterToStore', () => {
   it('converts a generic biquad to a generic store filter carrying its coefficients', () => {
     const result = convertUIFilterToStore({
       ...baseUIFilter,
-      icon: 'generic_normalized',
+      kind: 'generic_normalized',
       genericCoeffs: { b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 },
     })
 
@@ -77,7 +77,7 @@ describe('round-tripping a generic biquad', () => {
     const coefficients = { b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 }
     const uiFilter: UIFilter = {
       id: 4,
-      icon: 'generic_normalized',
+      kind: 'generic_normalized',
       text: '0',
       frequency: 0,
       gain: 0,
@@ -89,14 +89,14 @@ describe('round-tripping a generic biquad', () => {
     const stored = convertUIFilterToStore(uiFilter)
     const roundTripped = convertStoreFilterToUI({ ...stored, id: 'filter_4' }, 'filter_4')
 
-    expect(roundTripped.icon).toBe('generic_normalized')
+    expect(roundTripped.kind).toBe('generic_normalized')
     expect(roundTripped.genericCoeffs).toEqual(coefficients)
   })
 
   it('does not alias the coefficient object between the two representations', () => {
     const uiFilter: UIFilter = {
       id: 4,
-      icon: 'generic_normalized',
+      kind: 'generic_normalized',
       text: '0',
       frequency: 0,
       gain: 0,
@@ -125,7 +125,7 @@ describe('convertStoreFilterToUI', () => {
   it('converts peak filter to UI format', () => {
     const result = convertStoreFilterToUI(baseStoreFilter, 'filter_3')
     expect(result.id).toBe(3)
-    expect(result.icon).toBe('peaking')
+    expect(result.kind).toBe('peaking')
     expect(result.text).toBe('2000')
     expect(result.frequency).toBe(2000)
     expect(result.gain).toBe(-2.5)
@@ -133,14 +133,14 @@ describe('convertStoreFilterToUI', () => {
     expect(result.enabled).toBe(true)
   })
 
-  it('converts shelf-low to lowshelf icon', () => {
+  it('converts shelf-low to the lowshelf kind', () => {
     const result = convertStoreFilterToUI({ ...baseStoreFilter, type: 'shelf-low' }, 'filter_0')
-    expect(result.icon).toBe('lowshelf')
+    expect(result.kind).toBe('lowshelf')
   })
 
-  it('converts shelf-high to highshelf icon', () => {
+  it('converts shelf-high to the highshelf kind', () => {
     const result = convertStoreFilterToUI({ ...baseStoreFilter, type: 'shelf-high' }, 'filter_1')
-    expect(result.icon).toBe('highshelf')
+    expect(result.kind).toBe('highshelf')
   })
 
   it('parses id from filter string', () => {
@@ -165,7 +165,7 @@ describe('convertStoreFilterToUI', () => {
     expect(result.Q).toBe(0.71)
   })
 
-  it('maps a generic store filter back to the generic biquad icon with its coefficients', () => {
+  it('maps a generic store filter back to the generic biquad kind with its coefficients', () => {
     const result = convertStoreFilterToUI(
       {
         id: 'filter_2',
@@ -177,15 +177,15 @@ describe('convertStoreFilterToUI', () => {
       'filter_2',
     )
 
-    expect(result.icon).toBe('generic_normalized')
+    expect(result.kind).toBe('generic_normalized')
     expect(result.genericCoeffs).toEqual({ b0: 0.87, b1: -1.8, b2: 0.85, a1: -1.9, a2: 0.9 })
   })
 
-  it('falls back to peaking icon for unmapped store types', () => {
+  it('falls back to the peaking kind for unmapped store types', () => {
     const result = convertStoreFilterToUI(
       { ...baseStoreFilter, type: 'bandpass' },
       'filter_0',
     )
-    expect(result.icon).toBe('peaking')
+    expect(result.kind).toBe('peaking')
   })
 })

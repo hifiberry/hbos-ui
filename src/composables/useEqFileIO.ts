@@ -12,20 +12,37 @@ import { type Filter as StoreFilter } from '@/stores/filter_backend_interface';
 const EQ_FILE_PREFIX = 'speaker-eq';
 
 /**
+ * A filter as it appears in a saved EQ file, which is a verbatim dump of the
+ * UI Filter objects at the time of saving.
+ *
+ * Files written before the field was renamed carry the filter kind under
+ * `icon`. They are on users' disks and cannot be migrated, so loading has to
+ * accept both spellings -- the rename was internal, and a file that used to
+ * load must keep loading.
+ */
+type SavedFilter = Filter & { icon?: Filter['kind'] };
+
+function fromSavedFile(saved: SavedFilter): Filter {
+  if (saved.kind !== undefined) return saved;
+  const { icon, ...rest } = saved;
+  return { ...rest, kind: icon } as Filter;
+}
+
+/**
  * Apply a loaded set of per-channel filters to the hardware.
  *
  * Shared by the current and legacy file formats, which differ only in where
  * the per-channel arrays come from.
  *
  * Every channel is converted before any channel is written. A loaded file is
- * arbitrary user input and convertUIFilterToStore() now throws on an icon it
+ * arbitrary user input and convertUIFilterToStore() now throws on a kind it
  * cannot map, so converting inside the write loop would put the file's EQ on
  * one channel and leave the old one on the other, behind a single toast.
  */
 export async function applyLoadedChannelFilters(
   setBankFilters: (channel: string, filters: Omit<StoreFilter, 'id'>[]) => Promise<void>,
   channelNames: string[],
-  source: Record<string, Filter[]>
+  source: Record<string, SavedFilter[]>
 ): Promise<Record<string, Filter[]>> {
   const prepared: Array<{
     channel: string;
@@ -37,11 +54,14 @@ export async function applyLoadedChannelFilters(
     const loaded = source[ch];
     if (!loaded) continue;
 
-    const uiFilters = loaded.map((filter: Filter, index: number) => ({
-      ...filter,
-      frequency: Math.round(filter.frequency),
-      id: Date.now() + index + channelNames.indexOf(ch) * 1000
-    }));
+    const uiFilters = loaded.map((saved: SavedFilter, index: number) => {
+      const filter = fromSavedFile(saved);
+      return {
+        ...filter,
+        frequency: Math.round(filter.frequency),
+        id: Date.now() + index + channelNames.indexOf(ch) * 1000
+      };
+    });
 
     prepared.push({
       channel: ch,

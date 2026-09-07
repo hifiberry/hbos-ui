@@ -24,6 +24,10 @@ hifiberry-webui (0.26.0) stable; urgency=medium
     surface but no padding, and its bottom margin -- meant for stacked
     boxes -- pulled a stretched card's surface up out from under its own
     Apply button.
+  * Saved Speaker EQ files written by earlier versions still load. The UI
+    filter's kind moved from a field called `icon` to one called `kind`, and
+    a saved file is a verbatim dump of those objects, so loading accepts
+    both spellings.
 
  -- HiFiBerry <support@hifiberry.com>  Fri, 04 Sep 2026 16:45:00 +0000
 

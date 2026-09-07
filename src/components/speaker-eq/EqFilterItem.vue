@@ -2,11 +2,11 @@
   <div class="filter-item" :class="{ active: isActive }" @click="$emit('select', filter.id)">
     <div class="filter-main">
       <div class="filter-info">
-        <Icon :icon="getFilterIconName(filter.icon)" class="filter-icon"
-          :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
+        <Icon :icon="getFilterIconName(filter.kind)" class="filter-icon"
+          :class="filter.kind === 'peaking' ? 'icon-stroke' : ''" />
         <div class="filter-details">
-          <h3 v-if="filter.icon === 'generic_normalized'">
-            {{ formatFilterTypeName(filter.icon) }} |
+          <h3 v-if="isRawCoefficientFilter(filter)">
+            {{ formatFilterTypeName(filter.kind) }} |
             b0={{ filter.genericCoeffs?.b0 || 1 }}
             b1={{ filter.genericCoeffs?.b1 || 0 }}
             b2={{ filter.genericCoeffs?.b2 || 0 }}
@@ -14,7 +14,7 @@
             a2={{ filter.genericCoeffs?.a2 || 0 }}
           </h3>
           <h3 v-else>
-            {{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}
+            {{ formatFilterTypeName(filter.kind) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}
           </h3>
         </div>
       </div>
@@ -26,7 +26,7 @@
     </div>
 
     <div class="filter-controls" @click.stop>
-      <template v-if="filter.icon !== 'generic_normalized'">
+      <template v-if="!isRawCoefficientFilter(filter)">
         <div class="standard-controls">
           <div class="control-group" v-for="ctrl in standardControls" :key="ctrl.label">
             <label>{{ ctrl.label }}</label>
@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import Icon from '@/components/Icon.vue';
-import { type Filter } from '@/utils/filtercalc';
+import { isRawCoefficientFilter, type Filter } from '@/utils/filtercalc';
 import { getFilterIconName, formatFilterTypeName } from '@/utils/filter-display';
 
 defineProps<{

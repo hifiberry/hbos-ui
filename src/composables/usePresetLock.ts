@@ -12,7 +12,7 @@
  */
 
 import { ref, computed, type Ref } from 'vue'
-import type { Filter } from '@/utils/filtercalc'
+import { isRawCoefficientFilter, type Filter } from '@/utils/filtercalc'
 import { listSpeakerPresets, clearSpeakerPreset } from '@/api/dsptoolkit'
 import { useToastStore } from '@/stores/toast'
 
@@ -29,7 +29,7 @@ export function usePresetLock(filters: Ref<Filter[]>) {
    * unaffected.
    */
   const isPresetOwned = computed(() =>
-    filters.value.some(filter => filter.icon === 'generic_normalized')
+    filters.value.some(isRawCoefficientFilter)
   )
 
   const lockMessage = computed(() =>

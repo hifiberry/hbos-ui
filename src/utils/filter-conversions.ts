@@ -31,10 +31,10 @@ const iconMapping: Record<StoreFilter['type'], BiquadFilterType> = {
 const TRANSPARENT_COEFFS = { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 } as const
 
 export const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
-  const type = typeMapping[uiFilter.icon]
+  const type = typeMapping[uiFilter.kind]
   if (!type) {
     throw new Error(
-      `Unrecognised filter icon '${uiFilter.icon}' at ${uiFilter.frequency} Hz — refusing to ` +
+      `Unrecognised filter kind '${uiFilter.kind}' at ${uiFilter.frequency} Hz — refusing to ` +
       `substitute a peak filter for it.`
     )
   }
@@ -60,7 +60,7 @@ export const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'
 export const convertStoreFilterToUI = (storeFilter: StoreFilter, id: string): Filter => {
   const uiFilter: Filter = {
     id: parseInt(id.split('_')[1]) || 0,
-    icon: iconMapping[storeFilter.type] || 'peaking',
+    kind: iconMapping[storeFilter.type] || 'peaking',
     text: storeFilter.frequency.toString(),
     frequency: storeFilter.frequency,
     gain: storeFilter.gain || 0,

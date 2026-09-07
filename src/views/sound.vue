@@ -90,10 +90,10 @@
             <div class="filter-item" :class="{ active: activeFilterId === filter.id }" @click="setActiveFilter(filter.id)">
               <div class="filter-main">
                 <div class="filter-info">
-                  <Icon :icon="getFilterIconName(filter.icon)" class="filter-icon"
-                    :class="filter.icon === 'peaking' ? 'icon-stroke' : ''" />
+                  <Icon :icon="getFilterIconName(filter.kind)" class="filter-icon"
+                    :class="filter.kind === 'peaking' ? 'icon-stroke' : ''" />
                   <div class="filter-details">
-                    <h3>{{ formatFilterTypeName(filter.icon) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</h3>
+                    <h3>{{ formatFilterTypeName(filter.kind) }} | {{ filter.frequency }} Hz | {{ filter.gain }} dB | Q {{ filter.Q ? filter.Q.toFixed(2) : 'N/A' }}</h3>
                   </div>
                 </div>
                 <div class="filter-actions" @click.stop>
@@ -244,7 +244,7 @@ type ChannelMode = 'individual' | 'both';
 const activeChannel = ref<Channel>('left');
 const channelMode = ref<ChannelMode>('individual');
 const filters = ref<Filter[]>([
-  { id: 1, icon: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true } // Initial filter with Q=0.71
+  { id: 1, kind: 'peaking', text: '1000', frequency: 1000, gain: 0, Q: 0.71, enabled: true } // Initial filter with Q=0.71
 ]);
 const showAddFilterModal = ref(false);
 
@@ -279,7 +279,7 @@ const activeFilterBandwidthStart = computed(() => {
     let bandwidthHz;
 
     // Different interpretations of Q for different filter types
-    if (filter.icon === 'filter-peak') {
+    if (filter.kind === 'filter-peak') {
       bandwidthHz = filter.frequency / filter.Q; // Standard Q for peak filter
     } else {
       // For shelf filters, Q influences the slope. We'll use a scaled Fc/Q
@@ -299,7 +299,7 @@ const activeFilterBandwidthEnd = computed(() => {
   if (typeof filter.Q === 'number' && filter.Q > 0) {
     let bandwidthHz;
 
-    if (filter.icon === 'filter-peak') {
+    if (filter.kind === 'filter-peak') {
       bandwidthHz = filter.frequency / filter.Q;
     } else {
       bandwidthHz = filter.frequency / (filter.Q * 2);
@@ -322,7 +322,7 @@ const currentFilter = computed(() => {
   // but also won't display bandwidth lines (unless you want default lines)
   return filters.value.find((f) => f.id === activeFilterId.value) || {
     id: 0,
-    icon: 'none', // Default to 'none' or a type that won't trigger lines if you don't want them on startup
+    kind: 'none', // Default to 'none' or a type that won't trigger lines if you don't want them on startup
     text: '',
     frequency: 1000,
     gain: 0,
@@ -457,7 +457,7 @@ const addFilterOfType = (type: BiquadFilterType) => {
   const newId = Date.now();
   const newFilter: Filter = {
     id: newId,
-    icon: type,
+    kind: type,
     text: 'New',
     frequency: 1000,
     gain: 0,

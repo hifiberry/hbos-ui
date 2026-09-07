@@ -5,15 +5,15 @@ import {
   createBiquadFilter,
   FILTER_TYPES,
 } from '@/utils/biquad';
-import type { Filter } from '@/utils/filtercalc';
+import { isRawCoefficientFilter, type Filter } from '@/utils/filtercalc';
 
 export function useBandwidthLines(currentFilter: ComputedRef<Filter>, sampleRate: number) {
   const activeFilterBandwidthStart = computed<number | null>(() => {
     const filter = currentFilter.value;
-    if (filter.icon === 'generic_normalized') return null;
+    if (isRawCoefficientFilter(filter)) return null;
     if (typeof filter.Q === 'number' && filter.Q > 0 && filter.frequency > 0) {
       let biquadType: BiquadFilterType;
-      switch (filter.icon) {
+      switch (filter.kind) {
         case 'peaking': biquadType = FILTER_TYPES.PEAKING; break;
         case 'lowshelf': biquadType = FILTER_TYPES.LOWSHELF; break;
         case 'highshelf': biquadType = FILTER_TYPES.HIGHSHELF; break;
@@ -34,10 +34,10 @@ export function useBandwidthLines(currentFilter: ComputedRef<Filter>, sampleRate
 
   const activeFilterBandwidthEnd = computed<number | null>(() => {
     const filter = currentFilter.value;
-    if (filter.icon === 'generic_normalized') return null;
+    if (isRawCoefficientFilter(filter)) return null;
     if (typeof filter.Q === 'number' && filter.Q > 0 && filter.frequency > 0) {
       let biquadType: BiquadFilterType;
-      switch (filter.icon) {
+      switch (filter.kind) {
         case 'peaking': biquadType = FILTER_TYPES.PEAKING; break;
         case 'lowshelf': biquadType = FILTER_TYPES.LOWSHELF; break;
         case 'highshelf': biquadType = FILTER_TYPES.HIGHSHELF; break;

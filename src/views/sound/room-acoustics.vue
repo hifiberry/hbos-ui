@@ -384,7 +384,7 @@ const convertRoomEQFilterToEQFilter = (roomEQFilter: RoomEQConfig['filters'][0],
 
   return {
     id: Date.now() + index,
-    icon: filterType,
+    kind: filterType,
     text: filterType.charAt(0).toUpperCase() + filterType.slice(1),
     frequency: Math.round(roomEQFilter.frequency),
     gain: roomEQFilter.gain_db,

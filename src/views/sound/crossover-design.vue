@@ -17,9 +17,9 @@
       <div class="header-actions">
         <Icon icon="link"
           v-if="getPairPartner(activeChannel)"
-          @click="togglePairLink()"
+          @click="guardedTogglePairLink()"
           title="Link Channel Pair"
-          :class="{ linked: isCurrentPairLinked }"
+          :class="{ linked: isCurrentPairLinked, 'icon-disabled': isPresetOwned }"
           class="icon-btn" />
         <Icon icon="ear"
           @mousedown="startBypass"
@@ -33,6 +33,16 @@
       </div>
     </div>
 
+    <div v-if="isPresetOwned" class="preset-lock-banner" data-test="preset-lock-banner">
+      <Icon icon="lock" class="banner-icon" />
+      <div class="banner-text">
+        <p>{{ lockMessage }}</p>
+      </div>
+      <button class="banner-action" data-test="clear-preset" @click="showClearDialog = true">
+        Clear preset and edit freely
+      </button>
+    </div>
+
     <div class="card">
       <div class="graph">
         <FilterGraph
@@ -41,10 +51,10 @@
           :show-bandwidth-lines="true"
           :sample-rate="SAMPLE_RATE"
           @set-active-filter="activeFilterId = $event"
-          @update:freq-gain="onGraphUpdateFreqGain"
-          @update:q="onGraphUpdateQ"
-          @drag-start="onGraphDragStart"
-          @drag-end="onGraphDragEnd"
+          @update:freq-gain="guardedUpdateFreqGain"
+          @update:q="guardedUpdateQ"
+          @drag-start="guardedDragStart"
+          @drag-end="guardedDragEnd"
         />
       </div>
     </div>
@@ -123,38 +133,40 @@
           </div>
         </div>
 
-        <div class="filters-list">
+        <div class="filters-list" :class="{ 'preset-locked': isPresetOwned }">
           <div v-for="filter in filters" :key="filter.id" class="card">
             <EqFilterItem
               :filter="filter"
               :is-active="activeFilterId === filter.id"
               @select="activeFilterId = $event"
-              @remove="removeFilter"
-              @toggle-enabled="toggleFilterEnabled"
-              @increment-frequency="incrementFilterFrequency"
-              @decrement-frequency="decrementFilterFrequency"
-              @increment-gain="incrementFilterGain"
-              @decrement-gain="decrementFilterGain"
-              @widen-band="widenFilterBand"
-              @narrow-band="narrowFilterBand"
-              @update-generic-coeff="updateGenericCoeff"
+              @remove="guardedRemoveFilter"
+              @toggle-enabled="guardedToggleFilterEnabled"
+              @increment-frequency="guardedIncrementFrequency"
+              @decrement-frequency="guardedDecrementFrequency"
+              @increment-gain="guardedIncrementGain"
+              @decrement-gain="guardedDecrementGain"
+              @widen-band="guardedWidenBand"
+              @narrow-band="guardedNarrowBand"
+              @update-generic-coeff="guardedUpdateGenericCoeff"
             />
           </div>
 
           <div class="card">
             <div class="filter-item add-filter-item"
-                 :class="{ disabled: !canAddFilterToCurrentChannel }"
-                 @click="canAddFilterToCurrentChannel && (showAddFilterModal = true)">
+                 :class="{ disabled: !canAddFilter }"
+                 data-test="add-filter"
+                 @click="canAddFilter && (showAddFilterModal = true)">
               <div class="filter-main">
                 <div class="filter-info">
                   <Icon icon="plus" class="filter-icon" />
                   <div class="filter-details">
-                    <h3>{{ canAddFilterToCurrentChannel ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
+                    <h3 v-if="isPresetOwned">Preset Filters — Read Only</h3>
+                    <h3 v-else>{{ canAddFilter ? 'Add New Filter' : 'Maximum Filters Reached' }}</h3>
                     <div class="filter-frequency">
                       <span v-if="currentChannelFilterInfo">
                         {{ currentChannelFilterInfo.currentFilterCount }}/{{ currentChannelFilterInfo.maxFilters }} filters
                       </span>
-                      <span v-else-if="canAddFilterToCurrentChannel">Click to add</span>
+                      <span v-else-if="canAddFilter">Click to add</span>
                       <span v-else>Cannot add more filters</span>
                     </div>
                   </div>
@@ -167,11 +179,23 @@
     </div>
   </div>
 
+  <ConfirmationDialog
+    :is-open="showClearDialog"
+    title="Clear speaker preset?"
+    :message="clearConfirmationMessage"
+    confirm-button-text="Clear preset"
+    :is-dangerous="true"
+    :disabled="isClearing"
+    icon="lock"
+    @close="showClearDialog = false"
+    @confirm="handleClearPreset"
+  />
+
   <AddFilterModal
     :open="showAddFilterModal"
     :filter-types="AVAILABLE_FILTER_TYPES"
     @close="showAddFilterModal = false"
-    @add="handleAddFilter"
+    @add="guardedAddFilter"
   />
 
   <BackendInfoModal
@@ -190,10 +214,12 @@ import FilterGraph from '@/components/FilterGraph.vue';
 import EqFilterItem from '@/components/speaker-eq/EqFilterItem.vue';
 import AddFilterModal from '@/components/speaker-eq/AddFilterModal.vue';
 import BackendInfoModal from '@/components/speaker-eq/BackendInfoModal.vue';
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue';
 
 import { type BiquadFilterType } from '@/utils/biquad';
 import { useCrossoverFilters } from '@/composables/useCrossoverFilters';
 import { useBypass } from '@/composables/useBypass';
+import { usePresetLock } from '@/composables/usePresetLock';
 
 // Available filter types for crossover design (includes highpass/lowpass)
 const AVAILABLE_FILTER_TYPES: BiquadFilterType[] = [
@@ -218,6 +244,7 @@ const {
   togglePairLink,
   initialize,
   loadBackendCapabilities,
+  loadFiltersFromBackend,
   setActiveChannel,
   addFilterOfType,
   removeFilter,
@@ -243,6 +270,52 @@ const {
   getChannelLevelDb,
   SAMPLE_RATE,
 } = useCrossoverFilters();
+
+// --- Speaker preset ownership ---
+// A bank written by a speaker preset holds raw-coefficient filters. They stay
+// visible and the curve stays correct, but every editing path is closed: this
+// editor rewrites a whole bank per edit, which would destroy the preset.
+const {
+  isPresetOwned,
+  lockMessage,
+  clearConfirmationMessage,
+  showClearDialog,
+  isClearing,
+  loadAppliedPreset,
+  readOnly,
+  confirmClearPreset,
+} = usePresetLock(filters);
+
+const canAddFilter = computed(() => canAddFilterToCurrentChannel.value && !isPresetOwned.value);
+
+// Linking a pair copies the active channel's filters over its partner, which
+// would overwrite the partner's share of the preset just as thoroughly.
+const guardedTogglePairLink = readOnly(togglePairLink);
+const guardedRemoveFilter = readOnly(removeFilter);
+const guardedToggleFilterEnabled = readOnly(toggleFilterEnabled);
+const guardedIncrementFrequency = readOnly(incrementFilterFrequency);
+const guardedDecrementFrequency = readOnly(decrementFilterFrequency);
+const guardedIncrementGain = readOnly(incrementFilterGain);
+const guardedDecrementGain = readOnly(decrementFilterGain);
+const guardedWidenBand = readOnly(widenFilterBand);
+const guardedNarrowBand = readOnly(narrowFilterBand);
+const guardedUpdateGenericCoeff = readOnly(updateGenericCoeff);
+const guardedUpdateFreqGain = readOnly(onGraphUpdateFreqGain);
+const guardedUpdateQ = readOnly(onGraphUpdateQ);
+const guardedDragStart = readOnly(onGraphDragStart);
+const guardedDragEnd = readOnly(onGraphDragEnd);
+// Adding is guarded here too, not only by disabling the tile that opens the
+// modal. The tile is the sole way in today, so this changes nothing now --
+// but every other mutating path is stopped at the handler, and an add that
+// got through would rewrite the bank exactly like the rest of them.
+const guardedAddFilter = readOnly(handleAddFilter);
+
+async function handleClearPreset() {
+  await confirmClearPreset(async () => {
+    await loadFiltersFromBackend();
+    await loadBackendCapabilities();
+  });
+}
 
 const channelSelectOptions = [
   { value: 0, label: 'L' },
@@ -345,6 +418,7 @@ const handleKeyup = (e: KeyboardEvent) => {
 // --- Lifecycle ---
 onMounted(async () => {
   await initialize();
+  await loadAppliedPreset();
 
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('keyup', handleKeyup);
@@ -416,6 +490,57 @@ watch(activeChannel, async () => {
         &:hover { opacity: 0.5; }
         &.linked { stroke: red; }
         &.bypassed { stroke: blue; }
+
+        // A preset owns the bank: linking a pair would copy over its partner.
+        &.icon-disabled { opacity: 0.35; cursor: not-allowed; }
+      }
+    }
+  }
+
+  .preset-lock-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    background: rgba(0, 184, 255, 0.08);
+    border: 1px solid rgba(0, 184, 255, 0.4);
+
+    .banner-icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      stroke: #00b8ff;
+    }
+
+    .banner-text {
+      flex: 1;
+      min-width: 200px;
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--color-text);
+      }
+    }
+
+    .banner-action {
+      padding: 8px 16px;
+      border: 1px solid rgba(112, 112, 112, 0.5);
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--color-text);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(225, 30, 74, 0.2);
+        border-color: var(--primary, #e11e4a);
       }
     }
   }
@@ -606,6 +731,21 @@ watch(activeChannel, async () => {
       display: flex;
       flex-direction: column;
       gap: 15px;
+
+      // Read-only, not hidden: the filters a preset wrote stay legible and
+      // the count stays honest; only the controls that would rewrite the
+      // bank stop responding.
+      &.preset-locked {
+        :deep(.filter-item) {
+          pointer-events: none;
+          opacity: 0.75;
+        }
+
+        :deep(input),
+        :deep(button) {
+          pointer-events: none;
+        }
+      }
 
       .filter-item {
         padding: 20px;

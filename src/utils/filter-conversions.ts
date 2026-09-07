@@ -12,7 +12,7 @@ const typeMapping: Record<string, StoreFilter['type']> = {
   'bandpass': 'bandpass',
   'bandstop': 'bandstop',
   'allpass': 'allpass',
-  'generic_normalized': 'peak' // fallback mapping
+  'generic_normalized': 'generic'
 }
 
 // Map store filter types to UI filter icons (using supported BiquadFilterType values)
@@ -24,33 +24,53 @@ const iconMapping: Record<StoreFilter['type'], BiquadFilterType> = {
   'lowpass': 'lowpass',
   'bandpass': 'peaking', // Fallback to peaking for unsupported types
   'bandstop': 'peaking', // Fallback to peaking for unsupported types
-  'allpass': 'peaking'   // Fallback to peaking for unsupported types
+  'allpass': 'peaking',  // Fallback to peaking for unsupported types
+  'generic': 'generic_normalized'
 }
 
+const TRANSPARENT_COEFFS = { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 } as const
+
 export const convertUIFilterToStore = (uiFilter: Filter): Omit<StoreFilter, 'id'> => {
-  const type = typeMapping[uiFilter.icon]
+  const type = typeMapping[uiFilter.kind]
   if (!type) {
     throw new Error(
-      `Unrecognised filter icon '${uiFilter.icon}' at ${uiFilter.frequency} Hz — refusing to ` +
+      `Unrecognised filter kind '${uiFilter.kind}' at ${uiFilter.frequency} Hz — refusing to ` +
       `substitute a peak filter for it.`
     )
   }
 
-  return {
+  const storeFilter: Omit<StoreFilter, 'id'> = {
     type,
     frequency: uiFilter.frequency,
     gain: uiFilter.gain,
     q: uiFilter.Q,
     enabled: uiFilter.enabled
   }
+
+  // A generic biquad is defined by its coefficients alone. Dropping them here
+  // is how a speaker preset used to be degraded into a peak filter at some
+  // unrelated frequency.
+  if (type === 'generic') {
+    storeFilter.coefficients = { ...(uiFilter.genericCoeffs ?? TRANSPARENT_COEFFS) }
+  }
+
+  return storeFilter
 }
 
-export const convertStoreFilterToUI = (storeFilter: StoreFilter, id: string): Filter => ({
-  id: parseInt(id.split('_')[1]) || 0,
-  icon: iconMapping[storeFilter.type] || 'peaking',
-  text: storeFilter.frequency.toString(),
-  frequency: storeFilter.frequency,
-  gain: storeFilter.gain || 0,
-  Q: storeFilter.q || 0.71,
-  enabled: storeFilter.enabled
-})
+export const convertStoreFilterToUI = (storeFilter: StoreFilter, id: string): Filter => {
+  const uiFilter: Filter = {
+    id: parseInt(id.split('_')[1]) || 0,
+    kind: iconMapping[storeFilter.type] || 'peaking',
+    text: storeFilter.frequency.toString(),
+    frequency: storeFilter.frequency,
+    gain: storeFilter.gain || 0,
+    Q: storeFilter.q || 0.71,
+    enabled: storeFilter.enabled
+  }
+
+  if (storeFilter.type === 'generic') {
+    uiFilter.genericCoeffs = { ...(storeFilter.coefficients ?? TRANSPARENT_COEFFS) }
+  }
+
+  return uiFilter
+}

@@ -196,6 +196,11 @@ const router = createRouter({
               component: () => import('@/views/sound/speaker-equalizer.vue'),
             },
             {
+              path: 'speaker-presets',
+              name: 'speaker-presets',
+              component: () => import('@/views/sound/speaker-presets.vue'),
+            },
+            {
               path: 'crossover-design',
               name: 'crossover-design',
               component: () => import('@/views/sound/crossover-design.vue'),

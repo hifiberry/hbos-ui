@@ -1,3 +1,67 @@
+hifiberry-webui (0.26.0) stable; urgency=medium
+
+  * Crossover Design and Speaker Equalizer now show the filters a speaker
+    preset wrote. A preset is applied as raw biquad coefficients, and the
+    editors used to drop every one of them: a nine-band channel read
+    "0/16 filters" with a flat curve while the DSP held the real thing. The
+    count, the filter list and the response curve are now the preset's own.
+  * Those banks are read-only while the preset is applied. Adding a filter or
+    editing a band rewrites the whole bank, so a single edit silently
+    destroyed the applied preset. A banner names the preset, the controls
+    that would rewrite the bank are inert -- including loading a room
+    correction or a saved EQ file, and linking a channel pair -- and
+    "Clear preset and edit freely" returns all four channels to no filters
+    after a confirmation. Channel level, delay, polarity and input source
+    stay editable; they are not filters.
+  * A transparent biquad is read as an empty slot rather than a filter, so a
+    channel reports the filters it actually has and a cleared bank reads as
+    empty instead of staying locked.
+  * The Speaker Presets page is now reachable from the sidebar. Only the
+    route and the Sound overview card existed, so the page could be found
+    only by going via Sound or typing the URL. Listed after Crossover in
+    both places, so the sidebar and the overview agree on the order.
+  * Speaker preset cards have padding again. ContentBox supplies the card
+    surface but no padding, and its bottom margin -- meant for stacked
+    boxes -- pulled a stretched card's surface up out from under its own
+    Apply button.
+  * Saved Speaker EQ files written by earlier versions still load. The UI
+    filter's kind moved from a field called `icon` to one called `kind`, and
+    a saved file is a verbatim dump of those objects, so loading accepts
+    both spellings.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 04 Sep 2026 16:45:00 +0000
+
+hifiberry-webui (0.25.1) stable; urgency=medium
+
+  * Speaker presets: the apply button is styled like the other action buttons
+    in Sound. It previously rendered as plain text, giving no indication it
+    could be pressed.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 04 Sep 2026 13:58:47 +0000
+
+hifiberry-webui (0.25.0) stable; urgency=medium
+
+  * New Sound page: Speaker Presets. A speaker preset configures all four
+    amplifier channels for one loudspeaker -- crossover, driver
+    equalisation, routing and levels -- and is applied by the DSP daemon as a
+    unit. The page lists what is installed, marks the one currently applied,
+    and says why an incompatible preset cannot be applied rather than only
+    disabling the button. The confirmation says what applying costs: it
+    rewrites all four channels, including any room correction already loaded
+    into the same banks.
+  * A board running the wrong DSP program is offered the profile deployment
+    and the apply as two explicit steps, because applying does not deploy
+    profiles. That offer is made only where it is the right remedy: the
+    loaded profile must be readable, must name a different program, and the
+    profile that would replace it must target the same board. Otherwise a
+    DAC+DSP or DSP Add-On would have been offered a Beocreate profile --
+    every profile ships on every device, so their presence says nothing --
+    and writing one into that board's EEPROM persists across reboots.
+  * On a system with no DSP board or no DSP service the page now says so,
+    instead of printing the proxy's "HTTP 502: Bad Gateway" verbatim.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 04 Sep 2026 13:33:26 +0000
+
 hifiberry-webui (0.24.3) stable; urgency=medium
 
   * The VU meter is back on a Compute Module 5. Everything gated on "Pi 5 or

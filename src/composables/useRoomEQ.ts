@@ -57,7 +57,7 @@ export function useRoomEQ(
 
     return {
       id: Date.now() + index,
-      icon: filterType,
+      kind: filterType,
       text: formatFilterTypeName(filterType),
       frequency: Math.round(roomEQFilter.frequency),
       gain: roomEQFilter.gain_db,

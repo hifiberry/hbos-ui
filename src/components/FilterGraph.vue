@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { Filter } from '@/utils/filtercalc'
-import { calculateFilterGain } from '@/utils/filtercalc'
+import { calculateFilterGain, isRawCoefficientFilter } from '@/utils/filtercalc'
 import { useBandwidthLines } from '@/composables/useBandwidthLines'
 import { bandwidthToQ } from '@/utils/biquad'
 import {
@@ -139,7 +139,7 @@ const yToGainLocal = (y: number) => yToGain(y, plotHeight.value)
 const currentFilter = computed<Filter>(() => {
   return (
     props.filters.find(f => f.id === props.activeFilterId) || {
-      id: 0, icon: 'peaking', text: '', frequency: 1000, gain: 0, Q: 1.0, enabled: true
+      id: 0, kind: 'peaking', text: '', frequency: 1000, gain: 0, Q: 1.0, enabled: true
     }
   ) as Filter
 })
@@ -194,7 +194,7 @@ const combinedGraphData = computed(() => {
   return { linePath: `M ${linePoints.join(' L ')}` }
 })
 
-const nonGenericFilters = computed(() => props.filters.filter(f => f.icon !== 'generic_normalized'))
+const nonGenericFilters = computed(() => props.filters.filter(f => !isRawCoefficientFilter(f)))
 
 const startDrag = (e: MouseEvent, band: Filter) => {
   e.preventDefault(); e.stopPropagation()

@@ -13,6 +13,11 @@ export interface DetectedDSP {
 // Metadata Types
 export interface DSPMetadata {
   checksum: string
+  // Declared by the profile XML, so present on any profile that names them.
+  // programID identifies the DSP program; modelName the board it was built
+  // for, which is what decides whether another profile may replace it.
+  programID?: string
+  modelName?: string
   _system?: {
     profileName: string
     profileVersion: string
@@ -711,6 +716,93 @@ export async function readChannelSelect(address: number): Promise<number> {
 
 export async function writeChannelSelect(address: number, mode: number): Promise<void> {
   await writeMemory({ address: String(address), value: mode })
+}
+
+// Speaker Presets API — a preset describes one loudspeaker as four DSP
+// channels and is applied server-side as a unit.
+
+export interface SpeakerPresetSummary {
+  id: string
+  name: string
+  description?: string | null
+  requiredProfile: string
+  sampleRate: number
+  readOnly: boolean
+  filterCounts: Record<string, number>
+  compatible: boolean
+  incompatibleReason: string | null
+}
+
+export interface SpeakerPresetChannel {
+  role: string
+  level: number
+  delayMs: number
+  invert: boolean
+  enabled: boolean
+  filters: FilterCoefficients[]
+}
+
+export interface SpeakerPreset extends SpeakerPresetSummary {
+  schemaVersion: number
+  minProfileVersion: number
+  channels: Record<string, SpeakerPresetChannel>
+}
+
+export interface SpeakerPresetListResponse {
+  presets: SpeakerPresetSummary[]
+  current: string | null
+}
+
+export interface SpeakerPresetApplyResponse {
+  status: 'success' | 'partial'
+  preset: string
+  banksWritten: number
+  filtersWritten: number
+  registersWritten: number
+}
+
+/**
+ * Answer to DELETE /presets/current. `cleared` is the id of the preset that
+ * was applied, or null when there was nothing to clear.
+ */
+export interface SpeakerPresetClearResponse {
+  status: 'success'
+  cleared: string | null
+  // Only sent when something was actually cleared: with no preset applied
+  // the server returns early, before it writes any bank. Optional so the
+  // type says that, rather than promising a number that isn't there.
+  banksCleared?: number
+  filtersCleared?: number
+}
+
+export async function listSpeakerPresets(): Promise<SpeakerPresetListResponse> {
+  return apiRequest<SpeakerPresetListResponse>('/presets')
+}
+
+export async function getSpeakerPreset(id: string): Promise<SpeakerPreset> {
+  return apiRequest<SpeakerPreset>(`/presets/${encodeURIComponent(id)}`)
+}
+
+export async function applySpeakerPreset(
+  id: string
+): Promise<SpeakerPresetApplyResponse> {
+  return apiRequest<SpeakerPresetApplyResponse>(
+    `/presets/${encodeURIComponent(id)}/apply`,
+    { method: 'POST' }
+  )
+}
+
+/**
+ * Return all four channels to no filters and forget the recorded selection.
+ *
+ * The server writes transparent biquads to every bank, clears their stored
+ * filters and bypass state, and deliberately leaves the per-channel
+ * role/level/delay/polarity registers alone — those are not filters.
+ */
+export async function clearSpeakerPreset(): Promise<SpeakerPresetClearResponse> {
+  return apiRequest<SpeakerPresetClearResponse>('/presets/current', {
+    method: 'DELETE'
+  })
 }
 
 // DSP Toolkit Status Check

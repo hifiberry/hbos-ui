@@ -11,13 +11,22 @@ import {
 
 export interface Filter {
   id: number;
-  icon: BiquadFilterType; // Use biquad filter types directly
+  /**
+   * Which kind of filter this is, in the biquad vocabulary.
+   *
+   * Not an icon, despite what this field used to be called: getFilterIconName()
+   * is what turns a kind into an icon name. This is the discriminant every
+   * other decision about the filter hangs off -- which coefficients to compute,
+   * whether the frequency/gain/Q controls mean anything, whether a bank is
+   * owned by a speaker preset.
+   */
+  kind: BiquadFilterType;
   text: string;
   frequency: number;
   gain: number;
   Q?: number; // Q factor, representing width/slope
   enabled: boolean;
-  // For generic_normalized filters, provide the 5 coefficients directly
+  // Only raw-coefficient filters carry these; see isRawCoefficientFilter().
   genericCoeffs?: {
     b0: number;
     b1: number;
@@ -25,6 +34,20 @@ export interface Filter {
     a1: number;
     a2: number;
   };
+}
+
+/**
+ * Whether this filter is defined by raw biquad coefficients rather than by
+ * frequency, gain and Q.
+ *
+ * Speaker presets are written to the DSP as coefficients, so this is also what
+ * marks a bank as preset-owned. It is a predicate rather than a comparison
+ * spelled out at each call site because the meaning -- "there is nothing here
+ * to edit band-by-band" -- is not something a reader should have to infer from
+ * a string literal.
+ */
+export function isRawCoefficientFilter(filter: Filter): boolean {
+  return filter.kind === 'generic_normalized';
 }
 
 export interface FrequencyResponsePoint {
@@ -39,7 +62,7 @@ export function calculateFilterGain(freq: number, band: Filter, sampleRate: numb
   if (!band.enabled) return 0;
 
   // For generic normalized filters, create with coefficients
-  if (band.icon === 'generic_normalized' && band.genericCoeffs) {
+  if (isRawCoefficientFilter(band) && band.genericCoeffs) {
     const biquadFilter = {
       type: 'generic_normalized' as BiquadFilterType,
       frequency: band.frequency, // Not used for generic filters
@@ -54,7 +77,7 @@ export function calculateFilterGain(freq: number, band: Filter, sampleRate: numb
 
   // Create standard biquad filter with the band parameters
   const biquadFilter = createBiquadFilter(
-    band.icon, // Now directly using BiquadFilterType
+    band.kind,
     band.frequency,
     band.gain,
     band.Q || 1.0,

@@ -13,7 +13,7 @@ import { type Filter } from '@/utils/filtercalc'
  */
 describe('applyLoadedChannelFilters', () => {
   const peak = (frequency: number): Filter => ({
-    id: 1, icon: 'peaking', text: 'p', frequency, gain: -3, Q: 1, enabled: true,
+    id: 1, kind: 'peaking', text: 'p', frequency, gain: -3, Q: 1, enabled: true,
   } as Filter)
 
   it('writes no channel when a later channel cannot be converted', async () => {
@@ -21,7 +21,7 @@ describe('applyLoadedChannelFilters', () => {
 
     const source = {
       left: [peak(100)],
-      right: [{ ...peak(200), icon: 'no-such-filter-type' } as Filter],
+      right: [{ ...peak(200), kind: 'no-such-filter-type' } as Filter],
     }
 
     await expect(
@@ -30,6 +30,26 @@ describe('applyLoadedChannelFilters', () => {
 
     // 'left' must not have been written: the file could not be applied whole.
     expect(setBankFilters).not.toHaveBeenCalled()
+  })
+
+  it('loads a file saved before the kind field was renamed', async () => {
+    // Files on disk from earlier versions carry the filter kind under `icon`.
+    // The rename was internal to the UI; a file that used to load must still
+    // load, and must reach the hardware as the filter it describes.
+    const setBankFilters = vi.fn().mockResolvedValue(undefined)
+
+    const legacy = {
+      id: 1, icon: 'lowshelf', text: 'p', frequency: 100, gain: -3, Q: 1, enabled: true,
+    }
+
+    const applied = await applyLoadedChannelFilters(
+      setBankFilters, ['left'], { left: [legacy] } as never
+    )
+
+    expect(applied.left[0].kind).toBe('lowshelf')
+    expect(setBankFilters).toHaveBeenCalledWith('left', [
+      expect.objectContaining({ type: 'shelf-low', frequency: 100 })
+    ])
   })
 
   it('writes every channel it was given when they all convert', async () => {

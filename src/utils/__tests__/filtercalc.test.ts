@@ -10,7 +10,7 @@ const SAMPLE_RATE = 48000
 
 const peakingFilter: Filter = {
   id: 1,
-  icon: 'peaking',
+  kind: 'peaking',
   text: '1000',
   frequency: 1000,
   gain: 6,
@@ -38,7 +38,7 @@ describe('calculateFilterGain', () => {
   it('works with generic_normalized filters', () => {
     const generic: Filter = {
       id: 2,
-      icon: 'generic_normalized',
+      kind: 'generic_normalized',
       text: 'generic',
       frequency: 1000,
       gain: 0,

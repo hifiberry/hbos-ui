@@ -1,7 +1,7 @@
 <template>
   <div class="info-card">
     <div class="card-header">
-      <Icon icon="tabler/chart-donut" class="card-icon" />
+      <Icon icon="tabler/schema" class="card-icon" />
       <h2>Memory Usage</h2>
     </div>
 

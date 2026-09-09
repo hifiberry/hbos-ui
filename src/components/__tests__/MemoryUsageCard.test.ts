@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import MemoryUsageCard from '@/components/MemoryUsageCard.vue'
 import type { MemoryFeature, MemoryReport } from '@/api/memory'
 
@@ -205,5 +207,21 @@ describe('MemoryUsageCard', () => {
     const wrapper = mountCard([feature()])
     expect(wrapper.get('[data-test="action-mpd"]').attributes('aria-label'))
       .toContain('Music Player Daemon')
+  })
+})
+
+describe('MemoryUsageCard icons', () => {
+  // The Icon component resolves `icon="tabler/x"` to public/images/svg/tabler/x.svg
+  // at runtime. A name with no matching file renders nothing and the card loses
+  // the header icon every sibling card has -- silently, with no build or test
+  // failure. This pins every icon the card names to a file that exists.
+  it('names only icons that exist on disk', () => {
+    const source = readFileSync(resolve('src/components/MemoryUsageCard.vue'), 'utf-8')
+    const names = [...source.matchAll(/icon="([^"]+)"/g)].map(m => m[1])
+    expect(names.length).toBeGreaterThan(0)
+    for (const name of names) {
+      const svg = resolve(`public/images/svg/${name}.svg`)
+      expect(existsSync(svg), `missing icon asset: public/images/svg/${name}.svg`).toBe(true)
+    }
   })
 })

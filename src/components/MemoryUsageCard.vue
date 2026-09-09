@@ -51,6 +51,13 @@
                 <span :data-test="`reclaimable-${f.id}`" class="reclaimable">
                   frees {{ reclaimableRange(f.memory.reclaimable) }}
                 </span>
+                <span
+                  v-if="f.memory.reclaimable.swap_pss_kb > 0"
+                  :data-test="`swap-${f.id}`"
+                  class="swap"
+                >
+                  plus {{ mb(f.memory.reclaimable.swap_pss_kb) }} of swap
+                </span>
                 <RouterLink
                   v-if="actionFor(f)"
                   :data-test="`action-${f.id}`"
@@ -250,6 +257,12 @@ const actionFor = (f: MemoryFeature): { label: string; to: object } | null => {
   display: block;
   font-size: 0.85rem;
   opacity: 0.8;
+}
+.swap {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  color: var(--color-body-secondary);
 }
 .note {
   display: block;

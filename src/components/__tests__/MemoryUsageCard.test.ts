@@ -17,7 +17,7 @@ const feature = (overrides: Partial<MemoryFeature> = {}): MemoryFeature => ({
   memory: {
     rss_kb: 123702, pss_kb: 118400, private_kb: 114900, shared_kb: 8802,
     swap_kb: 0, swap_pss_kb: 0,
-    reclaimable: { min_kb: 114900, estimate_kb: 118400 },
+    reclaimable: { min_kb: 114900, estimate_kb: 118400, swap_pss_kb: 0 },
   },
   ...overrides,
 })
@@ -115,7 +115,7 @@ describe('MemoryUsageCard', () => {
     feature({
       memory: {
         rss_kb: 0, pss_kb: 0, private_kb: 0, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
-        reclaimable: { min_kb: 0, estimate_kb: 0 },
+        reclaimable: { min_kb: 0, estimate_kb: 0, swap_pss_kb: 0 },
       },
       ...overrides,
     })
@@ -151,10 +151,33 @@ describe('MemoryUsageCard', () => {
 
   it('shows a single figure when both bounds round to the same MB', () => {
     const f = feature()
-    f.memory.reclaimable = { min_kb: 114900, estimate_kb: 114950 }
+    f.memory.reclaimable = { min_kb: 114900, estimate_kb: 114950, swap_pss_kb: 0 }
     const text = mountCard([f]).get('[data-test="reclaimable-mpd"]').text()
     expect(text).toContain('112 MB')
     expect(text).not.toContain('\u2013')
+  })
+
+  // --- reclaimable is RAM only now; a feature that also holds swapped-out
+  // pages needs that called out separately, or an owner relieving memory
+  // pressure is pointed at the wrong service (Bluetooth: 1.6 MB of RAM but
+  // 26.8 MB of swap, previously shown as "frees 28 MB" and ranked mid-table).
+  it('shows the swap figure for a feature that holds swap', () => {
+    const f = feature({ id: 'bluetooth', name: 'Bluetooth' })
+    f.memory.reclaimable = { min_kb: 1600, estimate_kb: 1600, swap_pss_kb: 26800 }
+    const text = mountCard([f]).get('[data-test="swap-bluetooth"]').text()
+    expect(text).toContain('26 MB')
+  })
+
+  it('renders no swap element for a feature with no swap', () => {
+    const wrapper = mountCard([feature()])
+    expect(wrapper.find('[data-test="swap-mpd"]').exists()).toBe(false)
+  })
+
+  it('does not round a small but real swap figure down to nothing', () => {
+    const f = feature({ id: 'roon', name: 'Roon' })
+    f.memory.reclaimable = { min_kb: 1100, estimate_kb: 1100, swap_pss_kb: 400 }
+    const text = mountCard([f]).get('[data-test="swap-roon"]').text()
+    expect(text).toContain('<1 MB')
   })
 
   // --- unaccounted_kb is emitted so the columns visibly add up to the

@@ -12,6 +12,7 @@ export type FeatureDisposition = 'required' | 'disable' | 'uninstall' | 'reconfi
 export interface Reclaimable {
   min_kb: number
   estimate_kb: number
+  swap_pss_kb: number
 }
 
 export interface FeatureMemory {

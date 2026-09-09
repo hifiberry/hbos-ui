@@ -113,6 +113,88 @@ const actionFor = (f: MemoryFeature): { label: string; to: object } | null => {
 </script>
 
 <style scoped>
+/* No shared partial covers this card shape (checked src/assets/scss/_card.scss
+ * and _service-item.scss — both style a different card family: a flat
+ * elevated `.card` with box-shadow, or an icon+details+actions service row).
+ * `.info-card` / `.info-table` are defined only inside system-info.vue's own
+ * scoped block, nested under `.info-tables`, and Vue's scoped CSS only
+ * stamps a parent's scope attribute onto a child component's root element,
+ * never its internal descendants — so those nested rules would never reach
+ * this component if left out. Reproduced verbatim here (same class names,
+ * same --color-* / --background-* custom properties) so the card matches its
+ * siblings standalone, in both themes, without relying on the parent. */
+.info-card {
+  background: var(--background-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-header h2 {
+  margin: 0;
+  color: var(--color-head);
+  font-size: 1.25rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.card-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.info-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.info-table td {
+  padding: 5px 0;
+  vertical-align: top;
+}
+
+.info-table td.label {
+  font-weight: 500;
+  color: var(--color-body-secondary);
+  width: 40%;
+  padding-right: 16px;
+  line-height: 1.5;
+}
+
+.info-table td.value {
+  color: var(--color-body);
+  font-family: 'Metropolis', sans-serif;
+  line-height: 1.5;
+}
+
+.loading-message,
+.error-message {
+  padding: 16px;
+  text-align: center;
+  color: var(--color-body-secondary);
+  font-style: italic;
+}
+
+.error-message {
+  color: var(--color-error);
+}
+
 .feature-group h3 {
   margin: 1rem 0 0.25rem;
   font-size: 0.9rem;

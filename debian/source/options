@@ -1,0 +1,11 @@
+# This is a 3.0 (native) package, so dpkg-source tars the whole working tree.
+# node_modules is a build dependency of hundreds of megabytes that the chroot
+# never needs -- override_dh_auto_build uses the pre-built debian/webui-dist --
+# so exclude it from the source package here.
+#
+# It used to be excluded by deleting it in debian/rules' clean target instead.
+# That worked, but dpkg-source runs clean against the DEVELOPER'S tree, so every
+# package build wiped the local node_modules and the next npm/vite command in
+# that checkout failed until someone re-ran npm ci. Ignoring beats deleting.
+tar-ignore = node_modules
+tar-ignore = dist

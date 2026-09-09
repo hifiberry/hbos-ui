@@ -103,4 +103,84 @@ describe('MemoryUsageCard', () => {
   it('formats sizes in MB', () => {
     expect(mountCard([feature()]).text()).toContain('121 MB')
   })
+
+  // --- A feature using nothing is not a row worth showing. Kernel threads
+  // have no mm, so smaps_rollup is empty, the statm fallback yields RSS 0 and
+  // PSS None, and all ~120 of them land in the kernel bucket -- which then
+  // renders as "Kernel, 118 processes, 0 MB RES / 0 MB actual" on every
+  // device. It reads as a bug and it is conceptually empty: the PSS of a
+  // kernel thread is zero by definition, and real kernel memory is already
+  // carried in unaccounted_kb.
+  const zeroUsage = (overrides: Partial<MemoryFeature> = {}) =>
+    feature({
+      memory: {
+        rss_kb: 0, pss_kb: 0, private_kb: 0, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 0, estimate_kb: 0 },
+      },
+      ...overrides,
+    })
+
+  it('does not render a feature that uses no memory', () => {
+    const wrapper = mountCard([
+      zeroUsage({ id: 'kernel', name: 'Kernel', disposition: 'none', processes: 118 }),
+      feature({ id: 'audiocontrol', name: 'Audio control', disposition: 'required' }),
+    ])
+    expect(wrapper.text()).not.toContain('Kernel')
+    expect(wrapper.text()).toContain('Audio control')
+  })
+
+  it('does not render a zero-usage feature in the reducible group either', () => {
+    const wrapper = mountCard([
+      zeroUsage({ id: 'idle', name: 'Idle thing', disposition: 'disable' }),
+      feature(),
+    ])
+    expect(wrapper.get('[data-test="reducible"]').text()).not.toContain('Idle thing')
+  })
+
+  // --- The backend computes both ends of the reclaimable range because no
+  // exact answer exists: estimate_kb counts, at their per-process share, pages
+  // the feature shares with everything outside it -- glibc, and the Python
+  // interpreter shared between config-server, sigmatcpserver and roomeq-server
+  // -- none of which stopping the feature returns. Showing only estimate_kb
+  // systematically overstates what is freed.
+  it('shows both ends of the reclaimable range', () => {
+    const f = feature()
+    f.memory.reclaimable = { min_kb: 114900, estimate_kb: 118400 }
+    expect(mountCard([f]).get('[data-test="reclaimable-mpd"]').text()).toContain('112\u2013116 MB')
+  })
+
+  it('shows a single figure when both bounds round to the same MB', () => {
+    const f = feature()
+    f.memory.reclaimable = { min_kb: 114900, estimate_kb: 114950 }
+    const text = mountCard([f]).get('[data-test="reclaimable-mpd"]').text()
+    expect(text).toContain('112 MB')
+    expect(text).not.toContain('\u2013')
+  })
+
+  // --- unaccounted_kb is emitted so the columns visibly add up to the
+  // machine's RAM. Dropping it leaves the owner looking at Total 1980 MB above
+  // rows summing to far less, with nothing explaining the gap.
+  it('shows how much memory is in use', () => {
+    expect(mountCard([feature()]).get('[data-test="summary-used"]').text()).toContain('1186 MB')
+  })
+
+  it('accounts for the memory no feature owns', () => {
+    expect(mountCard([feature()]).get('[data-test="summary-unaccounted"]').text()).toContain('12 MB')
+  })
+
+  it('does not round a small but real figure down to nothing', () => {
+    const f = feature({ id: 'tiny', name: 'Tiny' })
+    f.memory.rss_kb = 400
+    expect(mountCard([f]).text()).toContain('<1 MB')
+    expect(mountCard([f]).text()).not.toContain('0 MB RES')
+  })
+
+  // --- Several disable rows share the link text "Settings", which a screen
+  // reader announces as "Settings, Settings, Settings" with nothing to tell
+  // them apart.
+  it('names the feature in the action link for assistive technology', () => {
+    const wrapper = mountCard([feature()])
+    expect(wrapper.get('[data-test="action-mpd"]').attributes('aria-label'))
+      .toContain('Music Player Daemon')
+  })
 })

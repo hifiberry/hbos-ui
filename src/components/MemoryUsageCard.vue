@@ -19,9 +19,20 @@
             <td class="label">Available</td>
             <td class="value">{{ mb(report.system.available_kb) }}</td>
           </tr>
+          <tr data-test="summary-used">
+            <td class="label">Used</td>
+            <td class="value">{{ mb(report.system.used_kb) }}</td>
+          </tr>
           <tr v-if="report.system.swap_total_kb > 0">
             <td class="label">Swap used</td>
             <td class="value">{{ mb(report.system.swap_used_kb) }} of {{ mb(report.system.swap_total_kb) }}</td>
+          </tr>
+          <tr data-test="summary-unaccounted">
+            <td class="label">Other / unaccounted</td>
+            <td class="value">
+              {{ mb(report.system.unaccounted_kb) }}
+              <span class="note">the kernel, drivers and page tables, which belong to no feature</span>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -38,12 +49,13 @@
               <td class="value">
                 <span class="usage">{{ mb(f.memory.rss_kb) }} RES / {{ mb(f.memory.pss_kb) }} actual</span>
                 <span :data-test="`reclaimable-${f.id}`" class="reclaimable">
-                  frees ~{{ mb(f.memory.reclaimable.estimate_kb) }}
+                  frees {{ reclaimableRange(f.memory.reclaimable) }}
                 </span>
                 <RouterLink
                   v-if="actionFor(f)"
                   :data-test="`action-${f.id}`"
                   :to="actionFor(f)!.to"
+                  :aria-label="`${actionFor(f)!.label} for ${f.name}`"
                 >{{ actionFor(f)!.label }}</RouterLink>
               </td>
             </tr>
@@ -72,7 +84,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Icon from '@/components/Icon.vue'
-import type { MemoryFeature, MemoryReport } from '@/api/memory'
+import type { MemoryFeature, MemoryReport, Reclaimable } from '@/api/memory'
 
 const props = defineProps<{
   report: MemoryReport | null
@@ -80,7 +92,31 @@ const props = defineProps<{
   error: string | null
 }>()
 
-const mb = (kb: number): string => `${Math.round(kb / 1024)} MB`
+/** Whole megabytes, except that a real but small figure must not read as
+ *  nothing: rounding 400 kB to "0 MB" claims the feature uses no memory. */
+const mbNumber = (kb: number): string =>
+  kb > 0 && kb < 1024 ? '<1' : String(Math.round(kb / 1024))
+
+const mb = (kb: number): string => `${mbNumber(kb)} MB`
+
+/** Both ends of the range, because no exact figure exists and the floor is
+ *  the honest half. `estimate_kb` counts, at their per-process share, pages
+ *  the feature shares with everything outside it -- glibc, and the Python
+ *  interpreter shared between config-server, sigmatcpserver and roomeq-server
+ *  -- and stopping the feature returns none of those. Showing it alone
+ *  overstates what is freed, worst for exactly the shared-interpreter case.
+ *  When the two bounds round to the same figure, "8-8 MB" is just noise. */
+const reclaimableRange = (r: Reclaimable): string => {
+  const low = mbNumber(r.min_kb)
+  const high = mbNumber(r.estimate_kb)
+  return low === high ? `${high} MB` : `${low}–${high} MB`
+}
+
+/** A feature using nothing is not worth a row. Kernel threads have no mm, so
+ *  every one of them reports zero, and a Pi runs well over a hundred: without
+ *  this the card shows "Kernel, 118 processes, 0 MB RES / 0 MB actual" on
+ *  every device. Real kernel memory is already in `unaccounted_kb`. */
+const usesMemory = (f: MemoryFeature) => f.memory.rss_kb > 0 || f.memory.pss_kb > 0
 
 const byEstimate = (a: MemoryFeature, b: MemoryFeature) =>
   b.memory.reclaimable.estimate_kb - a.memory.reclaimable.estimate_kb
@@ -89,11 +125,13 @@ const byUsage = (a: MemoryFeature, b: MemoryFeature) => b.memory.pss_kb - a.memo
 
 const ACTIONABLE = ['disable', 'uninstall', 'reconfigure']
 
+const shown = computed(() => (props.report?.features ?? []).filter(usesMemory))
+
 const reducible = computed(() =>
-  (props.report?.features ?? []).filter(f => ACTIONABLE.includes(f.disposition)).sort(byEstimate))
+  shown.value.filter(f => ACTIONABLE.includes(f.disposition)).sort(byEstimate))
 
 const required = computed(() =>
-  (props.report?.features ?? []).filter(f => !ACTIONABLE.includes(f.disposition)).sort(byUsage))
+  shown.value.filter(f => !ACTIONABLE.includes(f.disposition)).sort(byUsage))
 
 /** Where the owner goes to act on this feature. Nothing is turned off from
  *  this page: the flows that install, remove and configure features already
@@ -212,5 +250,10 @@ const actionFor = (f: MemoryFeature): { label: string; to: object } | null => {
   display: block;
   font-size: 0.85rem;
   opacity: 0.8;
+}
+.note {
+  display: block;
+  font-size: 0.8rem;
+  opacity: 0.6;
 }
 </style>

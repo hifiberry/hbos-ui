@@ -1,7 +1,7 @@
 <template>
   <PageContent title="Settings">
     <div class="settingsOverview">
-      <ContentBoxLink :to="{ name: 'players' }" height=150>
+      <ContentBoxLink :to="{ name: 'players' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="tabler/player-play" class="settingsCardHeaderIcon" />
           <h2>Players</h2>
@@ -11,7 +11,7 @@
         </p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'web-services' }" height=150>
+      <ContentBoxLink :to="{ name: 'web-services' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="tabler/cloud" class="settingsCardHeaderIcon" />
           <h2>Web Services</h2>
@@ -19,7 +19,7 @@
         <p>Connect and manage web-based music services</p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'music-files' }" height=150>
+      <ContentBoxLink :to="{ name: 'music-files' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="nas" class="settingsCardHeaderIcon" />
           <h2>Music Files</h2>
@@ -27,7 +27,7 @@
         <p>Mount SMB shares and manage local music directories</p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'dsp-programs' }" height=150>
+      <ContentBoxLink :to="{ name: 'dsp-programs' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="tabler/download" class="settingsCardHeaderIcon" />
           <h2>DSP Programs</h2>
@@ -35,7 +35,7 @@
         <p>Download and manage digital signal processing programs</p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'dsp-backends' }" height=150>
+      <ContentBoxLink :to="{ name: 'dsp-backends' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="tabler/server" class="settingsCardHeaderIcon" />
           <h2>DSP Backends</h2>
@@ -43,7 +43,7 @@
         <p>Select and configure digital signal processing backends</p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'system-info' }" height=150>
+      <ContentBoxLink :to="{ name: 'system-info' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="computer" class="settingsCardHeaderIcon" />
           <h2>System Information</h2>
@@ -51,7 +51,7 @@
         <p>View system details including Pi model, HAT information, and system UUID</p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'display' }" height=150>
+      <ContentBoxLink :to="{ name: 'display' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="tv" class="settingsCardHeaderIcon" />
           <h2>Display</h2>
@@ -59,7 +59,7 @@
         <p>Configure display settings and screen options</p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'bluetooth-settings' }" height=150>
+      <ContentBoxLink :to="{ name: 'bluetooth-settings' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="tabler/bluetooth" class="settingsCardHeaderIcon" />
           <h2>Bluetooth</h2>
@@ -67,7 +67,7 @@
         <p>Manage Bluetooth settings</p>
       </ContentBoxLink>
 
-      <ContentBoxLink :to="{ name: 'system-tools'}" height=150>
+      <ContentBoxLink :to="{ name: 'system-tools'}" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="tool" class="settingsCardHeaderIcon" />
           <h2>System Tools</h2>

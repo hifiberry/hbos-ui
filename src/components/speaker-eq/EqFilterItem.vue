@@ -31,11 +31,11 @@
           <div class="control-group" v-for="ctrl in standardControls" :key="ctrl.label">
             <label>{{ ctrl.label }}</label>
             <div class="control-buttons">
-              <button @click="$emit(ctrl.decEvent, filter)" class="control-btn">
+              <button @click="emitFilterEvent[ctrl.decEvent](filter)" class="control-btn">
                 <Icon icon="minus-small" />
               </button>
               <span class="control-value">{{ ctrl.format(filter) }}</span>
-              <button @click="$emit(ctrl.incEvent, filter)" class="control-btn">
+              <button @click="emitFilterEvent[ctrl.incEvent](filter)" class="control-btn">
                 <Icon icon="plus-small" />
               </button>
             </div>
@@ -68,7 +68,7 @@ defineProps<{
   isActive: boolean
 }>();
 
-defineEmits<{
+type EqFilterItemEmits = {
   select: [id: number]
   remove: [id: number]
   'increment-frequency': [filter: Filter]
@@ -78,25 +78,56 @@ defineEmits<{
   'widen-band': [filter: Filter]
   'narrow-band': [filter: Filter]
   'update-generic-coeff': [filter: Filter, coeffName: string, event: Event]
-}>();
+}
 
-const standardControls = [
+const emit = defineEmits<EqFilterItemEmits>();
+
+// The emit names that take a single `Filter` argument, i.e. the ones a
+// standard-control button can legitimately fire. Derived from the emit map
+// above so `standardControls` can't drift out of sync with it.
+type FilterOnlyEmitName = {
+  [K in keyof EqFilterItemEmits]: EqFilterItemEmits[K] extends [filter: Filter] ? K : never
+}[keyof EqFilterItemEmits]
+
+// $emit's type is a set of overloads, one per event name, so calling it with
+// a dynamically-chosen `ctrl.decEvent`/`ctrl.incEvent` (typed as the union
+// above) can never resolve to a single overload, however tightly that union
+// is narrowed. Each entry here calls `emit` with its own literal event name,
+// so every overload still resolves normally; the lookup just picks the right
+// closure at runtime.
+const emitFilterEvent: Record<FilterOnlyEmitName, (filter: Filter) => void> = {
+  'increment-frequency': (filter) => emit('increment-frequency', filter),
+  'decrement-frequency': (filter) => emit('decrement-frequency', filter),
+  'increment-gain': (filter) => emit('increment-gain', filter),
+  'decrement-gain': (filter) => emit('decrement-gain', filter),
+  'widen-band': (filter) => emit('widen-band', filter),
+  'narrow-band': (filter) => emit('narrow-band', filter),
+}
+
+interface StandardControl {
+  label: string
+  decEvent: FilterOnlyEmitName
+  incEvent: FilterOnlyEmitName
+  format: (f: Filter) => string
+}
+
+const standardControls: StandardControl[] = [
   {
     label: 'Frequency',
-    decEvent: 'decrement-frequency' as const,
-    incEvent: 'increment-frequency' as const,
+    decEvent: 'decrement-frequency',
+    incEvent: 'increment-frequency',
     format: (f: Filter) => `${f.frequency} Hz`,
   },
   {
     label: 'Gain',
-    decEvent: 'decrement-gain' as const,
-    incEvent: 'increment-gain' as const,
+    decEvent: 'decrement-gain',
+    incEvent: 'increment-gain',
     format: (f: Filter) => `${f.gain} dB`,
   },
   {
     label: 'Q (width)',
-    decEvent: 'widen-band' as const,
-    incEvent: 'narrow-band' as const,
+    decEvent: 'widen-band',
+    incEvent: 'narrow-band',
     format: (f: Filter) => f.Q ? f.Q.toFixed(2) : 'N/A',
   },
 ];

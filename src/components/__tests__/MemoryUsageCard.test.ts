@@ -39,20 +39,47 @@ const mountCard = (features: MemoryFeature[]) =>
     global: { stubs: { Icon: true, RouterLink: { template: '<a><slot /></a>' } } },
   })
 
+// Fillers exist only to push the total feature count above five, so the
+// disclosure (and the three groups behind it) actually renders. They use
+// memory so they are not dropped by the zero-usage filter, and default to
+// `required` so they land in neither `reducible` nor `unknown` unless a test
+// says otherwise.
+const filler = (n: number, overrides: Partial<MemoryFeature> = {}): MemoryFeature[] =>
+  Array.from({ length: n }, (_, i) =>
+    feature({
+      id: `filler-${i}`,
+      name: `Filler ${i}`,
+      disposition: 'required',
+      memory: {
+        rss_kb: 500, pss_kb: 500, private_kb: 500, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 0, estimate_kb: 0, swap_pss_kb: 0 },
+      },
+      ...overrides,
+    }))
+
+const expand = (wrapper: ReturnType<typeof mountCard>) =>
+  wrapper.get('[data-test="show-all"]').trigger('click')
+
 describe('MemoryUsageCard', () => {
   it('shows the feature name, not the unit name', () => {
     expect(mountCard([feature()]).text()).toContain('Music Player Daemon')
   })
 
-  it('puts actionable features in the reducible group', () => {
-    const wrapper = mountCard([feature()])
+  // The grouped sections only render once expanded, and only when there are
+  // more than five features total -- so these fixtures pad the list with
+  // filler features to get there.
+  it('puts actionable features in the reducible group', async () => {
+    const wrapper = mountCard([feature(), ...filler(5)])
+    await expand(wrapper)
     expect(wrapper.get('[data-test="reducible"]').text()).toContain('Music Player Daemon')
   })
 
-  it('puts required features in the required group', () => {
+  it('puts required features in the required group', async () => {
     const wrapper = mountCard([
       feature({ id: 'audiocontrol', name: 'Audio control', disposition: 'required' }),
+      ...filler(5),
     ])
+    await expand(wrapper)
     expect(wrapper.get('[data-test="required"]').text()).toContain('Audio control')
     expect(wrapper.find('[data-test="reducible"]').exists()).toBe(false)
   })
@@ -84,12 +111,14 @@ describe('MemoryUsageCard', () => {
     expect(wrapper.get('[data-test="action-display"]').text()).toContain('Display settings')
   })
 
-  it('sorts the reducible group by reclaimable estimate, descending', () => {
+  it('sorts the reducible group by reclaimable estimate, descending', async () => {
     const small = feature({ id: 'small', name: 'Small' })
     small.memory.reclaimable.estimate_kb = 1000
     const big = feature({ id: 'big', name: 'Big' })
     big.memory.reclaimable.estimate_kb = 900000
-    const text = mountCard([small, big]).get('[data-test="reducible"]').text()
+    const wrapper = mountCard([small, big, ...filler(4)])
+    await expand(wrapper)
+    const text = wrapper.get('[data-test="reducible"]').text()
     expect(text.indexOf('Big')).toBeLessThan(text.indexOf('Small'))
   })
 
@@ -131,11 +160,13 @@ describe('MemoryUsageCard', () => {
     expect(wrapper.text()).toContain('Audio control')
   })
 
-  it('does not render a zero-usage feature in the reducible group either', () => {
+  it('does not render a zero-usage feature in the reducible group either', async () => {
     const wrapper = mountCard([
       zeroUsage({ id: 'idle', name: 'Idle thing', disposition: 'disable' }),
       feature(),
+      ...filler(5),
     ])
+    await expand(wrapper)
     expect(wrapper.get('[data-test="reducible"]').text()).not.toContain('Idle thing')
   })
 
@@ -207,6 +238,118 @@ describe('MemoryUsageCard', () => {
     const wrapper = mountCard([feature()])
     expect(wrapper.get('[data-test="action-mpd"]').attributes('aria-label'))
       .toContain('Music Player Daemon')
+  })
+})
+
+describe('MemoryUsageCard top five and disclosure', () => {
+  // Eight features with distinct pss_kb, spanning all three dispositions plus
+  // one outside the known set, so ranking and grouping can both be exercised
+  // on the same fixture. Sorted here from largest to smallest for readability;
+  // mountCard receives them in a different order so rendering order can't
+  // accidentally match input order.
+  const eight = () => [
+    feature({ id: 'huge-none', name: 'Huge Unknown', disposition: 'none',
+      memory: { rss_kb: 900000, pss_kb: 900000, private_kb: 900000, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 0, estimate_kb: 0, swap_pss_kb: 0 } } }),
+    feature({ id: 'big-required', name: 'Big Required', disposition: 'required',
+      memory: { rss_kb: 800000, pss_kb: 800000, private_kb: 800000, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 0, estimate_kb: 0, swap_pss_kb: 0 } } }),
+    feature({ id: 'mid-disable', name: 'Mid Disable', disposition: 'disable',
+      memory: { rss_kb: 700000, pss_kb: 700000, private_kb: 690000, shared_kb: 10000, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 690000, estimate_kb: 700000, swap_pss_kb: 0 } } }),
+    feature({ id: 'weird-disposition', name: 'Weird Feature', disposition: 'mystery' as MemoryFeature['disposition'],
+      memory: { rss_kb: 600000, pss_kb: 600000, private_kb: 600000, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 0, estimate_kb: 0, swap_pss_kb: 0 } } }),
+    feature({ id: 'fifth', name: 'Fifth Largest', disposition: 'uninstall',
+      memory: { rss_kb: 500000, pss_kb: 500000, private_kb: 500000, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 500000, estimate_kb: 500000, swap_pss_kb: 0 } } }),
+    feature({ id: 'sixth', name: 'Sixth Largest', disposition: 'disable',
+      memory: { rss_kb: 400000, pss_kb: 400000, private_kb: 400000, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 400000, estimate_kb: 400000, swap_pss_kb: 0 } } }),
+    feature({ id: 'seventh', name: 'Seventh Largest', disposition: 'required',
+      memory: { rss_kb: 300000, pss_kb: 300000, private_kb: 300000, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 0, estimate_kb: 0, swap_pss_kb: 0 } } }),
+    feature({ id: 'eighth', name: 'Eighth Largest', disposition: 'none',
+      memory: { rss_kb: 200000, pss_kb: 200000, private_kb: 200000, shared_kb: 0, swap_kb: 0, swap_pss_kb: 0,
+        reclaimable: { min_kb: 0, estimate_kb: 0, swap_pss_kb: 0 } } }),
+  ]
+
+  it('renders exactly five feature rows, collapsed by default', () => {
+    const wrapper = mountCard(eight())
+    expect(wrapper.get('[data-test="top-five"]').findAll('tr').length).toBe(5)
+  })
+
+  it('ranks the top five by pss_kb, ignoring which group they belong to', () => {
+    const wrapper = mountCard(eight())
+    const text = wrapper.get('[data-test="top-five"]').text()
+    // The five biggest by pss_kb: 900000, 800000, 700000, 600000, 500000.
+    expect(text).toContain('Huge Unknown')
+    expect(text).toContain('Big Required')
+    expect(text).toContain('Mid Disable')
+    expect(text).toContain('Weird Feature')
+    expect(text).toContain('Fifth Largest')
+    // The three smallest are excluded from the top five.
+    expect(text).not.toContain('Sixth Largest')
+    expect(text).not.toContain('Seventh Largest')
+    expect(text).not.toContain('Eighth Largest')
+  })
+
+  it('does not render the grouped sections before expanding', () => {
+    const wrapper = mountCard(eight())
+    expect(wrapper.find('[data-test="reducible"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="required"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="unknown"]').exists()).toBe(false)
+  })
+
+  it('expanding reveals the rest of the features', async () => {
+    const wrapper = mountCard(eight())
+    await expand(wrapper)
+    // Sixth, seventh and eighth were excluded from the top five, but must
+    // show up somewhere once expanded.
+    const fullText = wrapper.text()
+    expect(fullText).toContain('Sixth Largest')
+    expect(fullText).toContain('Seventh Largest')
+    expect(fullText).toContain('Eighth Largest')
+  })
+
+  it('labels the disclosure control with the total feature count', () => {
+    const wrapper = mountCard(eight())
+    expect(wrapper.get('[data-test="show-all"]').text()).toContain('8')
+  })
+
+  it('puts a none-disposition feature under Unknown functionality, not Required', async () => {
+    const wrapper = mountCard(eight())
+    await expand(wrapper)
+    expect(wrapper.get('[data-test="unknown"]').text()).toContain('Eighth Largest')
+    expect(wrapper.get('[data-test="required"]').text()).not.toContain('Eighth Largest')
+  })
+
+  it('puts an unrecognised disposition under Unknown functionality rather than dropping it', async () => {
+    const wrapper = mountCard(eight())
+    await expand(wrapper)
+    expect(wrapper.get('[data-test="unknown"]').text()).toContain('Weird Feature')
+  })
+
+  it('still puts a required feature under Required once expanded', async () => {
+    const wrapper = mountCard(eight())
+    await expand(wrapper)
+    expect(wrapper.get('[data-test="required"]').text()).toContain('Seventh Largest')
+  })
+
+  it('never puts the same feature in more than one group', async () => {
+    const wrapper = mountCard(eight())
+    await expand(wrapper)
+    const groups = ['reducible', 'required', 'unknown'] as const
+    const names = eight().map(f => f.name)
+    for (const name of names) {
+      const appearances = groups.filter(g => wrapper.get(`[data-test="${g}"]`).text().includes(name))
+      expect(appearances.length, `${name} appeared in ${appearances.join(', ') || 'no groups'}`).toBe(1)
+    }
+  })
+
+  it('renders no disclosure control when there are five or fewer features', () => {
+    const wrapper = mountCard(eight().slice(0, 5))
+    expect(wrapper.find('[data-test="show-all"]').exists()).toBe(false)
   })
 })
 

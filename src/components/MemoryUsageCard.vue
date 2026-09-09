@@ -37,59 +37,125 @@
         </tbody>
       </table>
 
-      <div v-if="reducible.length" data-test="reducible" class="feature-group">
-        <h3>Can be reduced</h3>
+      <!-- The five biggest memory users overall, regardless of group -- a
+           required or unknown feature shows no frees figure and no link
+           here, exactly as it would in its own group below. -->
+      <div data-test="top-five" class="feature-group">
         <table class="info-table">
           <tbody>
-            <tr v-for="f in reducible" :key="f.id">
+            <tr v-for="f in topFive" :key="f.id">
               <td class="label">
                 {{ f.name }}
                 <span class="process-count">{{ f.processes }} {{ f.processes === 1 ? 'process' : 'processes' }}</span>
               </td>
               <td class="value">
                 <span class="usage">{{ mb(f.memory.rss_kb) }} RES / {{ mb(f.memory.pss_kb) }} actual</span>
-                <span :data-test="`reclaimable-${f.id}`" class="reclaimable">
-                  frees {{ reclaimableRange(f.memory.reclaimable) }}
-                </span>
-                <span
-                  v-if="f.memory.reclaimable.swap_pss_kb > 0"
-                  :data-test="`swap-${f.id}`"
-                  class="swap"
-                >
-                  plus {{ mb(f.memory.reclaimable.swap_pss_kb) }} of swap
-                </span>
-                <RouterLink
-                  v-if="actionFor(f)"
-                  :data-test="`action-${f.id}`"
-                  :to="actionFor(f)!.to"
-                  :aria-label="`${actionFor(f)!.label} for ${f.name}`"
-                >{{ actionFor(f)!.label }}</RouterLink>
+                <template v-if="isActionable(f)">
+                  <span :data-test="`reclaimable-${f.id}`" class="reclaimable">
+                    frees {{ reclaimableRange(f.memory.reclaimable) }}
+                  </span>
+                  <span
+                    v-if="f.memory.reclaimable.swap_pss_kb > 0"
+                    :data-test="`swap-${f.id}`"
+                    class="swap"
+                  >
+                    plus {{ mb(f.memory.reclaimable.swap_pss_kb) }} of swap
+                  </span>
+                  <RouterLink
+                    v-if="actionFor(f)"
+                    :data-test="`action-${f.id}`"
+                    :to="actionFor(f)!.to"
+                    :aria-label="`${actionFor(f)!.label} for ${f.name}`"
+                  >{{ actionFor(f)!.label }}</RouterLink>
+                </template>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div v-if="required.length" data-test="required" class="feature-group">
-        <h3>Required</h3>
-        <table class="info-table">
-          <tbody>
-            <tr v-for="f in required" :key="f.id">
-              <td class="label">
-                {{ f.name }}
-                <span class="process-count">{{ f.processes }} {{ f.processes === 1 ? 'process' : 'processes' }}</span>
-              </td>
-              <td class="value">{{ mb(f.memory.rss_kb) }} RES / {{ mb(f.memory.pss_kb) }} actual</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <!-- Collapsed by default: with more than five features, the card would
+           otherwise run to dozens of rows. The full breakdown is one click
+           away, grouped by what the owner can do about each feature. With
+           five or fewer features total, the list above already shows
+           everything, so there is nothing to expand. -->
+      <details v-if="shown.length > 5" class="disclosure" :open="expanded">
+        <summary data-test="show-all" @click.prevent="expanded = !expanded">
+          Show all {{ shown.length }} features
+        </summary>
+
+        <template v-if="expanded">
+          <div v-if="reducible.length" data-test="reducible" class="feature-group">
+            <h3>Can be reduced</h3>
+            <table class="info-table">
+              <tbody>
+                <tr v-for="f in reducible" :key="f.id">
+                  <td class="label">
+                    {{ f.name }}
+                    <span class="process-count">{{ f.processes }} {{ f.processes === 1 ? 'process' : 'processes' }}</span>
+                  </td>
+                  <td class="value">
+                    <span class="usage">{{ mb(f.memory.rss_kb) }} RES / {{ mb(f.memory.pss_kb) }} actual</span>
+                    <span :data-test="`reclaimable-${f.id}`" class="reclaimable">
+                      frees {{ reclaimableRange(f.memory.reclaimable) }}
+                    </span>
+                    <span
+                      v-if="f.memory.reclaimable.swap_pss_kb > 0"
+                      :data-test="`swap-${f.id}`"
+                      class="swap"
+                    >
+                      plus {{ mb(f.memory.reclaimable.swap_pss_kb) }} of swap
+                    </span>
+                    <RouterLink
+                      v-if="actionFor(f)"
+                      :data-test="`action-${f.id}`"
+                      :to="actionFor(f)!.to"
+                      :aria-label="`${actionFor(f)!.label} for ${f.name}`"
+                    >{{ actionFor(f)!.label }}</RouterLink>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div v-if="required.length" data-test="required" class="feature-group">
+            <h3>Required</h3>
+            <table class="info-table">
+              <tbody>
+                <tr v-for="f in required" :key="f.id">
+                  <td class="label">
+                    {{ f.name }}
+                    <span class="process-count">{{ f.processes }} {{ f.processes === 1 ? 'process' : 'processes' }}</span>
+                  </td>
+                  <td class="value">{{ mb(f.memory.rss_kb) }} RES / {{ mb(f.memory.pss_kb) }} actual</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div v-if="unknown.length" data-test="unknown" class="feature-group">
+            <h3>Unknown functionality</h3>
+            <p class="note">Running units HiFiBerry ships no description for -- the report cannot say whether they matter.</p>
+            <table class="info-table">
+              <tbody>
+                <tr v-for="f in unknown" :key="f.id">
+                  <td class="label">
+                    {{ f.name }}
+                    <span class="process-count">{{ f.processes }} {{ f.processes === 1 ? 'process' : 'processes' }}</span>
+                  </td>
+                  <td class="value">{{ mb(f.memory.rss_kb) }} RES / {{ mb(f.memory.pss_kb) }} actual</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+      </details>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import Icon from '@/components/Icon.vue'
 import type { MemoryFeature, MemoryReport, Reclaimable } from '@/api/memory'
 
@@ -132,13 +198,37 @@ const byUsage = (a: MemoryFeature, b: MemoryFeature) => b.memory.pss_kb - a.memo
 
 const ACTIONABLE = ['disable', 'uninstall', 'reconfigure']
 
+/** Actionable features -- the ones the owner can do something about --
+ *  always land in "Can be reduced" regardless of everything else. */
+const isActionable = (f: MemoryFeature) => ACTIONABLE.includes(f.disposition)
+
 const shown = computed(() => (props.report?.features ?? []).filter(usesMemory))
 
+/** disposition === 'disable' | 'uninstall' | 'reconfigure'. */
 const reducible = computed(() =>
-  shown.value.filter(f => ACTIONABLE.includes(f.disposition)).sort(byEstimate))
+  shown.value.filter(isActionable).sort(byEstimate))
 
+/** disposition === 'required' exactly. A feature we know is needed and know
+ *  cannot be turned off. */
 const required = computed(() =>
-  shown.value.filter(f => !ACTIONABLE.includes(f.disposition)).sort(byUsage))
+  shown.value.filter(f => !isActionable(f) && f.disposition === 'required').sort(byUsage))
+
+/** Everything left over: disposition === 'none' (a unit found running that no
+ *  descriptor claims), and -- so a value outside the known set lands
+ *  somewhere visible instead of vanishing -- anything that isn't actionable
+ *  and isn't 'required' either. The full set the backend emits today is
+ *  required | disable | uninstall | reconfigure | none; only 'none' is
+ *  expected to reach this branch. */
+const unknown = computed(() =>
+  shown.value.filter(f => !isActionable(f) && f.disposition !== 'required').sort(byUsage))
+
+/** The five biggest memory users overall, by the same honest measure the
+ *  card labels "actual" -- independent of which group a feature belongs to. */
+const topFive = computed(() => [...shown.value].sort(byUsage).slice(0, 5))
+
+/** Collapsed on every load; only reachable when there is something to expand
+ *  (see the `v-if="shown.length > 5"` on the <details> in the template). */
+const expanded = ref(false)
 
 /** Where the owner goes to act on this feature. Nothing is turned off from
  *  this page: the flows that install, remove and configure features already
@@ -268,5 +358,18 @@ const actionFor = (f: MemoryFeature): { label: string; to: object } | null => {
   display: block;
   font-size: 0.8rem;
   opacity: 0.6;
+}
+.disclosure {
+  margin-top: 1rem;
+}
+.disclosure summary {
+  cursor: pointer;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 4px 0;
+}
+.disclosure summary::marker {
+  color: var(--color-body-secondary);
 }
 </style>

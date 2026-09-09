@@ -495,6 +495,13 @@
           </table>
         </div>
 
+        <!-- Memory Usage -->
+        <MemoryUsageCard
+          :report="memoryReport"
+          :loading="memoryLoading"
+          :error="memoryError"
+        />
+
         <!-- Background Jobs -->
         <div class="info-card">
           <div class="card-header">
@@ -881,6 +888,8 @@ import { getVersion as getPipewireVersion } from '@/api/pipewire'
 import { useAppConfigStore } from '@/stores/appconfig'
 import { useSettingsStore } from '@/stores/settings'
 import { getAllLibraryStats, type LibraryStatsResponse } from '@/api/audiocontrol-library'
+import MemoryUsageCard from '@/components/MemoryUsageCard.vue'
+import { getMemoryUsage, type MemoryReport } from '@/api/memory'
 
 // State
 const loading = ref(true)
@@ -1788,6 +1797,32 @@ const fetchBackgroundServices = async () => {
   }
 }
 
+// Memory usage state
+const memoryReport = ref<MemoryReport | null>(null)
+const memoryLoading = ref(false)
+const memoryError = ref<string | null>(null)
+
+const fetchMemoryUsage = async () => {
+  memoryLoading.value = true
+  memoryError.value = null
+  try {
+    const data = await getMemoryUsage()
+    if (data === null) {
+      // getMemoryUsage returns null for a 401, a 503, or a device running a
+      // configurator too old to have the endpoint. We cannot tell which, so
+      // do not claim the device lacks the capability.
+      memoryError.value = 'Memory usage could not be read'
+    } else {
+      memoryReport.value = data
+    }
+  } catch (err) {
+    console.error('Error fetching memory usage:', err)
+    memoryError.value = err instanceof Error ? err.message : 'Failed to read memory usage'
+  } finally {
+    memoryLoading.value = false
+  }
+}
+
 // Auto-update state
 const autoUpdateInterval = ref<number | null>(null)
 const countdownInterval = ref<number | null>(null)
@@ -1824,9 +1859,10 @@ const refreshData = async () => {
     fetchVolumeInfo(),
     fetchDSPProgramInfo(),
     fetchBackgroundServices(),
-    fetchPipewireDevices()
+    fetchPipewireDevices(),
+    fetchMemoryUsage()
   ]).then(results => {
-    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'input devices', 'system files', 'volume info', 'DSP program info', 'background services', 'Pipewire devices']
+    const names = ['system info', 'favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'input devices', 'system files', 'volume info', 'DSP program info', 'background services', 'Pipewire devices', 'memory usage']
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Auto-refresh failed for ${names[index]}:`, result.reason)
@@ -1935,10 +1971,14 @@ onMounted(async () => {
     fetchLibraryStats().then(result => {
       console.log('fetchLibraryStats result:', result)
       return result
+    }),
+    fetchMemoryUsage().then(result => {
+      console.log('fetchMemoryUsage result:', result)
+      return result
     })
   ]).then(results => {
     results.forEach((result, index) => {
-      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'input devices', 'file existence', 'volume info', 'DSP program info', 'background services', 'Pipewire devices', 'library stats']
+      const names = ['favourites', 'cover art', 'cache stats', 'background jobs', 'network', 'I2C devices', 'input devices', 'file existence', 'volume info', 'DSP program info', 'background services', 'Pipewire devices', 'library stats', 'memory usage']
       if (result.status === 'rejected') {
         console.error(`Failed to load ${names[index]}:`, result.reason)
       } else {

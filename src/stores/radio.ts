@@ -55,6 +55,13 @@ export interface RadioSearchResult {
   error?: string
 }
 
+/**
+ * A single entry from the [[radio-browser.info]] `/json/servers` endpoint.
+ */
+interface RadioBrowserServer {
+  name: string
+}
+
 export const useRadioStore = defineStore('radio', () => {
   /**
    * Define a `Record` using a `string` as the key and a `RadioFavorite` as the value.
@@ -175,8 +182,9 @@ export const useRadioStore = defineStore('radio', () => {
     try {
       const response: Response = await fetch("https://all.api.radio-browser.info/json/servers")
       const servers = (await response.json()) as unknown
-      if (servers && servers.length > 0) {
-        const randomServer = servers[Math.floor(Math.random() * servers.length)]
+      if (Array.isArray(servers) && servers.length > 0) {
+        const typedServers = servers as RadioBrowserServer[]
+        const randomServer = typedServers[Math.floor(Math.random() * typedServers.length)]
         radioBrowserBaseUrl.value = `https://${randomServer.name}`
 
         /* Save item in storage */

@@ -27,11 +27,13 @@
           <div class="fft-analysis">
             <div class="analysis-header">
               <h4>Frequency Response</h4>
-              <div class="meta" v-if="measurement.points_per_octave || measurement.frequency_type === 'fft'">
-                <span v-if="measurement.points_per_octave">{{ measurement.points_per_octave }} p/o</span>
-                <span v-if="measurement.frequency_range">{{ measurement.frequency_range[0] }}–{{ measurement.frequency_range[1] }} Hz</span>
-                <span v-else>{{ measurement.sample_rate }} Hz</span>
-              </div>
+              <template v-if="measurement">
+                <div class="meta" v-if="measurement.points_per_octave || measurement.frequency_type === 'fft'">
+                  <span v-if="measurement.points_per_octave">{{ measurement.points_per_octave }} p/o</span>
+                  <span v-if="measurement.frequency_range">{{ measurement.frequency_range[0] }}–{{ measurement.frequency_range[1] }} Hz</span>
+                  <span v-else>{{ measurement.sample_rate }} Hz</span>
+                </div>
+              </template>
             </div>
             <div class="fft-chart">
               <FrequencyResponseChart

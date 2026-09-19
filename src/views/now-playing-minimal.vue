@@ -141,6 +141,7 @@ const tooltipStyles = computed(() => {
   flex-direction: column;
   min-width: 100%;
   height: 100%;
+  min-height: 0;
 
   // Minimal view specific overrides
   &--minimal {
@@ -218,6 +219,7 @@ const tooltipStyles = computed(() => {
     background-color: var(--background-main-content);
     box-shadow: $box-shadow-main-content;
     position: relative;
+    min-height: 0;
 
     // Minimal view adjustments
     .now-playing--minimal & {
@@ -226,6 +228,11 @@ const tooltipStyles = computed(() => {
       border-radius: 0;
       justify-content: center;
       height: 100%;
+      max-height: 100%;
+
+      @media (max-height: 600px) {
+        padding-top: 24px;
+      }
     }
 
     @include media-down(sm) {
@@ -262,8 +269,33 @@ const tooltipStyles = computed(() => {
       margin-bottom: 24px;
     }
 
+    @media (max-height: 600px) {
+      // Keep min-height: 120px; let main scroll instead of shrinking the cover.
+      height: auto;
+      max-height: none;
+      flex: 1 1 auto;
+      margin-bottom: 14px;
+    }
+
+    // Phone portrait: large square cover, centred, filling the card width.
+    @media (orientation: portrait) {
+      @include media-down(sm) {
+        aspect-ratio: 1 / 1;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: 100%;
+        min-height: 0;
+        flex: 0 1 auto;
+        align-self: center;
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+    }
+
     .now-playing__cover {
       height: 100%;
+      width: 100%;
       margin: 0;
     }
   }
@@ -278,6 +310,17 @@ const tooltipStyles = computed(() => {
     text-align: center;
     font-size: 18px;
     margin-bottom: 20px; /* Add space between track info and controls */
+
+    @media (orientation: portrait) {
+      @include media-down(sm) {
+        // So cover auto margins can centre it in the leftover space.
+        margin-top: 0;
+      }
+    }
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
+    }
 
     // Larger font sizes for ultra-wide screens (>2000px)
     @media (min-width: 2000px) {
@@ -313,6 +356,10 @@ const tooltipStyles = computed(() => {
 
   &__audio-controls {
     margin-bottom: 20px;
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
+    }
   }
 
   &__volume {
@@ -328,6 +375,10 @@ const tooltipStyles = computed(() => {
 
     @include media-down(md) {
       width: 100%; /* Keep at 100% on mobile */
+    }
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
     }
   }
 }
@@ -350,6 +401,10 @@ const tooltipStyles = computed(() => {
     bottom: 10px;
     right: 10px;
     font-size: 0.7rem;
+  }
+
+  @media (max-height: 600px) {
+    display: none;
   }
 }
 </style>

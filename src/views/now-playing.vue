@@ -129,16 +129,36 @@ const tooltipStyles = computed(() => {
   flex-direction: column;
   min-width: 100%;
   height: 100%;
+  min-height: 0;
+  max-height: 100%;
+
+  // Short screens: grow past the viewport so a 120px cover can scroll in main.
+  @media (max-height: 600px) {
+    height: auto;
+    min-height: 100%;
+    max-height: none;
+  }
 
   &__page-content {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    min-height: 0;
+    height: 100%;
 
     .content {
       display: flex;
       flex-direction: column;
       flex-grow: 1;
+      min-height: 0;
+      height: 100%;
+    }
+
+    // Drop the page heading on short displays (e.g. 5" kiosk).
+    .titleHintLink {
+      @media (max-height: 600px) {
+        display: none;
+      }
     }
   }
 
@@ -153,9 +173,16 @@ const tooltipStyles = computed(() => {
     background-color: var(--background-main-content);
     box-shadow: $box-shadow-main-content;
     position: relative;
+    min-height: 0;
+    max-height: 100%;
 
     @include media-down(sm) {
       padding-top: 24px;
+    }
+
+    @media (max-height: 600px) {
+      padding-top: 24px;
+      max-height: none;
     }
   }
 
@@ -175,6 +202,10 @@ const tooltipStyles = computed(() => {
 
     @include media-down(sm) {
       margin-bottom: 24px;
+    }
+
+    @media (max-height: 600px) {
+      max-height: none;
     }
   }
 
@@ -198,6 +229,28 @@ const tooltipStyles = computed(() => {
       margin-bottom: 24px;
     }
 
+    @media (max-height: 600px) {
+      // Keep min-height: 120px; let main scroll instead of shrinking the cover.
+      max-height: none;
+      flex: 1 1 auto;
+      margin-bottom: 14px;
+    }
+
+    // Phone portrait: large square cover, centred, filling the card width.
+    @media (orientation: portrait) {
+      @include media-down(sm) {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: 100%;
+        min-height: 0;
+        flex: 0 1 auto;
+        align-self: center;
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+    }
+
     .now-playing__cover {
       height: 100%;
       width: 100%;
@@ -215,6 +268,17 @@ const tooltipStyles = computed(() => {
     text-align: center;
     font-size: 18px;
     margin-bottom: 20px; /* Add space between track info and controls */
+
+    @media (orientation: portrait) {
+      @include media-down(sm) {
+        // So cover auto margins can centre it in the leftover space.
+        margin-top: 0;
+      }
+    }
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
+    }
 
     // Larger font sizes for ultra-wide screens (>2000px)
     @media (min-width: 2000px) {
@@ -250,6 +314,10 @@ const tooltipStyles = computed(() => {
 
   &__audio-controls {
     margin-bottom: 20px;
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
+    }
   }
 
   &__volume {
@@ -265,6 +333,11 @@ const tooltipStyles = computed(() => {
 
     @include media-down(md) {
       width: 100%; /* Keep at 100% on mobile */
+    }
+
+    @media (max-height: 600px) {
+      // Keep a little air above the card’s bottom padding.
+      margin-bottom: 12px;
     }
   }
 }

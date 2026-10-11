@@ -41,7 +41,7 @@
         <ProgressControl class="now-playing__progress-control" isDraggable />
 
         <!-- Volume control -->
-        <div class="now-playing__volume">
+        <div v-if="showVolume" class="now-playing__volume">
           <VolumeControl size="wide" />
         </div>
       </div>
@@ -60,8 +60,11 @@ import MetadataTooltip from '@/components/MetadataTooltip.vue'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
+import { useSettingsStore } from '@/stores/settings'
 
 const { currentSong: song } = storeToRefs(usePlayerStore())
+const settingsStore = useSettingsStore()
+const showVolume = computed(() => !settingsStore.getHideVolume)
 
 // Cover art event handlers
 const onCoverArtLoaded = (result: { success: boolean; urls: string[]; source: string }) => {

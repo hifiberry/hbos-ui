@@ -32,6 +32,7 @@ export interface UISettings {
   service: ServiceSettings
   expertMode: boolean
   vuMeterEnabled: boolean
+  hideVolume: boolean
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -48,7 +49,8 @@ export const useSettingsStore = defineStore('settings', () => {
       }
     },
     expertMode: false,
-    vuMeterEnabled: true
+    vuMeterEnabled: true,
+    hideVolume: false
   })
 
   const loading = ref(false)
@@ -64,6 +66,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const getSpotifySettings = computed(() => settings.value.service.spotify)
   const getExpertMode = computed(() => settings.value.expertMode)
   const getVuMeterEnabled = computed(() => settings.value.vuMeterEnabled)
+  const getHideVolume = computed(() => settings.value.hideVolume)
   const isPi5OrHigher = computed(() => isPi5OrNewer(piVersion.value))
 
   // Actions
@@ -107,6 +110,11 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  const updateHideVolume = async (hideVolume: boolean) => {
+    settings.value.hideVolume = hideVolume
+    await saveSettings()
+  }
+
   const saveSettings = async () => {
     loading.value = true
     try {
@@ -115,6 +123,7 @@ export const useSettingsStore = defineStore('settings', () => {
       localStorage.setItem('ui.service.settings', JSON.stringify(settings.value.service))
       localStorage.setItem('ui.expertMode', JSON.stringify(settings.value.expertMode))
       localStorage.setItem('ui.vuMeterEnabled', JSON.stringify(settings.value.vuMeterEnabled))
+      localStorage.setItem('ui.hideVolume', JSON.stringify(settings.value.hideVolume))
       console.log('Settings saved:', settings.value)
     } catch (error) {
       console.error('Failed to save settings:', error)
@@ -146,6 +155,11 @@ export const useSettingsStore = defineStore('settings', () => {
       const savedVuMeter = localStorage.getItem('ui.vuMeterEnabled')
       if (savedVuMeter !== null) {
         settings.value.vuMeterEnabled = JSON.parse(savedVuMeter)
+      }
+
+      const savedHideVolume = localStorage.getItem('ui.hideVolume')
+      if (savedHideVolume !== null) {
+        settings.value.hideVolume = JSON.parse(savedHideVolume)
       }
 
       // Fetch Pi version for hardware-gated features
@@ -182,7 +196,8 @@ export const useSettingsStore = defineStore('settings', () => {
         }
   },
   expertMode: false,
-  vuMeterEnabled: true
+  vuMeterEnabled: true,
+  hideVolume: false
     }
     await saveSettings()
   }
@@ -295,6 +310,7 @@ export const useSettingsStore = defineStore('settings', () => {
     getSpotifySettings,
     getExpertMode,
     getVuMeterEnabled,
+    getHideVolume,
     isPi5OrHigher,
     piVersion,
 
@@ -304,6 +320,7 @@ export const useSettingsStore = defineStore('settings', () => {
     updateSpotifySettings,
     updateExpertMode,
     updateVuMeterEnabled,
+    updateHideVolume,
     saveSettings,
     loadSettings,
     resetSettings,

@@ -29,6 +29,15 @@
           />
         </div>
       </div>
+      <div class="info-card">
+        <div class="toggle-row">
+          <h2>Hide volume on Now Playing</h2>
+          <ToggleSwitch
+            :modelValue="settingsStore.getHideVolume"
+            @update:modelValue="settingsStore.updateHideVolume"
+          />
+        </div>
+      </div>
     </div>
   </PageContent>
 </template>

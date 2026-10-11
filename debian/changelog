@@ -1,3 +1,15 @@
+hifiberry-webui (0.27.1) stable; urgency=medium
+
+  * Unknown /api/ paths now answer 404 with a JSON body instead of falling
+    through to the web interface, which served index.html with 200 OK. A
+    client probing for an API path could not tell it was missing: the Home
+    Assistant integration took the 200 as success and never tried
+    /api/audiocontrol/now-playing, so its player always showed idle. Every
+    service claims a longer /api/<service>/ prefix, so only paths no service
+    serves are affected.
+
+ -- HiFiBerry <support@hifiberry.com>  Sun, 11 Oct 2026 13:57:52 +0000
+
 hifiberry-webui (0.27.0) stable; urgency=medium
 
   * A Memory Usage card on the System Information page, showing which features

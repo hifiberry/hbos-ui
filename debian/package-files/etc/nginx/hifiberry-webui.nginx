@@ -32,6 +32,15 @@ location ~* \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
     try_files $uri =404;
 }
 
+# Unknown API paths get a 404, not the SPA fallback below. Every service claims a
+# longer /api/<service>/ prefix, so only paths no service serves land here; with
+# index.html and a 200 a client probing for an API path cannot tell it is missing.
+location /api/ {
+    auth_request off;  # a path that does not exist has nothing to gate
+    default_type application/json;
+    return 404 '{"error":"not found"}';
+}
+
 # SPA fallback - serve index.html for all unmatched routes
 # index.html must not be cached so the browser always gets the latest asset references
 location / {

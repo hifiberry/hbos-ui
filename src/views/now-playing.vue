@@ -126,16 +126,29 @@ const tooltipStyles = computed(() => {
   flex-direction: column;
   min-width: 100%;
   height: 100%;
+  min-height: 0;
+  max-height: 100%;
 
   &__page-content {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    min-height: 0;
+    height: 100%;
 
     .content {
       display: flex;
       flex-direction: column;
       flex-grow: 1;
+      min-height: 0;
+      height: 100%;
+    }
+
+    // Drop the page heading on short displays (e.g. 5" kiosk).
+    .titleHintLink {
+      @media (max-height: 600px) {
+        display: none;
+      }
     }
   }
 
@@ -150,9 +163,15 @@ const tooltipStyles = computed(() => {
     background-color: var(--background-main-content);
     box-shadow: $box-shadow-main-content;
     position: relative;
+    min-height: 0;
+    max-height: 100%;
 
     @include media-down(sm) {
       padding-top: 24px;
+    }
+
+    @media (max-height: 600px) {
+      padding-top: 20px;
     }
   }
 
@@ -172,6 +191,12 @@ const tooltipStyles = computed(() => {
 
     @include media-down(sm) {
       margin-bottom: 24px;
+    }
+
+    @media (max-height: 600px) {
+      // Clear inherited max-height so the flex-sized container can fill.
+      max-height: none;
+      min-height: 0;
     }
   }
 
@@ -195,6 +220,13 @@ const tooltipStyles = computed(() => {
       margin-bottom: 24px;
     }
 
+    @media (max-height: 600px) {
+      max-height: none;
+      min-height: 0;
+      flex: 1 1 0;
+      margin-bottom: 14px;
+    }
+
     .now-playing__cover {
       height: 100%;
       width: 100%;
@@ -212,6 +244,10 @@ const tooltipStyles = computed(() => {
     text-align: center;
     font-size: 18px;
     margin-bottom: 20px; /* Add space between track info and controls */
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
+    }
 
     // Larger font sizes for ultra-wide screens (>2000px)
     @media (min-width: 2000px) {
@@ -247,6 +283,10 @@ const tooltipStyles = computed(() => {
 
   &__audio-controls {
     margin-bottom: 20px;
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
+    }
   }
 
   &__volume {
@@ -262,6 +302,11 @@ const tooltipStyles = computed(() => {
 
     @include media-down(md) {
       width: 100%; /* Keep at 100% on mobile */
+    }
+
+    @media (max-height: 600px) {
+      // Keep a little air above the card’s bottom padding.
+      margin-bottom: 8px;
     }
   }
 }

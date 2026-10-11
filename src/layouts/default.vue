@@ -36,6 +36,7 @@ const isPlayerControls = computed(
   main {
     padding: 104px 24px 48px 80px;
     flex: 1;
+    min-height: 0;
     @include media-down(lg) {
       padding: 15px 15px 170px;
     }
@@ -51,6 +52,17 @@ const isPlayerControls = computed(
 
       @include media-down(lg) {
         padding-top: 15px;
+      }
+    }
+
+    // Short landscape oriented displays
+    @media (max-height: 600px) {
+      &.no-header {
+        padding-top: 16px;
+      }
+
+      &.no-player-controls {
+        padding-bottom: 16px;
       }
     }
   }

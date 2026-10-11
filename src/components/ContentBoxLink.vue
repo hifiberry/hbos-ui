@@ -17,8 +17,11 @@ const { to, height } = defineProps<{ to: RouteLocationRaw, height?: number }>()
 .contentBox {
   padding: 20px;
   transition: all 0.2s ease;
-  &:hover{
-    transform: translateY(-2px);
+
+  @include hoverable {
+    &:hover {
+      transform: translateY(-2px);
+    }
   }
 }
 </style>

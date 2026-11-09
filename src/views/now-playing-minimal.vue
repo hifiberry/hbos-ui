@@ -41,7 +41,7 @@
       <ProgressControl class="now-playing__progress-control" isDraggable />
 
       <!-- Volume control -->
-      <div class="now-playing__volume">
+      <div v-if="showVolume" class="now-playing__volume">
         <VolumeControl size="wide" />
       </div>
     </div>
@@ -64,10 +64,13 @@ import MetadataTooltip from '@/components/MetadataTooltip.vue'
 
 import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '@/stores/player.ts'
+import { useSettingsStore } from '@/stores/settings'
 
 const { currentSong: song } = storeToRefs(usePlayerStore())
 
 const route = useRoute()
+const settingsStore = useSettingsStore()
+const showVolume = computed(() => !settingsStore.getHideVolume)
 if (route.query.dark !== undefined) {
   onMounted(() => document.documentElement.classList.add('dark'))
   onUnmounted(() => document.documentElement.classList.remove('dark'))

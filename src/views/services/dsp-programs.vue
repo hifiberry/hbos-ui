@@ -150,6 +150,7 @@ import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
 import { detectSoundCard, type SoundCardDetectionResponse } from '@/api/system'
+import { dspHardwareLabel, dspModelForCard } from '@/utils/dsp-profile-model'
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit'
 
 // Stores
@@ -181,31 +182,9 @@ const soundcard = computed(() => {
   return soundcardDetection.value?.data?.card_name || null
 })
 
-const soundcardDisplayName = computed(() => {
-  const cardName = soundcard.value
-  if (!cardName) return 'Unknown'
+const soundcardDisplayName = computed(() => dspHardwareLabel(soundcard.value))
 
-  const card = cardName.toLowerCase()
-  if (card.includes('beocreate')) return 'Beocreate'
-  if (card.includes('dac+ dsp') || card.includes('dac+dsp') || card.includes('dacdsp')) return 'DAC+DSP'
-  if (card.includes('dac2') && card.includes('pro')) return 'DAC2 Pro + DSP add-on'
-  if (card.includes('dac2')) return 'DAC2 + DSP add-on'
-  if (card.includes('dsp')) return 'DSP-enabled sound card'
-
-  return cardName
-})
-
-const detectedModelName = computed(() => {
-  const cardName = soundcard.value
-  if (!cardName) return null
-
-  const card = cardName.toLowerCase()
-  if (card.includes('beocreate')) return 'Beocreate 4-Channel Amplifier'
-  if (card.includes('dac+ dsp') || card.includes('dac+dsp') || card.includes('dacdsp')) return 'DAC+ DSP'
-  if (card.includes('dac2')) return 'DSP add-on'
-
-  return null
-})
+const detectedModelName = computed(() => dspModelForCard(soundcard.value))
 
 const profilesList = computed(() => {
   if (!profilesMetadata.value?.profiles) return []

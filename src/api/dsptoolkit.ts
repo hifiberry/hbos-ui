@@ -28,8 +28,13 @@ export interface DSPMetadata {
 
 // Program Checksum Types
 export interface DSPProgramChecksumResponse {
+  /** Signature-mode MD5 -- kept for older clients. */
   checksum: string
-  format: 'md5'
+  format: string
+  /** Checksums over the program length (what profile `checksum_sha1` is made of). */
+  length?: { md5?: string; sha1?: string }
+  /** Checksums up to the program's end signature. */
+  signature?: { md5?: string; sha1?: string }
 }
 
 // Program Info Types

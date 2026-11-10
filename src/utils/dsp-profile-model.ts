@@ -29,3 +29,39 @@ export function dspHardwareLabel(cardName: string | null | undefined): string {
   if (model === 'DAC+ DSP') return 'DAC+DSP'
   return `${cardName} + DSP add-on`
 }
+
+// Whether a profile is the program running on the DSP.
+//
+// Profiles carry an MD5 (`checksum`) and, newer ones, a SHA-1
+// (`checksum_sha1`). The SHA-1 is the reliable one: it is what the server
+// computes over the program length (`length.sha1` in GET /checksum), and on
+// the DSP add-on v15 profile it is the only checksum that matches -- its MD5
+// matches neither live MD5. Older profiles carry only the MD5, which matches
+// the signature-mode MD5 (`checksum`, a.k.a. `signature.md5`).
+
+interface ProfileChecksums {
+  checksum?: unknown
+  checksum_sha1?: unknown
+}
+
+interface LiveChecksums {
+  checksum?: string
+  length?: { md5?: string; sha1?: string }
+  signature?: { md5?: string; sha1?: string }
+}
+
+const norm = (v: unknown): string => (typeof v === 'string' ? v.trim().toUpperCase() : '')
+
+export function profileMatchesProgram(
+  profile: ProfileChecksums | null | undefined,
+  live: LiveChecksums | null | undefined,
+): boolean {
+  if (!profile || !live) return false
+  const sha1 = norm(profile.checksum_sha1)
+  if (sha1) {
+    return sha1 === norm(live.length?.sha1) || sha1 === norm(live.signature?.sha1)
+  }
+  const md5 = norm(profile.checksum)
+  if (!md5) return false
+  return [live.checksum, live.signature?.md5, live.length?.md5].some((v) => norm(v) === md5)
+}

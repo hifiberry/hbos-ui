@@ -150,7 +150,7 @@ import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import { type DetectedDSP, getMetadata, type DSPMetadata, getCacheStatus, type CacheStatus, getDSPProfilesMetadata, type DSPProfilesMetadataResponse, getDSPProgramChecksum, type DSPProgramChecksumResponse, updateDSPProfile, type DSPProfile } from '@/api/dsptoolkit'
 import { detectSoundCard, type SoundCardDetectionResponse } from '@/api/system'
-import { dspHardwareLabel, dspModelForCard } from '@/utils/dsp-profile-model'
+import { dspHardwareLabel, dspModelForCard, profileMatchesProgram } from '@/utils/dsp-profile-model'
 import { useDSPToolkitStore } from '@/stores/dsp-toolkit'
 
 // Stores
@@ -192,7 +192,7 @@ const profilesList = computed(() => {
   let profiles = Object.entries(profilesMetadata.value.profiles).map(([filename, profile]) => ({
     filename,
     ...profile,
-    isInstalled: profile.checksum === programChecksum.value?.checksum
+    isInstalled: profileMatchesProgram(profile, programChecksum.value)
   }))
 
   // Always filter by hardware compatibility to show only compatible profiles
@@ -213,7 +213,7 @@ const deployModalTitle = computed(() => {
 
   if (selectedProfileForDeploy.value) {
     const profile = selectedProfileForDeploy.value
-    const isInstalled = profile.programChecksum === programChecksum.value
+    const isInstalled = profileMatchesProgram(profile, programChecksum.value)
     return isInstalled
       ? `${profile.profileName} - Already Installed`
       : `Deploy ${profile.profileName}?`

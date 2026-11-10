@@ -1,3 +1,22 @@
+hifiberry-webui (0.27.2) stable; urgency=medium
+
+  * DSP Programs offers the DSP add-on profiles for every card that hosts
+    the add-on. Only cards named "DAC2 ..." were mapped to it, so a Digi2
+    Pro (or Amp4 Pro, DAC2 HD, ...) with the add-on was shown every
+    profile, the DAC+ DSP one included; a Digi2 Pro with that profile on
+    its add-on had no S/PDIF output (hifiberry/hifiberry-os#665). Only the
+    DAC+ DSP and the Beocreate 4-Channel Amplifier have their own DSP and
+    profiles.
+  * DSP Programs marks the profile running on the DSP as installed. It
+    compared MD5 checksums, which do not match on newer profiles such as
+    DSP add-on v15; it now compares the SHA-1 and falls back to MD5 only for
+    profiles that carry nothing else. The deploy dialog's "Already
+    installed" check never matched and uses the same comparison now.
+  * New display setting "Hide volume on Now Playing" (kalaksi).
+  * Fixed selecting settings menu items on a touchscreen (kalaksi).
+
+ -- HiFiBerry <support@hifiberry.com>  Tue, 10 Nov 2026 16:36:24 +0000
+
 hifiberry-webui (0.27.1) stable; urgency=medium
 
   * Unknown /api/ paths now answer 404 with a JSON body instead of falling

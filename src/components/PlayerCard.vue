@@ -177,6 +177,17 @@
                     {{ opt.label }}
                   </option>
                 </select>
+                <input
+                  v-else-if="setting.type === 'text'"
+                  :id="`set-${player.systemdService}-${setting.key}`"
+                  type="text"
+                  :value="setting.value"
+                  :maxlength="setting.max_length"
+                  spellcheck="false"
+                  :placeholder="setting.description ? '' : setting.label"
+                  @change="$emit('update-external-setting', setting.key, ($event.target as HTMLInputElement).value)"
+                  class="text-input"
+                />
                 <div
                   v-else-if="setting.type === 'secret'"
                   class="secret-field"
@@ -534,6 +545,27 @@ const getStatusText = (player: Player) => {
         color: var(--color-body-secondary);
         font-family: inherit;
         font-size: 1rem;
+      }
+
+      .text-input {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 22rem;
+        height: 44px;
+        padding: 12px 16px;
+        border: 1px solid var(--color-sidebar-border);
+        border-radius: 6px;
+        background: var(--background-card);
+        color: var(--color-body-secondary);
+        font-family: inherit;
+        font-size: 1rem;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+          color: var(--color-head);
+          box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+        }
       }
 
       /* Range inputs have no usable default styling and render bright blue on

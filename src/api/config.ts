@@ -542,7 +542,7 @@ export const scanI2CDevices = async (busNumber?: number): Promise<ConfigApiRespo
 
 export interface PlayerSetting {
   key: string
-  type: 'toggle' | 'select' | 'number' | 'secret'
+  type: 'toggle' | 'select' | 'number' | 'secret' | 'text'
   label: string
   description?: string
   /** Vendor documentation for obtaining this value, e.g. where to generate an
@@ -561,6 +561,10 @@ export interface PlayerSetting {
   step?: number
   /** Presentation hint, e.g. 'slider' to render a number as a range control. */
   widget?: string
+  /** Limits for type === 'text'; config-server enforces both on write
+   *  (max_length defaults to 256, pattern must match the whole value). */
+  max_length?: number
+  pattern?: string
 }
 
 export interface ExternalPlayer {

@@ -65,15 +65,21 @@
         </template>
 
         <template v-else>
+          <!-- Still signed in on a server that is no longer selected: the
+               player keeps using that sign-in until it is signed out. -->
+          <p v-if="status.sign_in.other_server" class="setup-line" data-test="signin-other-server">
+            Signed in as {{ status.sign_in.account ?? 'unknown' }}<template v-if="status.sign_in.server_name"> on {{ status.sign_in.server_name }}</template> — a different server is selected.
+          </p>
           <p v-if="!status.sign_in.ready" class="setup-line setup-todo" data-test="signin-not-ready">
             {{ status.sign_in.reason ?? `${playerName} cannot sign in yet.` }}
           </p>
-          <p v-else class="setup-line" data-test="signin-needed">
+          <p v-else-if="!status.sign_in.other_server" class="setup-line" data-test="signin-needed">
             Not signed in yet.
           </p>
           <StatusBlock v-if="signInError" variant="error">{{ signInError }}</StatusBlock>
-          <div v-if="status.sign_in.ready" class="setup-actions">
+          <div v-if="status.sign_in.ready || status.sign_in.other_server" class="setup-actions">
             <button
+              v-if="status.sign_in.ready"
               type="button"
               class="btn btn-primary btn-sm"
               data-test="signin-start"
@@ -81,6 +87,16 @@
               @click="beginSignIn"
             >
               Sign in
+            </button>
+            <button
+              v-if="status.sign_in.other_server"
+              type="button"
+              class="btn btn-secondary btn-sm"
+              data-test="signin-logout"
+              :disabled="signInBusy"
+              @click="logout"
+            >
+              Sign out
             </button>
           </div>
         </template>

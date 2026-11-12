@@ -309,6 +309,47 @@ describe('PlayerSetupPanel', () => {
       expect(w.emitted('changed')).toBeTruthy()
     })
 
+    // Signed in on server A while server B is selected: the shim still
+    // connects to A, so the panel has to say so and offer to sign out.
+    it('signed in on another server offers Sign out and Sign in', async () => {
+      signOut.mockResolvedValue(undefined)
+      const w = mountIt(
+        true,
+        signInStatus(
+          { logged_in: false },
+          { account: 'alice', server_name: 'Cabin', other_server: true },
+        ),
+      )
+      await flushPromises()
+      expect(w.find('[data-test="signin-other-server"]').text()).toBe(
+        'Signed in as alice on Cabin — a different server is selected.',
+      )
+      expect(w.find('[data-test="signin-needed"]').exists()).toBe(false)
+      expect(w.find('[data-test="signin-start"]').exists()).toBe(true)
+      await w.find('[data-test="signin-logout"]').trigger('click')
+      await flushPromises()
+      expect(signOut).toHaveBeenCalledWith('/api/soloist')
+      expect(w.emitted('changed')).toBeTruthy()
+    })
+
+    it('signed in elsewhere with no server chosen still offers Sign out', async () => {
+      const w = mountIt(
+        true,
+        signInStatus(
+          { logged_in: false },
+          {
+            account: 'alice', server_name: 'Cabin', other_server: true,
+            ready: false, reason: 'Choose a server first.',
+          },
+        ),
+      )
+      await flushPromises()
+      expect(w.find('[data-test="signin-other-server"]').exists()).toBe(true)
+      expect(w.find('[data-test="signin-not-ready"]').text()).toContain('Choose a server first.')
+      expect(w.find('[data-test="signin-logout"]').exists()).toBe(true)
+      expect(w.find('[data-test="signin-start"]').exists()).toBe(false)
+    })
+
     it('provider without sign_in renders exactly as before', async () => {
       const w = mountIt(true, status({ binary_installed: true, version: 'soloist 1.0' }))
       await flushPromises()

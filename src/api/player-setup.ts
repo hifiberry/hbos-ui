@@ -47,6 +47,10 @@ export interface PlayerSetupSignIn {
   /** false when a prerequisite is missing; `reason` says which. */
   ready: boolean
   reason?: string | null
+  /** Signed in, but on another server than the one selected (logged_in is
+   *  false). `account` and `server_name` then name that sign-in, which the
+   *  player still uses until it is signed out. */
+  other_server?: boolean
 }
 
 export interface PlayerSignInState {

@@ -48,7 +48,9 @@ export function usePlayerSetup(
   const setupIncomplete = computed<boolean | null>(() => {
     if (!baseUrl.value) return null
     if (status.value === null) return null
-    return !status.value.binary_installed || !credentialsSet.value
+    // A provider with its own sign-in flow is unfinished until signed in.
+    const needsSignIn = status.value.sign_in != null && !status.value.logged_in
+    return !status.value.binary_installed || !credentialsSet.value || needsSignIn
   })
 
   const needsBinary = computed(() => status.value?.binary_installed === false)

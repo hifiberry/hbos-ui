@@ -44,6 +44,29 @@ describe('usePlayerSetup', () => {
     expect(s.needsBinary.value).toBe(false)
   })
 
+  const signIn = { method: 'quick_connect', ready: true, account: null, server_name: null }
+
+  it('setupIncomplete is true when sign_in present and logged_in false', async () => {
+    getSetupStatus.mockResolvedValue(status({ sign_in: signIn, logged_in: false }))
+    const s = usePlayerSetup(ref('/api/x'), ref(true))
+    await flush()
+    expect(s.setupIncomplete.value).toBe(true)
+  })
+
+  it('setupIncomplete is false when signed in', async () => {
+    getSetupStatus.mockResolvedValue(status({ sign_in: signIn, logged_in: true }))
+    const s = usePlayerSetup(ref('/api/x'), ref(true))
+    await flush()
+    expect(s.setupIncomplete.value).toBe(false)
+  })
+
+  it('ignores logged_in when the provider has no sign_in', async () => {
+    getSetupStatus.mockResolvedValue(status({ logged_in: false }))
+    const s = usePlayerSetup(ref('/api/x'), ref(true))
+    await flush()
+    expect(s.setupIncomplete.value).toBe(false)
+  })
+
   it('is complete when the binary and credentials are both there', async () => {
     getSetupStatus.mockResolvedValue(status())
     const s = usePlayerSetup(ref('/api/x'), ref(true))

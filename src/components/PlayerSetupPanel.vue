@@ -27,6 +27,65 @@
         </div>
       </template>
 
+      <template v-else-if="status.sign_in">
+        <template v-if="status.logged_in">
+          <p class="setup-line" data-test="signin-account">
+            Signed in as {{ status.sign_in.account ?? 'unknown' }}<template v-if="status.sign_in.server_name"> on {{ status.sign_in.server_name }}</template>.
+          </p>
+          <StatusBlock v-if="signInError" variant="error">{{ signInError }}</StatusBlock>
+          <div class="setup-actions">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              data-test="signin-logout"
+              :disabled="signInBusy"
+              @click="logout"
+            >
+              Sign out
+            </button>
+          </div>
+        </template>
+
+        <template v-else-if="signInCode">
+          <p class="setup-code" data-test="signin-code">{{ signInCode }}</p>
+          <p class="setup-line" data-test="signin-instruction">
+            Open the app, go to your profile &gt; Quick Connect, and enter this
+            code.
+          </p>
+          <div class="setup-actions">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              data-test="signin-cancel"
+              @click="cancelPending"
+            >
+              Cancel
+            </button>
+          </div>
+        </template>
+
+        <template v-else>
+          <p v-if="!status.sign_in.ready" class="setup-line setup-todo" data-test="signin-not-ready">
+            {{ status.sign_in.reason ?? `${playerName} cannot sign in yet.` }}
+          </p>
+          <p v-else class="setup-line" data-test="signin-needed">
+            Not signed in yet.
+          </p>
+          <StatusBlock v-if="signInError" variant="error">{{ signInError }}</StatusBlock>
+          <div v-if="status.sign_in.ready" class="setup-actions">
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              data-test="signin-start"
+              :disabled="signInBusy"
+              @click="beginSignIn"
+            >
+              Sign in
+            </button>
+          </div>
+        </template>
+      </template>
+
       <template v-else>
         <p class="setup-line" data-test="setup-version" :title="status.version ?? ''">
           {{ playerName }} {{ shortVersion ?? '—' }}
@@ -65,8 +124,12 @@
 import { computed, onUnmounted, ref } from 'vue'
 import StatusBlock from '@/components/StatusBlock.vue'
 import {
+  cancelSignIn,
   getSetupInstallState,
+  getSignInState,
+  signOut,
   startSetupInstall,
+  startSignIn,
   type PlayerSetupStatus,
 } from '@/api/player-setup'
 import { formatSetupVersion } from '@/utils/setup-version'
@@ -166,6 +229,68 @@ async function download() {
   }
 }
 
+const signInCode = ref<string | null>(null)
+const signInError = ref<string | null>(null)
+const signInBusy = ref(false)
+
+async function pollSignIn() {
+  try {
+    const state = await getSignInState(props.baseUrl)
+    if (state.state === 'waiting') {
+      timer = setTimeout(pollSignIn, POLL_MS)
+      return
+    }
+    signInCode.value = null
+    if (state.state === 'approved') {
+      refresh()
+    } else if (state.state === 'expired' || state.state === 'failed') {
+      signInError.value =
+        state.error ?? (state.state === 'expired' ? 'The code expired.' : 'Sign-in failed.')
+    }
+  } catch (e) {
+    signInCode.value = null
+    signInError.value = message(e)
+  }
+}
+
+async function beginSignIn() {
+  stop()
+  signInBusy.value = true
+  signInError.value = null
+  try {
+    const { code } = await startSignIn(props.baseUrl)
+    signInCode.value = code
+    timer = setTimeout(pollSignIn, POLL_MS)
+  } catch (e) {
+    signInError.value = message(e)
+  } finally {
+    signInBusy.value = false
+  }
+}
+
+async function cancelPending() {
+  stop()
+  signInCode.value = null
+  try {
+    await cancelSignIn(props.baseUrl)
+  } catch (e) {
+    signInError.value = message(e)
+  }
+}
+
+async function logout() {
+  signInBusy.value = true
+  signInError.value = null
+  try {
+    await signOut(props.baseUrl)
+    refresh()
+  } catch (e) {
+    signInError.value = message(e)
+  } finally {
+    signInBusy.value = false
+  }
+}
+
 onUnmounted(stop)
 </script>
 
@@ -186,6 +311,14 @@ onUnmounted(stop)
 .setup-todo {
   color: var(--primary);
   font-weight: 600;
+}
+
+.setup-code {
+  margin: 0;
+  font-size: 2em;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  font-variant-numeric: tabular-nums;
 }
 
 .setup-expiry {

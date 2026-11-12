@@ -13,6 +13,14 @@ import { apiFetch } from '@/api/http'
  *   POST <base>/install  -> starts the job, returns immediately
  *   GET  <base>/install  -> PlayerSetupInstallState, poll until running=false
  *
+ * Optional sign-in flow, announced by `sign_in` in the status response
+ * (providers without it are unaffected):
+ *   POST   <base>/login   -> { code, expires_in }, or 4xx/5xx { error }
+ *   GET    <base>/login   -> PlayerSignInState, poll until it leaves 'waiting'
+ *   DELETE <base>/login   -> cancels a pending code
+ *   POST   <base>/logout  -> removes the stored credentials
+ * The provider never sends a token.
+ *
  * Spotify Soloist is the case this exists for: its binary may not be
  * redistributed, so the device fetches it from Spotify on request.
  */
@@ -27,6 +35,24 @@ export interface PlayerSetupStatus {
   logged_in: boolean
   is_active: boolean
   device_name: string | null
+  /** Present when the provider has a sign-in flow of its own. */
+  sign_in?: PlayerSetupSignIn
+}
+
+export interface PlayerSetupSignIn {
+  method: 'quick_connect'
+  /** Signed-in account, null when signed out. */
+  account: string | null
+  server_name: string | null
+  /** false when a prerequisite is missing; `reason` says which. */
+  ready: boolean
+  reason?: string | null
+}
+
+export interface PlayerSignInState {
+  state: 'idle' | 'waiting' | 'approved' | 'expired' | 'failed'
+  code: string | null
+  error: string | null
 }
 
 export interface PlayerSetupInstallState {
@@ -38,9 +64,25 @@ export interface PlayerSetupInstallState {
 const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const response = await apiFetch(url, init)
   if (!response.ok) {
-    throw new Error(`Setup API request failed: ${response.status}`)
+    throw new Error(await errorMessage(response))
   }
   return response.json()
+}
+
+/** Providers explain failures as `{"error": "..."}`; prefer that text. */
+const errorMessage = async (response: Response): Promise<string> => {
+  try {
+    const body = await response.json()
+    if (body && typeof body.error === 'string' && body.error) return body.error
+  } catch {
+    // no JSON body; fall through
+  }
+  return `Setup API request failed: ${response.status}`
+}
+
+const send = async (url: string, init: RequestInit): Promise<void> => {
+  const response = await apiFetch(url, init)
+  if (!response.ok) throw new Error(await errorMessage(response))
 }
 
 /** Read-only; providers put this in the auth gateway's "ok" tier. */
@@ -54,3 +96,16 @@ export const startSetupInstall = (baseUrl: string) =>
 
 export const getSetupInstallState = (baseUrl: string) =>
   request<PlayerSetupInstallState>(`${baseUrl}/install`)
+
+/** "risky" tier: may raise the auth prompt. */
+export const startSignIn = (baseUrl: string) =>
+  request<{ code: string; expires_in: number }>(`${baseUrl}/login`, { method: 'POST' })
+
+export const getSignInState = (baseUrl: string) =>
+  request<PlayerSignInState>(`${baseUrl}/login`)
+
+export const cancelSignIn = (baseUrl: string) =>
+  send(`${baseUrl}/login`, { method: 'DELETE' })
+
+export const signOut = (baseUrl: string) =>
+  send(`${baseUrl}/logout`, { method: 'POST' })

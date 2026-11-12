@@ -164,6 +164,7 @@ describe('PlayerSetupPanel', () => {
       expect(startSignIn).toHaveBeenCalledWith('/api/soloist')
       expect(w.find('[data-test="signin-code"]').text()).toBe('314359')
       const text = w.text()
+      expect(text).toContain('Open Spotify (Soloist), go to')
       expect(text).toContain('profile')
       expect(text).toContain('Quick Connect')
       expect(w.find('[data-test="signin-start"]').exists()).toBe(false)
@@ -216,6 +217,72 @@ describe('PlayerSetupPanel', () => {
       await flushPromises()
       expect(cancelSignIn).toHaveBeenCalledWith('/api/soloist')
       expect(w.find('[data-test="signin-start"]').exists()).toBe(true)
+      const calls = getSignInState.mock.calls.length
+      await vi.advanceTimersByTimeAsync(5000)
+      expect(getSignInState).toHaveBeenCalledTimes(calls)
+    })
+
+    const deferred = <T,>() => {
+      let resolve!: (v: T) => void
+      const promise = new Promise<T>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    type St = { state: string; code: string | null; error: string | null }
+
+    it('drops a poll response that arrives after unmount', async () => {
+      const d = deferred<St>()
+      startSignIn.mockResolvedValue({ code: '314359', expires_in: 300 })
+      getSignInState.mockReturnValueOnce(d.promise)
+      const w = mountIt(true, signInStatus())
+      await start(w)
+      await vi.advanceTimersByTimeAsync(1600)
+      expect(getSignInState).toHaveBeenCalledTimes(1)
+      w.unmount()
+      d.resolve({ state: 'waiting', code: '314359', error: null })
+      await flushPromises()
+      await vi.advanceTimersByTimeAsync(5000)
+      expect(getSignInState).toHaveBeenCalledTimes(1)
+    })
+
+    it('drops a poll response that arrives after cancel', async () => {
+      const d = deferred<St>()
+      startSignIn.mockResolvedValue({ code: '314359', expires_in: 300 })
+      getSignInState.mockReturnValueOnce(d.promise)
+      cancelSignIn.mockResolvedValue(undefined)
+      const w = mountIt(true, signInStatus())
+      await start(w)
+      await vi.advanceTimersByTimeAsync(1600)
+      await w.find('[data-test="signin-cancel"]').trigger('click')
+      await flushPromises()
+      d.resolve({ state: 'waiting', code: '314359', error: null })
+      await flushPromises()
+      await vi.advanceTimersByTimeAsync(5000)
+      expect(getSignInState).toHaveBeenCalledTimes(1)
+    })
+
+    it('a late result from a cancelled attempt does not clobber the new code', async () => {
+      const d = deferred<St>()
+      startSignIn
+        .mockResolvedValueOnce({ code: '111111', expires_in: 300 })
+        .mockResolvedValueOnce({ code: '222222', expires_in: 300 })
+      getSignInState.mockReturnValueOnce(d.promise)
+      getSignInState.mockResolvedValue({ state: 'waiting', code: '222222', error: null })
+      cancelSignIn.mockResolvedValue(undefined)
+      const w = mountIt(true, signInStatus())
+      await start(w)
+      await vi.advanceTimersByTimeAsync(1600)
+      await w.find('[data-test="signin-cancel"]').trigger('click')
+      await flushPromises()
+      await start(w)
+      expect(w.find('[data-test="signin-code"]').text()).toBe('222222')
+      d.resolve({ state: 'expired', code: null, error: 'The code expired.' })
+      await flushPromises()
+      expect(w.find('[data-test="signin-code"]').text()).toBe('222222')
+      expect(w.text()).not.toContain('The code expired.')
+      // One poll chain only: one call per interval after the stale one.
+      getSignInState.mockClear()
+      await vi.advanceTimersByTimeAsync(1600)
+      expect(getSignInState).toHaveBeenCalledTimes(1)
     })
 
     it('stops polling on unmount', async () => {

@@ -49,7 +49,7 @@
         <template v-else-if="signInCode">
           <p class="setup-code" data-test="signin-code">{{ signInCode }}</p>
           <p class="setup-line" data-test="signin-instruction">
-            Open the app, go to your profile &gt; Quick Connect, and enter this
+            Open {{ playerName }}, go to your profile &gt; Quick Connect, and enter this
             code.
           </p>
           <div class="setup-actions">
@@ -233,9 +233,20 @@ const signInCode = ref<string | null>(null)
 const signInError = ref<string | null>(null)
 const signInBusy = ref(false)
 
+// Bumped whenever the current sign-in attempt is abandoned or replaced, so a
+// response that was already in flight when that happened is dropped.
+let signInGen = 0
+
+function abandonSignIn() {
+  signInGen++
+  stop()
+}
+
 async function pollSignIn() {
+  const gen = signInGen
   try {
     const state = await getSignInState(props.baseUrl)
+    if (gen !== signInGen) return
     if (state.state === 'waiting') {
       timer = setTimeout(pollSignIn, POLL_MS)
       return
@@ -248,29 +259,34 @@ async function pollSignIn() {
         state.error ?? (state.state === 'expired' ? 'The code expired.' : 'Sign-in failed.')
     }
   } catch (e) {
+    if (gen !== signInGen) return
     signInCode.value = null
     signInError.value = message(e)
   }
 }
 
 async function beginSignIn() {
-  stop()
+  abandonSignIn()
+  const gen = signInGen
   signInBusy.value = true
   signInError.value = null
   try {
     const { code } = await startSignIn(props.baseUrl)
+    if (gen !== signInGen) return
     signInCode.value = code
     timer = setTimeout(pollSignIn, POLL_MS)
   } catch (e) {
+    if (gen !== signInGen) return
     signInError.value = message(e)
   } finally {
-    signInBusy.value = false
+    if (gen === signInGen) signInBusy.value = false
   }
 }
 
 async function cancelPending() {
-  stop()
+  abandonSignIn()
   signInCode.value = null
+  signInBusy.value = false
   try {
     await cancelSignIn(props.baseUrl)
   } catch (e) {
@@ -291,7 +307,7 @@ async function logout() {
   }
 }
 
-onUnmounted(stop)
+onUnmounted(abandonSignIn)
 </script>
 
 <style scoped lang="scss">

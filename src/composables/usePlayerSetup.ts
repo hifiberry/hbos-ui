@@ -55,7 +55,13 @@ export function usePlayerSetup(
 
   const needsBinary = computed(() => status.value?.binary_installed === false)
 
+  /** The provider has its own sign-in and is not signed in (to the server
+   *  selected now). */
+  const needsSignIn = computed(
+    () => status.value?.sign_in != null && status.value.logged_in === false,
+  )
+
   watch(baseUrl, refresh, { immediate: true })
 
-  return { status, loading, error, refresh, setupIncomplete, needsBinary }
+  return { status, loading, error, refresh, setupIncomplete, needsBinary, needsSignIn }
 }

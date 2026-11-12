@@ -60,6 +60,23 @@ describe('usePlayerSetup', () => {
     expect(s.setupIncomplete.value).toBe(false)
   })
 
+  it('needsSignIn says why setup is incomplete for a sign-in provider', async () => {
+    getSetupStatus.mockResolvedValue(status({ sign_in: signIn, logged_in: false }))
+    const s = usePlayerSetup(ref('/api/x'), ref(true))
+    await flush()
+    expect(s.needsSignIn.value).toBe(true)
+    getSetupStatus.mockResolvedValue(status({ sign_in: signIn, logged_in: true }))
+    await s.refresh()
+    expect(s.needsSignIn.value).toBe(false)
+  })
+
+  it('needsSignIn is false for a provider without sign_in', async () => {
+    getSetupStatus.mockResolvedValue(status({ logged_in: false }))
+    const s = usePlayerSetup(ref('/api/x'), ref(true))
+    await flush()
+    expect(s.needsSignIn.value).toBe(false)
+  })
+
   it('ignores logged_in when the provider has no sign_in', async () => {
     getSetupStatus.mockResolvedValue(status({ logged_in: false }))
     const s = usePlayerSetup(ref('/api/x'), ref(true))

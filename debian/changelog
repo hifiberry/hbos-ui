@@ -1,3 +1,24 @@
+hifiberry-webui (0.28.0) stable; urgency=medium
+
+  * Player settings can be free text: a player plugin may declare a "text"
+    setting (for example a server address), shown as a text field on the
+    player card. It is saved when the field is left rather than on every
+    keystroke, and the server checks the value against the plugin's length
+    limit and pattern.
+  * Players with a sign-in of their own (Jellyfin) can be signed in from
+    the player card with Quick Connect: Sign in shows a code to enter in
+    the app on a phone or computer, the card follows it until it is
+    approved, expired or cancelled, and shows the account and server
+    afterwards, with Sign out. A sign-in still active on a server that is
+    no longer selected is shown with Sign out as well.
+  * A player whose setup is unfinished can no longer be switched on, but
+    one that is already running can always be switched off. The card says
+    "Setup required — sign in" for a player that needs a sign-in, and
+    reads the setup again after its settings are saved and whenever it is
+    opened, instead of keeping the state from when the page loaded.
+
+ -- HiFiBerry <support@hifiberry.com>  Thu, 12 Nov 2026 17:00:00 +0000
+
 hifiberry-webui (0.27.2) stable; urgency=medium
 
   * DSP Programs offers the DSP add-on profiles for every card that hosts

@@ -33,7 +33,7 @@
               data-test="setup-required"
               @click.stop="$emit('toggle-config')"
             >
-              {{ needsBinary ? 'Setup required — download and configure' : 'Setup required — add settings' }}
+              {{ setupRequiredText }}
             </button>
             <div v-if="player.maintainerName" class="player-maintainer">
               <a v-if="player.maintainerUrl" :href="player.maintainerUrl" target="_blank" rel="noopener noreferrer" class="maintainer-link">{{ maintainerLabel(player.maintainerName) }}</a>
@@ -44,14 +44,14 @@
         <div class="player-actions">
           <div class="player-toggle">
             <ToggleSwitch
-              :model-value="player.providedBy === 'DSP' ? player.enabled : player.status === 'active'"
+              :model-value="isOn"
               :disabled="
                 player.loading ||
                 player.allow_change === false ||
                 player.exists === false ||
-                setupIncomplete === true
+                blockedBySetup
               "
-              :title="setupIncomplete === true ? 'Finish setup before enabling this player' : undefined"
+              :title="blockedBySetup ? 'Finish setup before enabling this player' : undefined"
               :loading="player.loading"
               @update:model-value="$emit('toggle')"
             />
@@ -177,6 +177,17 @@
                     {{ opt.label }}
                   </option>
                 </select>
+                <input
+                  v-else-if="setting.type === 'text'"
+                  :id="`set-${player.systemdService}-${setting.key}`"
+                  type="text"
+                  :value="setting.value"
+                  :maxlength="setting.max_length"
+                  spellcheck="false"
+                  :placeholder="setting.description ? '' : setting.label"
+                  @change="$emit('update-external-setting', setting.key, ($event.target as HTMLInputElement).value)"
+                  class="text-input"
+                />
                 <div
                   v-else-if="setting.type === 'secret'"
                   class="secret-field"
@@ -228,7 +239,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import PlayerSetupPanel from '@/components/PlayerSetupPanel.vue'
 import { usePlayerSetup } from '@/composables/usePlayerSetup'
 import Icon from '@/components/Icon.vue'
@@ -314,8 +325,36 @@ const credentialsSet = computed(() => {
 // Fetched here, not in the panel: the panel only exists while the card is
 // expanded, so a collapsed card could not know -- and could not say -- that
 // the player is not ready to be switched on.
-const { status: setupStatus, setupIncomplete, needsBinary, refresh: refreshSetup } =
+const { status: setupStatus, setupIncomplete, needsBinary, needsSignIn, refresh: refreshSetup } =
   usePlayerSetup(setupBaseUrl, credentialsSet)
+
+const isOn = computed(() =>
+  props.player.providedBy === 'DSP' ? props.player.enabled : props.player.status === 'active',
+)
+
+// Unfinished setup only stops a player from being switched ON. One that is
+// already running -- signed out, or moved to another server, while on --
+// must still be switchable off.
+const blockedBySetup = computed(() => setupIncomplete.value === true && !isOn.value)
+
+const setupRequiredText = computed(() => {
+  if (needsBinary.value) return 'Setup required — download and configure'
+  if (needsSignIn.value) return 'Setup required — sign in'
+  return 'Setup required — add settings'
+})
+
+// The status is only fetched when the player's setup URL changes or the panel
+// reports a change of its own. Two more moments make it stale: settings the
+// provider depends on (Jellyfin's server) were saved -- the page then replaces
+// the settings array with what the server holds, which an in-place edit does
+// not do -- and the card being opened, where the panel shows it.
+watch(() => props.player.settings, refreshSetup)
+watch(
+  () => props.isExpanded,
+  (expanded) => {
+    if (expanded) refreshSetup()
+  },
+)
 
 const hasConfig = computed(() => {
   if (props.player.isExternal) {
@@ -534,6 +573,27 @@ const getStatusText = (player: Player) => {
         color: var(--color-body-secondary);
         font-family: inherit;
         font-size: 1rem;
+      }
+
+      .text-input {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 22rem;
+        height: 44px;
+        padding: 12px 16px;
+        border: 1px solid var(--color-sidebar-border);
+        border-radius: 6px;
+        background: var(--background-card);
+        color: var(--color-body-secondary);
+        font-family: inherit;
+        font-size: 1rem;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+          color: var(--color-head);
+          box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+        }
       }
 
       /* Range inputs have no usable default styling and render bright blue on

@@ -1,5 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { useAudioServerStore } from '@/stores/audio-server'
+import { parseAasLevels } from '@/helpers/aas_levels'
 
 export const useVuMeterStore = defineStore('vu-meter', () => {
   // State — raw u8 values (0-255) from the binary WebSocket protocol
@@ -29,6 +31,9 @@ export const useVuMeterStore = defineStore('vu-meter', () => {
     const hostname = window.location.hostname
     const port = window.location.port
     const portSuffix = port && port !== '80' ? `:${port}` : ''
+    if (useAudioServerStore().isAas) {
+      return `ws://${hostname}${portSuffix}/api/aas/v1/levels`
+    }
     return `ws://${hostname}${portSuffix}/api/vu-meter/api/v1/levels`
   }
 
@@ -59,7 +64,21 @@ export const useVuMeterStore = defineStore('vu-meter', () => {
         // onclose will fire after this, triggering reconnect
       }
 
+      const aas = useAudioServerStore().isAas
+
       socket.onmessage = (event: MessageEvent) => {
+        if (aas) {
+          if (!(event.data instanceof ArrayBuffer)) return
+          const levels = parseAasLevels(event.data)
+          if (!levels) return
+          leftRms.value = levels.leftRms
+          leftPeak.value = levels.leftPeak
+          rightRms.value = levels.rightRms
+          rightPeak.value = levels.rightPeak
+          leftClipping.value = levels.leftClipping
+          rightClipping.value = levels.rightClipping
+          return
+        }
         if (!(event.data instanceof ArrayBuffer) || event.data.byteLength < 6) return
 
         const view = new DataView(event.data)

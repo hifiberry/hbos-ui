@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { getConfigKeys, getConfigValue, setConfigValue, deleteConfigValue } from '@/api/config'
 import { enableService, disableService } from '@/api/config'
 import { getSystemInfo } from '@/api/system'
+import { useAudioServerStore } from '@/stores/audio-server'
 import { isPi5OrNewer } from '@/utils/pi-version'
 
 export interface ServiceSettings {
@@ -98,6 +99,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const updateVuMeterEnabled = async (enabled: boolean) => {
     settings.value.vuMeterEnabled = enabled
     await saveSettings()
+    // aas serves the levels itself: there is no vu-meter service to switch
+    if (useAudioServerStore().isAas) return
     // Also control the backend vu-meter service
     try {
       if (enabled) {

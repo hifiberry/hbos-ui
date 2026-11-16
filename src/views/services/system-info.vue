@@ -885,6 +885,7 @@ import { getCoverArtMethods, type CoverArtMethodsResponse } from '@/api/coverart
 // TODO: Update to use new PipeWire API
 // import { listPipewireDevices, getPipewireMonoStereo, getPipewireBalance, type PipewireDevices } from '@/api/pipewire'
 import { getVersion as getPipewireVersion } from '@/api/pipewire'
+import { useAudioServerStore } from '@/stores/audio-server'
 import { useAppConfigStore } from '@/stores/appconfig'
 import { useSettingsStore } from '@/stores/settings'
 import { getAllLibraryStats, type LibraryStatsResponse } from '@/api/audiocontrol-library'
@@ -1663,6 +1664,7 @@ const fetchBackgroundServices = async () => {
     const appConfigStore = useAppConfigStore()
 
     // Define the services to check (only those with version endpoints for now)
+    const isAas = useAudioServerStore().isAas
     const servicesToCheck = [
       {
         name: 'Web UI',
@@ -1680,17 +1682,20 @@ const fetchBackgroundServices = async () => {
         name: 'DSP backend',
         url: `${appConfigStore.getDSPToolkitApiBaseUrl()}/version`
       },
-      {
+      ...(isAas ? [{
+        name: 'aas',
+        url: `${appConfigStore.getAasApiBaseUrl()}/state`
+      }] : [{
         name: 'PipeWire API',
         url: `${window.location.origin}/api/pipewire/v1/version`,
         isPipewire: true
-      },
+      }]),
       {
         name: 'Room EQ',
         url: `${appConfigStore.getRoomEQApiBaseUrl()}/version`
       },
       // Only include VU Meter on Pi 5 or higher
-      ...(useSettingsStore().isPi5OrHigher ? [{
+      ...(!isAas && useSettingsStore().isPi5OrHigher ? [{
         name: 'VU Meter',
         url: `${window.location.origin}/api/vu-meter/api/v1/version`
       }] : []),

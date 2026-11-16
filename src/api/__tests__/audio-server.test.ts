@@ -17,7 +17,9 @@ describe('audio-server api', () => {
     const data = { running: 'aas', chosen: 'aas', available: true }
     apiFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ status: 'success', data }) })
     expect(await getAudioServer()).toEqual(data)
-    expect(apiFetch).toHaveBeenCalledWith('http://dev/api/config/v1/audio-server', undefined)
+    const [url, init] = apiFetch.mock.calls[0]
+    expect(url).toBe('http://dev/api/config/v1/audio-server')
+    expect(init.signal).toBeInstanceOf(AbortSignal)
   })
 
   it('setAudioServer POSTs {server}', async () => {

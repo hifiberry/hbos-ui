@@ -125,6 +125,11 @@ const router = createRouter({
               component: () => import('@/views/services/dsp-backends.vue'),
             },
             {
+              path: 'audio-server',
+              name: 'audio-server',
+              component: () => import('@/views/services/audio-server.vue'),
+            },
+            {
               path: 'system-info',
               name: 'system-info',
               component: () => import('@/views/services/system-info.vue'),

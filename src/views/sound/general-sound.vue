@@ -2,7 +2,7 @@
   <PageContent title="General sound settings" :backrouterLink="{ name: 'sound' }" class="settings">
     <div class="settings-overview">
       <div class="service-card">
-        <div class="setting-item">
+        <div v-if="!isAas" class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
               <Icon icon="tabler/volume" class="setting-icon" />
@@ -84,6 +84,7 @@
               <span class="percent">{{ balanceLabel }}</span>
             </div>
           </div>
+          <p v-if="aasNote && !balanceAvailable" class="aas-note">{{ aasNote }}</p>
         </div>
 
         <div class="setting-item">
@@ -139,6 +140,7 @@
               </div>
             </div>
           </div>
+          <p v-if="aasNote && !modeAvailable" class="aas-note">{{ aasNote }}</p>
         </div>
       </div>
     </div>
@@ -154,6 +156,78 @@ import { getSpeakerEQCrossbar, setSpeakerEQCrossbarMatrix, getSpeakerEQMasterGai
 import { getSystemInfo, type SystemInfo } from '@/api/system'
 import { getHeadphoneControls, getHeadphoneVolume, setHeadphoneVolume } from '@/api/volume'
 import { settingsToMatrix, matrixToSettings, type AudioMode } from '@/helpers/mixing_matrix'
+import { useAudioServerStore } from '@/stores/audio-server'
+import { getPlugins, setPluginParams, getMatrix, putMatrix, isAasError, type AasPlugin } from '@/api/aas'
+import { modeToMatrix, matrixToMode } from '@/helpers/aas_matrix'
+
+const audioServer = useAudioServerStore()
+const isAas = computed(() => audioServer.isAas)
+
+// Under aas, balance is the balance plugin of the master and the mode is its matrix.
+const aasNote = ref<string>('')
+const aasBalancePlugin = ref<AasPlugin | null>(null)
+
+const findBalancePlugin = (plugins: AasPlugin[]): AasPlugin | null =>
+  plugins.find((p) => p.type === 'balance' && p.id.startsWith('1/')) ?? null
+
+async function loadAas() {
+  const plugins = await getPlugins()
+  if (isAasError(plugins)) {
+    aasNote.value = 'The aas audio server cannot be reached.'
+    balanceAvailable.value = false
+    modeAvailable.value = false
+    return
+  }
+  const plugin = findBalancePlugin(plugins)
+  aasBalancePlugin.value = plugin
+  if (plugin) {
+    const param = plugin.params.find((p) => p.name === 'balance')
+    balanceValue.value = Math.round((param?.value ?? 0) * 100) / 100
+    balanceAvailable.value = true
+  } else {
+    aasNote.value = 'No balance plugin is configured for the main output.'
+    balanceAvailable.value = false
+  }
+
+  const matrix = await getMatrix()
+  if (isAasError(matrix)) {
+    aasNote.value = 'The aas audio server cannot be reached.'
+    modeAvailable.value = false
+    return
+  }
+  audioMode.value = matrixToMode(matrix)
+  modeAvailable.value = true
+}
+
+async function setAudioModeAas(mode: AudioMode) {
+  const current = await getMatrix()
+  if (isAasError(current)) {
+    aasNote.value = 'The aas audio server cannot be reached.'
+    modeAvailable.value = false
+    return
+  }
+  const result = await putMatrix(modeToMatrix(current, mode))
+  if (isAasError(result)) {
+    console.error('Failed to set the channel mode:', result.error, result.message)
+    aasNote.value = 'The channel mode could not be changed.'
+    modeAvailable.value = false
+    return
+  }
+  audioMode.value = mode
+  modeAvailable.value = true
+}
+
+async function setBalanceAas(balance: number) {
+  if (!aasBalancePlugin.value) return
+  const result = await setPluginParams(aasBalancePlugin.value.id, { balance })
+  if (isAasError(result)) {
+    console.error('Failed to set the balance:', result.error, result.message)
+    aasNote.value = 'The balance could not be changed.'
+    balanceAvailable.value = false
+    return
+  }
+  balanceAvailable.value = true
+}
 
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
@@ -304,6 +378,7 @@ const audioMode = ref<AudioMode>('stereo')
 const modeAvailable = ref<boolean>(true)
 
 async function setAudioMode(mode: AudioMode) {
+  if (isAas.value) return setAudioModeAas(mode)
   console.log('=== setAudioMode START ===')
   console.log('Setting audio mode to:', mode)
   console.log('Current balance value:', balanceValue.value)
@@ -354,6 +429,8 @@ async function onBalanceChange(newVal: number) {
     console.error('Invalid balance calculated from slider:', balance, 'from input:', newVal)
     return
   }
+
+  if (isAas.value) return setBalanceAas(balanceValue.value)
 
   try {
     // Convert mode and balance to mixing matrix
@@ -429,6 +506,11 @@ onMounted(async () => {
     }
   } catch (e) {
     console.warn('Failed to load system info:', e)
+  }
+
+  if (isAas.value) {
+    await loadAas()
+    return
   }
 
   // Load master gain from PipeWire SpeakerEQ
@@ -613,6 +695,8 @@ h1 { margin-bottom: 32px; color: var(--color-head); }
     }
   }
 }
+
+.aas-note { margin: 0 0 10px; color: var(--color-body-secondary); font-size: 0.875rem; }
 
 /* Responsive: stack into one column on small screens */
 @media (max-width: 800px) {

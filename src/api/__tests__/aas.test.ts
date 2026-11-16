@@ -39,7 +39,7 @@ describe('aas api', () => {
 
   it('putMatrix PUTs the matrix', async () => {
     apiFetch.mockResolvedValue(ok({}))
-    const matrix = { outputs: [{ output: 1, routes: [{ from: 1, to: 1, gain_db: -6 }] }] }
+    const matrix = { outputs: [{ output: 1, routes: [{ from: 'players.left', to: 1, gain_db: -6 }] }] }
     await putMatrix(matrix)
     const [url, init] = apiFetch.mock.calls[0]
     expect(url).toBe('http://dev/api/aas/v1/matrix')

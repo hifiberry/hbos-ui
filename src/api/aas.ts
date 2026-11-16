@@ -12,7 +12,8 @@ export type { ApiError }
 export type AasResponse<T> = T | ApiError
 
 export interface AasRoute {
-  from: number
+  /** `players.left`, `players.right`, `analog.left` or `analog.right`. */
+  from: string
   to: number
   gain_db?: number
 }
@@ -26,10 +27,25 @@ export interface AasMatrix {
   outputs: AasMatrixOutput[]
 }
 
-export interface AasPlugin {
-  id: string
+export interface AasPluginParam {
   name: string
-  [key: string]: unknown
+  unit: string
+  type: string
+  min: number
+  max: number
+  default: number
+  value: number
+}
+
+export interface AasPlugin {
+  /** Like `1/output/0`. */
+  id: string
+  type: 'balance' | 'detect' | 'library'
+  name: string
+  enabled: boolean
+  neutral: boolean
+  latency_frames: number
+  params: AasPluginParam[]
 }
 
 export function isAasError(response: unknown): response is ApiError {
@@ -72,7 +88,7 @@ const jsonInit = (method: string, body: unknown): RequestInit => ({
 
 export const getState = () => request<unknown>('/state')
 
-export const getPlugins = () => request<AasPlugin[] | { plugins: AasPlugin[] }>('/plugins')
+export const getPlugins = () => request<AasPlugin[]>('/plugins')
 
 /** `id` is like `1/output/0`; the slashes are part of the path. */
 export const setPluginParams = (id: string, params: Record<string, number>) =>

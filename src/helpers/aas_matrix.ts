@@ -29,28 +29,34 @@ const routesFor = (source: string, mode: AudioMode): AasRoute[] =>
     return route
   })
 
-/** The matrix with the master's routes set to `mode`; further outputs are kept as they are. */
+/**
+ * The matrix to PUT for the master set to `mode`: output 1 only, since aas
+ * keeps every output the body does not name.
+ */
 export function modeToMatrix(current: AasMatrix, mode: AudioMode): AasMatrix {
   const master = current.outputs.find((o) => o.output === MASTER)
   const sources = ['players']
   if (master?.routes.some((r) => r.from.startsWith('analog.'))) sources.push('analog')
   const routes = sources.flatMap((s) => routesFor(s, mode))
-
-  const outputs = current.outputs.map((o) => (o.output === MASTER ? { ...o, routes } : o))
-  if (!master) outputs.unshift({ output: MASTER, routes })
-  return { outputs }
+  return { outputs: [{ output: MASTER, routes }] }
 }
 
-const key = (r: AasRoute) => `${r.from}>${r.to}@${r.gain_db ?? 0}`
+/** Gains read back from aas are floats; compare them to this many dB. */
+const GAIN_TOLERANCE_DB = 0.1
+
+const sameRoute = (have: AasRoute, want: AasRoute) =>
+  have.from === want.from &&
+  have.to === want.to &&
+  Math.abs((have.gain_db ?? 0) - (want.gain_db ?? 0)) <= GAIN_TOLERANCE_DB
 
 /** The mode of the master's `players` routes; no routes or an unknown shape read as stereo. */
 export function matrixToMode(matrix: AasMatrix): AudioMode {
   const master = matrix.outputs.find((o) => o.output === MASTER)
-  const have = (master?.routes ?? []).filter((r) => r.from.startsWith('players.')).map(key).sort()
+  const have = (master?.routes ?? []).filter((r) => r.from.startsWith('players.'))
   if (have.length === 0) return 'stereo'
   for (const mode of Object.keys(MODE_ROUTES) as AudioMode[]) {
-    const want = routesFor('players', mode).map(key).sort()
-    if (want.length === have.length && want.every((k, i) => k === have[i])) return mode
+    const want = routesFor('players', mode)
+    if (want.length === have.length && want.every((w) => have.some((h) => sameRoute(h, w)))) return mode
   }
   return 'stereo'
 }

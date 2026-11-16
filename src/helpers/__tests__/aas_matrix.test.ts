@@ -42,16 +42,37 @@ describe('modeToMatrix', () => {
     ])
   })
 
-  it('keeps further outputs as they are', () => {
+  it('names only the master, so the other outputs are left to aas', () => {
     const other = { output: 2, routes: [players('left', 1, -3)] }
     const result = modeToMatrix({ outputs: [playersOnly.outputs[0], other] }, 'swapped')
-    expect(result.outputs).toEqual([{ output: 1, routes: expected.swapped }, other])
+    expect(result).toEqual({ outputs: [{ output: 1, routes: expected.swapped }] })
   })
 
-  it('adds the master when the matrix does not name it', () => {
-    const other = { output: 2, routes: [] }
-    const result = modeToMatrix({ outputs: [other] }, 'left')
-    expect(result.outputs).toEqual([{ output: 1, routes: expected.left }, other])
+  it('names the master when the matrix does not', () => {
+    const result = modeToMatrix({ outputs: [{ output: 2, routes: [] }] }, 'left')
+    expect(result).toEqual({ outputs: [{ output: 1, routes: expected.left }] })
+  })
+
+  it('works from the shape GET returns: explicit 0.0 gains, analog included', () => {
+    const get: AasMatrix = {
+      outputs: [
+        {
+          output: 1,
+          routes: [
+            { from: 'players.left', to: 1, gain_db: 0.0 },
+            { from: 'players.right', to: 2, gain_db: 0.0 },
+            { from: 'analog.left', to: 1, gain_db: 0.0 },
+            { from: 'analog.right', to: 2, gain_db: 0.0 },
+          ],
+        },
+        { output: 2, routes: [{ from: 'players.left', to: 1, gain_db: 0.0 }] },
+      ],
+    }
+    expect(matrixToMode(get)).toBe('stereo')
+    const put = modeToMatrix(get, 'mono')
+    expect(put.outputs).toHaveLength(1)
+    expect(put.outputs[0].routes).toEqual([...expected.mono, ...asAnalog(expected.mono)])
+    expect(matrixToMode(put)).toBe('mono')
   })
 })
 
@@ -66,6 +87,25 @@ describe('matrixToMode', () => {
       'mono',
     )
     expect(matrixToMode(matrix)).toBe('mono')
+  })
+
+  it('reads mono within 0.1 dB of -6', () => {
+    const near = (g: number): AasMatrix => ({
+      outputs: [{
+        output: 1,
+        routes: [players('left', 1, g), players('right', 1, g), players('left', 2, g), players('right', 2, g)],
+      }],
+    })
+    expect(matrixToMode(near(-6.02))).toBe('mono')
+    expect(matrixToMode(near(-5.95))).toBe('mono')
+    expect(matrixToMode(near(-6.3))).toBe('stereo')
+  })
+
+  it('reads explicit 0.0 gains as the plain modes', () => {
+    const swapped: AasMatrix = {
+      outputs: [{ output: 1, routes: [players('left', 2, 0), players('right', 1, 0.0)] }],
+    }
+    expect(matrixToMode(swapped)).toBe('swapped')
   })
 
   it('shows an unknown shape as stereo', () => {

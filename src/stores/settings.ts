@@ -69,6 +69,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const getVuMeterEnabled = computed(() => settings.value.vuMeterEnabled)
   const getHideVolume = computed(() => settings.value.hideVolume)
   const isPi5OrHigher = computed(() => isPi5OrNewer(piVersion.value))
+  /** The VU meter needs a Pi 5 or newer under PipeWire; aas serves the levels itself. */
+  const isVuMeterSupported = computed(() => isPi5OrHigher.value || useAudioServerStore().isAas)
 
   // Actions
   const updateServiceSettings = async <T extends keyof ServiceSettings>(
@@ -315,6 +317,7 @@ export const useSettingsStore = defineStore('settings', () => {
     getVuMeterEnabled,
     getHideVolume,
     isPi5OrHigher,
+    isVuMeterSupported,
     piVersion,
 
     // Actions

@@ -42,7 +42,7 @@
       </template>
     </div>
 
-    <div v-if="settingsStore.getVuMeterEnabled && settingsStore.isPi5OrHigher" class="sidebar-vu-meter">
+    <div v-if="settingsStore.getVuMeterEnabled && settingsStore.isVuMeterSupported" class="sidebar-vu-meter">
       <VuMeter />
     </div>
 

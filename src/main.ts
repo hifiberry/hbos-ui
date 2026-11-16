@@ -26,11 +26,9 @@ app.use(Vue3Toastify, {
 // Bootstrap: load persisted UI settings (e.g., expert mode) before mounting
 async function bootstrap() {
   try {
-    const settingsStore = useSettingsStore()
-    await settingsStore.loadSettings()
     // Which audio server runs decides what several views show; a failed
-    // load keeps the PipeWire defaults.
-    await useAudioServerStore().load()
+    // load keeps the PipeWire defaults. Neither waits for the other.
+    await Promise.allSettled([useSettingsStore().loadSettings(), useAudioServerStore().load()])
   } catch (e) {
     // Non-fatal: proceed with defaults if loading fails
     console.warn('Failed to load UI settings on startup, using defaults', e)

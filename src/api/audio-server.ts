@@ -13,6 +13,7 @@ export interface AudioServerInfo {
 
 export interface AudioServerChoice extends AudioServerInfo {
   reboot_required: boolean
+  warnings: string[]
 }
 
 async function call<T>(init?: RequestInit): Promise<T | ApiError> {
@@ -40,7 +41,11 @@ async function call<T>(init?: RequestInit): Promise<T | ApiError> {
   }
 }
 
-export const getAudioServer = () => call<AudioServerInfo>()
+/** The route answers fast or not at all; a slow one must not hold up start-up. */
+const LOAD_TIMEOUT_MS = 3000
+
+export const getAudioServer = () =>
+  call<AudioServerInfo>({ signal: AbortSignal.timeout(LOAD_TIMEOUT_MS) })
 
 export const setAudioServer = (server: AudioServerName) =>
   call<AudioServerChoice>({

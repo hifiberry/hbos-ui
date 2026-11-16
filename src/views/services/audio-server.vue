@@ -22,7 +22,11 @@
         </p>
       </div>
 
-      <p v-if="!available" class="not-available">
+      <div v-if="error" class="not-available">
+        <p>Could not read the audio server: {{ error }}</p>
+        <button class="action-button" :disabled="loading" @click="retry">Retry</button>
+      </div>
+      <p v-else-if="!available" class="not-available">
         aas is not installed on this device, so the audio server cannot be switched.
       </p>
       <div v-else class="backends-list">
@@ -80,7 +84,7 @@ Would you like to reboot now?"
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
@@ -92,7 +96,7 @@ import type { AudioServerName } from '@/api/audio-server'
 
 const toastStore = useToastStore()
 const store = useAudioServerStore()
-const { running, chosen, available } = storeToRefs(store)
+const { running, chosen, available, error } = storeToRefs(store)
 const { collectAasWarnings } = useAasWarnings()
 
 const showAasConfirmation = ref(false)
@@ -100,6 +104,18 @@ const showRebootConfirmation = ref(false)
 const pendingWarnings = ref<string[]>([])
 const warnings = ref<string[]>([])
 const switching = ref(false)
+const loading = ref(false)
+
+const reload = async () => {
+  loading.value = true
+  try {
+    await store.load()
+  } finally {
+    loading.value = false
+  }
+}
+const retry = reload
+onMounted(reload)
 
 const label = (server: AudioServerName) => (server === 'aas' ? 'aas' : 'PipeWire')
 
@@ -124,15 +140,10 @@ const askSwitchToAas = async () => {
 const choose = async (server: AudioServerName) => {
   switching.value = true
   try {
-    const result = (await store.choose(server)) as unknown
-    const data = (typeof result === 'object' && result !== null ? result : {}) as {
-      reboot_required?: boolean
-      warnings?: string[]
-    }
-    const reboot = typeof result === 'boolean' ? result : data.reboot_required !== false
-    warnings.value = Array.isArray(data.warnings) ? data.warnings.filter(Boolean) : []
+    const { rebootRequired, warnings: reported } = await store.choose(server)
+    warnings.value = reported.filter(Boolean)
     if (warnings.value.length) toastStore.showInfoToast(warnings.value.join(' '))
-    if (reboot) showRebootConfirmation.value = true
+    if (rebootRequired) showRebootConfirmation.value = true
   } catch (err) {
     toastStore.showErrorToast(err instanceof Error ? err.message : 'Failed to switch the audio server')
   } finally {

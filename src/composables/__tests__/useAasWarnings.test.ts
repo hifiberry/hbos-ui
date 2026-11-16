@@ -54,6 +54,8 @@ describe('collectAasWarnings', () => {
     m.getSpeakerEQMasterGain.mockResolvedValue({ gain: -6 })
     const w = await collectAasWarnings()
     expect(w).toHaveLength(2)
+    expect(w[0]).toMatch(/input processor/)
+    expect(w[1]).toMatch(/volume limit/)
   })
 
   it('leaves out a check that fails', async () => {

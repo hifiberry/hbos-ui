@@ -7,6 +7,8 @@ export const useAudioServerStore = defineStore('audio-server', () => {
   const chosen = ref<AudioServerName>('pipewire')
   const available = ref(false)
   const loaded = ref(false)
+  /** Message of the last failed load, null after a successful one. */
+  const error = ref<string | null>(null)
 
   const isAas = computed(() => running.value === 'aas')
 
@@ -15,7 +17,9 @@ export const useAudioServerStore = defineStore('audio-server', () => {
     const result = await getAudioServer()
     if ('error' in result) {
       console.warn('Failed to load the audio server:', result.message)
+      error.value = result.message
     } else {
+      error.value = null
       running.value = result.running
       chosen.value = result.chosen
       available.value = result.available
@@ -23,15 +27,17 @@ export const useAudioServerStore = defineStore('audio-server', () => {
     loaded.value = true
   }
 
-  /** Resolves with `reboot_required`; rejects with the route's message. */
-  const choose = async (server: AudioServerName): Promise<boolean> => {
+  /** Resolves with `reboot_required` and the route's warnings; rejects with its message. */
+  const choose = async (
+    server: AudioServerName,
+  ): Promise<{ rebootRequired: boolean; warnings: string[] }> => {
     const result = await setAudioServer(server)
     if ('error' in result) throw new Error(result.message)
     running.value = result.running
     chosen.value = result.chosen
     available.value = result.available
-    return result.reboot_required
+    return { rebootRequired: result.reboot_required, warnings: result.warnings ?? [] }
   }
 
-  return { running, chosen, available, loaded, isAas, load, choose }
+  return { running, chosen, available, loaded, error, isAas, load, choose }
 })

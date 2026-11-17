@@ -1,3 +1,17 @@
+hifiberry-webui (0.29.0) stable; urgency=medium
+
+  * The audio server can be switched between PipeWire and aas, on the Audio
+    Server page in System Tools. The page shows the running server and the
+    one chosen for the next boot, lists the warnings for the switch, and
+    offers the reboot that applies it. Without aas installed it says the
+    server cannot be switched. Needs configurator 2.20.0 or later.
+  * Under aas, the sound page's balance goes through aas's balance plugin,
+    and channel mode sets the master's routing; both controls stay disabled
+    until their state is loaded. The VU meter reads its levels from aas and
+    is shown, with its toggle, on any Pi. Under PipeWire nothing changes.
+
+ -- HiFiBerry <support@hifiberry.com>  Tue, 17 Nov 2026 10:28:49 +0000
+
 hifiberry-webui (0.28.0) stable; urgency=medium
 
   * Player settings can be free text: a player plugin may declare a "text"

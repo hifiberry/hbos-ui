@@ -32,11 +32,9 @@ describe('collectAasWarnings', () => {
     expect(await collectAasWarnings()).toEqual([])
   })
 
-  it('lists a paired Bluetooth device', async () => {
+  it('does not list a paired Bluetooth device: aas plays it', async () => {
     m.getSystemInfo.mockResolvedValue({ bluetooth: { devices: [{ name: 'x' }] } })
-    const w = await collectAasWarnings()
-    expect(w).toHaveLength(1)
-    expect(w[0]).toMatch(/Bluetooth/)
+    expect(await collectAasWarnings()).toEqual([])
   })
 
   it('lists enabled services by name', async () => {

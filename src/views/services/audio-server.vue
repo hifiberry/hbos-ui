@@ -1,5 +1,5 @@
 <template>
-  <PageContent title="Audio Server" :backrouterLink="{ name: 'services' }">
+  <PageContent title="Audio Server" :backrouterLink="{ name: 'system-tools' }">
     <div class="audio-server-content">
       <div class="audio-server-header">
         <h2>Audio Server</h2>

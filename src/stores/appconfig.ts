@@ -27,6 +27,12 @@ export interface AppConfig {
     apiPrefix: string
     useProxy: boolean
   }
+  aas_api: {
+    deviceIP: string
+    devicePort: number
+    apiPrefix: string
+    useProxy: boolean
+  }
 }
 
 export const useAppConfigStore = defineStore('appconfig', () => {
@@ -55,6 +61,12 @@ export const useAppConfigStore = defineStore('appconfig', () => {
       deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
       devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
       apiPrefix: import.meta.env.VITE_APP_ROOMEQ_API_PREFIX || '/api/roomeq',
+      useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
+    },
+    aas_api: {
+      deviceIP: import.meta.env.VITE_APP_DEVICE_IP || window.location.hostname,
+      devicePort: parseInt(import.meta.env.VITE_APP_DEVICE_PORT || '80', 10),
+      apiPrefix: import.meta.env.VITE_APP_AAS_API_PREFIX || '/api/aas/v1',
       useProxy: !import.meta.env.PROD // Use proxy in development to avoid CORS
     }
   })
@@ -175,6 +187,23 @@ export const useAppConfigStore = defineStore('appconfig', () => {
     return roomEQApiUrl
   }
 
+  const getAasApiBaseUrl = (): string => {
+    const { deviceIP, devicePort, apiPrefix, useProxy } = config.value.aas_api
+
+    let aasApiUrl: string
+    if (useProxy) {
+      // Use current host and port for proxy in development
+      const currentUrl = window.location.origin
+      aasApiUrl = `${currentUrl}${apiPrefix}`
+    } else {
+      // Don't include port 80 in the URL as it's the default HTTP port
+      const portSuffix = devicePort === 80 ? '' : `:${devicePort}`
+      aasApiUrl = `http://${deviceIP}${portSuffix}${apiPrefix}`
+    }
+
+    return aasApiUrl
+  }
+
   return {
     // State
     config,
@@ -192,6 +221,7 @@ export const useAppConfigStore = defineStore('appconfig', () => {
     getConfigApiBaseUrl,
     getDSPToolkitApiBaseUrl,
     getRoomEQApiBaseUrl,
+    getAasApiBaseUrl,
 
     // Getters
     radioPlayer: () => config.value.radioPlayer,

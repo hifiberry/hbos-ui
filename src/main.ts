@@ -3,6 +3,7 @@ import './assets/scss/main.scss'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { useSettingsStore } from '@/stores/settings'
+import { useAudioServerStore } from '@/stores/audio-server'
 import Vue3Toastify from 'vue3-toastify'
 
 import App from './App.vue'
@@ -25,8 +26,9 @@ app.use(Vue3Toastify, {
 // Bootstrap: load persisted UI settings (e.g., expert mode) before mounting
 async function bootstrap() {
   try {
-    const settingsStore = useSettingsStore()
-    await settingsStore.loadSettings()
+    // Which audio server runs decides what several views show; a failed
+    // load keeps the PipeWire defaults. Neither waits for the other.
+    await Promise.allSettled([useSettingsStore().loadSettings(), useAudioServerStore().load()])
   } catch (e) {
     // Non-fatal: proceed with defaults if loading fails
     console.warn('Failed to load UI settings on startup, using defaults', e)

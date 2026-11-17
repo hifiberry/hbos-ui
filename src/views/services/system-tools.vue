@@ -116,6 +116,29 @@
         </div>
       </div>
 
+      <!-- Audio Server Tool -->
+      <div class="tool-section">
+        <div class="tool-card audio-server-tool">
+          <div class="tool-info">
+            <Icon icon="tabler/server" class="tool-icon" />
+            <div class="tool-details">
+              <h3>Audio Server</h3>
+              <p class="tool-description">
+                Switch between PipeWire and aas. Requires a system reboot to take effect.
+                <template v-if="audioServer.loaded">
+                  Running: {{ audioServer.running === 'aas' ? 'aas' : 'PipeWire' }}.
+                </template>
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions">
+            <button @click="router.push({ name: 'audio-server' })" class="detect-button">
+              Audio server
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Stop All Music Players Tool -->
       <div class="tool-section">
         <div class="tool-card reset-tool">
@@ -259,6 +282,7 @@ Would you like to reboot now?"
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import Icon from '@/components/Icon.vue'
 import PageContent from '@/components/PageContent.vue'
@@ -266,6 +290,7 @@ import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import { useToastStore } from '@/stores/toast'
 import { useSettingsStore } from '@/stores/settings'
+import { useAudioServerStore } from '@/stores/audio-server'
 import { useSupportInfo } from '@/composables/useSupportInfo'
 import { rebootSystem, shutdownSystem, detectSoundCard as detectSoundCardAPI, setSoundCardDtoverlay, getSoundCards, setSoundCardDetection, disableSoundCardDetection, getSoundCardDetectionStatus, resetConfigDB } from '@/api/system'
 import { stopAllPlayers } from '@/api/player'
@@ -292,6 +317,9 @@ const loadingSoundCards = ref(false)
 const toastStore = useToastStore()
 const settingsStore = useSettingsStore()
 const { getExpertMode } = storeToRefs(settingsStore)
+// Loaded at start-up, so the card names the running server without a request.
+const audioServer = useAudioServerStore()
+const router = useRouter()
 const { report, loading, fetchReport, downloadReport } = useSupportInfo()
 
 // Helper function to transform sound card names

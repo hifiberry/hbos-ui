@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { getConfigKeys, getConfigValue, setConfigValue, deleteConfigValue } from '@/api/config'
 import { enableService, disableService } from '@/api/config'
 import { getSystemInfo } from '@/api/system'
+import { useAudioServerStore } from '@/stores/audio-server'
 import { isPi5OrNewer } from '@/utils/pi-version'
 
 export interface ServiceSettings {
@@ -68,6 +69,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const getVuMeterEnabled = computed(() => settings.value.vuMeterEnabled)
   const getHideVolume = computed(() => settings.value.hideVolume)
   const isPi5OrHigher = computed(() => isPi5OrNewer(piVersion.value))
+  /** The VU meter needs a Pi 5 or newer under PipeWire; aas serves the levels itself. */
+  const isVuMeterSupported = computed(() => isPi5OrHigher.value || useAudioServerStore().isAas)
 
   // Actions
   const updateServiceSettings = async <T extends keyof ServiceSettings>(
@@ -98,6 +101,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const updateVuMeterEnabled = async (enabled: boolean) => {
     settings.value.vuMeterEnabled = enabled
     await saveSettings()
+    // aas serves the levels itself: there is no vu-meter service to switch
+    if (useAudioServerStore().isAas) return
     // Also control the backend vu-meter service
     try {
       if (enabled) {
@@ -312,6 +317,7 @@ export const useSettingsStore = defineStore('settings', () => {
     getVuMeterEnabled,
     getHideVolume,
     isPi5OrHigher,
+    isVuMeterSupported,
     piVersion,
 
     // Actions

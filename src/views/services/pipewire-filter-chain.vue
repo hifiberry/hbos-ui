@@ -2,7 +2,11 @@
   <div class="pipewire-filter-chain">
     <h1>Pipewire Filter Chain</h1>
 
-    <div v-if="loading" class="loading-section">
+    <div v-if="isAas" class="empty-section">
+      <p>This page applies to PipeWire only. The audio server running on this device is aas.</p>
+    </div>
+
+    <div v-else-if="loading" class="loading-section">
       <p>Loading filter chain...</p>
     </div>
 
@@ -64,10 +68,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { getFilterChain } from '@/api/filterchain'
+import { useAudioServerStore } from '@/stores/audio-server'
 import StatusBlock from '@/components/StatusBlock.vue'
 import { graphviz } from 'd3-graphviz'
+
+const audioServer = useAudioServerStore()
+const isAas = computed(() => audioServer.isAas)
 
 // State
 const loading = ref(true)
@@ -146,6 +154,7 @@ watch(activeView, async (newView) => {
 
 // Lifecycle
 onMounted(() => {
+  if (isAas.value) return
   fetchFilterChain()
 })
 </script>

@@ -1,10 +1,10 @@
-import { getSystemInfo } from '@/api/system'
 import { getSystemdServiceStatus } from '@/api/config'
 import { getRIAAEnabled, getSpeakerEQMasterGain } from '@/api/pipewire'
 
 /**
  * What stops working on this device when it switches to aas: only what is in
  * use. A check that fails is left out of the list, not reported as an error.
+ * Bluetooth is not on it: aas plays it through bluez-alsa.
  */
 export const collectAasWarnings = async (): Promise<string[]> => {
   const serviceEnabled = async (name: string): Promise<boolean> => {
@@ -17,13 +17,6 @@ export const collectAasWarnings = async (): Promise<string[]> => {
   }
 
   const checks: Array<[string, () => Promise<boolean>]> = [
-    [
-      'Bluetooth speaker: the paired Bluetooth devices stop working',
-      async () => {
-        const info = await getSystemInfo()
-        return (info.bluetooth?.devices?.length ?? 0) > 0
-      },
-    ],
     ['AES67 stops working', () => serviceEnabled('aes67')],
     ['The USB audio gadget stops working', () => serviceEnabled('usbaudio')],
     [

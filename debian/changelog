@@ -1,3 +1,14 @@
+hifiberry-webui (0.30.0) stable; urgency=medium
+
+  * A device with more than one Bluetooth adapter, such as the built-in one
+    and a USB stick, offers a choice of adapter on the Bluetooth page; the
+    chosen one is used and the others are switched off. Phones pair again
+    after a change. Needs configurator 2.21.0 and hifiberry-bluetooth 1.2.0.
+  * Switching to aas no longer warns that paired Bluetooth devices stop
+    working: aas plays Bluetooth audio since aas 0.2.0.
+
+ -- HiFiBerry <support@hifiberry.com>  Fri, 20 Nov 2026 11:07:51 +0000
+
 hifiberry-webui (0.29.0) stable; urgency=medium
 
   * The audio server can be switched between PipeWire and aas, on the Audio

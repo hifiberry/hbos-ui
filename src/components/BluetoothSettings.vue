@@ -17,6 +17,24 @@
           <ToggleSwitch :model-value="capability === 'KeyboardOnly'" @update:model-value="togglePairingWithPassword" />
         </div>
       </div>
+      <template v-if="adapters.length > 1">
+        <div class="bluetooth-settings-pairs-div adapter-row">
+          <p>Bluetooth adapter</p>
+          <select
+            v-model="selectedAdapter"
+            class="adapter-select"
+            :disabled="switchingAdapter"
+            @change="changeAdapter"
+          >
+            <option v-for="a in adapters" :key="a.address" :value="a.address">
+              {{ adapterLabel(a) }}
+            </option>
+          </select>
+        </div>
+        <p class="adapter-hint">
+          Phones are paired with one adapter. After a change, pair them again.
+        </p>
+      </template>
       <BluetoothSettingsModal v-model:open="modalOpen" />
     </div>
   </ContentBox>
@@ -47,6 +65,29 @@ const modalOpen = ref(false)
 const modalShouldRequest = ref(false);
 const capability = ref("KeyboardOnly")
 
+interface BluetoothAdapter {
+  address: string
+  name: string
+  bus: 'usb' | 'built-in'
+  powered: boolean
+  selected: boolean
+}
+
+const emit = defineEmits<{ (e: 'adapter-changed', address: string): void }>()
+
+/** Every adapter the device has; the selector shows only with more than one. */
+const adapters = ref<BluetoothAdapter[]>([])
+const selectedAdapter = ref('')
+const switchingAdapter = ref(false)
+
+const adapterLabel = (a: BluetoothAdapter) =>
+  `${a.bus === 'usb' ? 'USB' : 'Built-in'}: ${a.name || a.address} (${a.address})`
+
+const takeAdapters = (list: BluetoothAdapter[] | undefined) => {
+  adapters.value = list ?? []
+  selectedAdapter.value = adapters.value.find((a) => a.selected)?.address ?? ''
+}
+
 
 /* FUNCTIONS */
 
@@ -62,6 +103,7 @@ onMounted(async () => {
 
     capability.value = data.data.capability
     discoverable.value = data.data.discoverable
+    takeAdapters(data.data.adapters)
 
     if (discoverable.value) {
       startCountdown()
@@ -217,6 +259,30 @@ async function togglePairingWithPassword() {
 }
 
 /**
+  * Uses the adapter chosen in the selector. hifiberry-bluetooth powers it on
+  * and the other adapters off; the paired devices shown are then its own.
+  */
+async function changeAdapter() {
+  const previous = adapters.value.find((a) => a.selected)?.address ?? ''
+  const address = selectedAdapter.value
+  if (address === previous) return
+  switchingAdapter.value = true
+  try {
+    const data = await updateSetting('adapter', address)
+    takeAdapters(data?.data?.adapters)
+    const chosen = adapters.value.find((a) => a.address === address)
+    toastStore.showSuccessToast(`Using ${chosen ? adapterLabel(chosen) : address}`)
+    emit('adapter-changed', address)
+  } catch (error) {
+    console.error('Failed to change the Bluetooth adapter:', error)
+    selectedAdapter.value = previous
+    toastStore.showErrorToast('Failed to change the Bluetooth adapter.')
+  } finally {
+    switchingAdapter.value = false
+  }
+}
+
+/**
   * Resets the countdown. This is called
   * when the user presses on the visible countdown,
   * so it will go back to 60.
@@ -253,6 +319,42 @@ function resetCountdown() {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.adapter-row {
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.adapter-select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-sidebar-border);
+  border-radius: 6px;
+  background: var(--background-card);
+  color: var(--color-body-secondary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 60%;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    color: var(--color-head);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.adapter-hint {
+  width: 100%;
+  margin: 0 0 15px 0;
+  font-size: 0.85rem;
+  color: var(--color-body-secondary);
 }
 
 .countdown {

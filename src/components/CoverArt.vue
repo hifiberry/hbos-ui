@@ -380,5 +380,11 @@ onMounted(() => {
     width: 150px;
     height: 150px;
   }
+
+  /* Keep container-controlled sizing; the rules above would otherwise win. */
+  .cover-art.container-sized {
+    width: 100%;
+    height: 100%;
+  }
 }
 </style>

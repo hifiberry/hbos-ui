@@ -2,7 +2,7 @@
   <PageContent title="General sound settings" :backrouterLink="{ name: 'sound' }" class="settings">
     <div class="settings-overview">
       <div class="service-card">
-        <div v-if="!isAas" class="setting-item">
+        <div class="setting-item">
           <div class="setting-header">
             <div class="setting-label">
               <Icon icon="tabler/volume" class="setting-icon" />
@@ -28,6 +28,7 @@
               <span class="db">{{ displayDb }}</span>
             </div>
           </div>
+          <p v-if="isAas && limitNote" class="aas-note">{{ limitNote }}</p>
         </div>
 
         <div class="setting-item" :title="headphoneVolumeAvailable ? `Headphone volume control: ${headphoneVolumeControlType}` : 'Your sound card doesn\'t support headphones'">
@@ -157,7 +158,7 @@ import { getSystemInfo, type SystemInfo } from '@/api/system'
 import { getHeadphoneControls, getHeadphoneVolume, setHeadphoneVolume } from '@/api/volume'
 import { settingsToMatrix, matrixToSettings, type AudioMode } from '@/helpers/mixing_matrix'
 import { useAudioServerStore } from '@/stores/audio-server'
-import { getPlugins, setPluginParams, getMatrix, putMatrix, isAasError, type AasPlugin } from '@/api/aas'
+import { getPlugins, setPluginParams, getMatrix, putMatrix, getOutput, setOutputLimit, isAasError, type AasPlugin } from '@/api/aas'
 import { modeToMatrix, matrixToMode } from '@/helpers/aas_matrix'
 import { findBalancePlugin } from '@/helpers/aas_balance'
 
@@ -170,7 +171,48 @@ const modeNote = ref<string>('')
 const aasBalancePlugin = ref<AasPlugin | null>(null)
 const UNREACHABLE = 'The aas audio server cannot be reached.'
 
+// Under aas the volume limit is the master's limit_db: a gain aas applies itself,
+// so no player gets around it through the card's volume control.
+const limitNote = ref<string>('')
+const LIMIT_COST = 'While a limit is set, DSD (DoP) does not play and nothing is bit-perfect.'
+
+function showAasLimit(db: number) {
+  volumeLimitDb.value = db
+  volumeLimitPercent.value = Math.round(dbToPercent(db))
+  volumeAvailable.value = true
+  limitNote.value = db < 0 ? LIMIT_COST : ''
+}
+
+async function loadAasLimit() {
+  const output = await getOutput(1)
+  if (!output || isAasError(output)) {
+    limitNote.value = UNREACHABLE
+    volumeAvailable.value = false
+  } else if (typeof output.limit_db !== 'number') {
+    limitNote.value = 'This version of aas has no volume limit. Update aas to set one.'
+    volumeAvailable.value = false
+  } else {
+    showAasLimit(output.limit_db)
+  }
+}
+
+async function setLimitAas(db: number) {
+  const previous = volumeLimitDb.value ?? 0
+  volumeLimitDb.value = db
+  const result = await setOutputLimit(db)
+  if (!result || isAasError(result)) {
+    if (result) console.error('Failed to set the volume limit:', result.error, result.message)
+    // aas still has the limit it had: show that one again.
+    showAasLimit(previous)
+    limitNote.value = `The volume limit could not be changed. ${limitNote.value}`.trim()
+    return
+  }
+  showAasLimit(typeof result.limit_db === 'number' ? result.limit_db : db)
+}
+
 async function loadAas() {
+  await loadAasLimit()
+
   const plugins = await getPlugins()
   if (isAasError(plugins)) {
     balanceNote.value = UNREACHABLE
@@ -238,7 +280,8 @@ async function setBalanceAas(balance: number) {
 // Local UI state for volume limit (0-100%)
 const volumeLimitPercent = ref<number>(100)
 const volumeLimitDb = ref<number | null>(null)
-const volumeAvailable = ref<boolean>(true)
+// Under aas the control stays disabled until aas's data has loaded.
+const volumeAvailable = ref<boolean>(!isAas.value)
 
 // Convert percentage (0-100) to dB (-60 to 0)
 // 0% = -60dB, 100% = 0dB
@@ -262,7 +305,9 @@ const systemInfo = ref<SystemInfo | null>(null)
 
 // Convert percentage to attenuation in dB (linear mapping)
 const displayDb = computed(() => {
-  const db = percentToDb(volumeLimitPercent.value)
+  // Under aas the limit is shown as aas has it, which a 1 % step may not reach.
+  const db =
+    isAas.value && volumeLimitDb.value !== null ? volumeLimitDb.value : percentToDb(volumeLimitPercent.value)
   const rounded = Math.round(db * 10) / 10 // 0.1 dB precision
   return `${rounded.toFixed(1)} dB`
 })
@@ -285,8 +330,10 @@ async function onSliderChange(newVal: number) {
   const pct = Math.round(newVal)
   volumeLimitPercent.value = pct
 
-  // Convert percentage to dB and update PipeWire master gain
   const db = percentToDb(pct)
+  if (isAas.value) return setLimitAas(db)
+
+  // Update the PipeWire master gain
 
   try {
     console.log(`Setting master gain to ${db} dB (${pct}%)`)

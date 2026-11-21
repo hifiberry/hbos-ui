@@ -97,3 +97,16 @@ export const setPluginParams = (id: string, params: Record<string, number>) =>
 export const getMatrix = () => request<AasMatrix>('/matrix')
 
 export const putMatrix = (matrix: AasMatrix) => request<unknown>('/matrix', jsonInit('PUT', matrix))
+
+/** An output as `GET /outputs/N` gives it. `limit_db` is on the master only, and only from an aas that has the limit (after 0.2.0). */
+export interface AasOutput {
+  id: number
+  volume?: number
+  limit_db?: number
+}
+
+export const getOutput = (id: number) => request<AasOutput>(`/outputs/${id}`)
+
+/** The master's volume limit, -60 to 0 dB: a ceiling no player gets around. */
+export const setOutputLimit = (db: number) =>
+  request<AasOutput>('/outputs/1', jsonInit('PATCH', { limit_db: db }))

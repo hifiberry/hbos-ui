@@ -53,7 +53,7 @@ describe('collectAasWarnings', () => {
     const w = await collectAasWarnings()
     expect(w).toHaveLength(2)
     expect(w[0]).toMatch(/input processor/)
-    expect(w[1]).toMatch(/volume limit/)
+    expect(w[1]).toBe('The volume limit of -6 dB is not carried over: set it again under Sound, General')
   })
 
   it('leaves out a check that fails', async () => {

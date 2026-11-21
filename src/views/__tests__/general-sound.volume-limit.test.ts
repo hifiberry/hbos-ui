@@ -64,13 +64,37 @@ describe('the volume limit on the general sound page', () => {
 
   it('under aas sets the limit on the master, not in PipeWire', async () => {
     getOutput.mockResolvedValue({ id: 1, limit_db: 0 })
-    setOutputLimit.mockResolvedValue({ id: 1, limit_db: -30 })
+    setOutputLimit.mockResolvedValue({ id: 1, limit_db: -29.4 })
     const w = await mountUnder('aas')
     limitSlider(w).vm.$emit('click:progress', 50)
     await flushPromises()
     expect(setOutputLimit).toHaveBeenCalledWith(-30)
     expect(setSpeakerEQMasterGain).not.toHaveBeenCalled()
-    expect(limitSlider(w).props('value')).toBe(50)
+    // What aas answers is what the page shows.
+    expect(limitSlider(w).props('value')).toBe(51)
+    expect(w.text()).toContain('-29.4 dB')
+  })
+
+  it('under aas shows the limit in dB as aas has it, not from the rounded percentage', async () => {
+    getOutput.mockResolvedValue({ id: 1, limit_db: -12.5 })
+    const w = await mountUnder('aas')
+    expect(w.text()).toContain('-12.5 dB')
+  })
+
+  it('under aas drops the note once the limit is lifted', async () => {
+    getOutput.mockResolvedValue({ id: 1, limit_db: -6 })
+    setOutputLimit.mockResolvedValue({ id: 1, limit_db: 0 })
+    const w = await mountUnder('aas')
+    limitSlider(w).vm.$emit('click:progress', 100)
+    await flushPromises()
+    expect(w.text()).not.toMatch(/DSD/)
+  })
+
+  it('under aas, a body that is not an output counts as aas not answering', async () => {
+    getOutput.mockResolvedValue(null)
+    const w = await mountUnder('aas')
+    expect(limitSlider(w).props('disabled')).toBe(true)
+    expect(w.text()).toContain('cannot be reached')
   })
 
   it('under aas says what a limit costs while one is set', async () => {
@@ -99,14 +123,17 @@ describe('the volume limit on the general sound page', () => {
     expect(limitSlider(w).props('disabled')).toBe(true)
   })
 
-  it('under aas a refused change disables the control and says so', async () => {
-    getOutput.mockResolvedValue({ id: 1, limit_db: 0 })
+  it('under aas a refused change goes back to the limit aas still has, and says so', async () => {
+    getOutput.mockResolvedValue({ id: 1, limit_db: -12 })
     setOutputLimit.mockResolvedValue({ error: 'HTTP 422', message: 'no' })
     const w = await mountUnder('aas')
     limitSlider(w).vm.$emit('click:progress', 50)
     await flushPromises()
-    expect(limitSlider(w).props('disabled')).toBe(true)
+    expect(limitSlider(w).props('value')).toBe(80)
+    expect(w.text()).toContain('-12.0 dB')
     expect(w.text()).toMatch(/could not be changed/)
+    expect(w.text()).toMatch(/DSD/)
+    expect(limitSlider(w).props('disabled')).toBe(false)
   })
 
   it('under PipeWire still uses the speaker EQ master gain', async () => {

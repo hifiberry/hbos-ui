@@ -56,6 +56,15 @@ describe('collectAasWarnings', () => {
     expect(w[1]).toBe('The volume limit of -6 dB is not carried over: set it again under Sound, General')
   })
 
+  it('names a fractional limit to one decimal, and leaves out one that rounds to 0 dB', async () => {
+    m.getSpeakerEQMasterGain.mockResolvedValue({ gain: -12.345 })
+    expect(await collectAasWarnings()).toEqual([
+      'The volume limit of -12.3 dB is not carried over: set it again under Sound, General',
+    ])
+    m.getSpeakerEQMasterGain.mockResolvedValue({ gain: -0.04 })
+    expect(await collectAasWarnings()).toEqual([])
+  })
+
   it('leaves out a check that fails', async () => {
     m.getSystemInfo.mockRejectedValue(new Error('down'))
     m.getSystemdServiceStatus.mockRejectedValue(new Error('down'))

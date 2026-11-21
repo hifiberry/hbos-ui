@@ -185,7 +185,7 @@ function showAasLimit(db: number) {
 
 async function loadAasLimit() {
   const output = await getOutput(1)
-  if (isAasError(output)) {
+  if (!output || isAasError(output)) {
     limitNote.value = UNREACHABLE
     volumeAvailable.value = false
   } else if (typeof output.limit_db !== 'number') {
@@ -197,11 +197,14 @@ async function loadAasLimit() {
 }
 
 async function setLimitAas(db: number) {
+  const previous = volumeLimitDb.value ?? 0
+  volumeLimitDb.value = db
   const result = await setOutputLimit(db)
-  if (isAasError(result)) {
-    console.error('Failed to set the volume limit:', result.error, result.message)
-    limitNote.value = 'The volume limit could not be changed.'
-    volumeAvailable.value = false
+  if (!result || isAasError(result)) {
+    if (result) console.error('Failed to set the volume limit:', result.error, result.message)
+    // aas still has the limit it had: show that one again.
+    showAasLimit(previous)
+    limitNote.value = `The volume limit could not be changed. ${limitNote.value}`.trim()
     return
   }
   showAasLimit(typeof result.limit_db === 'number' ? result.limit_db : db)
@@ -302,7 +305,9 @@ const systemInfo = ref<SystemInfo | null>(null)
 
 // Convert percentage to attenuation in dB (linear mapping)
 const displayDb = computed(() => {
-  const db = percentToDb(volumeLimitPercent.value)
+  // Under aas the limit is shown as aas has it, which a 1 % step may not reach.
+  const db =
+    isAas.value && volumeLimitDb.value !== null ? volumeLimitDb.value : percentToDb(volumeLimitPercent.value)
   const rounded = Math.round(db * 10) / 10 // 0.1 dB precision
   return `${rounded.toFixed(1)} dB`
 })

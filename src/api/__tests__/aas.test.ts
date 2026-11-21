@@ -55,7 +55,7 @@ describe('aas api', () => {
 
   it('setOutputLimit PATCHes the master with {limit_db}', async () => {
     apiFetch.mockResolvedValue(ok({ id: 1, limit_db: -12 }))
-    await setOutputLimit(-12)
+    expect(await setOutputLimit(-12)).toEqual({ id: 1, limit_db: -12 })
     const [url, init] = apiFetch.mock.calls[0]
     expect(url).toBe('http://dev/api/aas/v1/outputs/1')
     expect(init.method).toBe('PATCH')

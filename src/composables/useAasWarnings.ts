@@ -22,8 +22,9 @@ export const collectAasWarnings = async (): Promise<string[]> => {
   // aas has a volume limit of its own, but PipeWire's is not copied into it.
   const pipewireLimit = async () => {
     const r = await getSpeakerEQMasterGain()
-    if ('error' in r || !(r.gain < 0)) return null
+    if ('error' in r) return null
     const db = Math.round(r.gain * 10) / 10
+    if (!(db < 0)) return null
     return `The volume limit of ${db} dB is not carried over: set it again under Sound, General`
   }
 

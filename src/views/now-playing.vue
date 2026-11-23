@@ -124,21 +124,47 @@ const tooltipStyles = computed(() => {
 </script>
 
 <style lang="scss">
+// Height of everything but the cover on a short screen (max-height: 600px):
+// main's padding, the card's padding, track info, controls, volume and their
+// margins. Measured at 800x480 and 1024x600.
+$short-screen-chrome: 314px;
+$short-screen-chrome-bottom-nav: 370px;
+
 .now-playing {
   display: flex;
   flex-direction: column;
   min-width: 100%;
   height: 100%;
+  min-height: 0;
+  max-height: 100%;
+
+  // Short screens: grow past the viewport so a 120px cover can scroll in main.
+  @media (max-height: 600px) {
+    height: auto;
+    min-height: 100%;
+    max-height: none;
+  }
 
   &__page-content {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    min-height: 0;
+    height: 100%;
 
     .content {
       display: flex;
       flex-direction: column;
       flex-grow: 1;
+      min-height: 0;
+      height: 100%;
+    }
+
+    // Drop the page heading on short displays (e.g. 5" kiosk).
+    .titleHintLink {
+      @media (max-height: 600px) {
+        display: none;
+      }
     }
   }
 
@@ -153,9 +179,16 @@ const tooltipStyles = computed(() => {
     background-color: var(--background-main-content);
     box-shadow: $box-shadow-main-content;
     position: relative;
+    min-height: 0;
+    max-height: 100%;
 
     @include media-down(sm) {
       padding-top: 24px;
+    }
+
+    @media (max-height: 600px) {
+      padding-top: 24px;
+      max-height: none;
     }
   }
 
@@ -175,6 +208,10 @@ const tooltipStyles = computed(() => {
 
     @include media-down(sm) {
       margin-bottom: 24px;
+    }
+
+    @media (max-height: 600px) {
+      max-height: none;
     }
   }
 
@@ -198,6 +235,37 @@ const tooltipStyles = computed(() => {
       margin-bottom: 24px;
     }
 
+    @media (max-height: 600px) {
+      // Bound the cover by the screen, not by the image: with no bound, the
+      // square box takes the image's pixel size (a 600px cover filled an
+      // 800x480 screen). The bound leaves room for the title, controls and
+      // volume below; min-height: 120px still wins on the smallest screens,
+      // where main scrolls instead.
+      max-height: calc(100dvh - #{$short-screen-chrome});
+      flex: 1 1 auto;
+      margin-bottom: 14px;
+
+      // Below lg the navigation is a bar at the bottom, inside main's padding.
+      @include media-down(lg) {
+        max-height: calc(100dvh - #{$short-screen-chrome-bottom-nav});
+      }
+    }
+
+    // Phone portrait: large square cover, centred, filling the card width.
+    @media (orientation: portrait) {
+      @include media-down(sm) {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: 100%;
+        min-height: 0;
+        flex: 0 1 auto;
+        align-self: center;
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+    }
+
     .now-playing__cover {
       height: 100%;
       width: 100%;
@@ -215,6 +283,17 @@ const tooltipStyles = computed(() => {
     text-align: center;
     font-size: 18px;
     margin-bottom: 20px; /* Add space between track info and controls */
+
+    @media (orientation: portrait) {
+      @include media-down(sm) {
+        // So cover auto margins can centre it in the leftover space.
+        margin-top: 0;
+      }
+    }
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
+    }
 
     // Larger font sizes for ultra-wide screens (>2000px)
     @media (min-width: 2000px) {
@@ -250,6 +329,10 @@ const tooltipStyles = computed(() => {
 
   &__audio-controls {
     margin-bottom: 20px;
+
+    @media (max-height: 600px) {
+      margin-bottom: 12px;
+    }
   }
 
   &__volume {
@@ -265,6 +348,11 @@ const tooltipStyles = computed(() => {
 
     @include media-down(md) {
       width: 100%; /* Keep at 100% on mobile */
+    }
+
+    @media (max-height: 600px) {
+      // Keep a little air above the card’s bottom padding.
+      margin-bottom: 12px;
     }
   }
 }

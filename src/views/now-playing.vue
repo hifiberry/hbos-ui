@@ -124,6 +124,12 @@ const tooltipStyles = computed(() => {
 </script>
 
 <style lang="scss">
+// Height of everything but the cover on a short screen (max-height: 600px):
+// main's padding, the card's padding, track info, controls, volume and their
+// margins. Measured at 800x480 and 1024x600.
+$short-screen-chrome: 314px;
+$short-screen-chrome-bottom-nav: 370px;
+
 .now-playing {
   display: flex;
   flex-direction: column;
@@ -230,10 +236,19 @@ const tooltipStyles = computed(() => {
     }
 
     @media (max-height: 600px) {
-      // Keep min-height: 120px; let main scroll instead of shrinking the cover.
-      max-height: none;
+      // Bound the cover by the screen, not by the image: with no bound, the
+      // square box takes the image's pixel size (a 600px cover filled an
+      // 800x480 screen). The bound leaves room for the title, controls and
+      // volume below; min-height: 120px still wins on the smallest screens,
+      // where main scrolls instead.
+      max-height: calc(100dvh - #{$short-screen-chrome});
       flex: 1 1 auto;
       margin-bottom: 14px;
+
+      // Below lg the navigation is a bar at the bottom, inside main's padding.
+      @include media-down(lg) {
+        max-height: calc(100dvh - #{$short-screen-chrome-bottom-nav});
+      }
     }
 
     // Phone portrait: large square cover, centred, filling the card width.

@@ -73,6 +73,22 @@ const router = createRouter({
               component: () => import('@/views/library/radio.vue'),
             },
             {
+              path: 'podcasts',
+              component: () => import('@/views/router-view.vue'),
+              children: [
+                {
+                  path: '',
+                  name: 'podcasts',
+                  component: () => import('@/views/library/podcasts.vue'),
+                },
+                {
+                  path: ':podcastId',
+                  name: 'podcast',
+                  component: () => import('@/views/library/podcast.vue'),
+                },
+              ],
+            },
+            {
               path: 'genres',
               component: () => import('@/views/router-view.vue'),
               children: [

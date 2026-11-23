@@ -119,6 +119,11 @@ const routes = computed(() => {
           title: 'Radio',
           icon: 'radio-wave',
         },
+        {
+          name: 'podcasts',
+          title: 'Podcasts',
+          icon: 'tabler/podcast',
+        },
       ],
     },
     {

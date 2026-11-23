@@ -39,6 +39,23 @@
           @click="playStation" />
       </div>
     </ContentBox>
+
+    <ContentBox class="libaryContentBox">
+      <div class="libaryCard">
+        <div class="title">
+          <h2>Podcasts</h2>
+          <router-link :to="{ name: 'podcasts' }" class="text-link">View All</router-link>
+        </div>
+
+        <div v-if="subscriptionsList.length === 0" class="empty-state">
+          <Icon icon="tabler/podcast" class="empty-icon" />
+          <p>No podcast subscriptions yet</p>
+        </div>
+
+        <PosterGrid v-else :loading="false" :loaded="true" :items="subscribedPodcastsForDisplay" in-row
+          @click="(podcast) => router.push({ name: 'podcast', params: { podcastId: podcast.$id } })" />
+      </div>
+    </ContentBox>
   </PageContent>
 </template>
 
@@ -89,6 +106,21 @@ const playStation = async (station: { $id?: string }) => {
   }
 }
 
+import { usePodcastStore, type PodcastSubscription } from '@/stores/podcast'
+const podcastStore = usePodcastStore()
+const { subscriptionsList } = storeToRefs(podcastStore)
+
+// Convert podcast subscriptions to poster grid format
+const subscribedPodcastsForDisplay = computed(() => {
+  return subscriptionsList.value.map((podcast: PodcastSubscription) => ({
+    $id: podcast.id,
+    $title: podcast.title,
+    $subtitle: podcast.author || 'Podcast',
+    $note: podcast.genre || '',
+    $cover_src: podcast.image || ''
+  }))
+})
+
 import { useAlbumStore } from '@/stores/album'
 import PosterGrid from '@/components/PosterGrid.vue'
 import Icon from '@/components/Icon.vue'
@@ -104,7 +136,7 @@ onMounted(async () => {
   await libraryStore.getAvailableLibrary()
   getArtists()
   getAlbums()
-  await radioStore.initialize()
+  await Promise.all([radioStore.initialize(), podcastStore.initialize()])
 })
 </script>
 

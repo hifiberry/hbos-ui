@@ -6,7 +6,7 @@ vi.mock('@/stores/appconfig', () => ({
   useAppConfigStore: () => ({ getAasApiBaseUrl: () => 'http://dev/api/aas/v1' }),
 }))
 
-import { getState, getPlugins, setPluginParams, getMatrix, putMatrix, getOutput, setOutputLimit } from '@/api/aas'
+import { getState, getPlugins, setPluginParams, getMatrix, putMatrix, getOutput, setOutputLimit, getSettings, getAes67, getAes67Streams, setAes67Input, isAasError } from '@/api/aas'
 
 const ok = (body: unknown) => ({ ok: true, status: 200, json: async () => body })
 
@@ -70,5 +70,33 @@ describe('aas api', () => {
   it('returns an ApiError when the request throws', async () => {
     apiFetch.mockRejectedValue(new Error('unreachable'))
     expect(await getState()).toEqual({ error: 'Network Error', message: 'unreachable' })
+  })
+
+  it('getSettings, getAes67 and getAes67Streams GET their paths', async () => {
+    apiFetch.mockResolvedValue(ok({ latency_ms: 40 }))
+    expect(await getSettings()).toEqual({ latency_ms: 40 })
+    await getAes67()
+    await getAes67Streams()
+    expect(apiFetch.mock.calls.map((c) => c[0])).toEqual([
+      'http://dev/api/aas/v1/settings',
+      'http://dev/api/aas/v1/aes67',
+      'http://dev/api/aas/v1/aes67/streams',
+    ])
+  })
+
+  it('getAes67 gives an ApiError on 404 (aas without AES67)', async () => {
+    apiFetch.mockResolvedValue({ ok: false, status: 404, json: async () => ({ message: 'no aes67' }) })
+    const r = await getAes67()
+    expect(isAasError(r)).toBe(true)
+    expect(r).toEqual({ error: 'HTTP 404', message: 'no aes67' })
+  })
+
+  it('setAes67Input PATCHes /aes67/input with the patch', async () => {
+    apiFetch.mockResolvedValue(ok({}))
+    await setAes67Input({ enabled: true, stream: null, latency_ms: 'auto' })
+    const [url, init] = apiFetch.mock.calls[0]
+    expect(url).toBe('http://dev/api/aas/v1/aes67/input')
+    expect(init.method).toBe('PATCH')
+    expect(JSON.parse(init.body)).toEqual({ enabled: true, stream: null, latency_ms: 'auto' })
   })
 })

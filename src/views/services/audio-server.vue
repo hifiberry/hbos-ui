@@ -101,7 +101,112 @@
         </p>
         <p v-if="latencyError" class="latency-note red" data-test="latency-error">{{ latencyError }}</p>
       </section>
+
+      <section v-if="running === 'aas' && aasSettings" class="aas-section" data-test="aes67-section">
+        <h3>AES67</h3>
+        <p v-if="aes67Unavailable" class="not-available" data-test="aes67-unavailable">
+          AES67 is not available on this device: it needs aas with AES67 and a wired network connection.
+        </p>
+        <p v-else-if="aes67Error" class="server-warnings">Could not read AES67: {{ aes67Error }}</p>
+        <template v-else-if="aes67">
+          <div class="aes67-row">
+            <span>Receive an AES67 stream</span>
+            <ToggleSwitch
+              :key="`enabled-${aes67Loads}`"
+              :model-value="aes67.enabled"
+              :disabled="aes67Busy"
+              :loading="aes67Busy"
+              data-test="aes67-enabled"
+              @update:model-value="(enabled: boolean) => changeAes67({ enabled })"
+            />
+          </div>
+          <div class="aes67-row">
+            <label for="aes67-stream">Stream</label>
+            <select
+              id="aes67-stream"
+              :key="`stream-${aes67Loads}`"
+              :value="aes67.stream ?? ''"
+              :disabled="aes67Busy"
+              data-test="aes67-stream"
+              @change="selectStream"
+            >
+              <option v-if="aes67.stream === null" value="" disabled>No stream chosen</option>
+              <option v-if="unannouncedStream" :value="unannouncedStream">
+                {{ unannouncedStream }} (not announced)
+              </option>
+              <option v-for="name in aes67Streams" :key="name" :value="name">{{ name }}</option>
+            </select>
+          </div>
+          <p data-test="aes67-latency-current">
+            AES67 latency: <strong>{{ aes67LatencyLabel }}</strong>
+          </p>
+          <div class="latency-row">
+            <input
+              v-model="aes67LatencyInput"
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              class="latency-input"
+              aria-label="AES67 latency in ms"
+              :placeholder="aes67AutomaticLabel"
+              :disabled="aes67Busy"
+              data-test="aes67-latency-input"
+            />
+            <span>ms</span>
+            <button
+              class="action-button"
+              :disabled="aes67Busy || typedAes67Latency === null"
+              data-test="aes67-latency-save"
+              @click="setAes67Latency"
+            >
+              Set
+            </button>
+            <button
+              class="action-button"
+              :disabled="aes67Busy || aes67.latency_auto"
+              data-test="aes67-latency-auto"
+              @click="changeAes67({ latency_ms: 'auto' })"
+            >
+              Automatic
+            </button>
+          </div>
+          <p v-if="aes67Note" class="latency-note" :class="aes67Note.level" data-test="aes67-latency-note">
+            {{ aes67Note.text }}
+          </p>
+          <p class="section-hint">
+            The AES67 latency includes the card's buffer: a lower card latency lowers the least it can hold.
+          </p>
+          <p class="section-hint">AES67 changes apply at once, without restarting aas.</p>
+        </template>
+      </section>
+
+      <section v-if="running === 'aas' && aasSettings" class="aas-section">
+        <h3>Recommended for this board</h3>
+        <p class="section-hint">
+          Puts the latency{{ aes67 ? ' and the AES67 latency' : '' }} back to this board's values.
+        </p>
+        <button
+          class="action-button"
+          :disabled="latencyBusy || aes67Busy"
+          data-test="recommended"
+          @click="showRecommendedConfirmation = true"
+        >
+          Recommended for this board
+        </button>
+      </section>
     </div>
+
+    <ConfirmationDialog
+      :is-open="showRecommendedConfirmation"
+      title="Recommended for this board"
+      :message="recommendedConfirmationMessage"
+      confirm-button-text="Apply"
+      cancel-button-text="Cancel"
+      icon="tabler/adjustments"
+      @close="showRecommendedConfirmation = false"
+      @confirm="applyRecommended"
+    />
 
     <ConfirmationDialog
       :is-open="showLatencyConfirmation"
@@ -148,13 +253,22 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import { useToastStore } from '@/stores/toast'
 import { useAudioServerStore } from '@/stores/audio-server'
 import { useAasWarnings } from '@/composables/useAasWarnings'
 import { rebootSystem } from '@/api/system'
 import { getAasLatency, setAasLatency, type AudioServerName } from '@/api/audio-server'
-import { getSettings, isAasError, type AasSettings } from '@/api/aas'
-import { cardLatencyNote, validLatency } from '@/composables/useLatencyNotes'
+import {
+  getAes67,
+  getAes67Streams,
+  getSettings,
+  isAasError,
+  setAes67Input,
+  type AasSettings,
+  type Aes67Input,
+} from '@/api/aas'
+import { aes67LatencyNote, cardLatencyNote, validLatency } from '@/composables/useLatencyNotes'
 
 const toastStore = useToastStore()
 const store = useAudioServerStore()
@@ -172,7 +286,7 @@ const reload = async () => {
   loading.value = true
   try {
     await store.load()
-    if (running.value === 'aas') await loadLatency()
+    if (running.value === 'aas') await Promise.all([loadLatency(), loadAes67(true)])
   } finally {
     loading.value = false
   }
@@ -405,6 +519,126 @@ const confirmLowLatency = async () => {
   pendingLowLatency.value = null
   if (latency !== null) await saveLatency(latency)
 }
+
+// --- AES67 input: same gate as the latency. --------------------------------
+// Every change goes to aas at once (no restart); after each one the page
+// reloads `GET /aes67` and shows what aas holds, whether the change took or not.
+
+type Aes67Patch = Parameters<typeof setAes67Input>[0]
+
+const aes67 = ref<Aes67Input | null>(null)
+/** `GET /aes67` answered 404: this aas has no AES67. */
+const aes67Unavailable = ref(false)
+const aes67Error = ref<string | null>(null)
+/** The announced streams that can be selected, by name. */
+const aes67Streams = ref<string[]>([])
+const aes67Busy = ref(false)
+/** What the AES67 latency input holds: a number, or '' when empty (Automatic). */
+const aes67LatencyInput = ref<number | string>('')
+/**
+ * Counts loads. The switch and the select are keyed on it: after a refused
+ * change aas holds the same value as before, which Vue would not patch back
+ * over what the user clicked.
+ */
+const aes67Loads = ref(0)
+
+const loadAes67Streams = async () => {
+  const result = await getAes67Streams()
+  aes67Streams.value = isAasError(result) ? [] : result.filter((s) => s.selectable).map((s) => s.name)
+}
+
+const loadAes67 = async (withStreams: boolean) => {
+  const result = await getAes67()
+  if (isAasError(result)) {
+    aes67.value = null
+    aes67Unavailable.value = result.error === 'HTTP 404'
+    aes67Error.value = aes67Unavailable.value ? null : result.message
+    return
+  }
+  aes67Unavailable.value = false
+  aes67Error.value = null
+  aes67.value = result.input
+  aes67Loads.value += 1
+  aes67LatencyInput.value = result.input.latency_auto ? '' : result.input.latency_ms
+  if (withStreams) await loadAes67Streams()
+}
+
+/** A chosen stream that is no longer announced stays shown and selected. */
+const unannouncedStream = computed(() => {
+  const stream = aes67.value?.stream
+  return stream && !aes67Streams.value.includes(stream) ? stream : null
+})
+
+/** Automatic plays at the board's value, but never below the floor a playing stream holds. */
+const aes67AutomaticLabel = computed(() => {
+  const input = aes67.value
+  if (!input) return 'Automatic'
+  const ms = Math.max(input.latency_ms, input.latency_floor_ms ?? input.latency_ms)
+  return `Automatic (${ms} ms)`
+})
+
+const aes67LatencyLabel = computed(() =>
+  aes67.value?.latency_auto ? aes67AutomaticLabel.value : `${aes67.value?.latency_ms} ms`,
+)
+
+const typedAes67Latency = computed(() => {
+  const value = aes67LatencyInput.value
+  if (typeof value === 'string' && value.trim() === '') return null
+  return validLatency(typeof value === 'number' ? value : Number(value))
+})
+
+/** For a number only: the input is empty while Automatic, so Automatic shows no note. */
+const aes67Note = computed(() =>
+  typedAes67Latency.value === null
+    ? null
+    : aes67LatencyNote(typedAes67Latency.value, aes67.value?.latency_floor_ms),
+)
+
+/** Sends one change to aas, then shows what aas holds; the streams too after turning it on. */
+const changeAes67 = async (patch: Aes67Patch) => {
+  aes67Busy.value = true
+  try {
+    const result = await setAes67Input(patch)
+    const ok = !isAasError(result)
+    if (!ok) toastStore.showErrorToast(`Could not change AES67: ${result.message}`)
+    await loadAes67(ok && patch.enabled === true)
+  } finally {
+    aes67Busy.value = false
+  }
+}
+
+const selectStream = (event: Event) => {
+  const stream = (event.target as HTMLSelectElement).value
+  if (stream && stream !== aes67.value?.stream) void changeAes67({ stream })
+}
+
+const setAes67Latency = () => {
+  const latency = typedAes67Latency.value
+  if (latency !== null) void changeAes67({ latency_ms: latency })
+}
+
+// --- Recommended for this board. -------------------------------------------
+// The AES67 latency goes first: aas keeps it in its state file, so the
+// restart the card latency causes does not lose it. A card latency that is
+// already the default is not saved again, so aas does not restart.
+
+const showRecommendedConfirmation = ref(false)
+
+const recommendedConfirmationMessage = computed(() => {
+  const lines = [`Latency: ${recommendedLatencyLabel.value}`]
+  if (aes67.value) lines.push('AES67 latency: Automatic')
+  const restart =
+    savedLatency.value === null && savedLatencyError.value === null
+      ? ''
+      : '\n\nSaving the latency restarts aas: the sound stops for a moment.'
+  return `Sets the values recommended for this board:\n\n${lines.join('\n')}${restart}`
+})
+
+const applyRecommended = async () => {
+  showRecommendedConfirmation.value = false
+  if (aes67.value) await changeAes67({ latency_ms: 'auto' })
+  if (savedLatency.value !== null || savedLatencyError.value !== null) await saveLatency(null)
+}
 </script>
 
 <style scoped lang="scss">
@@ -460,6 +694,14 @@ const confirmLowLatency = async () => {
 
     .latency-input {
       width: 6em;
+    }
+
+    .aes67-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 12px 0;
     }
 
     .latency-note.amber {

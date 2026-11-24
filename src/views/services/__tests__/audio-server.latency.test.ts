@@ -5,6 +5,7 @@ import { ref } from 'vue'
 
 const m = vi.hoisted(() => ({
   getSettings: vi.fn(),
+  getAes67: vi.fn(),
   getAasLatency: vi.fn(),
   setAasLatency: vi.fn(),
   store: null as unknown as Record<string, unknown>,
@@ -12,6 +13,9 @@ const m = vi.hoisted(() => ({
 
 vi.mock('@/api/aas', () => ({
   getSettings: m.getSettings,
+  getAes67: m.getAes67,
+  getAes67Streams: vi.fn(),
+  setAes67Input: vi.fn(),
   isAasError: (x: unknown) => typeof x === 'object' && x !== null && 'error' in x,
 }))
 vi.mock('@/api/audio-server', () => ({
@@ -75,6 +79,8 @@ describe('audio server page: card latency', () => {
     vi.clearAllMocks()
     setStore('aas')
     m.getSettings.mockResolvedValue(settings(5))
+    // Without AES67: its section is audio-server.aes67.test.ts's.
+    m.getAes67.mockResolvedValue({ error: 'HTTP 404', message: 'Not Found' })
     m.getAasLatency.mockResolvedValue({ latency_ms: null })
     m.setAasLatency.mockImplementation(async (v: number | null) => ({ latency_ms: v, restarted: true }))
   })

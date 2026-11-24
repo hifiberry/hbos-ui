@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
@@ -97,6 +97,61 @@ describe('audio server page: AES67', () => {
     m.getAes67.mockResolvedValue(input())
     m.getAes67Streams.mockResolvedValue([])
     m.setAes67Input.mockResolvedValue({})
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const aes67Controls = (wrapper: Wrapper) => [
+    wrapper.find('[data-test="aes67-enabled"] input'),
+    wrapper.find('[data-test="aes67-stream"]'),
+    wrapper.find('[data-test="aes67-latency-save"]'),
+    wrapper.find('[data-test="aes67-latency-auto"]'),
+  ]
+
+  it('holds AES67 while aas restarts, then reloads it', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    m.setAasLatency.mockImplementation(async (v: number | null) => ({ latency_ms: v, restarted: true }))
+    m.getAes67.mockResolvedValue(input({ latency_auto: false, latency_ms: 9 }))
+    const wrapper = await mountPage()
+    m.getAes67.mockClear()
+    m.getAes67Streams.mockClear()
+    m.getSettings.mockReset()
+    m.getSettings
+      .mockResolvedValueOnce({ error: 'Network Error', message: 'Failed to fetch' })
+      .mockResolvedValue({ latency_ms: 6, latency_recommended_ms: 5, latency_min_ms: 3 })
+
+    await wrapper.find('[data-test="latency-input"]').setValue('6')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await flushPromises()
+    for (const control of aes67Controls(wrapper)) {
+      expect(control.attributes('disabled')).toBeDefined()
+    }
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(m.getAes67).not.toHaveBeenCalled()
+
+    m.getAes67.mockResolvedValue(input({ latency_auto: false, latency_ms: 9, latency_floor_ms: 8 }))
+    m.getAes67Streams.mockResolvedValue([{ name: 'a', selectable: true }])
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+    expect(wrapper.find('[data-test="latency-restarting"]').exists()).toBe(false)
+    expect(m.getAes67).toHaveBeenCalledTimes(1)
+    expect(m.getAes67Streams).toHaveBeenCalledTimes(1)
+    expect(options(wrapper).map((o) => o.text())).toEqual(['a'])
+    expect(wrapper.find('[data-test="aes67-enabled"] input').attributes('disabled')).toBeUndefined()
+    expect(wrapper.find('[data-test="aes67-latency-auto"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('retries reading AES67', async () => {
+    m.getAes67.mockResolvedValue({ error: 'HTTP 500', message: 'busy' })
+    const wrapper = await mountPage()
+    expect(section(wrapper).text()).toContain('Could not read AES67: busy')
+    m.getAes67.mockResolvedValue(input())
+    await wrapper.find('[data-test="aes67-retry"]').trigger('click')
+    await flushPromises()
+    expect(m.getAes67).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('[data-test="aes67-enabled"]').exists()).toBe(true)
   })
 
   it('shows the no-AES67 note on 404', async () => {
@@ -233,6 +288,7 @@ describe('audio server page: AES67', () => {
   })
 
   it('recommended leaves a latency that is already the default', async () => {
+    const successToast = vi.spyOn(useToastStore(), 'showSuccessToast')
     m.getAasLatency.mockResolvedValue({ latency_ms: null })
     const wrapper = await mountPage()
     await wrapper.find('[data-test="recommended"]').trigger('click')
@@ -240,6 +296,7 @@ describe('audio server page: AES67', () => {
     await flushPromises()
     expect(m.setAes67Input).toHaveBeenCalledWith({ latency_ms: 'auto' })
     expect(m.setAasLatency).not.toHaveBeenCalled()
+    expect(successToast).toHaveBeenCalledWith('Recommended values set.')
   })
 
   it('recommended sets only the card latency without AES67', async () => {

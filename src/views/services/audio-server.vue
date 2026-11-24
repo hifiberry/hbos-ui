@@ -1,5 +1,5 @@
 <template>
-  <PageContent title="Audio Server" :backrouterLink="{ name: 'system-tools' }">
+  <PageContent title="Audio Server" :backrouterLink="{ name: 'services' }">
     <div class="audio-server-content">
       <div class="audio-server-header">
         <h2>Audio Server</h2>
@@ -12,6 +12,9 @@
         </p>
         <p>
           Chosen for the next boot: <strong>{{ label(chosen) }}</strong>
+        </p>
+        <p v-if="chosen === 'aas' && running !== 'aas'" data-test="aas-not-running">
+          aas is chosen but not running right now; it may be restarting.
         </p>
         <div v-if="running !== chosen" class="reboot-pending">
           <p>The change applies after a reboot.</p>
@@ -54,7 +57,12 @@
         </div>
       </div>
 
-      <section v-if="running === 'aas' && aasSettings" class="aas-section" data-test="latency-section">
+      <div v-if="aasShown && aasSettingsError" class="not-available" data-test="aas-not-answering">
+        <p>aas is not answering right now; it may be restarting.</p>
+        <button class="action-button" :disabled="loading" data-test="aas-retry" @click="retry">Retry</button>
+      </div>
+
+      <section v-if="aasShown && aasLoaded" class="aas-section" data-test="latency-section">
         <h3>Latency</h3>
         <p class="section-hint">
           The sound card's buffer. Lower is quicker to react, higher is safer against dropouts.
@@ -65,7 +73,7 @@
         <p v-if="savedLatencyError" class="server-warnings">
           Could not read the saved latency: {{ savedLatencyError }}
         </p>
-        <p data-test="latency-running">
+        <p v-if="aasSettings" data-test="latency-running">
           aas runs at: <strong>{{ aasSettings.latency_ms }} ms</strong>
           <span v-if="runningLatencyDiffers"> (differs from the saved value)</span>
         </p>
@@ -96,25 +104,31 @@
           {{ latencyNote.text }}
         </p>
         <p class="section-hint">Saving restarts aas: the sound stops for a moment.</p>
+        <p v-if="latencyPending" data-test="latency-pending">Saved; it applies when aas next starts.</p>
         <p v-if="restarting" class="restarting" data-test="latency-restarting">
           Restarting… waiting for aas to come back.
         </p>
         <p v-if="latencyError" class="latency-note red" data-test="latency-error">{{ latencyError }}</p>
       </section>
 
-      <section v-if="running === 'aas' && aasSettings" class="aas-section" data-test="aes67-section">
+      <section v-if="aasShown && aasSettings" class="aas-section" data-test="aes67-section">
         <h3>AES67</h3>
         <p v-if="aes67Unavailable" class="not-available" data-test="aes67-unavailable">
           AES67 is not available on this device: it needs aas with AES67 and a wired network connection.
         </p>
-        <p v-else-if="aes67Error" class="server-warnings">Could not read AES67: {{ aes67Error }}</p>
+        <div v-else-if="aes67Error" class="aes67-row">
+          <p class="server-warnings">Could not read AES67: {{ aes67Error }}</p>
+          <button class="action-button" :disabled="aes67Disabled" data-test="aes67-retry" @click="retryAes67">
+            Retry
+          </button>
+        </div>
         <template v-else-if="aes67">
           <div class="aes67-row">
             <span>Receive an AES67 stream</span>
             <ToggleSwitch
               :key="`enabled-${aes67Loads}`"
               :model-value="aes67.enabled"
-              :disabled="aes67Busy"
+              :disabled="aes67Disabled"
               :loading="aes67Busy"
               data-test="aes67-enabled"
               @update:model-value="(enabled: boolean) => changeAes67({ enabled })"
@@ -126,7 +140,7 @@
               id="aes67-stream"
               :key="`stream-${aes67Loads}`"
               :value="aes67.stream ?? ''"
-              :disabled="aes67Busy"
+              :disabled="aes67Disabled"
               data-test="aes67-stream"
               @change="selectStream"
             >
@@ -150,13 +164,13 @@
               class="latency-input"
               aria-label="AES67 latency in ms"
               :placeholder="aes67AutomaticLabel"
-              :disabled="aes67Busy"
+              :disabled="aes67Disabled"
               data-test="aes67-latency-input"
             />
             <span>ms</span>
             <button
               class="action-button"
-              :disabled="aes67Busy || typedAes67Latency === null"
+              :disabled="aes67Disabled || typedAes67Latency === null"
               data-test="aes67-latency-save"
               @click="setAes67Latency"
             >
@@ -164,7 +178,7 @@
             </button>
             <button
               class="action-button"
-              :disabled="aes67Busy || aes67.latency_auto"
+              :disabled="aes67Disabled || aes67.latency_auto"
               data-test="aes67-latency-auto"
               @click="changeAes67({ latency_ms: 'auto' })"
             >
@@ -181,7 +195,7 @@
         </template>
       </section>
 
-      <section v-if="running === 'aas' && aasSettings" class="aas-section">
+      <section v-if="aasShown && aasLoaded" class="aas-section">
         <h3>Recommended for this board</h3>
         <p class="section-hint">
           Puts the latency{{ aes67 ? ' and the AES67 latency' : '' }} back to this board's values.
@@ -266,6 +280,7 @@ import {
   isAasError,
   setAes67Input,
   type AasSettings,
+  type ApiError,
   type Aes67Input,
 } from '@/api/aas'
 import { aes67LatencyNote, cardLatencyNote, validLatency } from '@/composables/useLatencyNotes'
@@ -286,13 +301,19 @@ const reload = async () => {
   loading.value = true
   try {
     await store.load()
-    if (running.value === 'aas') await Promise.all([loadLatency(), loadAes67(true)])
+    if (aasShown.value) await Promise.all([loadLatency(), loadAes67(true)])
   } finally {
     loading.value = false
   }
 }
 const retry = reload
 onMounted(reload)
+
+/**
+ * The aas sections show while aas runs or is chosen: a reload while aas
+ * restarts finds it chosen, not running, and must not hide them.
+ */
+const aasShown = computed(() => chosen.value === 'aas' || running.value === 'aas')
 
 const label = (server: AudioServerName) => (server === 'aas' ? 'aas' : 'PipeWire')
 
@@ -347,15 +368,22 @@ const executeReboot = async () => {
   }
 }
 
-// --- Card latency: only while aas runs and answers. -----------------------
+// --- Card latency: while aas runs or is chosen. ----------------------------
 // The saved value is the config server's (it persists; null leaves it to
-// aas's own default), the running one is aas's `GET /settings`.
+// aas's own default), the running one is aas's `GET /settings`. Saving goes
+// through the config server only, so it works while aas does not answer.
 
-/** aas restarts to apply a saved latency; it is polled this often, this many times. */
+/** aas restarts to apply a saved latency; it is polled this often, for this long. */
 const RESTART_POLL_MS = 1000
-const RESTART_POLLS = 30
+const RESTART_WAIT_MS = 30_000
+/** One poll gives up after this long, so a hanging request cannot hold up the wait. */
+const RESTART_POLL_TIMEOUT_MS = 2000
 
 const aasSettings = ref<AasSettings | null>(null)
+/** aas's `GET /settings` failed: it is not answering, maybe restarting. */
+const aasSettingsError = ref<string | null>(null)
+/** Either aas answered or it is known not to: the sections can show. */
+const aasLoaded = computed(() => aasSettings.value !== null || aasSettingsError.value !== null)
 const savedLatency = ref<number | null>(null)
 const savedLatencyError = ref<string | null>(null)
 /** What the number input holds: a number, or '' when empty. */
@@ -363,18 +391,24 @@ const latencyInput = ref<number | string>('')
 const latencySaving = ref(false)
 const restarting = ref(false)
 const latencyError = ref<string | null>(null)
+/** Saved while aas was not running: it applies at aas's next start. */
+const latencyPending = ref(false)
 const showLatencyConfirmation = ref(false)
 /** The value that opened the low-latency confirmation; that one is saved on confirm. */
 const pendingLowLatency = ref<number | null>(null)
 let restartPoll: ReturnType<typeof setTimeout> | null = null
+/** Set when the page is left: a poll in flight then stops instead of scheduling the next. */
+let unmounted = false
 
 const loadLatency = async () => {
   const [settingsResult, savedResult] = await Promise.all([getSettings(), getAasLatency()])
   if (isAasError(settingsResult)) {
     aasSettings.value = null
-    return
+    aasSettingsError.value = settingsResult.message
+  } else {
+    aasSettings.value = settingsResult
+    aasSettingsError.value = null
   }
-  aasSettings.value = settingsResult
   if (isAasError(savedResult)) {
     savedLatencyError.value = savedResult.message
   } else {
@@ -437,36 +471,55 @@ const stopRestartPoll = () => {
   if (restartPoll !== null) clearTimeout(restartPoll)
   restartPoll = null
 }
-onUnmounted(stopRestartPoll)
+onUnmounted(() => {
+  unmounted = true
+  stopRestartPoll()
+})
+
+/** `GET /settings`, or an error once `ms` have passed without an answer. */
+const getSettingsWithin = async (ms: number) => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<ApiError>((resolve) => {
+    timer = setTimeout(() => resolve({ error: 'Timeout', message: 'aas did not answer in time' }), ms)
+  })
+  try {
+    return await Promise.race([getSettings({ signal: AbortSignal.timeout(ms) }), timeout])
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
 /**
- * Polls `GET /settings` until aas answers at the expected latency or the polls
- * run out. The config server answers before aas has stopped, so an answer at
+ * Polls `GET /settings` until aas answers at the expected latency or the wait
+ * runs out. The config server answers before aas has stopped, so an answer at
  * another value is the old aas still running. Without a recommended value to
- * expect for a saved `null`, any answer counts.
+ * expect for a saved `null`, any answer counts. Once aas is back, the AES67
+ * section is read again: its floor and stream list follow the card latency.
  */
 const waitForAas = (saved: number | null) => {
   stopRestartPoll()
   restarting.value = true
   const expected = expectedLatency(saved)
-  let polls = 0
+  const deadline = Date.now() + RESTART_WAIT_MS
   let lastRunning: number | null = null
   const poll = async () => {
     restartPoll = null
-    polls += 1
-    const result = await getSettings()
+    const result = await getSettingsWithin(RESTART_POLL_TIMEOUT_MS)
+    if (unmounted) return
     if (!isAasError(result)) {
       lastRunning = result.latency_ms
       if (expected === undefined || sameLatency(result.latency_ms, expected)) {
         aasSettings.value = result
+        aasSettingsError.value = null
+        await loadAes67(true)
         restarting.value = false
         return
       }
     }
-    if (polls >= RESTART_POLLS) {
+    if (Date.now() >= deadline) {
       restarting.value = false
       latencyError.value =
-        `aas did not come back within ${(RESTART_POLLS * RESTART_POLL_MS) / 1000} s ` +
+        `aas did not come back within ${RESTART_WAIT_MS / 1000} s ` +
         `after the latency was saved as ${latencyLabel(saved)}` +
         (lastRunning !== null ? `; it still runs at ${lastRunning} ms` : '') +
         '. If it stays silent, set the latency back.'
@@ -477,25 +530,26 @@ const waitForAas = (saved: number | null) => {
   restartPoll = setTimeout(poll, RESTART_POLL_MS)
 }
 
-/** Saves through the config server; `null` goes back to the board's default. */
-const saveLatency = async (latency: number | null) => {
+/**
+ * Saves through the config server; `null` goes back to the board's default.
+ * Resolves whether the save took.
+ */
+const saveLatency = async (latency: number | null): Promise<boolean> => {
   latencySaving.value = true
   latencyError.value = null
+  latencyPending.value = false
   try {
     const result = await setAasLatency(latency)
     if (isAasError(result)) {
       toastStore.showErrorToast(`Could not save the latency: ${result.message}`)
-      return
+      return false
     }
     savedLatency.value = result.latency_ms
     savedLatencyError.value = null
     latencyInput.value = result.latency_ms ?? ''
-    if (result.restarted) {
-      waitForAas(result.latency_ms)
-    } else {
-      const settings = await getSettings()
-      if (!isAasError(settings)) aasSettings.value = settings
-    }
+    if (result.restarted) waitForAas(result.latency_ms)
+    else latencyPending.value = true
+    return true
   } finally {
     latencySaving.value = false
   }
@@ -549,6 +603,7 @@ const loadAes67Streams = async () => {
 
 const loadAes67 = async (withStreams: boolean) => {
   const result = await getAes67()
+  if (unmounted) return
   if (isAasError(result)) {
     aes67.value = null
     aes67Unavailable.value = result.error === 'HTTP 404'
@@ -561,6 +616,18 @@ const loadAes67 = async (withStreams: boolean) => {
   aes67Loads.value += 1
   aes67LatencyInput.value = result.input.latency_auto ? '' : result.input.latency_ms
   if (withStreams) await loadAes67Streams()
+}
+
+/** Nothing is sent to aas while it restarts for the card latency. */
+const aes67Disabled = computed(() => aes67Busy.value || latencyBusy.value)
+
+const retryAes67 = async () => {
+  aes67Busy.value = true
+  try {
+    await loadAes67(true)
+  } finally {
+    aes67Busy.value = false
+  }
 }
 
 /** A chosen stream that is no longer announced stays shown and selected. */
@@ -594,14 +661,18 @@ const aes67Note = computed(() =>
     : aes67LatencyNote(typedAes67Latency.value, aes67.value?.latency_floor_ms),
 )
 
-/** Sends one change to aas, then shows what aas holds; the streams too after turning it on. */
-const changeAes67 = async (patch: Aes67Patch) => {
+/**
+ * Sends one change to aas, then shows what aas holds; the streams too after
+ * turning it on. Resolves whether aas took the change.
+ */
+const changeAes67 = async (patch: Aes67Patch): Promise<boolean> => {
   aes67Busy.value = true
   try {
     const result = await setAes67Input(patch)
     const ok = !isAasError(result)
     if (!ok) toastStore.showErrorToast(`Could not change AES67: ${result.message}`)
     await loadAes67(ok && patch.enabled === true)
+    return ok
   } finally {
     aes67Busy.value = false
   }
@@ -634,10 +705,13 @@ const recommendedConfirmationMessage = computed(() => {
   return `Sets the values recommended for this board:\n\n${lines.join('\n')}${restart}`
 })
 
+/** Each step reports its own failure; success is said once, also when nothing needed changing. */
 const applyRecommended = async () => {
   showRecommendedConfirmation.value = false
-  if (aes67.value) await changeAes67({ latency_ms: 'auto' })
-  if (savedLatency.value !== null || savedLatencyError.value !== null) await saveLatency(null)
+  let ok = true
+  if (aes67.value) ok = (await changeAes67({ latency_ms: 'auto' })) && ok
+  if (savedLatency.value !== null || savedLatencyError.value !== null) ok = (await saveLatency(null)) && ok
+  if (ok) toastStore.showSuccessToast('Recommended values set.')
 }
 </script>
 

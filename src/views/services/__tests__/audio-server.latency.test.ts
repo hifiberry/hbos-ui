@@ -32,10 +32,10 @@ vi.mock('@/stores/audio-server', () => ({ useAudioServerStore: () => m.store }))
 import AudioServerView from '@/views/services/audio-server.vue'
 import { useToastStore } from '@/stores/toast'
 
-const setStore = (running: 'pipewire' | 'aas') => {
+const setStore = (running: 'pipewire' | 'aas', chosen: 'pipewire' | 'aas' = running) => {
   m.store = {
     running: ref(running),
-    chosen: ref(running),
+    chosen: ref(chosen),
     available: ref(true),
     error: ref(null),
     load: vi.fn().mockResolvedValue(undefined),
@@ -48,7 +48,10 @@ const mountPage = async () => {
     global: {
       stubs: {
         Icon: true,
-        PageContent: { template: '<div><slot /></div>' },
+        PageContent: {
+          props: ['backrouterLink'],
+          template: '<div data-test="page" :data-back="backrouterLink?.name"><slot /></div>',
+        },
         ConfirmationDialog: {
           props: ['isOpen', 'title', 'message'],
           emits: ['confirm', 'close'],
@@ -101,10 +104,138 @@ describe('audio server page: card latency', () => {
     expect(wrapper.text()).toContain('Use aas')
   })
 
-  it('hides the latency when aas does not answer', async () => {
+  it('says so when aas does not answer, and keeps the latency usable', async () => {
+    m.getSettings.mockResolvedValue({ error: 'Network Error', message: 'down' })
+    m.getAasLatency.mockResolvedValue({ latency_ms: 8 })
+    const wrapper = await mountPage()
+    expect(wrapper.find('[data-test="aas-not-answering"]').text()).toContain(
+      'aas is not answering right now; it may be restarting.',
+    )
+    expect(wrapper.find('[data-test="latency-saved"]').text()).toContain('8 ms')
+    expect(wrapper.find('[data-test="latency-running"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="aes67-section"]').exists()).toBe(false)
+    const input = wrapper.find('[data-test="latency-input"]')
+    expect(input.attributes('placeholder')).toBe("aas's default")
+    // Without aas's figures there is nothing to warn about.
+    await typeLatency(wrapper, '2')
+    expect(wrapper.find('[data-test="latency-note"]').exists()).toBe(false)
+  })
+
+  it('retries aas when it does not answer', async () => {
     m.getSettings.mockResolvedValue({ error: 'Network Error', message: 'down' })
     const wrapper = await mountPage()
-    expect(wrapper.find('[data-test="latency-input"]').exists()).toBe(false)
+    m.getSettings.mockResolvedValue(settings(5))
+    await wrapper.find('[data-test="aas-retry"]').trigger('click')
+    await flushPromises()
+    expect(m.store.load).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('[data-test="aas-not-answering"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="latency-running"]').text()).toContain('5 ms')
+  })
+
+  it('saves and sets the recommended latency while aas does not answer', async () => {
+    m.getSettings.mockResolvedValue({ error: 'Network Error', message: 'down' })
+    m.setAasLatency.mockImplementation(async (v: number | null) => ({ latency_ms: v, restarted: false }))
+    const wrapper = await mountPage()
+
+    await typeLatency(wrapper, '2')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-test="dialog"]').exists()).toBe(false)
+    expect(m.setAasLatency).toHaveBeenCalledWith(2)
+    expect(wrapper.find('[data-test="latency-saved"]').text()).toContain('2 ms')
+
+    await wrapper.find('[data-test="recommended"]').trigger('click')
+    const dialog = wrapper.find('[data-test="dialog"]')
+    expect(dialog.text()).toContain("Latency: aas's default")
+    expect(dialog.text()).not.toMatch(/\d+ ms/)
+    await wrapper.find('[data-test="dialog-confirm"]').trigger('click')
+    await flushPromises()
+    expect(m.setAasLatency).toHaveBeenLastCalledWith(null)
+  })
+
+  it('says when aas is chosen but not running', async () => {
+    setStore('pipewire', 'aas')
+    m.getSettings.mockResolvedValue({ error: 'Network Error', message: 'down' })
+    const wrapper = await mountPage()
+    expect(wrapper.find('[data-test="aas-not-running"]').text()).toBe(
+      'aas is chosen but not running right now; it may be restarting.',
+    )
+    expect(wrapper.find('[data-test="aas-not-answering"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('The change applies after a reboot.')
+  })
+
+  it('does not say aas is not running while it runs', async () => {
+    const wrapper = await mountPage()
+    expect(wrapper.find('[data-test="aas-not-running"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="aas-not-answering"]').exists()).toBe(false)
+  })
+
+  it('shows a fractional saved latency', async () => {
+    m.getAasLatency.mockResolvedValue({ latency_ms: 7.5 })
+    m.getSettings.mockResolvedValue(settings(7.5))
+    const wrapper = await mountPage()
+    expect(wrapper.find('[data-test="latency-saved"]').text()).toContain('7.5 ms')
+    expect(wrapper.find('[data-test="latency-running"]').text()).not.toContain('differs')
+  })
+
+  it('goes back to the Settings page', async () => {
+    const wrapper = await mountPage()
+    expect(wrapper.find('[data-test="page"]').attributes('data-back')).toBe('services')
+  })
+
+  it('says when the saved latency applies at the next start', async () => {
+    m.setAasLatency.mockImplementation(async (v: number | null) => ({ latency_ms: v, restarted: false }))
+    const wrapper = await mountPage()
+    m.getSettings.mockClear()
+    await typeLatency(wrapper, '8')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-test="latency-pending"]').text()).toBe(
+      'Saved; it applies when aas next starts.',
+    )
+    expect(wrapper.find('[data-test="latency-restarting"]').exists()).toBe(false)
+    expect(m.getSettings).not.toHaveBeenCalled()
+  })
+
+  it('stops waiting for aas when the page is left', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const wrapper = await mountPage()
+    m.getSettings.mockReset()
+    let answer: (v: unknown) => void = () => {}
+    m.getSettings
+      .mockReturnValueOnce(new Promise((resolve) => (answer = resolve)))
+      .mockResolvedValue({ error: 'Network Error', message: 'Failed to fetch' })
+
+    await typeLatency(wrapper, '8')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(m.getSettings).toHaveBeenCalledTimes(1)
+
+    // Left while a poll is in flight: its answer must not schedule another.
+    wrapper.unmount()
+    answer({ error: 'Network Error', message: 'Failed to fetch' })
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(m.getSettings).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('gives up on a hanging poll in time', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const wrapper = await mountPage()
+    m.getSettings.mockReset()
+    m.getSettings.mockReturnValue(new Promise(() => {}))
+
+    await typeLatency(wrapper, '7')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(33_000)
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="latency-restarting"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="latency-error"]').text()).toContain('7 ms')
+    expect(m.getSettings).toHaveBeenCalledWith({ signal: expect.any(AbortSignal) })
   })
 
   it('shows the saved latency or the recommended one', async () => {
@@ -179,7 +310,7 @@ describe('audio server page: card latency', () => {
   })
 
   it('waits for aas after saving', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     const wrapper = await mountPage()
     m.getSettings.mockReset()
     m.getSettings
@@ -205,7 +336,7 @@ describe('audio server page: card latency', () => {
   })
 
   it('keeps waiting while the old aas still answers', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     const wrapper = await mountPage()
     m.getSettings.mockReset()
     m.getSettings.mockResolvedValueOnce(settings(5)).mockResolvedValue(settings(8.0))
@@ -225,7 +356,7 @@ describe('audio server page: card latency', () => {
   })
 
   it('waits for the recommended value after saving the default', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     m.getAasLatency.mockResolvedValue({ latency_ms: 8 })
     m.getSettings.mockResolvedValue(settings(8))
     const wrapper = await mountPage()
@@ -247,7 +378,7 @@ describe('audio server page: card latency', () => {
   })
 
   it('names the last running value when aas answers with another one', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     const wrapper = await mountPage()
     m.getSettings.mockReset()
     m.getSettings.mockResolvedValue(settings(5))
@@ -285,7 +416,7 @@ describe('audio server page: card latency', () => {
   })
 
   it('names the saved value when aas does not come back', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     const wrapper = await mountPage()
     m.getSettings.mockReset()
     m.getSettings.mockResolvedValue({ error: 'Network Error', message: 'Failed to fetch' })

@@ -118,7 +118,8 @@ export interface AasSettings {
   latency_min_ms?: number
 }
 
-export const getSettings = () => request<AasSettings>('/settings')
+/** `init` can carry a signal, to give up on an aas that does not answer. */
+export const getSettings = (init?: RequestInit) => request<AasSettings>('/settings', init)
 
 export interface Aes67Input {
   enabled: boolean

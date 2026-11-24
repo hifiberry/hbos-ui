@@ -43,6 +43,14 @@
         <p>Select and configure digital signal processing backends</p>
       </ContentBoxLink>
 
+      <ContentBoxLink :to="{ name: 'audio-server' }" :height="150">
+        <div class="settingsCardHeader">
+          <Icon icon="tabler/server" class="settingsCardHeaderIcon" />
+          <h2>Audio Server</h2>
+        </div>
+        <p>Choose the audio server and set its latency and AES67</p>
+      </ContentBoxLink>
+
       <ContentBoxLink :to="{ name: 'system-info' }" :height="150">
         <div class="settingsCardHeader">
           <Icon icon="computer" class="settingsCardHeaderIcon" />

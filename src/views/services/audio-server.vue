@@ -45,7 +45,7 @@
             :disabled="switching || chosen === 'pipewire'"
             @click="switchToPipewire"
           >
-            {{ chosen === 'pipewire' ? 'Chosen' : 'Use PipeWire' }}
+            {{ chosen === 'pipewire' ? 'Selected' : 'Use PipeWire' }}
           </button>
         </div>
         <div class="card" :class="{ active: chosen === 'aas' }">
@@ -56,7 +56,7 @@
             :disabled="switching || chosen === 'aas'"
             @click="askSwitchToAas"
           >
-            {{ chosen === 'aas' ? 'Chosen' : 'Use aas' }}
+            {{ chosen === 'aas' ? 'Selected' : 'Use aas' }}
           </button>
         </div>
       </div>

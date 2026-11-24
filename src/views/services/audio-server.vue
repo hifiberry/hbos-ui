@@ -53,7 +53,67 @@
           </button>
         </div>
       </div>
+
+      <section v-if="running === 'aas' && aasSettings" class="aas-section" data-test="latency-section">
+        <h3>Latency</h3>
+        <p class="section-hint">
+          The sound card's buffer. Lower is quicker to react, higher is safer against dropouts.
+        </p>
+        <p data-test="latency-saved">
+          Saved: <strong>{{ savedLatencyLabel }}</strong>
+        </p>
+        <p v-if="savedLatencyError" class="server-warnings">
+          Could not read the saved latency: {{ savedLatencyError }}
+        </p>
+        <p data-test="latency-running">
+          aas runs at: <strong>{{ aasSettings.latency_ms }} ms</strong>
+          <span v-if="runningLatencyDiffers"> (differs from the saved value)</span>
+        </p>
+        <div class="latency-row">
+          <input
+            v-model="latencyInput"
+            type="number"
+            min="1"
+            max="100"
+            step="1"
+            class="latency-input"
+            aria-label="Latency in ms"
+            :placeholder="recommendedLatencyLabel"
+            :disabled="latencyBusy"
+            data-test="latency-input"
+          />
+          <span>ms</span>
+          <button
+            class="action-button"
+            :disabled="latencyBusy || typedLatency === null"
+            data-test="latency-save"
+            @click="askSaveLatency"
+          >
+            Save
+          </button>
+        </div>
+        <p v-if="latencyNote" class="latency-note" :class="latencyNote.level" data-test="latency-note">
+          {{ latencyNote.text }}
+        </p>
+        <p class="section-hint">Saving restarts aas: the sound stops for a moment.</p>
+        <p v-if="restarting" class="restarting" data-test="latency-restarting">
+          Restarting… waiting for aas to come back.
+        </p>
+        <p v-if="latencyError" class="latency-note red" data-test="latency-error">{{ latencyError }}</p>
+      </section>
     </div>
+
+    <ConfirmationDialog
+      :is-open="showLatencyConfirmation"
+      title="Low latency"
+      :message="latencyConfirmationMessage"
+      confirm-button-text="Save anyway"
+      cancel-button-text="Cancel"
+      :is-dangerous="true"
+      icon="tabler/alert-circle"
+      @close="showLatencyConfirmation = false"
+      @confirm="confirmLowLatency"
+    />
 
     <ConfirmationDialog
       :is-open="showAasConfirmation"
@@ -84,7 +144,7 @@ Would you like to reboot now?"
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import PageContent from '@/components/PageContent.vue'
 import ConfirmationDialog from '@/components/ConfirmationDialog.vue'
@@ -92,7 +152,9 @@ import { useToastStore } from '@/stores/toast'
 import { useAudioServerStore } from '@/stores/audio-server'
 import { useAasWarnings } from '@/composables/useAasWarnings'
 import { rebootSystem } from '@/api/system'
-import type { AudioServerName } from '@/api/audio-server'
+import { getAasLatency, setAasLatency, type AudioServerName } from '@/api/audio-server'
+import { getSettings, isAasError, type AasSettings } from '@/api/aas'
+import { cardLatencyNote, validLatency } from '@/composables/useLatencyNotes'
 
 const toastStore = useToastStore()
 const store = useAudioServerStore()
@@ -110,6 +172,7 @@ const reload = async () => {
   loading.value = true
   try {
     await store.load()
+    if (running.value === 'aas') await loadLatency()
   } finally {
     loading.value = false
   }
@@ -169,6 +232,151 @@ const executeReboot = async () => {
     toastStore.showErrorToast(`Failed to reboot system: ${message}. Please reboot manually using the system controls.`)
   }
 }
+
+// --- Card latency: only while aas runs and answers. -----------------------
+// The saved value is the config server's (it persists; null leaves it to
+// aas's own default), the running one is aas's `GET /settings`.
+
+/** aas restarts to apply a saved latency; it is polled this often, this many times. */
+const RESTART_POLL_MS = 1000
+const RESTART_POLLS = 30
+
+const aasSettings = ref<AasSettings | null>(null)
+const savedLatency = ref<number | null>(null)
+const savedLatencyError = ref<string | null>(null)
+/** What the number input holds: a number, or '' when empty. */
+const latencyInput = ref<number | string>('')
+const latencySaving = ref(false)
+const restarting = ref(false)
+const latencyError = ref<string | null>(null)
+const showLatencyConfirmation = ref(false)
+let restartPoll: ReturnType<typeof setTimeout> | null = null
+
+const loadLatency = async () => {
+  const [settingsResult, savedResult] = await Promise.all([getSettings(), getAasLatency()])
+  if (isAasError(settingsResult)) {
+    aasSettings.value = null
+    return
+  }
+  aasSettings.value = settingsResult
+  if (isAasError(savedResult)) {
+    savedLatencyError.value = savedResult.message
+  } else {
+    savedLatencyError.value = null
+    savedLatency.value = savedResult.latency_ms
+    latencyInput.value = savedResult.latency_ms ?? ''
+  }
+}
+
+const recommendedLatencyLabel = computed(() => {
+  const recommended = aasSettings.value?.latency_recommended_ms
+  return recommended !== undefined ? `Recommended (${recommended} ms)` : "aas's default"
+})
+
+const latencyLabel = (ms: number | null) => (ms === null ? recommendedLatencyLabel.value : `${ms} ms`)
+
+const savedLatencyLabel = computed(() => latencyLabel(savedLatency.value))
+
+/** A saved `null` runs at the recommended value, when aas says which that is. */
+const runningLatencyDiffers = computed(() => {
+  const expected = savedLatency.value ?? aasSettings.value?.latency_recommended_ms
+  return expected !== undefined && aasSettings.value?.latency_ms !== expected
+})
+
+const typedLatency = computed(() => {
+  const value = latencyInput.value
+  if (typeof value === 'string' && value.trim() === '') return null
+  return validLatency(typeof value === 'number' ? value : Number(value))
+})
+
+const latencyNote = computed(() =>
+  typedLatency.value === null
+    ? null
+    : cardLatencyNote(
+        typedLatency.value,
+        aasSettings.value?.latency_recommended_ms,
+        aasSettings.value?.latency_min_ms,
+      ),
+)
+
+const latencyBusy = computed(() => latencySaving.value || restarting.value)
+
+const latencyConfirmationMessage = computed(
+  () =>
+    `${typedLatency.value} ms is below the lowest latency this board handles ` +
+    `(${aasSettings.value?.latency_min_ms} ms): dropouts are likely.\n\n` +
+    'Saving restarts aas: the sound stops for a moment.',
+)
+
+const stopRestartPoll = () => {
+  if (restartPoll !== null) clearTimeout(restartPoll)
+  restartPoll = null
+}
+onUnmounted(stopRestartPoll)
+
+/** Polls `GET /settings` until aas answers or the polls run out. */
+const waitForAas = (saved: number | null) => {
+  stopRestartPoll()
+  restarting.value = true
+  let polls = 0
+  const poll = async () => {
+    restartPoll = null
+    polls += 1
+    const result = await getSettings()
+    if (!isAasError(result)) {
+      aasSettings.value = result
+      restarting.value = false
+    } else if (polls >= RESTART_POLLS) {
+      restarting.value = false
+      latencyError.value =
+        `aas did not come back within ${(RESTART_POLLS * RESTART_POLL_MS) / 1000} s ` +
+        `after the latency was saved as ${latencyLabel(saved)}. ` +
+        'If it stays silent, set the latency back.'
+    } else {
+      restartPoll = setTimeout(poll, RESTART_POLL_MS)
+    }
+  }
+  restartPoll = setTimeout(poll, RESTART_POLL_MS)
+}
+
+/** Saves through the config server; `null` goes back to the board's default. */
+const saveLatency = async (latency: number | null) => {
+  latencySaving.value = true
+  latencyError.value = null
+  try {
+    const result = await setAasLatency(latency)
+    if (isAasError(result)) {
+      toastStore.showErrorToast(`Could not save the latency: ${result.message}`)
+      return
+    }
+    savedLatency.value = result.latency_ms
+    latencyInput.value = result.latency_ms ?? ''
+    if (result.restarted) {
+      waitForAas(result.latency_ms)
+    } else {
+      const settings = await getSettings()
+      if (!isAasError(settings)) aasSettings.value = settings
+    }
+  } finally {
+    latencySaving.value = false
+  }
+}
+
+const askSaveLatency = () => {
+  const latency = typedLatency.value
+  if (latency === null) return
+  const min = aasSettings.value?.latency_min_ms
+  if (min !== undefined && latency < min) {
+    showLatencyConfirmation.value = true
+    return
+  }
+  void saveLatency(latency)
+}
+
+const confirmLowLatency = async () => {
+  showLatencyConfirmation.value = false
+  if (typedLatency.value !== null) await saveLatency(typedLatency.value)
+}
 </script>
 
 <style scoped lang="scss">
@@ -198,6 +406,41 @@ const executeReboot = async () => {
 
   .not-available {
     color: var(--color-body-secondary);
+  }
+
+  .aas-section {
+    margin-top: 30px;
+
+    h3 {
+      margin: 0 0 6px 0;
+    }
+
+    p {
+      margin: 0 0 6px 0;
+    }
+
+    .section-hint {
+      color: var(--color-body-secondary);
+    }
+
+    .latency-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .latency-input {
+      width: 6em;
+    }
+
+    .latency-note.amber {
+      color: var(--color-warning);
+    }
+
+    .latency-note.red {
+      color: var(--color-error);
+    }
   }
 
   .backends-list {

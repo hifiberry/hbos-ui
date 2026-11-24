@@ -153,15 +153,24 @@ describe('audio server page: card latency', () => {
     expect(m.setAasLatency).toHaveBeenLastCalledWith(null)
   })
 
-  it('says when aas is chosen but not running', async () => {
+  it('says when aas is chosen but not running, with a retry when its settings fail', async () => {
     setStore('pipewire', 'aas')
     m.getSettings.mockResolvedValue({ error: 'Network Error', message: 'down' })
     const wrapper = await mountPage()
-    expect(wrapper.find('[data-test="aas-not-running"]').text()).toBe(
-      'aas is chosen but not running right now; it may be restarting.',
+    const line = wrapper.find('[data-test="aas-not-running"]')
+    expect(line.text()).toContain(
+      'aas is chosen but not running. If the device has not rebooted since, reboot; otherwise it may be restarting or have failed.',
     )
-    expect(wrapper.find('[data-test="aas-not-answering"]').exists()).toBe(true)
+    expect(line.find('[data-test="aas-retry"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="aas-not-answering"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('The change applies after a reboot.')
+  })
+
+  it('shows the not-answering box when aas runs and its settings fail', async () => {
+    m.getSettings.mockResolvedValue({ error: 'Network Error', message: 'down' })
+    const wrapper = await mountPage()
+    expect(wrapper.find('[data-test="aas-not-answering"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="aas-not-running"]').exists()).toBe(false)
   })
 
   it('does not say aas is not running while it runs', async () => {

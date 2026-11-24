@@ -14,7 +14,11 @@
           Chosen for the next boot: <strong>{{ label(chosen) }}</strong>
         </p>
         <p v-if="chosen === 'aas' && running !== 'aas'" data-test="aas-not-running">
-          aas is chosen but not running right now; it may be restarting.
+          aas is chosen but not running. If the device has not rebooted since, reboot; otherwise it may be restarting or
+          have failed.
+          <button v-if="aasSettingsError" class="action-button" :disabled="loading" data-test="aas-retry" @click="retry">
+            Retry
+          </button>
         </p>
         <div v-if="running !== chosen" class="reboot-pending">
           <p>The change applies after a reboot.</p>
@@ -57,7 +61,7 @@
         </div>
       </div>
 
-      <div v-if="aasShown && aasSettingsError" class="not-available" data-test="aas-not-answering">
+      <div v-if="running === 'aas' && aasSettingsError" class="not-available" data-test="aas-not-answering">
         <p>aas is not answering right now; it may be restarting.</p>
         <button class="action-button" :disabled="loading" data-test="aas-retry" @click="retry">Retry</button>
       </div>

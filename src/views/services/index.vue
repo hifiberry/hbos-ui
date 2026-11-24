@@ -48,7 +48,7 @@
           <Icon icon="tabler/server" class="settingsCardHeaderIcon" />
           <h2>Audio Server</h2>
         </div>
-        <p>Choose the audio server and set its latency and AES67</p>
+        <p>Choose the audio server and set its latency</p>
       </ContentBoxLink>
 
       <ContentBoxLink :to="{ name: 'system-info' }" :height="150">

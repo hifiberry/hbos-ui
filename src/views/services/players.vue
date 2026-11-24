@@ -22,6 +22,7 @@
           @save-config="saveConfig(player.name)"
           @update-external-setting="(key, value) => updateExternalSetting(player.name, key, value)"
         />
+        <Aes67PlayerCard />
       </div>
       <template v-if="externalVisiblePlayers.length > 0">
         <div class="section-header">
@@ -58,6 +59,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import PlayerCard from '@/components/PlayerCard.vue'
+import Aes67PlayerCard from '@/components/Aes67PlayerCard.vue'
 import PageContent from '@/components/PageContent.vue'
 import StatusBlock from '@/components/StatusBlock.vue'
 import { useRouter } from 'vue-router'
@@ -194,6 +196,10 @@ onMounted(async () => {
   await loadServiceStatus()
 })
 
+// The PipeWire AES67 extension is replaced by aas's AES67 input, which has a
+// card of its own; a device that still has the extension does not list it.
+const REPLACED_PROVIDERS = ['hifiberry-aes67']
+
 // Fetch external players and merge into the list. Known services are
 // updated in place (settings in particular, so a refresh after save picks
 // up the server's current is_set) rather than skipped, since re-pushing
@@ -221,7 +227,9 @@ onMounted(async () => {
 // the save path depends on. `toMerge` already scopes a named call to just
 // that one service, so there is no cross-player risk to guard against here.
 const refreshExternalPlayers = async (onlyServiceName?: string) => {
-  const externalPlayers = await getExternalPlayers()
+  const externalPlayers = (await getExternalPlayers()).filter(
+    ext => !REPLACED_PROVIDERS.includes(ext.provided_by)
+  )
   const toMerge = onlyServiceName
     ? externalPlayers.filter(ext => ext.systemd_service === onlyServiceName)
     : externalPlayers

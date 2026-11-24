@@ -5,7 +5,6 @@ import { ref } from 'vue'
 
 const m = vi.hoisted(() => ({
   getSettings: vi.fn(),
-  getAes67: vi.fn(),
   getAasLatency: vi.fn(),
   setAasLatency: vi.fn(),
   store: null as unknown as Record<string, unknown>,
@@ -13,9 +12,6 @@ const m = vi.hoisted(() => ({
 
 vi.mock('@/api/aas', () => ({
   getSettings: m.getSettings,
-  getAes67: m.getAes67,
-  getAes67Streams: vi.fn(),
-  setAes67Input: vi.fn(),
   isAasError: (x: unknown) => typeof x === 'object' && x !== null && 'error' in x,
 }))
 vi.mock('@/api/audio-server', () => ({
@@ -82,8 +78,6 @@ describe('audio server page: card latency', () => {
     vi.clearAllMocks()
     setStore('aas')
     m.getSettings.mockResolvedValue(settings(5))
-    // Without AES67: its section is audio-server.aes67.test.ts's.
-    m.getAes67.mockResolvedValue({ error: 'HTTP 404', message: 'Not Found' })
     m.getAasLatency.mockResolvedValue({ latency_ms: null })
     m.setAasLatency.mockImplementation(async (v: number | null) => ({ latency_ms: v, restarted: true }))
   })
@@ -98,7 +92,6 @@ describe('audio server page: card latency', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.find('[data-test="latency-input"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test="aes67-section"]').exists()).toBe(false)
     expect(errorToast).not.toHaveBeenCalled()
     expect(m.getSettings).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Use aas')
@@ -113,7 +106,6 @@ describe('audio server page: card latency', () => {
     )
     expect(wrapper.find('[data-test="latency-saved"]').text()).toContain('8 ms')
     expect(wrapper.find('[data-test="latency-running"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test="aes67-section"]').exists()).toBe(false)
     const input = wrapper.find('[data-test="latency-input"]')
     expect(input.attributes('placeholder')).toBe("aas's default")
     // Without aas's figures there is nothing to warn about.
@@ -446,6 +438,35 @@ describe('audio server page: card latency', () => {
 
     await vi.advanceTimersByTimeAsync(5000)
     expect(m.getSettings).toHaveBeenCalledTimes(30)
+  })
+
+  it('recommended resets only the card latency', async () => {
+    m.getAasLatency.mockResolvedValue({ latency_ms: 8 })
+    m.getSettings.mockResolvedValue(settings(8))
+    const successToast = vi.spyOn(useToastStore(), 'showSuccessToast')
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain("Puts the latency back to this board's values.")
+    expect(wrapper.text()).not.toContain('AES67')
+    await wrapper.find('[data-test="recommended"]').trigger('click')
+    const dialog = wrapper.find('[data-test="dialog"]')
+    expect(dialog.text()).toContain('Latency: Recommended (5 ms)')
+    expect(dialog.text()).not.toContain('AES67')
+
+    await wrapper.find('[data-test="dialog-confirm"]').trigger('click')
+    await flushPromises()
+    expect(m.setAasLatency).toHaveBeenCalledWith(null)
+    expect(successToast).toHaveBeenCalledWith('Recommended latency set.')
+  })
+
+  it('recommended leaves a latency that is already the default', async () => {
+    const successToast = vi.spyOn(useToastStore(), 'showSuccessToast')
+    const wrapper = await mountPage()
+    await wrapper.find('[data-test="recommended"]').trigger('click')
+    expect(wrapper.find('[data-test="dialog"]').text()).not.toContain('restarts aas')
+    await wrapper.find('[data-test="dialog-confirm"]').trigger('click')
+    await flushPromises()
+    expect(m.setAasLatency).not.toHaveBeenCalled()
+    expect(successToast).toHaveBeenCalledWith('Recommended latency set.')
   })
 
   it('reports a refused save', async () => {

@@ -39,12 +39,19 @@ describe('collectAasWarnings', () => {
 
   it('lists enabled services by name', async () => {
     m.getSystemdServiceStatus.mockImplementation(async (name: string) => ({
-      data: { enabled: name === 'aes67' || name === 'soloist' ? 'enabled' : 'disabled' },
+      data: { enabled: name === 'usbaudio' || name === 'soloist' ? 'enabled' : 'disabled' },
     }))
     const w = await collectAasWarnings()
     expect(w).toHaveLength(2)
-    expect(w.join()).toMatch(/AES67/)
+    expect(w.join()).toMatch(/USB audio gadget/)
     expect(w.join()).toMatch(/Soloist/)
+  })
+
+  it('does not list the old AES67 extension: aas receives AES67 itself', async () => {
+    m.getSystemdServiceStatus.mockImplementation(async (name: string) => ({
+      data: { enabled: name === 'aes67' ? 'enabled' : 'disabled' },
+    }))
+    expect(await collectAasWarnings()).toEqual([])
   })
 
   it('lists the input processor and a volume limit below 0 dB', async () => {

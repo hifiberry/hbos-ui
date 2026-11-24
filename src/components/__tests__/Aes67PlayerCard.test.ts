@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 
 const m = vi.hoisted(() => ({
   getAes67: vi.fn(),
@@ -25,9 +25,12 @@ import { useToastStore } from '@/stores/toast'
 const setStore = (running: 'pipewire' | 'aas') => {
   m.store = {
     running: ref(running),
+    loaded: ref(true),
+    error: ref<string | null>(null),
     load: vi.fn().mockResolvedValue(undefined),
   }
 }
+const storeRef = <T>(key: string) => m.store[key] as Ref<T>
 
 const mountCard = async (open = true) => {
   const wrapper = mount(Aes67PlayerCard, {
@@ -129,6 +132,115 @@ describe('AES67 player card', () => {
     expect(greyed(wrapper)).toBe(false)
     expect(wrapper.find('[data-test="aes67-error"]').exists()).toBe(false)
     expect(toggle(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
+  it('says when the audio server cannot be read, and retries it', async () => {
+    // A failed read leaves the store's default: `running` says nothing then.
+    setStore('pipewire')
+    storeRef<string | null>('error').value = 'Network Error'
+    const wrapper = await mountCard()
+    expect(greyed(wrapper)).toBe(true)
+    expect(wrapper.find('[data-test="aes67-server-error"]').text()).toContain(
+      'Could not read the audio server: Network Error',
+    )
+    expect(wrapper.find('[data-test="aes67-requires-aas"]').exists()).toBe(false)
+    expect(m.getAes67).not.toHaveBeenCalled()
+
+    ;(m.store.load as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+      storeRef<string | null>('error').value = null
+      storeRef<string>('running').value = 'aas'
+    })
+    await wrapper.find('[data-test="aes67-server-retry"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-test="aes67-server-error"]').exists()).toBe(false)
+    expect(m.getAes67).toHaveBeenCalledTimes(1)
+    expect(greyed(wrapper)).toBe(false)
+  })
+
+  it('gives no reason until the audio server has been read', async () => {
+    setStore('pipewire')
+    storeRef<boolean>('loaded').value = false
+    let done: () => void = () => {}
+    ;(m.store.load as ReturnType<typeof vi.fn>).mockReturnValue(new Promise<void>((r) => (done = r)))
+    const wrapper = await mountCard(false)
+    expect(greyed(wrapper)).toBe(true)
+    expect(wrapper.find('.player-note').exists()).toBe(false)
+
+    storeRef<boolean>('loaded').value = true
+    storeRef<string>('running').value = 'aas'
+    done()
+    await flushPromises()
+    expect(wrapper.find('[data-test="aes67-requires-aas"]').exists()).toBe(false)
+    expect(greyed(wrapper)).toBe(false)
+  })
+
+  it('says it is reading while the first GET /aes67 is under way', async () => {
+    let answer: (v: unknown) => void = () => {}
+    m.getAes67.mockReturnValue(new Promise((r) => (answer = r)))
+    const wrapper = await mountCard(false)
+    expect(greyed(wrapper)).toBe(true)
+    expect(wrapper.find('[data-test="aes67-reading"]').text()).toBe('Reading…')
+    answer(input())
+    await flushPromises()
+    expect(wrapper.find('[data-test="aes67-reading"]').exists()).toBe(false)
+    expect(greyed(wrapper)).toBe(false)
+  })
+
+  it('follows the audio server while mounted', async () => {
+    setStore('pipewire')
+    const wrapper = await mountCard(false)
+    expect(greyed(wrapper)).toBe(true)
+    expect(m.getAes67).not.toHaveBeenCalled()
+
+    storeRef<string>('running').value = 'aas'
+    await flushPromises()
+    expect(m.getAes67).toHaveBeenCalledTimes(1)
+    expect(greyed(wrapper)).toBe(false)
+    expect(toggle(wrapper).attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('[data-test="aes67-expand"]').trigger('click')
+    expect(wrapper.find('[data-test="aes67-settings"]').exists()).toBe(true)
+
+    storeRef<string>('running').value = 'pipewire'
+    await flushPromises()
+    expect(greyed(wrapper)).toBe(true)
+    expect(wrapper.find('[data-test="aes67-requires-aas"]').exists()).toBe(true)
+    expect(toggle(wrapper).attributes('disabled')).toBeDefined()
+    expect(wrapper.find('[data-test="aes67-settings"]').exists()).toBe(false)
+
+    // Un-greyed again, the settings stay closed until asked for.
+    storeRef<string>('running').value = 'aas'
+    await flushPromises()
+    expect(greyed(wrapper)).toBe(false)
+    expect(wrapper.find('[data-test="aes67-settings"]').exists()).toBe(false)
+  })
+
+  it('drops an answer to a request older than the last one', async () => {
+    const wrapper = await mountCard(false)
+    let oldAnswer: (v: unknown) => void = () => {}
+    let newAnswer: (v: unknown) => void = () => {}
+    m.getAes67
+      .mockReturnValueOnce(new Promise((r) => (oldAnswer = r)))
+      .mockReturnValueOnce(new Promise((r) => (newAnswer = r)))
+    // The reload after this change is still in flight when aas stops and starts again.
+    await toggle(wrapper).setValue(false)
+    await flushPromises()
+    storeRef<string>('running').value = 'pipewire'
+    await flushPromises()
+    storeRef<string>('running').value = 'aas'
+    await flushPromises()
+    expect(m.getAes67).toHaveBeenCalledTimes(3)
+
+    oldAnswer(input({ enabled: false }))
+    await flushPromises()
+    expect(wrapper.find('[data-test="aes67-reading"]').exists()).toBe(true)
+    expect(greyed(wrapper)).toBe(true)
+
+    newAnswer(input({ enabled: true, receiving: true }))
+    await flushPromises()
+    expect(greyed(wrapper)).toBe(false)
+    expect((toggle(wrapper).element as HTMLInputElement).checked).toBe(true)
+    expect(wrapper.find('[data-test="aes67-status"]').text()).toBe('active')
   })
 
   it('turns AES67 on', async () => {

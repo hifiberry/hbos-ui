@@ -62,7 +62,12 @@ const external = (name: string, provided_by: string) => ({
 })
 
 const setStore = (running: 'pipewire' | 'aas') => {
-  m.store = { running: ref(running), load: vi.fn().mockResolvedValue(undefined) }
+  m.store = {
+    running: ref(running),
+    loaded: ref(true),
+    error: ref(null),
+    load: vi.fn().mockResolvedValue(undefined),
+  }
 }
 
 const mountPlayersView = async () => {

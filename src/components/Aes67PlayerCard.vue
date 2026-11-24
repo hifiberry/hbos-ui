@@ -11,19 +11,29 @@
                 {{ active ? 'active' : 'inactive' }}
               </span>
             </div>
-            <p v-if="!aasRuns" class="player-note" data-test="aes67-requires-aas">
-              Requires the aas audio server
-              <router-link :to="{ name: 'audio-server' }">Audio Server</router-link>
-            </p>
-            <p v-else-if="unavailable" class="player-note" data-test="aes67-unavailable">
-              Needs a wired network connection
-            </p>
-            <div v-else-if="loadError" class="player-note" data-test="aes67-error">
-              <span>Could not read AES67: {{ loadError }}</span>
-              <button class="btn btn-secondary btn-sm" :disabled="busy" data-test="aes67-retry" @click="retry">
-                Retry
-              </button>
-            </div>
+            <!-- No reason until the card has read the audio server itself. -->
+            <template v-if="serverKnown">
+              <div v-if="serverError" class="player-note" data-test="aes67-server-error">
+                <span>Could not read the audio server: {{ serverError }}</span>
+                <button class="btn btn-secondary btn-sm" :disabled="busy" data-test="aes67-server-retry" @click="retryServer">
+                  Retry
+                </button>
+              </div>
+              <p v-else-if="!aasRuns" class="player-note" data-test="aes67-requires-aas">
+                Requires the aas audio server
+                <router-link :to="{ name: 'audio-server' }">Audio Server</router-link>
+              </p>
+              <p v-else-if="unavailable" class="player-note" data-test="aes67-unavailable">
+                Needs a wired network connection
+              </p>
+              <div v-else-if="loadError" class="player-note" data-test="aes67-error">
+                <span>Could not read AES67: {{ loadError }}</span>
+                <button class="btn btn-secondary btn-sm" :disabled="busy" data-test="aes67-retry" @click="retry">
+                  Retry
+                </button>
+              </div>
+              <p v-else-if="!aes67" class="player-note" data-test="aes67-reading">Reading…</p>
+            </template>
           </div>
         </div>
         <div class="player-actions">
@@ -135,7 +145,7 @@ type Aes67Patch = Parameters<typeof setAes67Input>[0]
 
 const toastStore = useToastStore()
 const store = useAudioServerStore()
-const { running } = storeToRefs(store)
+const { running, loaded, error: serverError } = storeToRefs(store)
 
 const aes67 = ref<Aes67Input | null>(null)
 /** `GET /aes67` answered 404: this aas has no AES67, as without a wired network. */
@@ -153,24 +163,36 @@ const latencyInput = ref<number | string>('')
  * over what the user clicked.
  */
 const loads = ref(0)
+/** The card's own read of the audio server is done: until then it gives no reason. */
+const checked = ref(false)
 let unmounted = false
 let stopWatch: WatchStopHandle | null = null
+/**
+ * Counts `GET /aes67` requests, and reset() bumps it too: an answer to an
+ * older request (a reload after a change, still in flight when aas stopped)
+ * must not overwrite what is newer.
+ */
+let loadSeq = 0
 
-const aasRuns = computed(() => running.value === 'aas')
+const serverKnown = computed(() => checked.value && loaded.value)
+/** Only a successful read says which server runs; after a failed one `running` is a stale default. */
+const aasRuns = computed(() => serverKnown.value && !serverError.value && running.value === 'aas')
 /** Dimmed, with switch and settings disabled, until aas answers with an AES67 input. */
 const greyed = computed(() => !aasRuns.value || aes67.value === null)
 const disabled = computed(() => greyed.value || busy.value)
 const panelOpen = computed(() => expanded.value && !greyed.value)
 const active = computed(() => !greyed.value && !!aes67.value?.enabled && !!aes67.value?.receiving)
 
-const loadStreams = async () => {
+const loadStreams = async (seq: number) => {
   const result = await getAes67Streams()
+  if (seq !== loadSeq || unmounted) return
   streams.value = isAasError(result) ? [] : result.filter((s) => s.selectable).map((s) => s.name)
 }
 
 const load = async (withStreams: boolean) => {
+  const seq = ++loadSeq
   const result = await getAes67()
-  if (unmounted) return
+  if (seq !== loadSeq || unmounted) return
   if (isAasError(result)) {
     aes67.value = null
     unavailable.value = result.error === 'HTTP 404'
@@ -182,10 +204,12 @@ const load = async (withStreams: boolean) => {
   aes67.value = result.input
   loads.value += 1
   latencyInput.value = result.input.latency_auto ? '' : result.input.latency_ms
-  if (withStreams) await loadStreams()
+  if (withStreams) await loadStreams(seq)
 }
 
 const reset = () => {
+  loadSeq += 1
+  expanded.value = false
   aes67.value = null
   unavailable.value = false
   loadError.value = null
@@ -197,6 +221,7 @@ const reset = () => {
 onMounted(async () => {
   await store.load()
   if (unmounted) return
+  checked.value = true
   stopWatch = watch(
     aasRuns,
     (runs) => {
@@ -215,6 +240,16 @@ const retry = async () => {
   busy.value = true
   try {
     await load(true)
+  } finally {
+    busy.value = false
+  }
+}
+
+/** Reading the audio server again; the watch on `aasRuns` then loads AES67. */
+const retryServer = async () => {
+  busy.value = true
+  try {
+    await store.load()
   } finally {
     busy.value = false
   }

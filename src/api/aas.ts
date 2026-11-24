@@ -110,3 +110,39 @@ export const getOutput = (id: number) => request<AasOutput>(`/outputs/${id}`)
 /** The master's volume limit, -60 to 0 dB: a ceiling no player gets around. */
 export const setOutputLimit = (db: number) =>
   request<AasOutput>('/outputs/1', jsonInit('PATCH', { limit_db: db }))
+
+/** `GET /settings`: the engine's settings. The latency hints are only from an aas that has them. */
+export interface AasSettings {
+  latency_ms: number
+  latency_recommended_ms?: number
+  latency_min_ms?: number
+}
+
+/** `init` can carry a signal, to give up on an aas that does not answer. */
+export const getSettings = (init?: RequestInit) => request<AasSettings>('/settings', init)
+
+export interface Aes67Input {
+  enabled: boolean
+  stream: string | null
+  latency_ms: number
+  latency_auto: boolean
+  latency_floor_ms?: number
+  receiving: boolean
+  mode: string | null
+}
+
+export interface Aes67Stream {
+  name: string
+  selectable: boolean
+}
+
+/** HTTP 404 (an `ApiError`) when this aas has no AES67. */
+export const getAes67 = () => request<{ input: Aes67Input }>('/aes67')
+
+export const getAes67Streams = () => request<Aes67Stream[]>('/aes67/streams')
+
+export const setAes67Input = (patch: {
+  enabled?: boolean
+  stream?: string | null
+  latency_ms?: number | 'auto'
+}) => request<unknown>('/aes67/input', jsonInit('PATCH', patch))

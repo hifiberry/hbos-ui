@@ -16,10 +16,10 @@ export interface AudioServerChoice extends AudioServerInfo {
   warnings: string[]
 }
 
-async function call<T>(init?: RequestInit): Promise<T | ApiError> {
+async function call<T>(init?: RequestInit, path = ''): Promise<T | ApiError> {
   try {
     const base = useAppConfigStore().getConfigApiBaseUrl()
-    const response = await apiFetch(`${base}/audio-server`, init)
+    const response = await apiFetch(`${base}/audio-server${path}`, init)
     let body: { status?: string; data?: T; message?: string } | null = null
     try {
       body = await response.json()
@@ -53,3 +53,22 @@ export const setAudioServer = (server: AudioServerName) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ server }),
   })
+
+/** The latency the config server keeps for aas; `null` leaves it to aas's own default. */
+export interface AasLatencySetting {
+  latency_ms: number | null
+}
+
+export const getAasLatency = () =>
+  call<AasLatencySetting>({ signal: AbortSignal.timeout(LOAD_TIMEOUT_MS) }, '/aas-settings')
+
+/** `restarted` says whether aas was restarted to apply it. */
+export const setAasLatency = (latency_ms: number | null) =>
+  call<AasLatencySetting & { restarted: boolean }>(
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ latency_ms }),
+    },
+    '/aas-settings',
+  )

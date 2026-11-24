@@ -5,6 +5,8 @@ import { getRIAAEnabled, getSpeakerEQMasterGain } from '@/api/pipewire'
  * What stops working on this device when it switches to aas: only what is in
  * use. A check that fails is left out of the list, not reported as an error.
  * Bluetooth is not on it: aas plays it through bluez-alsa.
+ * AES67 is not either: aas receives it itself, and its package removes the old
+ * PipeWire extension.
  */
 export const collectAasWarnings = async (): Promise<string[]> => {
   const serviceEnabled = async (name: string): Promise<boolean> => {
@@ -29,7 +31,6 @@ export const collectAasWarnings = async (): Promise<string[]> => {
   }
 
   const checks: Array<() => Promise<string | null>> = [
-    when('AES67 stops working', () => serviceEnabled('aes67')),
     when('The USB audio gadget stops working', () => serviceEnabled('usbaudio')),
     when('The input processor (RIAA) stops working', async () => {
       const r = await getRIAAEnabled()

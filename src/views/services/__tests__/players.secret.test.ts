@@ -80,6 +80,8 @@ const mountPlayersView = async () => {
         InlineSvg: true,
         ToggleSwitch: true,
         RouterLink: { template: '<a><slot /></a>' },
+        // Reads aas; players.aes67.test.ts covers it.
+        Aes67PlayerCard: true,
       },
     },
   })

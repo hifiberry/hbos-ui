@@ -11,11 +11,11 @@
           Running: <strong>{{ label(running) }}</strong>
         </p>
         <p>
-          Chosen for the next boot: <strong>{{ label(chosen) }}</strong>
+          Selected for the next boot: <strong>{{ label(chosen) }}</strong>
         </p>
         <p v-if="chosen === 'aas' && running !== 'aas'" data-test="aas-not-running">
-          aas is chosen but not running. If the device has not rebooted since, reboot; otherwise it may be restarting or
-          have failed.
+          aas is selected but not running. Reboot to start it. If you have already rebooted, it may be restarting or may
+          have failed to start.
           <button v-if="aasSettingsError" class="btn btn-secondary btn-sm" :disabled="loading" data-test="aas-retry" @click="retry">
             Retry
           </button>
@@ -62,24 +62,24 @@
       </div>
 
       <div v-if="running === 'aas' && aasSettingsError" class="not-available" data-test="aas-not-answering">
-        <p>aas is not answering right now; it may be restarting.</p>
+        <p>aas is not responding. It may be restarting.</p>
         <button class="btn btn-secondary btn-sm" :disabled="loading" data-test="aas-retry" @click="retry">Retry</button>
       </div>
 
       <section v-if="aasShown && aasLoaded" class="aas-section" data-test="latency-section">
         <h3>Latency</h3>
         <p class="section-hint">
-          The sound card's buffer. Lower is quicker to react, higher is safer against dropouts.
+          How much audio the sound card buffers. Lower values reduce the delay; higher values protect against dropouts.
         </p>
         <p data-test="latency-saved">
-          Saved: <strong>{{ savedLatencyLabel }}</strong>
+          Setting: <strong>{{ savedLatencyLabel }}</strong>
         </p>
         <p v-if="savedLatencyError" class="server-warnings">
-          Could not read the saved latency: {{ savedLatencyError }}
+          Could not read the latency setting: {{ savedLatencyError }}
         </p>
         <p v-if="aasSettings" data-test="latency-running">
-          aas runs at: <strong>{{ aasSettings.latency_ms }} ms</strong>
-          <span v-if="runningLatencyDiffers"> (differs from the saved value)</span>
+          Currently running with: <strong>{{ aasSettings.latency_ms }} ms</strong>
+          <span v-if="runningLatencyDiffers"> (differs from the setting)</span>
         </p>
         <div class="latency-row">
           <input
@@ -107,10 +107,10 @@
         <p v-if="latencyNote" class="latency-note" :class="latencyNote.level" data-test="latency-note">
           {{ latencyNote.text }}
         </p>
-        <p class="section-hint">Saving restarts aas: the sound stops for a moment.</p>
-        <p v-if="latencyPending" data-test="latency-pending">Saved; it applies when aas next starts.</p>
+        <p class="section-hint">Saving restarts aas, so playback stops briefly.</p>
+        <p v-if="latencyPending" data-test="latency-pending">Saved. It takes effect the next time aas starts.</p>
         <p v-if="restarting" class="restarting" data-test="latency-restarting">
-          Restarting… waiting for aas to come back.
+          Restarting aas…
         </p>
         <p v-if="latencyError" class="latency-note red" data-test="latency-error">{{ latencyError }}</p>
       </section>
@@ -118,7 +118,7 @@
       <section v-if="aasShown && aasLoaded" class="aas-section">
         <h3>Recommended for this board</h3>
         <p class="section-hint">
-          Puts the latency back to this board's values.
+          Resets the latency to the recommended value for this device.
         </p>
         <button
           class="btn btn-secondary"
@@ -372,9 +372,9 @@ const latencyBusy = computed(() => latencySaving.value || restarting.value)
 
 const latencyConfirmationMessage = computed(
   () =>
-    `${pendingLowLatency.value} ms is below the lowest latency this board handles ` +
-    `(${aasSettings.value?.latency_min_ms} ms): dropouts are likely.\n\n` +
-    'Saving restarts aas: the sound stops for a moment.',
+    `${pendingLowLatency.value} ms is lower than this device can handle ` +
+    `(${aasSettings.value?.latency_min_ms} ms), so expect dropouts.\n\n` +
+    'Saving restarts aas, so playback stops briefly.',
 )
 
 const stopRestartPoll = () => {
@@ -390,7 +390,7 @@ onUnmounted(() => {
 const getSettingsWithin = async (ms: number) => {
   let timer: ReturnType<typeof setTimeout> | undefined
   const timeout = new Promise<ApiError>((resolve) => {
-    timer = setTimeout(() => resolve({ error: 'Timeout', message: 'aas did not answer in time' }), ms)
+    timer = setTimeout(() => resolve({ error: 'Timeout', message: 'aas did not respond in time' }), ms)
   })
   try {
     return await Promise.race([getSettings({ signal: AbortSignal.timeout(ms) }), timeout])
@@ -427,10 +427,10 @@ const waitForAas = (saved: number | null) => {
     if (Date.now() >= deadline) {
       restarting.value = false
       latencyError.value =
-        `aas did not come back within ${RESTART_WAIT_MS / 1000} s ` +
+        `aas did not restart within ${RESTART_WAIT_MS / 1000} s ` +
         `after the latency was saved as ${latencyLabel(saved)}` +
-        (lastRunning !== null ? `; it still runs at ${lastRunning} ms` : '') +
-        '. If it stays silent, set the latency back.'
+        (lastRunning !== null ? `; it is still running with ${lastRunning} ms` : '') +
+        '. If there is still no sound, change the latency back.'
     } else {
       restartPoll = setTimeout(poll, RESTART_POLL_MS)
     }
@@ -492,8 +492,8 @@ const recommendedConfirmationMessage = computed(() => {
   const restart =
     savedLatency.value === null && savedLatencyError.value === null
       ? ''
-      : '\n\nSaving the latency restarts aas: the sound stops for a moment.'
-  return `Sets the latency recommended for this board:\n\nLatency: ${recommendedLatencyLabel.value}${restart}`
+      : '\n\nSaving restarts aas, so playback stops briefly.'
+  return `Reset the latency to the recommended value for this device?\n\nLatency: ${recommendedLatencyLabel.value}${restart}`
 })
 
 /** A failed save reports itself; success is said also when nothing needed changing. */
@@ -501,7 +501,7 @@ const applyRecommended = async () => {
   showRecommendedConfirmation.value = false
   let ok = true
   if (savedLatency.value !== null || savedLatencyError.value !== null) ok = await saveLatency(null)
-  if (ok) toastStore.showSuccessToast('Recommended latency set.')
+  if (ok) toastStore.showSuccessToast('Latency reset to the recommended value.')
 }
 </script>
 

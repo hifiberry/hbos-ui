@@ -102,7 +102,7 @@ describe('audio server page: card latency', () => {
     m.getAasLatency.mockResolvedValue({ latency_ms: 8 })
     const wrapper = await mountPage()
     expect(wrapper.find('[data-test="aas-not-answering"]').text()).toContain(
-      'aas is not answering right now; it may be restarting.',
+      'aas is not responding. It may be restarting.',
     )
     expect(wrapper.find('[data-test="latency-saved"]').text()).toContain('8 ms')
     expect(wrapper.find('[data-test="latency-running"]').exists()).toBe(false)
@@ -151,7 +151,7 @@ describe('audio server page: card latency', () => {
     const wrapper = await mountPage()
     const line = wrapper.find('[data-test="aas-not-running"]')
     expect(line.text()).toContain(
-      'aas is chosen but not running. If the device has not rebooted since, reboot; otherwise it may be restarting or have failed.',
+      'aas is selected but not running. Reboot to start it. If you have already rebooted, it may be restarting or may have failed to start.',
     )
     expect(line.find('[data-test="aas-retry"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="aas-not-answering"]').exists()).toBe(false)
@@ -192,7 +192,7 @@ describe('audio server page: card latency', () => {
     await wrapper.find('[data-test="latency-save"]').trigger('click')
     await flushPromises()
     expect(wrapper.find('[data-test="latency-pending"]').text()).toBe(
-      'Saved; it applies when aas next starts.',
+      'Saved. It takes effect the next time aas starts.',
     )
     expect(wrapper.find('[data-test="latency-restarting"]').exists()).toBe(false)
     expect(m.getSettings).not.toHaveBeenCalled()
@@ -260,14 +260,14 @@ describe('audio server page: card latency', () => {
     const wrapper = await mountPage()
     const running = wrapper.find('[data-test="latency-running"]').text()
     expect(running).toContain('10 ms')
-    expect(running).toContain('differs from the saved value')
+    expect(running).toContain('differs from the setting')
   })
 
   it('shows the note for the typed value', async () => {
     const wrapper = await mountPage()
     await typeLatency(wrapper, '4')
     expect(wrapper.find('[data-test="latency-note"]').text()).toBe(
-      'Lower than recommended for this board: it may drop out under heavy load.',
+      'Lower than recommended: audio may drop out under heavy load.',
     )
     await typeLatency(wrapper, '5')
     expect(wrapper.find('[data-test="latency-note"]').exists()).toBe(false)
@@ -322,7 +322,7 @@ describe('audio server page: card latency', () => {
     await wrapper.find('[data-test="latency-save"]').trigger('click')
     await flushPromises()
     expect(m.setAasLatency).toHaveBeenCalledWith(8)
-    expect(wrapper.find('[data-test="latency-restarting"]').text()).toContain('Restarting…')
+    expect(wrapper.find('[data-test="latency-restarting"]').text()).toContain('Restarting aas…')
 
     await vi.advanceTimersByTimeAsync(1000)
     expect(wrapper.find('[data-test="latency-restarting"]').exists()).toBe(true)
@@ -347,7 +347,7 @@ describe('audio server page: card latency', () => {
     await flushPromises()
 
     await vi.advanceTimersByTimeAsync(1000)
-    expect(wrapper.find('[data-test="latency-restarting"]').text()).toContain('Restarting…')
+    expect(wrapper.find('[data-test="latency-restarting"]').text()).toContain('Restarting aas…')
 
     await vi.advanceTimersByTimeAsync(1000)
     await flushPromises()
@@ -445,7 +445,7 @@ describe('audio server page: card latency', () => {
     m.getSettings.mockResolvedValue(settings(8))
     const successToast = vi.spyOn(useToastStore(), 'showSuccessToast')
     const wrapper = await mountPage()
-    expect(wrapper.text()).toContain("Puts the latency back to this board's values.")
+    expect(wrapper.text()).toContain("Resets the latency to the recommended value for this device.")
     expect(wrapper.text()).not.toContain('AES67')
     await wrapper.find('[data-test="recommended"]').trigger('click')
     const dialog = wrapper.find('[data-test="dialog"]')
@@ -455,7 +455,7 @@ describe('audio server page: card latency', () => {
     await wrapper.find('[data-test="dialog-confirm"]').trigger('click')
     await flushPromises()
     expect(m.setAasLatency).toHaveBeenCalledWith(null)
-    expect(successToast).toHaveBeenCalledWith('Recommended latency set.')
+    expect(successToast).toHaveBeenCalledWith('Latency reset to the recommended value.')
   })
 
   it('recommended leaves a latency that is already the default', async () => {
@@ -466,7 +466,7 @@ describe('audio server page: card latency', () => {
     await wrapper.find('[data-test="dialog-confirm"]').trigger('click')
     await flushPromises()
     expect(m.setAasLatency).not.toHaveBeenCalled()
-    expect(successToast).toHaveBeenCalledWith('Recommended latency set.')
+    expect(successToast).toHaveBeenCalledWith('Latency reset to the recommended value.')
   })
 
   it('reports a refused save', async () => {

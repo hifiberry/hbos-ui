@@ -128,7 +128,7 @@ describe('players.vue: AES67', () => {
     const wrapper = await mountPlayersView()
     const card = wrapper.find('[data-test="aes67-player"]')
     expect(card.find('.player-item').classes()).toContain('greyed')
-    expect(card.find('[data-test="aes67-unavailable"]').text()).toBe('Needs a wired network connection')
+    expect(card.find('[data-test="aes67-unavailable"]').text()).toBe('Requires a wired network connection')
   })
 
   it('hides the old hifiberry-aes67 extension', async () => {

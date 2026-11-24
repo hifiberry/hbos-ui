@@ -115,7 +115,7 @@ describe('AES67 player card', () => {
     m.getAes67.mockResolvedValue({ error: 'HTTP 404', message: 'Not Found' })
     const wrapper = await mountCard()
     expect(greyed(wrapper)).toBe(true)
-    expect(wrapper.find('[data-test="aes67-unavailable"]').text()).toBe('Needs a wired network connection')
+    expect(wrapper.find('[data-test="aes67-unavailable"]').text()).toBe('Requires a wired network connection')
     expect(toggle(wrapper).attributes('disabled')).toBeDefined()
     expect(wrapper.find('[data-test="aes67-settings"]').exists()).toBe(false)
   })
@@ -124,7 +124,7 @@ describe('AES67 player card', () => {
     m.getAes67.mockResolvedValue({ error: 'HTTP 500', message: 'busy' })
     const wrapper = await mountCard()
     expect(greyed(wrapper)).toBe(true)
-    expect(wrapper.find('[data-test="aes67-error"]').text()).toContain('Could not read AES67: busy')
+    expect(wrapper.find('[data-test="aes67-error"]').text()).toContain('Could not read the AES67 settings: busy')
     m.getAes67.mockResolvedValue(input())
     await wrapper.find('[data-test="aes67-retry"]').trigger('click')
     await flushPromises()
@@ -296,7 +296,7 @@ describe('AES67 player card', () => {
     const wrapper = await mountCard()
     const select = wrapper.find('[data-test="aes67-stream"]')
     const selected = select.findAll('option').find((o) => (o.element as HTMLOptionElement).selected)
-    expect(selected?.text()).toBe('No stream chosen')
+    expect(selected?.text()).toBe('No stream selected')
   })
 
   it('keeps an unannounced selection', async () => {
@@ -306,7 +306,7 @@ describe('AES67 player card', () => {
     const select = wrapper.find('[data-test="aes67-stream"]')
     expect((select.element as HTMLSelectElement).value).toBe('gone')
     const selected = select.findAll('option').find((o) => (o.element as HTMLOptionElement).selected)
-    expect(selected?.text()).toBe('gone (not announced)')
+    expect(selected?.text()).toBe('gone (currently unavailable)')
     expect(m.setAes67Input).not.toHaveBeenCalled()
   })
 
@@ -328,7 +328,7 @@ describe('AES67 player card', () => {
     expect(wrapper.find('[data-test="aes67-latency-current"]').text()).toContain('Automatic (6 ms)')
     expect(wrapper.find('[data-test="aes67-latency-note"]').exists()).toBe(false)
     expect(wrapper.find('[data-test="aes67-settings"]').text()).toContain(
-      "The AES67 latency includes the card's buffer: a lower card latency lowers the least it can hold.",
+      "The lowest possible latency depends on the sound card latency, set on the Audio Server page.",
     )
 
     m.getAes67.mockResolvedValue(input({ latency_ms: 4, latency_floor_ms: 6, latency_auto: false }))
@@ -338,7 +338,7 @@ describe('AES67 player card', () => {
     expect(m.setAes67Input).toHaveBeenCalledWith({ latency_ms: 4 })
     expect(wrapper.find('[data-test="aes67-latency-current"]').text()).toContain('4 ms')
     expect(wrapper.find('[data-test="aes67-latency-note"]').text()).toBe(
-      'This board holds at least 6 ms; the stream plays at 6 ms.',
+      'Too low for this device. AES67 uses 6 ms, the lowest it can handle.',
     )
 
     m.getAes67.mockResolvedValue(input({ latency_ms: 5, latency_floor_ms: 6, latency_auto: true }))

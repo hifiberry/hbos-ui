@@ -198,6 +198,86 @@ describe('audio server page: card latency', () => {
     expect(wrapper.find('[data-test="latency-error"]').exists()).toBe(false)
   })
 
+  it('keeps waiting while the old aas still answers', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const wrapper = await mountPage()
+    m.getSettings.mockReset()
+    m.getSettings.mockResolvedValueOnce(settings(5)).mockResolvedValue(settings(8.0))
+
+    await typeLatency(wrapper, '8')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await flushPromises()
+
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(wrapper.find('[data-test="latency-restarting"]').text()).toContain('Restarting…')
+
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+    expect(wrapper.find('[data-test="latency-restarting"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="latency-running"]').text()).toContain('8 ms')
+    expect(m.getSettings).toHaveBeenCalledTimes(2)
+  })
+
+  it('waits for the recommended value after saving the default', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    m.getAasLatency.mockResolvedValue({ latency_ms: 8 })
+    m.getSettings.mockResolvedValue(settings(8))
+    const wrapper = await mountPage()
+    m.getSettings.mockReset()
+    m.getSettings.mockResolvedValueOnce(settings(8)).mockResolvedValue(settings(5))
+
+    // An empty field cannot be saved; Task 8's "Recommended" button saves null.
+    m.setAasLatency.mockResolvedValue({ latency_ms: null, restarted: true })
+    await typeLatency(wrapper, '9')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await flushPromises()
+
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(wrapper.find('[data-test="latency-restarting"]').exists()).toBe(true)
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+    expect(wrapper.find('[data-test="latency-restarting"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="latency-saved"]').text()).toContain('Recommended (5 ms)')
+  })
+
+  it('names the last running value when aas answers with another one', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const wrapper = await mountPage()
+    m.getSettings.mockReset()
+    m.getSettings.mockResolvedValue(settings(5))
+
+    await typeLatency(wrapper, '7')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(30_000)
+    await flushPromises()
+
+    expect(m.getSettings).toHaveBeenCalledTimes(30)
+    const error = wrapper.find('[data-test="latency-error"]').text()
+    expect(error).toContain('7 ms')
+    expect(error).toContain('5 ms')
+  })
+
+  it('shows the saved latency as unknown when the config server does not answer', async () => {
+    m.getAasLatency.mockResolvedValue({ error: 'HTTP 500', message: 'boom' })
+    m.getSettings.mockResolvedValue(settings(8))
+    const wrapper = await mountPage()
+    const saved = wrapper.find('[data-test="latency-saved"]').text()
+    expect(saved).toContain('unknown')
+    expect(saved).not.toContain('Recommended')
+    expect(wrapper.find('[data-test="latency-running"]').text()).not.toContain('differs')
+  })
+
+  it('saves the value that opened the confirmation', async () => {
+    const wrapper = await mountPage()
+    await typeLatency(wrapper, '2')
+    await wrapper.find('[data-test="latency-save"]').trigger('click')
+    await typeLatency(wrapper, '9')
+    await wrapper.find('[data-test="dialog-confirm"]').trigger('click')
+    await flushPromises()
+    expect(m.setAasLatency).toHaveBeenCalledWith(2)
+  })
+
   it('names the saved value when aas does not come back', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const wrapper = await mountPage()

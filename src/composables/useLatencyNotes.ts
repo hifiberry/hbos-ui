@@ -47,7 +47,3 @@ export function validLatency(value: unknown): number | null {
     ? value
     : null
 }
-
-export function useLatencyNotes() {
-  return { cardLatencyNote, aes67LatencyNote, validLatency }
-}

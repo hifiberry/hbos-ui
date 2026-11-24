@@ -250,6 +250,8 @@ const latencySaving = ref(false)
 const restarting = ref(false)
 const latencyError = ref<string | null>(null)
 const showLatencyConfirmation = ref(false)
+/** The value that opened the low-latency confirmation; that one is saved on confirm. */
+const pendingLowLatency = ref<number | null>(null)
 let restartPoll: ReturnType<typeof setTimeout> | null = null
 
 const loadLatency = async () => {
@@ -275,12 +277,21 @@ const recommendedLatencyLabel = computed(() => {
 
 const latencyLabel = (ms: number | null) => (ms === null ? recommendedLatencyLabel.value : `${ms} ms`)
 
-const savedLatencyLabel = computed(() => latencyLabel(savedLatency.value))
+/** Not shown as a guess when the config server could not be read. */
+const savedLatencyLabel = computed(() =>
+  savedLatencyError.value !== null ? 'unknown' : latencyLabel(savedLatency.value),
+)
 
-/** A saved `null` runs at the recommended value, when aas says which that is. */
+/** The latency aas should run at: the saved one, or the recommended one for a saved `null`. */
+const expectedLatency = (saved: number | null) => saved ?? aasSettings.value?.latency_recommended_ms
+
+/** aas reports a float; the saved value is whole ms. */
+const sameLatency = (a: number, b: number) => Math.abs(Number(a) - Number(b)) < 1e-6
+
 const runningLatencyDiffers = computed(() => {
-  const expected = savedLatency.value ?? aasSettings.value?.latency_recommended_ms
-  return expected !== undefined && aasSettings.value?.latency_ms !== expected
+  if (savedLatencyError.value !== null || !aasSettings.value) return false
+  const expected = expectedLatency(savedLatency.value)
+  return expected !== undefined && !sameLatency(aasSettings.value.latency_ms, expected)
 })
 
 const typedLatency = computed(() => {
@@ -303,7 +314,7 @@ const latencyBusy = computed(() => latencySaving.value || restarting.value)
 
 const latencyConfirmationMessage = computed(
   () =>
-    `${typedLatency.value} ms is below the lowest latency this board handles ` +
+    `${pendingLowLatency.value} ms is below the lowest latency this board handles ` +
     `(${aasSettings.value?.latency_min_ms} ms): dropouts are likely.\n\n` +
     'Saving restarts aas: the sound stops for a moment.',
 )
@@ -314,24 +325,37 @@ const stopRestartPoll = () => {
 }
 onUnmounted(stopRestartPoll)
 
-/** Polls `GET /settings` until aas answers or the polls run out. */
+/**
+ * Polls `GET /settings` until aas answers at the expected latency or the polls
+ * run out. The config server answers before aas has stopped, so an answer at
+ * another value is the old aas still running. Without a recommended value to
+ * expect for a saved `null`, any answer counts.
+ */
 const waitForAas = (saved: number | null) => {
   stopRestartPoll()
   restarting.value = true
+  const expected = expectedLatency(saved)
   let polls = 0
+  let lastRunning: number | null = null
   const poll = async () => {
     restartPoll = null
     polls += 1
     const result = await getSettings()
     if (!isAasError(result)) {
-      aasSettings.value = result
-      restarting.value = false
-    } else if (polls >= RESTART_POLLS) {
+      lastRunning = result.latency_ms
+      if (expected === undefined || sameLatency(result.latency_ms, expected)) {
+        aasSettings.value = result
+        restarting.value = false
+        return
+      }
+    }
+    if (polls >= RESTART_POLLS) {
       restarting.value = false
       latencyError.value =
         `aas did not come back within ${(RESTART_POLLS * RESTART_POLL_MS) / 1000} s ` +
-        `after the latency was saved as ${latencyLabel(saved)}. ` +
-        'If it stays silent, set the latency back.'
+        `after the latency was saved as ${latencyLabel(saved)}` +
+        (lastRunning !== null ? `; it still runs at ${lastRunning} ms` : '') +
+        '. If it stays silent, set the latency back.'
     } else {
       restartPoll = setTimeout(poll, RESTART_POLL_MS)
     }
@@ -350,6 +374,7 @@ const saveLatency = async (latency: number | null) => {
       return
     }
     savedLatency.value = result.latency_ms
+    savedLatencyError.value = null
     latencyInput.value = result.latency_ms ?? ''
     if (result.restarted) {
       waitForAas(result.latency_ms)
@@ -367,6 +392,7 @@ const askSaveLatency = () => {
   if (latency === null) return
   const min = aasSettings.value?.latency_min_ms
   if (min !== undefined && latency < min) {
+    pendingLowLatency.value = latency
     showLatencyConfirmation.value = true
     return
   }
@@ -375,7 +401,9 @@ const askSaveLatency = () => {
 
 const confirmLowLatency = async () => {
   showLatencyConfirmation.value = false
-  if (typedLatency.value !== null) await saveLatency(typedLatency.value)
+  const latency = pendingLowLatency.value
+  pendingLowLatency.value = null
+  if (latency !== null) await saveLatency(latency)
 }
 </script>
 

@@ -24,10 +24,10 @@
                 <router-link :to="{ name: 'audio-server' }">Audio Server</router-link>
               </p>
               <p v-else-if="unavailable" class="player-note" data-test="aes67-unavailable">
-                Needs a wired network connection
+                Requires a wired network connection
               </p>
               <div v-else-if="loadError" class="player-note" data-test="aes67-error">
-                <span>Could not read AES67: {{ loadError }}</span>
+                <span>Could not read the AES67 settings: {{ loadError }}</span>
                 <button class="btn btn-secondary btn-sm" :disabled="busy" data-test="aes67-retry" @click="retry">
                   Retry
                 </button>
@@ -72,15 +72,15 @@
               data-test="aes67-stream"
               @change="selectStream"
             >
-              <option v-if="aes67.stream === null" value="" disabled>No stream chosen</option>
+              <option v-if="aes67.stream === null" value="" disabled>No stream selected</option>
               <option v-if="unannouncedStream" :value="unannouncedStream">
-                {{ unannouncedStream }} (not announced)
+                {{ unannouncedStream }} (currently unavailable)
               </option>
               <option v-for="name in streams" :key="name" :value="name">{{ name }}</option>
             </select>
           </div>
           <p data-test="aes67-latency-current">
-            AES67 latency: <strong>{{ latencyLabel }}</strong>
+            Latency: <strong>{{ latencyLabel }}</strong>
           </p>
           <div class="latency-row">
             <input
@@ -117,9 +117,9 @@
             {{ note.text }}
           </p>
           <p class="section-hint">
-            The AES67 latency includes the card's buffer: a lower card latency lowers the least it can hold.
+            The lowest possible latency depends on the sound card latency, set on the Audio Server page.
           </p>
-          <p class="section-hint">AES67 changes apply at once, without restarting aas.</p>
+          <p class="section-hint">Changes take effect immediately.</p>
         </div>
       </div>
     </div>
@@ -294,7 +294,7 @@ const change = async (patch: Aes67Patch) => {
   try {
     const result = await setAes67Input(patch)
     const ok = !isAasError(result)
-    if (!ok) toastStore.showErrorToast(`Could not change AES67: ${result.message}`)
+    if (!ok) toastStore.showErrorToast(`Could not change the AES67 settings: ${result.message}`)
     await load(ok && patch.enabled === true)
   } finally {
     busy.value = false

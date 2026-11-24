@@ -8,14 +8,14 @@ describe('cardLatencyNote', () => {
     expect(cardLatencyNote(3, 5, 3)?.level).toBe('amber')
     expect(cardLatencyNote(2, 5, 3)).toEqual({
       level: 'red',
-      text: 'Below what this board handles: dropouts are likely.',
+      text: 'Too low for this device: expect dropouts.',
     })
   })
 
   it('uses the exact amber text', () => {
     expect(cardLatencyNote(4, 5, 3)).toEqual({
       level: 'amber',
-      text: 'Lower than recommended for this board: it may drop out under heavy load.',
+      text: 'Lower than recommended: audio may drop out under heavy load.',
     })
   })
 
@@ -26,7 +26,7 @@ describe('cardLatencyNote', () => {
 
 describe('aes67LatencyNote', () => {
   it('names the floor below it and nothing at or without it', () => {
-    expect(aes67LatencyNote(5, 6)?.text).toBe('This board holds at least 6 ms; the stream plays at 6 ms.')
+    expect(aes67LatencyNote(5, 6)?.text).toBe('Too low for this device. AES67 uses 6 ms, the lowest it can handle.')
     expect(aes67LatencyNote(5, 6)?.level).toBe('amber')
     expect(aes67LatencyNote(6, 6)).toBeNull()
     expect(aes67LatencyNote(5)).toBeNull()

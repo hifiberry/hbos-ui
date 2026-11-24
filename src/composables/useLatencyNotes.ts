@@ -16,12 +16,12 @@ export const LATENCY_MAX_MS = 100
  */
 export function cardLatencyNote(ms: number, recommended?: number, min?: number): Note {
   if (min !== undefined && ms < min) {
-    return { level: 'red', text: 'Below what this board handles: dropouts are likely.' }
+    return { level: 'red', text: 'Too low for this device: expect dropouts.' }
   }
   if (recommended !== undefined && ms < recommended) {
     return {
       level: 'amber',
-      text: 'Lower than recommended for this board: it may drop out under heavy load.',
+      text: 'Lower than recommended: audio may drop out under heavy load.',
     }
   }
   return null
@@ -32,7 +32,7 @@ export function aes67LatencyNote(ms: number, floor?: number): Note {
   if (floor !== undefined && ms < floor) {
     return {
       level: 'amber',
-      text: `This board holds at least ${floor} ms; the stream plays at ${floor} ms.`,
+      text: `Too low for this device. AES67 uses ${floor} ms, the lowest it can handle.`,
     }
   }
   return null

@@ -116,7 +116,7 @@
       </section>
 
       <section v-if="aasShown && aasLoaded" class="aas-section">
-        <h3>Recommended for this board</h3>
+        <h3>Recommended latency</h3>
         <p class="section-hint">
           Resets the latency to the recommended value for this device.
         </p>
@@ -126,14 +126,14 @@
           data-test="recommended"
           @click="showRecommendedConfirmation = true"
         >
-          Recommended for this board
+          Use the recommended latency
         </button>
       </section>
     </div>
 
     <ConfirmationDialog
       :is-open="showRecommendedConfirmation"
-      title="Recommended for this board"
+      title="Recommended latency"
       :message="recommendedConfirmationMessage"
       confirm-button-text="Apply"
       cancel-button-text="Cancel"
@@ -482,7 +482,7 @@ const confirmLowLatency = async () => {
   if (latency !== null) await saveLatency(latency)
 }
 
-// --- Recommended for this board. -------------------------------------------
+// --- Recommended latency. -------------------------------------------
 // A card latency that is already the default is not saved again, so aas does
 // not restart.
 

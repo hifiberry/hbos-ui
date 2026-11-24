@@ -16,13 +16,13 @@
         <p v-if="chosen === 'aas' && running !== 'aas'" data-test="aas-not-running">
           aas is chosen but not running. If the device has not rebooted since, reboot; otherwise it may be restarting or
           have failed.
-          <button v-if="aasSettingsError" class="action-button" :disabled="loading" data-test="aas-retry" @click="retry">
+          <button v-if="aasSettingsError" class="btn btn-secondary btn-sm" :disabled="loading" data-test="aas-retry" @click="retry">
             Retry
           </button>
         </p>
         <div v-if="running !== chosen" class="reboot-pending">
           <p>The change applies after a reboot.</p>
-          <button class="action-button" @click="showRebootConfirmation = true">Reboot to apply</button>
+          <button class="btn btn-primary btn-sm" @click="showRebootConfirmation = true">Reboot to apply</button>
         </div>
         <p v-if="warnings.length" class="server-warnings">
           <span v-for="w in warnings" :key="w">{{ w }}<br /></span>
@@ -31,7 +31,7 @@
 
       <div v-if="error" class="not-available">
         <p>Could not read the audio server: {{ error }}</p>
-        <button class="action-button" :disabled="loading" @click="retry">Retry</button>
+        <button class="btn btn-secondary btn-sm" :disabled="loading" @click="retry">Retry</button>
       </div>
       <p v-else-if="!available" class="not-available">
         aas is not installed on this device, so the audio server cannot be switched.
@@ -41,7 +41,7 @@
           <h3>PipeWire</h3>
           <p>The default audio server.</p>
           <button
-            class="action-button"
+            class="btn btn-primary btn-sm"
             :disabled="switching || chosen === 'pipewire'"
             @click="switchToPipewire"
           >
@@ -52,7 +52,7 @@
           <h3>aas</h3>
           <p>The alternative audio server.</p>
           <button
-            class="action-button"
+            class="btn btn-primary btn-sm"
             :disabled="switching || chosen === 'aas'"
             @click="askSwitchToAas"
           >
@@ -63,7 +63,7 @@
 
       <div v-if="running === 'aas' && aasSettingsError" class="not-available" data-test="aas-not-answering">
         <p>aas is not answering right now; it may be restarting.</p>
-        <button class="action-button" :disabled="loading" data-test="aas-retry" @click="retry">Retry</button>
+        <button class="btn btn-secondary btn-sm" :disabled="loading" data-test="aas-retry" @click="retry">Retry</button>
       </div>
 
       <section v-if="aasShown && aasLoaded" class="aas-section" data-test="latency-section">
@@ -96,7 +96,7 @@
           />
           <span>ms</span>
           <button
-            class="action-button"
+            class="btn btn-primary btn-sm"
             :disabled="latencyBusy || typedLatency === null"
             data-test="latency-save"
             @click="askSaveLatency"
@@ -122,7 +122,7 @@
         </p>
         <div v-else-if="aes67Error" class="aes67-row">
           <p class="server-warnings">Could not read AES67: {{ aes67Error }}</p>
-          <button class="action-button" :disabled="aes67Disabled" data-test="aes67-retry" @click="retryAes67">
+          <button class="btn btn-secondary btn-sm" :disabled="aes67Disabled" data-test="aes67-retry" @click="retryAes67">
             Retry
           </button>
         </div>
@@ -173,7 +173,7 @@
             />
             <span>ms</span>
             <button
-              class="action-button"
+              class="btn btn-primary btn-sm"
               :disabled="aes67Disabled || typedAes67Latency === null"
               data-test="aes67-latency-save"
               @click="setAes67Latency"
@@ -181,7 +181,7 @@
               Set
             </button>
             <button
-              class="action-button"
+              class="btn btn-secondary btn-sm"
               :disabled="aes67Disabled || aes67.latency_auto"
               data-test="aes67-latency-auto"
               @click="changeAes67({ latency_ms: 'auto' })"
@@ -205,7 +205,7 @@
           Puts the latency{{ aes67 ? ' and the AES67 latency' : '' }} back to this board's values.
         </p>
         <button
-          class="action-button"
+          class="btn btn-secondary"
           :disabled="latencyBusy || aes67Busy"
           data-test="recommended"
           @click="showRecommendedConfirmation = true"
@@ -746,6 +746,25 @@ const applyRecommended = async () => {
 
   .not-available {
     color: var(--color-body-secondary);
+
+    .btn {
+      margin-top: 6px;
+    }
+  }
+
+  .reboot-pending {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  [data-test='aas-not-running'] .btn {
+    margin-left: 8px;
   }
 
   .aas-section {
@@ -771,7 +790,31 @@ const applyRecommended = async () => {
     }
 
     .latency-input {
-      width: 6em;
+      width: 15em;
+    }
+
+    // The fields as the Security page draws them.
+    .latency-input,
+    select {
+      padding: 8px 10px;
+      border: 1px solid rgba(128, 128, 128, 0.4);
+      border-radius: 6px;
+      background: var(--background-body, #fafafa);
+      color: var(--color-body);
+      font-size: 1rem;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+      }
+    }
+
+    select {
+      min-width: 13em;
     }
 
     .aes67-row {
